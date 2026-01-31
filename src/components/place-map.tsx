@@ -20,6 +20,8 @@ interface SavedPlace {
 
 interface PlaceMapProps {
   places: SavedPlace[];
+  selectedPlaceId: string | null;
+  onMarkerClick: (savedPlaceId: string) => void;
 }
 
 declare global {
@@ -30,12 +32,56 @@ declare global {
   }
 }
 
-export function PlaceMap({ places }: PlaceMapProps) {
+const MARKER_COLORS = {
+  want: "#ef4444",
+  been: "#22c55e",
+  selected: "#3b82f6",
+};
+
+const MARKER_SIZE = {
+  default: 24,
+  selected: 32,
+};
+
+function createMarkerContent(status: "WANT" | "BEEN", isSelected: boolean): HTMLElement {
+  const size = isSelected ? MARKER_SIZE.selected : MARKER_SIZE.default;
+  const color = isSelected ? MARKER_COLORS.selected : (status === "WANT" ? MARKER_COLORS.want : MARKER_COLORS.been);
+  const iconSize = isSelected ? 16 : 12;
+  
+  const pinElement = document.createElement("div");
+  pinElement.style.cssText = `
+    background-color: ${color};
+    border-radius: 50%;
+    width: ${size}px;
+    height: ${size}px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: ${isSelected ? "3px" : "2px"} solid white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    ${isSelected ? "z-index: 1000;" : ""}
+  `;
+  
+  pinElement.innerHTML = `
+    <svg width="${iconSize}" height="${iconSize}" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
+      ${status === "WANT" 
+        ? '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>'
+        : '<path d="M20 6 9 17l-5-5"/>'
+      }
+    </svg>
+  `;
+
+  return pinElement;
+}
+
+export function PlaceMap({ places, selectedPlaceId, onMarkerClick }: PlaceMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+  const markersRef = useRef<Map<string, google.maps.marker.AdvancedMarkerElement>>(new Map());
 
   const initMapCallback = useCallback(() => {
     if (!mapRef.current || !window.google) return;
@@ -100,94 +146,67 @@ export function PlaceMap({ places }: PlaceMapProps) {
     markersRef.current.forEach((marker) => {
       marker.map = null;
     });
-    markersRef.current = [];
+    markersRef.current.clear();
 
     if (places.length === 0) return;
 
     const bounds = new google.maps.LatLngBounds();
 
     places.forEach((savedPlace) => {
-      const { place, status } = savedPlace;
+      const { place, status, id } = savedPlace;
       const position = { lat: place.lat, lng: place.lng };
-
-      const pinColor = status === "WANT" ? "#ef4444" : "#22c55e";
-      
-      const pinElement = document.createElement("div");
-      pinElement.innerHTML = `
-        <div style="
-          background-color: ${pinColor};
-          border-radius: 50%;
-          width: 24px;
-          height: 24px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border: 2px solid white;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        ">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
-            ${status === "WANT" 
-              ? '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>'
-              : '<path d="M20 6 9 17l-5-5"/>'
-            }
-          </svg>
-        </div>
-      `;
+      const isSelected = id === selectedPlaceId;
 
       const marker = new google.maps.marker.AdvancedMarkerElement({
         map,
         position,
         title: place.name,
-        content: pinElement,
+        content: createMarkerContent(status, isSelected),
+        zIndex: isSelected ? 1000 : 1,
       });
 
-      const infoContent = document.createElement("div");
-      infoContent.style.cssText = "padding: 8px; max-width: 200px;";
-      
-      const nameEl = document.createElement("strong");
-      nameEl.style.fontSize = "14px";
-      nameEl.textContent = place.name;
-      
-      const addressEl = document.createElement("p");
-      addressEl.style.cssText = "font-size: 12px; color: #666; margin-top: 4px;";
-      addressEl.textContent = place.formattedAddress;
-      
-      const statusEl = document.createElement("span");
-      statusEl.style.cssText = `
-        display: inline-block;
-        margin-top: 8px;
-        padding: 2px 8px;
-        background-color: ${status === "WANT" ? "#fef2f2" : "#f0fdf4"};
-        color: ${status === "WANT" ? "#dc2626" : "#16a34a"};
-        border-radius: 4px;
-        font-size: 12px;
-        font-weight: 500;
-      `;
-      statusEl.textContent = status === "WANT" ? "Want to visit" : "Been there";
-      
-      infoContent.appendChild(nameEl);
-      infoContent.appendChild(addressEl);
-      infoContent.appendChild(statusEl);
-      
-      const infoWindow = new google.maps.InfoWindow({
-        content: infoContent,
+      marker.addListener("gmp-click", () => {
+        onMarkerClick(id);
       });
 
-      marker.addListener("click", () => {
-        infoWindow.open(map, marker);
-      });
-
-      markersRef.current.push(marker);
+      markersRef.current.set(id, marker);
       bounds.extend(position);
     });
 
     if (places.length === 1) {
       map.setCenter(bounds.getCenter());
       map.setZoom(14);
-    } else {
+    } else if (!selectedPlaceId) {
       map.fitBounds(bounds, { top: 50, right: 50, bottom: 50, left: 50 });
     }
-  }, [map, places]);
+  }, [map, places, selectedPlaceId, onMarkerClick]);
+
+  useEffect(() => {
+    if (!map || !selectedPlaceId) return;
+
+    const selectedPlace = places.find(p => p.id === selectedPlaceId);
+    if (selectedPlace) {
+      const position = { lat: selectedPlace.place.lat, lng: selectedPlace.place.lng };
+      map.panTo(position);
+      const currentZoom = map.getZoom() || 12;
+      if (currentZoom < 14) {
+        map.setZoom(15);
+      }
+    }
+  }, [map, selectedPlaceId, places]);
+
+  useEffect(() => {
+    if (!map || !window.google) return;
+
+    markersRef.current.forEach((marker, id) => {
+      const savedPlace = places.find(p => p.id === id);
+      if (savedPlace) {
+        const isSelected = id === selectedPlaceId;
+        marker.content = createMarkerContent(savedPlace.status, isSelected);
+        marker.zIndex = isSelected ? 1000 : 1;
+      }
+    });
+  }, [selectedPlaceId, places, map]);
 
   if (error) {
     return (

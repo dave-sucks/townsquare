@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,12 +9,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { MapPin, Search, LogOut, Trash2, Heart, CheckCircle, Plus } from "lucide-react";
+import { MapPin, Search, LogOut, Heart, CheckCircle, Plus } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { PlaceMap } from "@/components/place-map";
+import { PlaceRow } from "@/components/place-row";
+import { PlacePreview } from "@/components/place-preview";
 
 interface User {
   id: string;
@@ -62,6 +65,9 @@ export function MainApp({ user }: { user: User }) {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedTab, setSelectedTab] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  
+  const placeRowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const { data: savedPlacesData, isLoading: isLoadingPlaces } = useQuery<{ savedPlaces: SavedPlace[] }>({
     queryKey: ["saved-places"],
@@ -146,8 +152,11 @@ export function MainApp({ user }: { user: User }) {
         method: "DELETE",
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, deletedId) => {
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
+      if (selectedPlaceId === deletedId) {
+        setSelectedPlaceId(null);
+      }
       toast.success("Place removed!");
     },
     onError: (error: Error) => {
@@ -162,10 +171,31 @@ export function MainApp({ user }: { user: User }) {
     return true;
   });
 
+  const selectedPlace = selectedPlaceId 
+    ? savedPlaces.find(sp => sp.id === selectedPlaceId) 
+    : null;
+
+  const handleListItemClick = useCallback((savedPlaceId: string) => {
+    setSelectedPlaceId(savedPlaceId);
+  }, []);
+
+  const handleMarkerClick = useCallback((savedPlaceId: string) => {
+    setSelectedPlaceId(savedPlaceId);
+    
+    const rowElement = placeRowRefs.current.get(savedPlaceId);
+    if (rowElement) {
+      rowElement.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, []);
+
+  const handleClosePreview = useCallback(() => {
+    setSelectedPlaceId(null);
+  }, []);
+
   const userName = user.firstName || user.email?.split("@")[0] || "User";
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen flex-col overflow-hidden">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center justify-between gap-4">
           <div className="flex items-center gap-2">
@@ -276,105 +306,94 @@ export function MainApp({ user }: { user: User }) {
         </div>
       </header>
 
-      <main className="flex-1 container py-6">
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div>
-            <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="all" data-testid="tab-all">
-                  All ({savedPlaces.length})
-                </TabsTrigger>
-                <TabsTrigger value="want" data-testid="tab-want">
-                  Want ({savedPlaces.filter((p) => p.status === "WANT").length})
-                </TabsTrigger>
-                <TabsTrigger value="been" data-testid="tab-been">
-                  Been ({savedPlaces.filter((p) => p.status === "BEEN").length})
-                </TabsTrigger>
-              </TabsList>
+      <main className="flex-1 overflow-hidden">
+        <div className="grid h-full lg:grid-cols-2">
+          <div className="flex flex-col border-r">
+            <div className="p-4 pb-0">
+              <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="all" data-testid="tab-all">
+                    All ({savedPlaces.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="want" data-testid="tab-want">
+                    Want ({savedPlaces.filter((p) => p.status === "WANT").length})
+                  </TabsTrigger>
+                  <TabsTrigger value="been" data-testid="tab-been">
+                    Been ({savedPlaces.filter((p) => p.status === "BEEN").length})
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
 
-              <TabsContent value={selectedTab} className="mt-4">
-                {isLoadingPlaces ? (
-                  <div className="space-y-4">
-                    <Skeleton className="h-24 w-full" />
-                    <Skeleton className="h-24 w-full" />
-                    <Skeleton className="h-24 w-full" />
-                  </div>
-                ) : filteredPlaces.length === 0 ? (
-                  <Card>
-                    <CardContent className="flex flex-col items-center justify-center py-12">
-                      <MapPin className="mb-4 h-12 w-12 text-muted-foreground" />
-                      <p className="text-lg font-medium">No places yet</p>
-                      <p className="text-sm text-muted-foreground">
-                        Add your first place to get started
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="space-y-3">
-                    {filteredPlaces.map((savedPlace) => (
-                      <Card key={savedPlace.id} data-testid={`place-card-${savedPlace.id}`}>
-                        <CardHeader className="p-4">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <CardTitle className="text-base truncate">
-                                {savedPlace.place.name}
-                              </CardTitle>
-                              <CardDescription className="mt-1 truncate">
-                                {savedPlace.place.formattedAddress}
-                              </CardDescription>
-                            </div>
-                            <Badge variant={savedPlace.status === "WANT" ? "secondary" : "default"}>
-                              {savedPlace.status === "WANT" ? (
-                                <>
-                                  <Heart className="mr-1 h-3 w-3" />
-                                  Want
-                                </>
-                              ) : (
-                                <>
-                                  <CheckCircle className="mr-1 h-3 w-3" />
-                                  Been
-                                </>
-                              )}
-                            </Badge>
-                          </div>
-                          <div className="mt-3 flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                updateStatusMutation.mutate({
-                                  id: savedPlace.id,
-                                  status: savedPlace.status === "WANT" ? "BEEN" : "WANT",
-                                })
-                              }
-                              disabled={updateStatusMutation.isPending}
-                              data-testid={`button-toggle-status-${savedPlace.id}`}
-                            >
-                              {savedPlace.status === "WANT" ? "Mark as Been" : "Mark as Want"}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => deletePlaceMutation.mutate(savedPlace.id)}
-                              disabled={deletePlaceMutation.isPending}
-                              data-testid={`button-delete-${savedPlace.id}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </CardHeader>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
+            <ScrollArea className="flex-1 p-4">
+              {isLoadingPlaces ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-24 w-full" />
+                  <Skeleton className="h-24 w-full" />
+                  <Skeleton className="h-24 w-full" />
+                </div>
+              ) : filteredPlaces.length === 0 ? (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <MapPin className="mb-4 h-12 w-12 text-muted-foreground" />
+                    <p className="text-lg font-medium">No places yet</p>
+                    <p className="text-sm text-muted-foreground">
+                      Add your first place to get started
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {filteredPlaces.map((savedPlace) => (
+                    <PlaceRow
+                      key={savedPlace.id}
+                      ref={(el) => {
+                        if (el) {
+                          placeRowRefs.current.set(savedPlace.id, el);
+                        } else {
+                          placeRowRefs.current.delete(savedPlace.id);
+                        }
+                      }}
+                      savedPlace={savedPlace}
+                      isSelected={savedPlace.id === selectedPlaceId}
+                      onSelect={() => handleListItemClick(savedPlace.id)}
+                      onToggleStatus={() =>
+                        updateStatusMutation.mutate({
+                          id: savedPlace.id,
+                          status: savedPlace.status === "WANT" ? "BEEN" : "WANT",
+                        })
+                      }
+                      onDelete={() => deletePlaceMutation.mutate(savedPlace.id)}
+                      isUpdating={updateStatusMutation.isPending}
+                      isDeleting={deletePlaceMutation.isPending}
+                    />
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
           </div>
 
-          <div className="h-[600px] lg:sticky lg:top-20">
-            <Card className="h-full overflow-hidden">
-              <PlaceMap places={savedPlaces} />
-            </Card>
+          <div className="relative h-full">
+            <PlaceMap
+              places={savedPlaces}
+              selectedPlaceId={selectedPlaceId}
+              onMarkerClick={handleMarkerClick}
+            />
+            {selectedPlace && (
+              <PlacePreview
+                savedPlace={selectedPlace}
+                onClose={handleClosePreview}
+                onToggleStatus={() =>
+                  updateStatusMutation.mutate({
+                    id: selectedPlace.id,
+                    status: selectedPlace.status === "WANT" ? "BEEN" : "WANT",
+                  })
+                }
+                onDelete={() => deletePlaceMutation.mutate(selectedPlace.id)}
+                isUpdating={updateStatusMutation.isPending}
+                isDeleting={deletePlaceMutation.isPending}
+              />
+            )}
           </div>
         </div>
       </main>
