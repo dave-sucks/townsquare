@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Heart, CheckCircle, MapPin, ExternalLink, List, Lock, Globe, Trash2 } from "lucide-react";
+import { ArrowLeft, Heart, CheckCircle, MapPin, ExternalLink, List, Lock, Globe, Trash2, Users } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
@@ -44,10 +45,23 @@ interface ListData {
   };
 }
 
+interface FriendSavedPlace {
+  id: string;
+  status: "WANT" | "BEEN";
+  user: {
+    id: string;
+    username: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    profileImageUrl: string | null;
+  };
+}
+
 interface PlaceDetailData {
   place: Place;
   savedPlace: SavedPlace | null;
   listsContainingPlace: ListData[];
+  friendsWhoSaved: FriendSavedPlace[];
 }
 
 export default function PlaceDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -64,6 +78,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
   const place = data?.place;
   const savedPlace = data?.savedPlace;
   const listsContainingPlace = data?.listsContainingPlace || [];
+  const friendsWhoSaved = data?.friendsWhoSaved || [];
 
   const saveOrUpdatePlaceMutation = useMutation({
     mutationFn: async (status: "WANT" | "BEEN") => {
@@ -290,6 +305,59 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                   </Button>
                 </div>
               ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">
+            <Users className="inline-block mr-2 h-4 w-4" />
+            Friends who saved this place
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {friendsWhoSaved.length === 0 ? (
+            <p className="text-sm text-muted-foreground" data-testid="text-no-friends-saved">
+              None of the people you follow have saved this place yet.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {friendsWhoSaved.map((friend) => {
+                const displayName = friend.user.firstName
+                  ? `${friend.user.firstName}${friend.user.lastName ? ` ${friend.user.lastName}` : ""}`
+                  : friend.user.username || "User";
+                return (
+                  <Link
+                    key={friend.id}
+                    href={`/u/${friend.user.username || friend.user.id}`}
+                    className="flex items-center gap-3 p-2 rounded-md hover:bg-muted transition-colors"
+                    data-testid={`friend-saved-${friend.id}`}
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={friend.user.profileImageUrl || undefined} alt={displayName} />
+                      <AvatarFallback>{displayName.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{displayName}</p>
+                    </div>
+                    <Badge variant={friend.status === "WANT" ? "secondary" : "default"} className="shrink-0">
+                      {friend.status === "WANT" ? (
+                        <>
+                          <Heart className="mr-1 h-3 w-3" />
+                          Want
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="mr-1 h-3 w-3" />
+                          Been
+                        </>
+                      )}
+                    </Badge>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </CardContent>

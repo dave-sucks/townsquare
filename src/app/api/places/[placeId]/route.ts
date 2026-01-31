@@ -47,10 +47,37 @@ export async function GET(
       },
     });
 
+    const following = await prisma.follow.findMany({
+      where: { followerId: user.id },
+      select: { followingId: true },
+    });
+    const followingIds = following.map((f) => f.followingId);
+
+    const friendsWhoSaved = await prisma.savedPlace.findMany({
+      where: {
+        placeId: place.id,
+        userId: { in: followingIds },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            profileImageUrl: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+
     return NextResponse.json({
       place,
       savedPlace,
       listsContainingPlace,
+      friendsWhoSaved,
     });
   } catch (error: any) {
     console.error("Get place error:", error);
