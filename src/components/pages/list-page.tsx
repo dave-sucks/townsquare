@@ -1,0 +1,195 @@
+"use client";
+
+import { useState, useCallback, useRef } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { MapLayout } from "@/components/map/map-layout";
+import { ListSidebar } from "@/components/sidebars/list-sidebar";
+import { PlaceDetailsSheet } from "@/components/place-details-sheet";
+import { queryClient, apiRequest } from "@/lib/query-client";
+import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AppShell } from "@/components/layout";
+
+interface UserData {
+  id: string;
+  email: string | null;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  profileImageUrl: string | null;
+}
+
+interface Place {
+  id: string;
+  googlePlaceId: string;
+  name: string;
+  formattedAddress: string;
+  lat: number;
+  lng: number;
+  primaryType: string | null;
+  types: string[] | null;
+  priceLevel: string | null;
+  photoRefs: string[] | null;
+}
+
+interface ListPlace {
+  id: string;
+  listId: string;
+  placeId: string;
+  addedAt: string;
+  place: Place;
+}
+
+interface ListOwner {
+  id: string;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  profileImageUrl: string | null;
+}
+
+interface ListData {
+  id: string;
+  name: string;
+  description: string | null;
+  visibility: "PRIVATE" | "PUBLIC";
+  userId: string;
+  createdAt: string;
+  user: ListOwner;
+  listPlaces: ListPlace[];
+}
+
+interface ListPageProps {
+  listId: string;
+  currentUser: UserData | null;
+  isAuthenticated: boolean;
+}
+
+export function ListPage({ listId, currentUser, isAuthenticated }: ListPageProps) {
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  const { data, isLoading, error } = useQuery<{ list: ListData }>({
+    queryKey: ["lists", listId],
+    queryFn: () => apiRequest(`/api/lists/${listId}`),
+    enabled: isAuthenticated,
+  });
+
+  const list = data?.list;
+  const isOwner = currentUser?.id === list?.userId;
+
+  const removePlaceMutation = useMutation({
+    mutationFn: (placeId: string) =>
+      apiRequest(`/api/lists/${listId}/places/${placeId}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["lists", listId] });
+      toast.success("Place removed from list");
+    },
+    onError: (error: Error) => toast.error(error.message || "Failed to remove place"),
+  });
+
+  const savedPlaces = list?.listPlaces.map(lp => ({
+    id: lp.id,
+    userId: list.userId,
+    placeId: lp.placeId,
+    status: "WANT" as const,
+    visitedAt: null,
+    createdAt: lp.addedAt,
+    place: lp.place,
+  })) || [];
+
+  const selectedListPlace = selectedPlaceId 
+    ? list?.listPlaces.find(lp => lp.id === selectedPlaceId) 
+    : null;
+
+  const handlePlaceSelect = useCallback((savedPlaceId: string) => {
+    setSelectedPlaceId(savedPlaceId);
+    setSheetOpen(true);
+  }, []);
+
+  const handleRemovePlace = useCallback((placeId: string) => {
+    removePlaceMutation.mutate(placeId);
+    if (selectedPlaceId && list?.listPlaces.find(lp => lp.id === selectedPlaceId)?.placeId === placeId) {
+      setSelectedPlaceId(null);
+      setSheetOpen(false);
+    }
+  }, [removePlaceMutation, selectedPlaceId, list?.listPlaces]);
+
+  if (!isAuthenticated) {
+    return (
+      <AppShell user={null}>
+        <div className="flex items-center justify-center h-full">
+          <p className="text-muted-foreground">Please sign in to view lists</p>
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppShell user={currentUser}>
+        <div className="flex items-center justify-center h-full">
+          <p className="text-destructive">Error loading list</p>
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <AppShell user={currentUser}>
+        <div className="flex items-center justify-center h-full">
+          <Skeleton className="h-12 w-12 rounded-full" />
+        </div>
+      </AppShell>
+    );
+  }
+
+  const sidebar = (
+    <ListSidebar
+      list={list || null}
+      isLoading={isLoading}
+      isOwner={isOwner}
+      currentUserId={currentUser?.id}
+      onRemovePlace={handleRemovePlace}
+      isRemovingPlace={removePlaceMutation.isPending}
+    />
+  );
+
+  const sheet = selectedListPlace ? (
+    <PlaceDetailsSheet
+      savedPlace={{
+        id: selectedListPlace.id,
+        userId: list?.userId || "",
+        placeId: selectedListPlace.placeId,
+        status: "WANT",
+        visitedAt: null,
+        createdAt: selectedListPlace.addedAt,
+        place: selectedListPlace.place,
+      }}
+      open={sheetOpen}
+      onOpenChange={setSheetOpen}
+      onToggleStatus={() => {}}
+      onDelete={() => {
+        if (isOwner) {
+          handleRemovePlace(selectedListPlace.placeId);
+        }
+      }}
+      onAddToList={() => {}}
+      isUpdating={false}
+      isDeleting={removePlaceMutation.isPending}
+    />
+  ) : null;
+
+  return (
+    <MapLayout
+      user={currentUser}
+      places={savedPlaces}
+      selectedPlaceId={selectedPlaceId}
+      onPlaceSelect={handlePlaceSelect}
+      sheetComponent={sheet}
+    >
+      {sidebar}
+    </MapLayout>
+  );
+}

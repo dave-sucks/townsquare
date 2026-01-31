@@ -1,0 +1,141 @@
+"use client";
+
+import {
+  useRef,
+  useCallback,
+  useEffect,
+  type ReactNode,
+  type ReactElement,
+  cloneElement,
+  isValidElement,
+} from "react";
+import { PlaceMap, type PlaceMapHandle } from "@/components/place-map";
+import { BottomSheet } from "@/components/bottom-sheet";
+import { AppShell } from "@/components/layout";
+
+interface Place {
+  id: string;
+  googlePlaceId: string;
+  name: string;
+  formattedAddress: string;
+  lat: number;
+  lng: number;
+  primaryType: string | null;
+  types: string[] | null;
+  priceLevel: string | null;
+  photoRefs: string[] | null;
+}
+
+interface SavedPlace {
+  id: string;
+  userId?: string;
+  placeId: string;
+  status: "WANT" | "BEEN";
+  visitedAt?: string | null;
+  createdAt?: string;
+  place: Place;
+}
+
+interface UserData {
+  id: string;
+  email: string | null;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  profileImageUrl: string | null;
+}
+
+export interface SidebarInjectedProps {
+  selectedPlaceId: string | null;
+  onPlaceSelect: (savedPlaceId: string) => void;
+  placeRowRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
+}
+
+interface MapLayoutProps {
+  user: UserData | null;
+  places: SavedPlace[];
+  children: ReactNode;
+  selectedPlaceId: string | null;
+  onPlaceSelect: (savedPlaceId: string) => void;
+  showMapSettings?: boolean;
+  sheetComponent?: ReactNode;
+}
+
+export function MapLayout({
+  user,
+  places,
+  children,
+  selectedPlaceId,
+  onPlaceSelect,
+  showMapSettings = true,
+  sheetComponent,
+}: MapLayoutProps) {
+  const placeRowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const mapRef = useRef<PlaceMapHandle>(null);
+
+  const handleMarkerClick = useCallback((savedPlaceId: string) => {
+    onPlaceSelect(savedPlaceId);
+    const rowElement = placeRowRefs.current.get(savedPlaceId);
+    if (rowElement) {
+      rowElement.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [onPlaceSelect]);
+
+  const handleSidebarPlaceSelect = useCallback((savedPlaceId: string) => {
+    onPlaceSelect(savedPlaceId);
+    const selectedPlace = places.find(p => p.id === savedPlaceId);
+    if (selectedPlace && mapRef.current) {
+      mapRef.current.panTo(selectedPlace.place.lat, selectedPlace.place.lng);
+    }
+  }, [places, onPlaceSelect]);
+
+  useEffect(() => {
+    if (selectedPlaceId) {
+      const selectedPlace = places.find(p => p.id === selectedPlaceId);
+      if (selectedPlace && mapRef.current) {
+        mapRef.current.panTo(selectedPlace.place.lat, selectedPlace.place.lng);
+      }
+    }
+  }, [selectedPlaceId, places]);
+
+  const injectedProps: SidebarInjectedProps = {
+    selectedPlaceId,
+    onPlaceSelect: handleSidebarPlaceSelect,
+    placeRowRefs,
+  };
+
+  const renderChildrenWithProps = (children: ReactNode): ReactNode => {
+    if (isValidElement(children)) {
+      return cloneElement(children as ReactElement<SidebarInjectedProps>, injectedProps);
+    }
+    return children;
+  };
+
+  return (
+    <AppShell user={user}>
+      <div className="relative flex-1 overflow-hidden">
+        <PlaceMap
+          ref={mapRef}
+          places={places}
+          selectedPlaceId={selectedPlaceId}
+          onMarkerClick={handleMarkerClick}
+          showSettings={showMapSettings}
+        />
+
+        <div className="absolute top-0 left-0 bottom-0 z-10 w-[25rem] p-3 hidden md:block">
+          <div className="h-full bg-background rounded-lg border shadow-lg overflow-hidden">
+            {renderChildrenWithProps(children)}
+          </div>
+        </div>
+
+        <div className="md:hidden">
+          <BottomSheet defaultSnapPoint="mid">
+            {renderChildrenWithProps(children)}
+          </BottomSheet>
+        </div>
+      </div>
+
+      {sheetComponent}
+    </AppShell>
+  );
+}

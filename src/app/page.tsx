@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { LandingPage } from "@/components/landing-page";
-import { Dashboard } from "@/components/dashboard";
+import { DiscoverPage } from "@/components/pages/discover-page";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
@@ -23,5 +23,5 @@ export default function Home() {
     return <LandingPage />;
   }
 
-  return <Dashboard user={user} />;
+  return <DiscoverPage user={user} />;
 }
