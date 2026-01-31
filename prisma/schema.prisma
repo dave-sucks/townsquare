@@ -18,6 +18,9 @@ model User {
   createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
   savedPlaces     SavedPlace[]
   lists           List[]
+  followers       Follow[]     @relation("following")
+  following       Follow[]     @relation("follower")
+  activities      Activity[]
 
   @@map("users")
 }
@@ -46,6 +49,7 @@ model Place {
   updatedAt        DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
   savedPlaces      SavedPlace[]
   listPlaces       ListPlace[]
+  activities       Activity[]
 
   @@map("places")
 }
@@ -84,6 +88,7 @@ model List {
   updatedAt   DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   listPlaces  ListPlace[]
+  activities  Activity[]
 
   @@map("lists")
 }
@@ -100,4 +105,44 @@ model ListPlace {
 
   @@unique([listId, placeId])
   @@map("list_places")
+}
+
+model Follow {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  followerId  String   @map("follower_id") @db.VarChar(36)
+  followingId String   @map("following_id") @db.VarChar(36)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follows")
+}
+
+enum activity_type {
+  PLACE_SAVED_WANT
+  PLACE_MARKED_BEEN
+  PLACE_ADDED_TO_LIST
+  LIST_CREATED
+  REVIEW_CREATED
+}
+
+model Activity {
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  actorId   String        @map("actor_id") @db.VarChar(36)
+  type      activity_type
+  placeId   String?       @map("place_id") @db.VarChar(36)
+  listId    String?       @map("list_id") @db.VarChar(36)
+  metadata  Json?
+  dedupeKey String        @unique @map("dedupe_key")
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
+  actor     User          @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  place     Place?        @relation(fields: [placeId], references: [id], onDelete: SetNull)
+  list      List?         @relation(fields: [listId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+  @@map("activities")
 }
