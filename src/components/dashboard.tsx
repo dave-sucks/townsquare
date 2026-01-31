@@ -329,23 +329,24 @@ export function Dashboard({ user }: { user: UserData }) {
           </Dialog>
         </div>
 
-        <PlacesPanel
-          places={filteredPlaces}
-          lists={lists}
-          isLoading={isLoadingPlaces}
-          selectedPlaceId={selectedPlaceId}
-          selectedListId={selectedListId}
-          selectedTab={selectedTab}
-          listFilteredPlaces={listFilteredPlaces}
-          onListChange={setSelectedListId}
-          onTabChange={setSelectedTab}
-          onPlaceSelect={handleListItemClick}
-          onToggleStatus={handleToggleStatus}
-          onDelete={handleDelete}
-          isUpdating={updateStatusMutation.isPending}
-          isDeleting={deletePlaceMutation.isPending}
-          placeRowRefs={placeRowRefs}
-        />
+        <div className="absolute top-0 left-0 bottom-0 z-10 w-80 p-3 hidden md:block">
+          <div className="h-full bg-background rounded-lg border shadow-lg overflow-hidden">
+            <PlacesPanel
+              places={filteredPlaces}
+              isLoading={isLoadingPlaces}
+              selectedPlaceId={selectedPlaceId}
+              selectedTab={selectedTab}
+              listFilteredPlaces={listFilteredPlaces}
+              onTabChange={setSelectedTab}
+              onPlaceSelect={handleListItemClick}
+              onToggleStatus={handleToggleStatus}
+              onDelete={handleDelete}
+              isUpdating={updateStatusMutation.isPending}
+              isDeleting={deletePlaceMutation.isPending}
+              placeRowRefs={placeRowRefs}
+            />
+          </div>
+        </div>
       </div>
 
       <PlaceDetailsSheet
