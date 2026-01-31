@@ -12,6 +12,12 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get("search") || "";
 
   try {
+    const following = await prisma.follow.findMany({
+      where: { followerId: user.id },
+      select: { followingId: true },
+    });
+    const followingIds = new Set(following.map((f) => f.followingId));
+
     const users = await prisma.user.findMany({
       where: {
         id: { not: user.id },
@@ -37,7 +43,12 @@ export async function GET(request: NextRequest) {
       take: 50,
     });
 
-    return NextResponse.json({ users });
+    const usersWithFollowStatus = users.map((u) => ({
+      ...u,
+      isFollowing: followingIds.has(u.id),
+    }));
+
+    return NextResponse.json({ users: usersWithFollowStatus });
   } catch (error: any) {
     console.error("Get users error:", error);
     return NextResponse.json({ error: "Failed to get users" }, { status: 500 });

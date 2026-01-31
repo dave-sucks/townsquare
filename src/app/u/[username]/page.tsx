@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Heart, CheckCircle, MapPin, List as ListIcon, Lock, Globe, User, Users } from "lucide-react";
+import { ArrowLeft, Heart, CheckCircle, MapPin, List as ListIcon, Lock, Globe, User, Users, UserPlus, UserMinus, Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/query-client";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -48,6 +48,9 @@ interface ListData {
 interface ProfileData {
   user: User;
   isOwnProfile: boolean;
+  isFollowing: boolean;
+  followerCount: number;
+  followingCount: number;
   wantPlaces: SavedPlace[];
   beenPlaces: SavedPlace[];
   lists: ListData[];
@@ -56,6 +59,7 @@ interface ProfileData {
 export default function UserProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = use(params);
   const { isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery<ProfileData>({
     queryKey: ["user-profile", username],
@@ -63,11 +67,51 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
     enabled: isAuthenticated,
   });
 
+  const followMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      return apiRequest("/api/follows", {
+        method: "POST",
+        body: JSON.stringify({ followingId: userId }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-profile", username] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+
+  const unfollowMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      return apiRequest("/api/follows", {
+        method: "DELETE",
+        body: JSON.stringify({ followingId: userId }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-profile", username] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+
   const user = data?.user;
   const isOwnProfile = data?.isOwnProfile || false;
+  const isFollowing = data?.isFollowing || false;
+  const followerCount = data?.followerCount || 0;
+  const followingCount = data?.followingCount || 0;
   const wantPlaces = data?.wantPlaces || [];
   const beenPlaces = data?.beenPlaces || [];
   const lists = data?.lists || [];
+
+  const isFollowLoading = followMutation.isPending || unfollowMutation.isPending;
+
+  const handleFollow = () => {
+    if (!user) return;
+    if (isFollowing) {
+      unfollowMutation.mutate(user.id);
+    } else {
+      followMutation.mutate(user.id);
+    }
+  };
 
   const displayName = user?.firstName 
     ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ""}`
@@ -146,6 +190,10 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
                 {user.username && (
                   <CardDescription data-testid="text-username">@{user.username}</CardDescription>
                 )}
+                <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                  <span data-testid="text-followers">{followerCount} followers</span>
+                  <span data-testid="text-following">{followingCount} following</span>
+                </div>
               </div>
             </div>
             <div>
@@ -154,9 +202,20 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
                   Edit Profile
                 </Button>
               ) : (
-                <Button variant="outline" disabled data-testid="button-follow">
-                  <Users className="mr-2 h-4 w-4" />
-                  Follow (Coming Soon)
+                <Button
+                  variant={isFollowing ? "outline" : "default"}
+                  onClick={handleFollow}
+                  disabled={isFollowLoading}
+                  data-testid="button-follow"
+                >
+                  {isFollowLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : isFollowing ? (
+                    <UserMinus className="mr-2 h-4 w-4" />
+                  ) : (
+                    <UserPlus className="mr-2 h-4 w-4" />
+                  )}
+                  {isFollowing ? "Unfollow" : "Follow"}
                 </Button>
               )}
             </div>

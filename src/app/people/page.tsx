@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Search, Users, MapPin, List as ListIcon } from "lucide-react";
+import { ArrowLeft, Search, Users, MapPin, List as ListIcon, UserPlus, UserMinus, Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/query-client";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -18,6 +18,7 @@ interface UserData {
   firstName: string | null;
   lastName: string | null;
   profileImageUrl: string | null;
+  isFollowing: boolean;
   _count: {
     savedPlaces: number;
     lists: number;
@@ -26,8 +27,10 @@ interface UserData {
 
 export default function PeoplePage() {
   const { isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -41,6 +44,50 @@ export default function PeoplePage() {
     queryFn: () => apiRequest(`/api/users${debouncedSearch ? `?search=${encodeURIComponent(debouncedSearch)}` : ""}`),
     enabled: isAuthenticated,
   });
+
+  const followMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      setLoadingUserId(userId);
+      return apiRequest("/api/follows", {
+        method: "POST",
+        body: JSON.stringify({ followingId: userId }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      setLoadingUserId(null);
+    },
+    onError: () => {
+      setLoadingUserId(null);
+    },
+  });
+
+  const unfollowMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      setLoadingUserId(userId);
+      return apiRequest("/api/follows", {
+        method: "DELETE",
+        body: JSON.stringify({ followingId: userId }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      setLoadingUserId(null);
+    },
+    onError: () => {
+      setLoadingUserId(null);
+    },
+  });
+
+  const handleFollow = (userId: string, isFollowing: boolean, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isFollowing) {
+      unfollowMutation.mutate(userId);
+    } else {
+      followMutation.mutate(userId);
+    }
+  };
 
   const users = data?.users || [];
 
@@ -145,6 +192,27 @@ export default function PeoplePage() {
                         </span>
                       </div>
                     </div>
+                    <Button
+                      variant={user.isFollowing ? "outline" : "default"}
+                      size="sm"
+                      onClick={(e) => handleFollow(user.id, user.isFollowing, e)}
+                      disabled={loadingUserId === user.id}
+                      data-testid={`button-follow-${user.id}`}
+                    >
+                      {loadingUserId === user.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : user.isFollowing ? (
+                        <>
+                          <UserMinus className="mr-1 h-4 w-4" />
+                          Unfollow
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="mr-1 h-4 w-4" />
+                          Follow
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </CardHeader>
               </Link>

@@ -36,6 +36,23 @@ export async function GET(
 
     const isOwnProfile = user.id === currentUser.id;
 
+    const isFollowing = !isOwnProfile && await prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: currentUser.id,
+          followingId: user.id,
+        },
+      },
+    }) !== null;
+
+    const followerCount = await prisma.follow.count({
+      where: { followingId: user.id },
+    });
+
+    const followingCount = await prisma.follow.count({
+      where: { followerId: user.id },
+    });
+
     const wantPlaces = await prisma.savedPlace.findMany({
       where: {
         userId: user.id,
@@ -70,6 +87,9 @@ export async function GET(
     return NextResponse.json({
       user,
       isOwnProfile,
+      isFollowing,
+      followerCount,
+      followingCount,
       wantPlaces,
       beenPlaces,
       lists,
