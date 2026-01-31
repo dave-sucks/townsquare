@@ -12,6 +12,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
         defaultTheme="light"
         enableSystem={false}
         disableTransitionOnChange
+        forcedTheme={undefined}
+        storageKey="beli-theme"
       >
         {children}
       </ThemeProvider>

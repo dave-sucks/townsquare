@@ -5,7 +5,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Heart, CheckCircle } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Search, Heart, CheckCircle, ChevronUp, List } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { PlaceMap } from "@/components/place-map";
@@ -82,6 +83,7 @@ export function Dashboard({ user }: { user: UserData }) {
   const [selectedListId, setSelectedListId] = useState<string>("all");
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [addToListDialogOpen, setAddToListDialogOpen] = useState(false);
   const [addToListPlaceId, setAddToListPlaceId] = useState<string | null>(null);
   const [addToListPlaceName, setAddToListPlaceName] = useState("");
@@ -336,6 +338,48 @@ export function Dashboard({ user }: { user: UserData }) {
               placeRowRefs={placeRowRefs}
             />
           </div>
+        </div>
+
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 md:hidden">
+          <Sheet open={mobileSheetOpen} onOpenChange={setMobileSheetOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="default"
+                size="lg"
+                className="rounded-full shadow-lg gap-2"
+                data-testid="button-mobile-places"
+              >
+                <List className="h-4 w-4" />
+                My Places ({filteredPlaces.length})
+                <ChevronUp className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[70vh] p-0">
+              <SheetHeader className="sr-only">
+                <SheetTitle>My Places</SheetTitle>
+              </SheetHeader>
+              <PlacesPanel
+                places={filteredPlaces}
+                lists={lists}
+                isLoading={isLoadingPlaces}
+                selectedPlaceId={selectedPlaceId}
+                selectedTab={selectedTab}
+                selectedListId={selectedListId}
+                listFilteredPlaces={listFilteredPlaces}
+                onTabChange={setSelectedTab}
+                onListChange={setSelectedListId}
+                onPlaceSelect={(id) => {
+                  handleListItemClick(id);
+                  setMobileSheetOpen(false);
+                }}
+                onToggleStatus={handleToggleStatus}
+                onDelete={handleDelete}
+                isUpdating={updateStatusMutation.isPending}
+                isDeleting={deletePlaceMutation.isPending}
+                placeRowRefs={placeRowRefs}
+              />
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
 
