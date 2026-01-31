@@ -90,15 +90,15 @@ export function PlacesPanel({
 
   return (
     <div className="h-full flex flex-col bg-background" data-testid="places-panel">
-      <div className="sticky top-0 z-10 bg-background border-b">
-        <div className="flex items-center gap-2 p-2 border-b">
+      <div className="sticky top-0 z-10 bg-background p-2 border-b">
+        <div className="flex items-center gap-2 pb-2">
           <SidebarTrigger data-testid="button-sidebar-toggle" />
           <h1 className="font-semibold text-sm">Places</h1>
         </div>
-        <div className="flex gap-2 p-2">
+        <div className="flex gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="justify-between gap-1" data-testid="select-status-filter">
+              <Button variant="outline" size="sm" data-testid="select-status-filter">
                 {selectedStatusLabel}
                 <ChevronDown className="h-3 w-3 text-muted-foreground" />
               </Button>
@@ -116,10 +116,9 @@ export function PlacesPanel({
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="justify-between gap-1" data-testid="select-list-filter">
+              <Button variant="outline" size="sm" data-testid="select-list-filter">
                 {selectedListLabel}
                 <ChevronDown className="h-3 w-3 text-muted-foreground" />
               </Button>
@@ -147,7 +146,7 @@ export function PlacesPanel({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-1">
+      <div className="flex flex-1 flex-col overflow-y-auto p-1 gap-1 space-y-1">
         {isLoading ? (
           <div className="space-y-3">
             <Skeleton className="h-20 w-full" />

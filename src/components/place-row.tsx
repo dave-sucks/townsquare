@@ -71,10 +71,10 @@ export const PlaceRow = forwardRef<HTMLDivElement, PlaceRowProps>(
         <div
           ref={ref}
           className={cn(
-            "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors",
+            "flex items-center gap-3 p-1 rounded-lg cursor-pointer transition-colors",
             isSelected 
               ? "bg-accent" 
-              : "hover:bg-accent/50"
+              : "hover:bg-accent"
           )}
           data-testid={`place-card-${savedPlace.id}`}
           data-selected={isSelected}
