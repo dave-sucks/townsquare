@@ -203,19 +203,6 @@ export function PlacesPanel({
     </>
   );
 
-  const MobilePanelContent = (
-    <>
-      {FilterControls}
-      <div 
-        className="flex-1 overflow-y-auto overscroll-contain"
-        style={{ WebkitOverflowScrolling: "touch" }}
-      >
-        <div className="p-3 space-y-2">
-          {PlacesList}
-        </div>
-      </div>
-    </>
-  );
 
   if (isDesktop) {
     return (
@@ -261,26 +248,17 @@ export function PlacesPanel({
       ? "h-[45vh]"
       : "h-[85vh]";
 
-  const stopPropagation = (e: React.TouchEvent | React.MouseEvent) => {
-    e.stopPropagation();
-  };
-
   return (
     <div
       ref={sheetRef}
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-20 bg-background/95 backdrop-blur-xl border-t rounded-t-2xl shadow-lg transition-all duration-300 flex flex-col",
+        "fixed bottom-0 left-0 right-0 z-20 bg-background border-t rounded-t-2xl shadow-lg transition-all duration-300 flex flex-col",
         sheetHeight
       )}
-      style={{ touchAction: "pan-y" }}
-      onTouchStart={stopPropagation}
-      onTouchMove={stopPropagation}
-      onTouchEnd={stopPropagation}
       data-testid="places-panel-mobile"
     >
       <div
-        className="flex items-center justify-center py-2 cursor-grab active:cursor-grabbing"
-        style={{ touchAction: "none" }}
+        className="flex-shrink-0 flex items-center justify-center py-2 cursor-grab active:cursor-grabbing"
         onTouchStart={handleDragStart}
         onTouchMove={handleDragMove}
         onTouchEnd={handleDragEnd}
@@ -291,7 +269,7 @@ export function PlacesPanel({
       >
         <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
       </div>
-      <div className="flex items-center justify-between gap-2 px-3 pb-2">
+      <div className="flex-shrink-0 flex items-center justify-between gap-2 px-3 pb-2">
         <span className="text-sm font-medium">
           {places.length} {places.length === 1 ? "place" : "places"}
         </span>
@@ -319,10 +297,11 @@ export function PlacesPanel({
         </div>
       </div>
       {bottomSheetState !== "collapsed" && (
-        <div 
-          className="flex-1 flex flex-col min-h-0"
-        >
-          {MobilePanelContent}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          {FilterControls}
+          <div className="p-3 space-y-2">
+            {PlacesList}
+          </div>
         </div>
       )}
     </div>
