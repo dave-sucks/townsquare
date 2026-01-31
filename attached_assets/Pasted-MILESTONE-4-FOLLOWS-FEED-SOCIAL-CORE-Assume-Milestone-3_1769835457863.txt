@@ -1,0 +1,118 @@
+MILESTONE 4 — FOLLOWS + FEED (SOCIAL CORE)
+Assume Milestone 3.5 is complete:
+- /places/[id] exists (place detail page)
+- /u/[username] exists (profile page with Want/Been/Lists tabs)
+- /people exists (directory to find profiles)
+- Dashboard + map preview card link to /places/[id]
+
+Now implement FOLLOWS and a HOME FEED of activity from people you follow.
+
+HARD UI RULES (UNCHANGED):
+1) All non-map UI MUST use shadcn/ui components only.
+2) Do NOT add ad-hoc Tailwind class strings throughout pages.
+   - If layout/styling changes are needed, implement wrapper components using cva variants.
+3) Map canvas can remain a plain div; all overlays/panels/menus/dialogs must be shadcn.
+4) No new UI libraries.
+
+DATABASE (Prisma) — ADD / CONFIRM THESE MODELS:
+A) Follow
+- id (uuid)
+- followerId (fk -> User)
+- followingId (fk -> User)
+- createdAt
+Constraints:
+- unique(followerId, followingId)
+- prevent following self
+
+B) Activity
+- id (uuid)
+- actorId (fk -> User)              // who did it
+- type enum:
+  - PLACE_SAVED_WANT
+  - PLACE_MARKED_BEEN
+  - PLACE_ADDED_TO_LIST
+  - LIST_CREATED
+  - REVIEW_CREATED (placeholder for next milestone)
+- placeId (fk -> Place, nullable)
+- listId (fk -> List, nullable)
+- metadata JSON (nullable)          // snapshots (placeName, listName) if useful
+- createdAt
+Indexes:
+- actorId + createdAt DESC
+- createdAt DESC
+
+IMPORTANT: Write Activity rows for these existing actions (idempotent):
+- Save place as WANT
+- Mark place as BEEN
+- Add place to list
+- Create list
+Do NOT write activity for simple viewing/navigation.
+
+IDEMPOTENCY RULE:
+Avoid duplicate Activity rows if a user clicks twice or the action retries.
+Implement either:
+- a deterministic "dedupeKey" (string) column on Activity and unique(dedupeKey)
+OR
+- transactional check-before-insert for the same actorId+type+placeId/listId within a short window.
+Pick one approach and implement cleanly.
+
+ROUTES / PAGES:
+1) /home (Feed)
+- Create a Home feed page if it doesn't exist (and make it the default post-login route).
+- Feed shows Activity from:
+  - the current user
+  - users the current user follows
+- Sort newest first, paginate (simple "Load more" is fine)
+- Each feed item is a shadcn Card with:
+  - actor avatar + username (link to /u/[username])
+  - action text (e.g. “Dave saved Fools Gold (Want)”)
+  - timestamp
+  - place/list snippet:
+    - if placeId present: show place name + address (link to /places/[id])
+    - if listId present: show list name (link to /lists/[id]) if accessible
+- Empty state if user follows nobody and has no activity:
+  “Follow someone or save a place to see activity here.”
+
+2) Follow controls
+- On /u/[username]:
+  - Implement Follow/Unfollow button (shadcn Button variants)
+  - Button reflects current follow state
+  - Clicking updates immediately and persists
+- On /people:
+  - Add Follow/Unfollow actions inline per user row
+  - Add search by username (if not already)
+  - Exclude current user
+
+SOCIAL CONTEXT (LIGHTWEIGHT, REQUIRED):
+On /places/[id], add a small “Social” section:
+- Show up to 3 usernames of people you follow who have saved this place
+- Show counts (e.g. “Saved by 5 people you follow”)
+- Each username links to their profile
+If none, hide section.
+
+AUTHORIZATION:
+- A user can follow/unfollow only as themselves.
+- A user can view another user's PUBLIC lists only (already implemented in prior milestone).
+- Feed: only uses Activity from self + followed users (no global feed).
+
+ACCEPTANCE CRITERIA:
+- I can follow/unfollow users from /u/[username] and /people
+- Following someone makes their Activity appear in /home
+- Activities are created for save/been/add-to-list/create-list actions (no duplicates)
+- Feed items link to place pages and profile pages
+- Place detail shows social context for followed users who saved it
+- No Tailwind class soup added; use shadcn + variants
+
+WORKFLOW:
+1) Add Follow + Activity schema, migrate
+2) Implement follow/unfollow mutations
+3) Implement Activity writes in existing actions + dedupe
+4) Build /home feed query + UI
+5) Add social context section on /places/[id]
+6) Confirm end-to-end: follow → save → feed item → click through
+
+After finishing, summarize:
+- Prisma changes
+- Deduping approach for Activity
+- Which actions write Activity and where
+Do not proceed to Reviews/Photos or Recommendations yet.

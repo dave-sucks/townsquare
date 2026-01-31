@@ -13,9 +13,48 @@ Core features:
 - Bidirectional list↔map selection synchronization
 - Map overlay preview card for selected places
 
-## Recent Changes (Phase 3 - Usability & Lists)
+## Recent Changes (Milestone 3.5 - Pages & Deep Links)
 
 **Date: January 31, 2026**
+
+### Place Detail Pages (/places/[id])
+- Full-page view for any place using Google Place ID as route parameter
+- Shows place name, address, and current user's status (Want/Been/Not Saved)
+- Action buttons: Mark as Want, Mark as Been, Add to List, Open in Google Maps
+- Lists section showing which of user's lists contain the place
+- Reviews placeholder section for future implementation
+- API route at `/api/places/[placeId]` returns place details + user's saved status + lists containing place
+
+### User Profile Pages (/u/[username])
+- Profile page accessible by username or user ID
+- Shows avatar, name, and placeholder Edit Profile/Follow buttons
+- Three tabs: Want (WANT places), Been (BEEN places), Lists (user's lists)
+- For non-owners: only shows PUBLIC lists
+- Links from profile places to place detail pages
+- API route at `/api/users/[username]` returns user data with want/been/lists
+
+### People Directory (/people)
+- Paginated list of all users (excluding current user)
+- Debounced search by username
+- User cards with avatar, name, and stats (places saved, lists created)
+- Links to user profile pages
+- API route at `/api/users?search=...` for listing/searching users
+
+### Deep Linking
+- PlaceRow: Clickable place name links to `/places/{googlePlaceId}`
+- PlacePreview: "Open Details" button and clickable name link to place page
+- List detail page: Place names now link to place detail pages
+- User dropdown: "My Profile" and "Browse People" navigation links
+
+### Auth Updates
+- Added username field to auth user data
+- Updated useAuth hook and /api/auth/user to include username
+
+---
+
+## Previous Changes (Phase 3 - Usability & Lists)
+
+**Date: January 30, 2026**
 
 ### Lists/Collections Feature
 - Users can create lists to organize saved places
