@@ -321,10 +321,6 @@ export function ProfileDashboard({ username, currentUser, isAuthenticated }: Pro
 
   const sidebarContent = (
     <div className="h-full flex flex-col">
-      <div className="flex items-center gap-2 p-2 border-b md:hidden">
-        <SidebarTrigger data-testid="button-sidebar-toggle" />
-        <ThemeToggle />
-      </div>
       {isLoading || !profileUser ? (
         <ProfileSkeleton />
       ) : (
