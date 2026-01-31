@@ -38,6 +38,35 @@ const MARKER_COLORS = {
   selected: "#3b82f6",
 };
 
+const MAP_STORAGE_KEY = "beli-map-view";
+const DEFAULT_CENTER = { lat: 40.7128, lng: -74.006 };
+const DEFAULT_ZOOM = 12;
+
+function getStoredMapView(): { center: { lat: number; lng: number }; zoom: number } | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = localStorage.getItem(MAP_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed.center && typeof parsed.zoom === "number") {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    // Ignore parse errors
+  }
+  return null;
+}
+
+function saveMapView(center: { lat: number; lng: number }, zoom: number) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(MAP_STORAGE_KEY, JSON.stringify({ center, zoom }));
+  } catch (e) {
+    // Ignore storage errors
+  }
+}
+
 const MARKER_SIZE = {
   default: 24,
   selected: 32,
@@ -86,15 +115,28 @@ export function PlaceMap({ places, selectedPlaceId, onMarkerClick }: PlaceMapPro
   const initMapCallback = useCallback(() => {
     if (!mapRef.current || !window.google) return;
 
+    const storedView = getStoredMapView();
+    const initialCenter = storedView?.center || DEFAULT_CENTER;
+    const initialZoom = storedView?.zoom || DEFAULT_ZOOM;
+
     const mapInstance = new google.maps.Map(mapRef.current, {
-      center: { lat: 40.7128, lng: -74.006 },
-      zoom: 12,
+      center: initialCenter,
+      zoom: initialZoom,
       mapId: "beli-map",
       disableDefaultUI: false,
       zoomControl: true,
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: true,
+    });
+
+    // Persist map view on idle (after user interaction)
+    mapInstance.addListener("idle", () => {
+      const center = mapInstance.getCenter();
+      const zoom = mapInstance.getZoom();
+      if (center && zoom !== undefined) {
+        saveMapView({ lat: center.lat(), lng: center.lng() }, zoom);
+      }
     });
 
     setMap(mapInstance);

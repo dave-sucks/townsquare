@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, CheckCircle, X, Trash2, ExternalLink } from "lucide-react";
+import { Heart, CheckCircle, X, Trash2, ExternalLink, List } from "lucide-react";
 
 interface Place {
   id: string;
@@ -33,6 +33,7 @@ interface PlacePreviewProps {
   onClose: () => void;
   onToggleStatus: () => void;
   onDelete: () => void;
+  onAddToList: () => void;
   isUpdating?: boolean;
   isDeleting?: boolean;
 }
@@ -42,6 +43,7 @@ export function PlacePreview({
   onClose,
   onToggleStatus,
   onDelete,
+  onAddToList,
   isUpdating,
   isDeleting,
 }: PlacePreviewProps) {
@@ -98,6 +100,15 @@ export function PlacePreview({
             data-testid="preview-button-toggle-status"
           >
             {savedPlace.status === "WANT" ? "Mark as Been" : "Mark as Want"}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onAddToList}
+            data-testid="preview-button-add-to-list"
+          >
+            <List className="mr-1 h-4 w-4" />
+            Add to List
           </Button>
           <Button
             size="sm"

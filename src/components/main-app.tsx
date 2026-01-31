@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,14 +11,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { MapPin, Search, LogOut, Heart, CheckCircle, Plus } from "lucide-react";
+import { MapPin, Search, LogOut, Heart, CheckCircle, Plus, List as ListIcon } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { PlaceMap } from "@/components/place-map";
 import { PlaceRow } from "@/components/place-row";
 import { PlacePreview } from "@/components/place-preview";
+import { AddToListDialog } from "@/components/add-to-list-dialog";
 
 interface User {
   id: string;
@@ -59,13 +62,30 @@ interface PlacePrediction {
   };
 }
 
+interface ListData {
+  id: string;
+  name: string;
+  _count: {
+    listPlaces: number;
+  };
+}
+
+interface ListWithPlaces {
+  id: string;
+  listPlaces: Array<{ placeId: string }>;
+}
+
 export function MainApp({ user }: { user: User }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<PlacePrediction[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedTab, setSelectedTab] = useState("all");
+  const [selectedListId, setSelectedListId] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  const [addToListDialogOpen, setAddToListDialogOpen] = useState(false);
+  const [addToListPlaceId, setAddToListPlaceId] = useState<string | null>(null);
+  const [addToListPlaceName, setAddToListPlaceName] = useState("");
   
   const placeRowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
@@ -75,6 +95,21 @@ export function MainApp({ user }: { user: User }) {
   });
 
   const savedPlaces = savedPlacesData?.savedPlaces || [];
+
+  const { data: listsData } = useQuery<{ lists: ListData[] }>({
+    queryKey: ["lists"],
+    queryFn: () => apiRequest("/api/lists"),
+  });
+
+  const lists = listsData?.lists || [];
+
+  const { data: selectedListData } = useQuery<{ list: ListWithPlaces }>({
+    queryKey: ["lists", selectedListId],
+    queryFn: () => apiRequest(`/api/lists/${selectedListId}`),
+    enabled: selectedListId !== "all",
+  });
+
+  const selectedListPlaceIds = selectedListData?.list?.listPlaces?.map(lp => lp.placeId) || [];
 
   const searchPlaces = useCallback(async (query: string) => {
     if (!query.trim()) {
@@ -164,15 +199,31 @@ export function MainApp({ user }: { user: User }) {
     },
   });
 
-  const filteredPlaces = savedPlaces.filter((sp) => {
+  // First filter by list only (for tab counts)
+  const listFilteredPlaces = savedPlaces.filter((sp) => {
+    if (selectedListId !== "all") {
+      return selectedListPlaceIds.includes(sp.placeId);
+    }
+    return true;
+  });
+
+  // Then filter by tab (status) for display
+  const filteredPlaces = listFilteredPlaces.filter((sp) => {
     if (selectedTab === "all") return true;
     if (selectedTab === "want") return sp.status === "WANT";
     if (selectedTab === "been") return sp.status === "BEEN";
     return true;
   });
 
+  // Clear selection when the selected place is filtered out
+  useEffect(() => {
+    if (selectedPlaceId && !filteredPlaces.find(sp => sp.id === selectedPlaceId)) {
+      setSelectedPlaceId(null);
+    }
+  }, [filteredPlaces, selectedPlaceId]);
+
   const selectedPlace = selectedPlaceId 
-    ? savedPlaces.find(sp => sp.id === selectedPlaceId) 
+    ? filteredPlaces.find(sp => sp.id === selectedPlaceId) 
     : null;
 
   const handleListItemClick = useCallback((savedPlaceId: string) => {
@@ -190,6 +241,12 @@ export function MainApp({ user }: { user: User }) {
 
   const handleClosePreview = useCallback(() => {
     setSelectedPlaceId(null);
+  }, []);
+
+  const handleAddToList = useCallback((placeId: string, placeName: string) => {
+    setAddToListPlaceId(placeId);
+    setAddToListPlaceName(placeName);
+    setAddToListDialogOpen(true);
   }, []);
 
   const userName = user.firstName || user.email?.split("@")[0] || "User";
@@ -309,17 +366,37 @@ export function MainApp({ user }: { user: User }) {
       <main className="flex-1 overflow-hidden">
         <div className="grid h-full lg:grid-cols-2">
           <div className="flex flex-col border-r">
-            <div className="p-4 pb-0">
+            <div className="p-4 pb-0 space-y-3">
+              <div className="flex items-center gap-2">
+                <Select value={selectedListId} onValueChange={setSelectedListId}>
+                  <SelectTrigger className="flex-1" data-testid="select-list-filter">
+                    <SelectValue placeholder="All Places" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Places</SelectItem>
+                    {lists.map((list) => (
+                      <SelectItem key={list.id} value={list.id}>
+                        {list.name} ({list._count.listPlaces})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="ghost" size="icon" asChild>
+                  <Link href="/lists" data-testid="button-manage-lists">
+                    <ListIcon className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
               <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="all" data-testid="tab-all">
-                    All ({savedPlaces.length})
+                    All ({listFilteredPlaces.length})
                   </TabsTrigger>
                   <TabsTrigger value="want" data-testid="tab-want">
-                    Want ({savedPlaces.filter((p) => p.status === "WANT").length})
+                    Want ({listFilteredPlaces.filter((p) => p.status === "WANT").length})
                   </TabsTrigger>
                   <TabsTrigger value="been" data-testid="tab-been">
-                    Been ({savedPlaces.filter((p) => p.status === "BEEN").length})
+                    Been ({listFilteredPlaces.filter((p) => p.status === "BEEN").length})
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -375,7 +452,7 @@ export function MainApp({ user }: { user: User }) {
 
           <div className="relative h-full">
             <PlaceMap
-              places={savedPlaces}
+              places={filteredPlaces}
               selectedPlaceId={selectedPlaceId}
               onMarkerClick={handleMarkerClick}
             />
@@ -390,6 +467,7 @@ export function MainApp({ user }: { user: User }) {
                   })
                 }
                 onDelete={() => deletePlaceMutation.mutate(selectedPlace.id)}
+                onAddToList={() => handleAddToList(selectedPlace.placeId, selectedPlace.place.name)}
                 isUpdating={updateStatusMutation.isPending}
                 isDeleting={deletePlaceMutation.isPending}
               />
@@ -397,6 +475,15 @@ export function MainApp({ user }: { user: User }) {
           </div>
         </div>
       </main>
+
+      {addToListPlaceId && (
+        <AddToListDialog
+          open={addToListDialogOpen}
+          onOpenChange={setAddToListDialogOpen}
+          placeId={addToListPlaceId}
+          placeName={addToListPlaceName}
+        />
+      )}
     </div>
   );
 }

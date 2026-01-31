@@ -13,9 +13,24 @@ Core features:
 - Bidirectional list↔map selection synchronization
 - Map overlay preview card for selected places
 
-## Recent Changes (Phase 2 - Interaction Tightening)
+## Recent Changes (Phase 3 - Usability & Lists)
 
 **Date: January 31, 2026**
+
+### Lists/Collections Feature
+- Users can create lists to organize saved places
+- List model with visibility (PRIVATE/PUBLIC), name, and description
+- Full CRUD API for lists at `/api/lists` and `/api/lists/[id]`
+- Lists management page at `/lists` and individual list page at `/lists/[id]`
+- AddToListDialog component for adding places to lists from map preview
+
+### Filtering Architecture
+- **List Filter**: Dropdown above tabs to filter by a specific list
+- **Tab Filter**: WANT/BEEN/All status filter (applied after list filter)
+- Filter order: List filter first → Tab filter second
+- Tab counts show list-filtered results only (before applying tab filter)
+- Map markers receive fully filtered places (both list and tab filters)
+- Selection clears when selected place is filtered out
 
 ### Selection State Architecture
 - `selectedPlaceId` state lives in `main-app.tsx` as the single source of truth
@@ -27,9 +42,10 @@ Core features:
 - **Map → List**: Clicking a map marker sets selectedPlaceId, highlights corresponding list row, scrolls list to bring row into view, and shows preview card
 - Uses React refs (placeRowRefs) to scroll list items into view when marker is clicked
 
-### New Components Added
-- `src/components/place-row.tsx`: Wrapper component for list items with cva variants for selection highlighting (ring-2 ring-primary when selected)
-- `src/components/place-preview.tsx`: Lightweight shadcn Card overlay on map showing place name, address, status, and quick actions
+### Components
+- `src/components/place-row.tsx`: Wrapper component for list items with cva variants for selection highlighting
+- `src/components/place-preview.tsx`: Map overlay showing place name, address, status, and quick actions (including add to list)
+- `src/components/add-to-list-dialog.tsx`: Dialog for adding places to lists
 - `src/components/ui/scroll-area.tsx`: shadcn ScrollArea for independent list scrolling
 
 ### Marker States
@@ -40,7 +56,7 @@ Three distinct visual states for map markers:
 
 ### Layout
 - Full viewport height layout (h-screen) with overflow-hidden
-- Left panel: Tabs at top, ScrollArea for place list below
+- Left panel: List filter dropdown + Tabs at top, ScrollArea for place list below
 - Right panel: Full-height map with relative positioning for preview overlay
 - Header remains sticky at top
 
