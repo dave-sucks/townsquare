@@ -62,9 +62,12 @@ export function PlacesPanel({
 }: PlacesPanelProps) {
   return (
     <div className="h-full flex flex-col bg-background" data-testid="places-panel">
-      <div className="sticky top-0 z-10 bg-background border-b p-3 flex items-center gap-2">
-        <SidebarTrigger data-testid="button-sidebar-toggle" />
-        <div className="flex gap-1 flex-1">
+      <div className="sticky top-0 z-10 bg-background border-b">
+        <div className="flex items-center gap-2 p-2 border-b">
+          <SidebarTrigger data-testid="button-sidebar-toggle" />
+          <h1 className="font-semibold text-sm">Places</h1>
+        </div>
+        <div className="flex gap-1 p-2">
           <Button
             size="sm"
             variant={selectedTab === "all" ? "default" : "ghost"}
