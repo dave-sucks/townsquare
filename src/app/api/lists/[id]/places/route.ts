@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createActivity } from "@/lib/activity";
 
 export async function POST(
   request: NextRequest,
@@ -60,6 +61,14 @@ export async function POST(
         note: note?.trim() || null,
       },
       include: { place: true },
+    });
+
+    await createActivity({
+      actorId: user.id,
+      type: "PLACE_ADDED_TO_LIST",
+      placeId,
+      listId,
+      metadata: { placeName: place.name, listName: list.name },
     });
 
     return NextResponse.json({ listPlace });

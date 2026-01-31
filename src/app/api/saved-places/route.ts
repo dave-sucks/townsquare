@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createActivity } from "@/lib/activity";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -78,6 +79,13 @@ export async function POST(request: NextRequest) {
         visitedAt: status === "BEEN" ? new Date() : null,
       },
       include: { place: true },
+    });
+
+    await createActivity({
+      actorId: user.id,
+      type: status === "WANT" ? "PLACE_SAVED_WANT" : "PLACE_MARKED_BEEN",
+      placeId: place.id,
+      metadata: { placeName: place.name },
     });
 
     return NextResponse.json({ savedPlace });
