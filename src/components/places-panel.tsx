@@ -3,8 +3,14 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MapPin, ChevronDown, Check } from "lucide-react";
 import { PlaceRow } from "@/components/place-row";
 
 interface Place {
@@ -54,6 +60,12 @@ interface PlacesPanelProps {
   placeRowRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
 }
 
+const statusOptions = [
+  { value: "all", label: "All" },
+  { value: "want", label: "Want" },
+  { value: "been", label: "Been" },
+];
+
 export function PlacesPanel({
   places,
   lists,
@@ -71,6 +83,11 @@ export function PlacesPanel({
   isDeleting,
   placeRowRefs,
 }: PlacesPanelProps) {
+  const selectedStatusLabel = statusOptions.find((o) => o.value === selectedTab)?.label || "All";
+  const selectedListLabel = selectedListId === "all" 
+    ? "All Lists" 
+    : lists.find((l) => l.id === selectedListId)?.name || "All Lists";
+
   return (
     <div className="h-full flex flex-col bg-background" data-testid="places-panel">
       <div className="sticky top-0 z-10 bg-background border-b">
@@ -79,29 +96,54 @@ export function PlacesPanel({
           <h1 className="font-semibold text-sm">Places</h1>
         </div>
         <div className="flex gap-2 p-2">
-          <Select value={selectedTab} onValueChange={onTabChange}>
-            <SelectTrigger className="w-auto h-8 text-xs" data-testid="select-status-filter">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="want">Want</SelectItem>
-              <SelectItem value="been">Been</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={selectedListId} onValueChange={onListChange}>
-            <SelectTrigger className="w-auto h-8 text-xs" data-testid="select-list-filter">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Lists</SelectItem>
-              {lists.map((list) => (
-                <SelectItem key={list.id} value={list.id}>
-                  {list.name}
-                </SelectItem>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="justify-between gap-1" data-testid="select-status-filter">
+                {selectedStatusLabel}
+                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {statusOptions.map((option) => (
+                <DropdownMenuItem
+                  key={option.value}
+                  onSelect={() => onTabChange(option.value)}
+                  data-active={selectedTab === option.value}
+                >
+                  {option.label}
+                  <Check className={`ml-auto h-4 w-4 ${selectedTab === option.value ? "opacity-100" : "opacity-0"}`} />
+                </DropdownMenuItem>
               ))}
-            </SelectContent>
-          </Select>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="justify-between gap-1" data-testid="select-list-filter">
+                {selectedListLabel}
+                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem
+                onSelect={() => onListChange("all")}
+                data-active={selectedListId === "all"}
+              >
+                All Lists
+                <Check className={`ml-auto h-4 w-4 ${selectedListId === "all" ? "opacity-100" : "opacity-0"}`} />
+              </DropdownMenuItem>
+              {lists.map((list) => (
+                <DropdownMenuItem
+                  key={list.id}
+                  onSelect={() => onListChange(list.id)}
+                  data-active={selectedListId === list.id}
+                >
+                  {list.name}
+                  <Check className={`ml-auto h-4 w-4 ${selectedListId === list.id ? "opacity-100" : "opacity-0"}`} />
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
