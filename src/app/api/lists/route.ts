@@ -13,6 +13,29 @@ export async function GET() {
     const lists = await prisma.list.findMany({
       where: { userId: user.id },
       include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            profileImageUrl: true,
+          },
+        },
+        listPlaces: {
+          take: 5,
+          orderBy: { addedAt: "desc" },
+          include: {
+            place: {
+              select: {
+                id: true,
+                name: true,
+                formattedAddress: true,
+                photoRefs: true,
+              },
+            },
+          },
+        },
         _count: {
           select: { listPlaces: true },
         },

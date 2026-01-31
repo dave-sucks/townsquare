@@ -2,20 +2,37 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, List as ListIcon, Lock, Globe } from "lucide-react";
+import { Plus, List as ListIcon } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { AppShell, PageHeader, ContentContainer } from "@/components/layout";
+import { ListCard } from "@/components/list-card";
+
+interface ListPlace {
+  id: string;
+  place: {
+    id: string;
+    name: string;
+    formattedAddress: string;
+    photoRefs?: string[] | null;
+  };
+}
+
+interface ListUser {
+  id: string;
+  username?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+}
 
 interface ListData {
   id: string;
@@ -23,6 +40,8 @@ interface ListData {
   description: string | null;
   visibility: "PRIVATE" | "PUBLIC";
   createdAt: string;
+  user?: ListUser;
+  listPlaces?: ListPlace[];
   _count: {
     listPlaces: number;
   };
@@ -75,10 +94,14 @@ export default function ListsPage() {
   const { user } = useAuth();
 
   const content = authLoading ? (
-    <div className="space-y-4">
-      <Skeleton className="h-24 w-full" />
-      <Skeleton className="h-24 w-full" />
-      <Skeleton className="h-24 w-full" />
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="space-y-2">
+          <Skeleton className="aspect-[4/3] w-full rounded-md" />
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-3 w-1/2" />
+        </div>
+      ))}
     </div>
   ) : !isAuthenticated ? (
     <Card>
@@ -91,10 +114,14 @@ export default function ListsPage() {
       </CardContent>
     </Card>
   ) : isLoading ? (
-    <div className="space-y-4">
-      <Skeleton className="h-24 w-full" />
-      <Skeleton className="h-24 w-full" />
-      <Skeleton className="h-24 w-full" />
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="space-y-2">
+          <Skeleton className="aspect-[4/3] w-full rounded-md" />
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-3 w-1/2" />
+        </div>
+      ))}
     </div>
   ) : lists.length === 0 ? (
     <Card>
@@ -105,32 +132,23 @@ export default function ListsPage() {
       </CardContent>
     </Card>
   ) : (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {lists.map((list) => (
-        <Link key={list.id} href={`/lists/${list.id}`} data-testid={`list-card-${list.id}`}>
-          <Card className="cursor-pointer transition-colors hover-elevate">
-            <CardHeader>
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="text-base truncate">{list.name}</CardTitle>
-                  {list.description && (
-                    <CardDescription className="mt-1 line-clamp-2">{list.description}</CardDescription>
-                  )}
-                </div>
-                <Badge variant="outline">
-                  {list.visibility === "PRIVATE" ? (
-                    <><Lock className="mr-1 h-3 w-3" />Private</>
-                  ) : (
-                    <><Globe className="mr-1 h-3 w-3" />Public</>
-                  )}
-                </Badge>
-              </div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {list._count.listPlaces} {list._count.listPlaces === 1 ? "place" : "places"}
-              </p>
-            </CardHeader>
-          </Card>
-        </Link>
+        <ListCard
+          key={list.id}
+          id={list.id}
+          name={list.name}
+          description={list.description}
+          visibility={list.visibility}
+          placeCount={list._count.listPlaces}
+          places={list.listPlaces?.map((lp) => ({
+            id: lp.place.id,
+            name: lp.place.name,
+            formattedAddress: lp.place.formattedAddress,
+            photoRefs: lp.place.photoRefs as string[] | null,
+          }))}
+          user={list.user}
+        />
       ))}
     </div>
   );

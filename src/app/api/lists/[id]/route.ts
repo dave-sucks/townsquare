@@ -13,6 +13,15 @@ export async function GET(
     const list = await prisma.list.findUnique({
       where: { id },
       include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            profileImageUrl: true,
+          },
+        },
         listPlaces: {
           include: { place: true },
           orderBy: { addedAt: "desc" },
