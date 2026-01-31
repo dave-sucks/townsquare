@@ -1,0 +1,96 @@
+MILESTONE 3 — LISTS (CORE) + MAP FILTER BY LIST
+We are continuing the Beli clone master plan. We already have:
+- Google Places add flow (search + save)
+- Saved places (WANT/BEEN) persisted in DB
+- Split view: list left, Google map right
+- Selection sync between list and map
+- Map preview card with quick actions
+
+In this milestone we are building LISTS (collections) and the ability to filter the map by list.
+We are NOT building recommendations yet.
+We are NOT building follows/feed yet.
+We are NOT building reviews/photos yet (except minimal placeholders if needed).
+
+HARD UI RULES (UNCHANGED):
+1) All non-map UI MUST use shadcn/ui components only.
+2) Do NOT add ad-hoc Tailwind class strings throughout pages.
+   - If layout/styling changes are needed, implement wrapper components using cva variants (e.g. PageShell, ListShell, PlaceRow).
+3) Map canvas can remain a plain div; all overlays/panels/menus/dialogs must be shadcn.
+4) No new UI libraries.
+
+DATABASE (Prisma) — ADD THESE TABLES:
+A) List
+- id (uuid)
+- userId (fk)
+- name (string, required)
+- description (string, optional)
+- visibility enum: PRIVATE | PUBLIC (default PRIVATE)
+- createdAt, updatedAt
+
+B) ListPlace (join table)
+- id (uuid)
+- listId (fk)
+- placeId (fk)
+- addedAt
+- note (optional)
+- sortOrder (optional int)
+- unique(listId, placeId)
+
+Also ensure:
+- user can only mutate their own lists
+- but public lists can be viewed by anyone (auth optional depending on existing setup)
+
+UI / ROUTES:
+Add these routes (App Router):
+1) /lists
+- Shows user’s lists
+- Button: “New List” (Dialog)
+- Each list row shows: name, count of places, visibility badge
+- Clicking a list opens /lists/[id]
+
+2) /lists/[id]
+- List detail page
+- Header: list name, description, visibility toggle (PRIVATE/PUBLIC)
+- Body: places in the list (reusing existing PlaceRow)
+- Ability to remove a place from the list
+- Ability to add places to the list:
+  - If the place already exists in our Place table, allow adding from saved places
+  - If not, allow “Add Place” using existing Google add flow (then add to list)
+
+3) Integrate list selection into existing main split view (the map screen you already have):
+- Add a “List filter” control above the tabs:
+  - Use shadcn Select or DropdownMenu
+  - Options: “All Places” + each list name
+- When a list is selected:
+  - left list should show ONLY places in that list (but still allow All/Want/Been within the list)
+  - map markers should show ONLY places in that list
+- Keep selectedPlaceId stable:
+  - if selected place is not in the filtered list, clear selection + close preview
+
+FEATURE DETAILS:
+- Adding a place to a list should be a single action from:
+  A) place preview card (map overlay): “Add to List” button opens Dialog with list picker
+  B) place detail page (if you have it): same action
+- Use shadcn Dialog + Command pattern if available:
+  - list picker should be fast and searchable if easy; if not, basic list is fine
+
+ACCEPTANCE CRITERIA:
+- User can create a list, rename it, set visibility
+- User can add a place to a list from the map preview card
+- /lists shows all lists with counts
+- /lists/[id] shows list places and allows removal
+- Selecting a list filter updates BOTH list panel and map markers
+- No tailwind class soup is introduced across pages (keep shadcn + variants)
+- Authorization rules: users can’t edit other users’ lists
+
+WORKFLOW:
+1) Add Prisma models + migrate
+2) Build /lists and /lists/[id]
+3) Add “Add to List” action in the map preview card
+4) Add list filter to the main split view and ensure it filters list + map
+
+After finishing, summarize:
+- Prisma schema changes
+- Which components were added (ListDialog, AddToListDialog, etc.)
+- How list filtering is implemented (server query vs client filtering)
+Do not proceed to follows/feed, reviews/photos, or recommendations yet.
