@@ -32,9 +32,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MapPin, Home, Users, List, LogOut, Settings, ChevronsUpDown, ArrowLeft, Activity } from "lucide-react";
+import { MapPin, Users, List, LogOut, ChevronsUpDown, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { SidebarThemeToggle } from "@/components/theme-toggle";
 
 interface User {
   id: string;
@@ -123,6 +123,17 @@ function SidebarNav({ user }: { user: User | null }) {
                   </SidebarMenuItem>
                 );
               })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Settings</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarThemeToggle />
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -234,16 +245,8 @@ export function PageHeader({ title, children, size, showTrigger = true, backHref
   return (
     <header className={pageHeaderVariants({ size })}>
       {showTrigger && <SidebarTrigger data-testid="button-sidebar-toggle" />}
-      {backHref && (
-        <Button variant="ghost" size="icon" asChild>
-          <Link href={backHref} data-testid="button-back">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-      )}
       {title && <h1 className="font-semibold text-sm">{title}</h1>}
       <div className="ml-auto flex items-center gap-2">
-        <ThemeToggle />
         {children}
       </div>
     </header>

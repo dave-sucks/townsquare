@@ -1,16 +1,12 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { ArrowLeft, Lock, Globe, Trash2 } from "lucide-react";
-import { apiRequest } from "@/lib/query-client";
-import { toast } from "sonner";
+import { Lock, Globe, Trash2 } from "lucide-react";
 import { PlacesList } from "@/components/shared/places-list";
 import type { SidebarInjectedProps } from "@/components/map/map-layout";
 import { cn } from "@/lib/utils";
@@ -64,62 +60,42 @@ interface ListSidebarProps extends Partial<SidebarInjectedProps> {
   isRemovingPlace?: boolean;
 }
 
-function ListHeader({
-  list,
-  isOwner,
-}: {
-  list: ListData;
-  isOwner: boolean;
-}) {
-  const router = useRouter();
+function ListInfo({ list }: { list: ListData }) {
   const ownerName = list.user.firstName 
     ? `${list.user.firstName}${list.user.lastName ? ` ${list.user.lastName}` : ""}`
     : list.user.username || "User";
 
   return (
-    <div className="border-b">
-      <div className="flex items-center gap-2 p-2 border-b">
-        <SidebarTrigger data-testid="button-sidebar-toggle" />
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.push("/lists")}
-          data-testid="button-back-to-lists"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex-1" />
-        <ThemeToggle />
-      </div>
-      
-      <div className="p-4">
-        <div className="flex items-start gap-2">
-          <h1 className="text-xl font-bold flex-1" data-testid="text-list-name">
+    <div className="p-3 border-b space-y-2">
+      <div className="flex items-start gap-2">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm font-semibold truncate" data-testid="text-list-name">
             {list.name}
-          </h1>
-          {list.visibility === "PRIVATE" ? (
-            <Lock className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
-          ) : (
-            <Globe className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
+          </h2>
+          {list.description && (
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+              {list.description}
+            </p>
           )}
         </div>
-        
-        {list.description && (
-          <p className="text-sm text-muted-foreground mt-1">
-            {list.description}
-          </p>
+        {list.visibility === "PRIVATE" ? (
+          <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
+        ) : (
+          <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
         )}
-        
-        <div className="flex items-center gap-2 mt-3">
-          <Avatar className="h-6 w-6">
+      </div>
+      
+      <div className="flex items-center gap-2">
+        <Link href={`/u/${list.user.username || list.user.id}`} className="flex items-center gap-2 hover:underline">
+          <Avatar className="h-5 w-5">
             <AvatarImage src={list.user.profileImageUrl || undefined} alt={ownerName} />
             <AvatarFallback className="text-xs">{ownerName.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
-          <span className="text-sm text-muted-foreground">{ownerName}</span>
-          <Badge variant="secondary" className="ml-auto">
-            {list.listPlaces.length} {list.listPlaces.length === 1 ? "place" : "places"}
-          </Badge>
-        </div>
+          <span className="text-xs text-muted-foreground">{ownerName}</span>
+        </Link>
+        <Badge variant="secondary" className="ml-auto text-xs">
+          {list.listPlaces.length} {list.listPlaces.length === 1 ? "place" : "places"}
+        </Badge>
       </div>
     </div>
   );
@@ -147,24 +123,22 @@ export function ListSidebar({
   if (isLoading || !list) {
     return (
       <div className="h-full flex flex-col bg-background">
-        <div className="flex items-center gap-2 p-2 border-b">
+        <div className="flex items-center gap-2 p-3 border-b">
           <SidebarTrigger data-testid="button-sidebar-toggle" />
-          <Skeleton className="h-8 w-8" />
-          <div className="flex-1" />
-          <Skeleton className="h-8 w-8" />
+          <Skeleton className="h-4 w-32" />
         </div>
-        <div className="p-4 border-b space-y-3">
-          <Skeleton className="h-6 w-48" />
-          <Skeleton className="h-4 w-64" />
+        <div className="p-3 border-b space-y-3">
+          <Skeleton className="h-5 w-48" />
+          <Skeleton className="h-3 w-64" />
           <div className="flex items-center gap-2">
-            <Skeleton className="h-6 w-6 rounded-full" />
-            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-5 w-5 rounded-full" />
+            <Skeleton className="h-3 w-24" />
           </div>
         </div>
         <div className="p-2 space-y-2">
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
         </div>
       </div>
     );
@@ -172,23 +146,26 @@ export function ListSidebar({
 
   return (
     <div className="h-full flex flex-col bg-background" data-testid="list-sidebar">
-      <ListHeader list={list} isOwner={isOwner} />
+      <div className="flex items-center gap-2 p-3 border-b">
+        <SidebarTrigger data-testid="button-sidebar-toggle" />
+        <h1 className="font-semibold text-sm flex-1 truncate">{list.name}</h1>
+      </div>
+
+      <ListInfo list={list} />
 
       <div className="flex-1 overflow-y-auto">
         {savedPlaces.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center p-4">
-            <p className="text-lg font-medium">No places in this list</p>
-            <p className="text-sm text-muted-foreground">
+          <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+            <Globe className="mb-4 h-10 w-10 text-muted-foreground" />
+            <p className="text-sm font-medium">No places in this list</p>
+            <p className="text-xs text-muted-foreground mt-1">
               {isOwner ? "Add places from your saved places" : "This list is empty"}
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-1 p-1">
+          <div className="flex flex-col gap-1 p-2">
             {savedPlaces.map((savedPlace) => (
-              <div
-                key={savedPlace.id}
-                className="group relative"
-              >
+              <div key={savedPlace.id} className="group relative">
                 <div
                   ref={(el) => {
                     if (placeRowRefs) {
@@ -197,14 +174,14 @@ export function ListSidebar({
                     }
                   }}
                   className={cn(
-                    "flex items-center gap-3 p-1 rounded-lg cursor-pointer transition-colors hover-elevate",
+                    "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors hover-elevate",
                     selectedPlaceId === savedPlace.id && "bg-accent"
                   )}
                   onClick={() => onPlaceSelect?.(savedPlace.id)}
                   data-testid={`list-place-row-${savedPlace.id}`}
                   data-selected={selectedPlaceId === savedPlace.id}
                 >
-                  <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0">
+                  <div className="relative w-14 h-14 rounded-md overflow-hidden bg-muted flex-shrink-0">
                     {savedPlace.place.photoRefs?.[0] ? (
                       <img
                         src={`/api/places/photo?photoRef=${encodeURIComponent(savedPlace.place.photoRefs[0])}&maxWidth=100`}
@@ -213,7 +190,7 @@ export function ListSidebar({
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                        <Globe className="h-6 w-6" />
+                        <Globe className="h-5 w-5" />
                       </div>
                     )}
                   </div>

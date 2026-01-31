@@ -12,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Search, Heart, CheckCircle, ChevronDown, Check } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
@@ -142,124 +141,121 @@ export function DiscoverSidebar({
 
   return (
     <div className="h-full flex flex-col bg-background" data-testid="discover-sidebar">
-      <div className="sticky top-0 z-10 bg-background border-b">
-        <div className="flex items-center gap-2 p-2 border-b">
-          <SidebarTrigger data-testid="button-sidebar-toggle" />
-          <h1 className="font-semibold text-sm flex-1">Places</h1>
-          <ThemeToggle />
+      <div className="flex items-center gap-2 p-3 border-b">
+        <SidebarTrigger data-testid="button-sidebar-toggle" />
+        <h1 className="font-semibold text-sm flex-1">Places</h1>
+      </div>
+
+      <div className="p-3 border-b space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search for a place..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+            data-testid="input-search-place"
+          />
         </div>
 
-        <div className="p-2">
-          <div className="relative mb-2">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search for a place..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-              data-testid="input-search-place"
-            />
-          </div>
-
-          {(isSearching || searchResults.length > 0 || (searchQuery && searchResults.length === 0)) && (
-            <div className="border rounded-lg max-h-60 overflow-y-auto mb-2">
-              {isSearching && (
-                <div className="space-y-2 p-3">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-              )}
-              {!isSearching && searchResults.length > 0 && (
-                <div className="py-1">
-                  {searchResults.map((result) => (
-                    <div 
-                      key={result.place_id} 
-                      className="px-3 py-2 hover-elevate cursor-pointer" 
-                      data-testid={`search-result-${result.place_id}`}
-                    >
-                      <p className="font-medium text-sm">{result.structured_formatting.main_text}</p>
-                      <p className="text-xs text-muted-foreground truncate">{result.structured_formatting.secondary_text}</p>
-                      <div className="mt-1.5 flex gap-1.5">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs"
-                          onClick={() => savePlaceMutation.mutate({ placeId: result.place_id, status: "WANT" })}
-                          disabled={savePlaceMutation.isPending}
-                          data-testid={`button-save-want-${result.place_id}`}
-                        >
-                          <Heart className="mr-1 h-3 w-3" />Want
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs"
-                          onClick={() => savePlaceMutation.mutate({ placeId: result.place_id, status: "BEEN" })}
-                          disabled={savePlaceMutation.isPending}
-                          data-testid={`button-save-been-${result.place_id}`}
-                        >
-                          <CheckCircle className="mr-1 h-3 w-3" />Been
-                        </Button>
-                      </div>
+        {(isSearching || searchResults.length > 0 || (searchQuery && searchResults.length === 0)) && (
+          <div className="border rounded-lg max-h-60 overflow-y-auto">
+            {isSearching && (
+              <div className="space-y-2 p-3">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            )}
+            {!isSearching && searchResults.length > 0 && (
+              <div className="py-1">
+                {searchResults.map((result) => (
+                  <div 
+                    key={result.place_id} 
+                    className="px-3 py-2 hover-elevate cursor-pointer" 
+                    data-testid={`search-result-${result.place_id}`}
+                  >
+                    <p className="font-medium text-sm">{result.structured_formatting.main_text}</p>
+                    <p className="text-xs text-muted-foreground truncate">{result.structured_formatting.secondary_text}</p>
+                    <div className="mt-1.5 flex gap-1.5">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={() => savePlaceMutation.mutate({ placeId: result.place_id, status: "WANT" })}
+                        disabled={savePlaceMutation.isPending}
+                        data-testid={`button-save-want-${result.place_id}`}
+                      >
+                        <Heart className="mr-1 h-3 w-3" />Want
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={() => savePlaceMutation.mutate({ placeId: result.place_id, status: "BEEN" })}
+                        disabled={savePlaceMutation.isPending}
+                        data-testid={`button-save-been-${result.place_id}`}
+                      >
+                        <CheckCircle className="mr-1 h-3 w-3" />Been
+                      </Button>
                     </div>
-                  ))}
-                </div>
-              )}
-              {!isSearching && searchQuery && searchResults.length === 0 && (
-                <p className="p-3 text-center text-sm text-muted-foreground">No places found</p>
-              )}
-            </div>
-          )}
-
-          <div className="flex gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" data-testid="select-status-filter">
-                  {selectedStatusLabel}
-                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {statusOptions.map((option) => (
-                  <DropdownMenuItem
-                    key={option.value}
-                    onSelect={() => onStatusFilterChange(option.value)}
-                    data-active={statusFilter === option.value}
-                  >
-                    {option.label}
-                    <Check className={`ml-auto h-4 w-4 ${statusFilter === option.value ? "opacity-100" : "opacity-0"}`} />
-                  </DropdownMenuItem>
+                  </div>
                 ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" data-testid="select-list-filter">
-                  {selectedListLabel}
-                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem
-                  onSelect={() => onListFilterChange("all")}
-                  data-active={listFilter === "all"}
-                >
-                  All Lists
-                  <Check className={`ml-auto h-4 w-4 ${listFilter === "all" ? "opacity-100" : "opacity-0"}`} />
-                </DropdownMenuItem>
-                {lists.map((list) => (
-                  <DropdownMenuItem
-                    key={list.id}
-                    onSelect={() => onListFilterChange(list.id)}
-                    data-active={listFilter === list.id}
-                  >
-                    {list.name}
-                    <Check className={`ml-auto h-4 w-4 ${listFilter === list.id ? "opacity-100" : "opacity-0"}`} />
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </div>
+            )}
+            {!isSearching && searchQuery && searchResults.length === 0 && (
+              <p className="p-3 text-center text-sm text-muted-foreground">No places found</p>
+            )}
           </div>
+        )}
+
+        <div className="flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" data-testid="select-status-filter">
+                {selectedStatusLabel}
+                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {statusOptions.map((option) => (
+                <DropdownMenuItem
+                  key={option.value}
+                  onSelect={() => onStatusFilterChange(option.value)}
+                  data-active={statusFilter === option.value}
+                >
+                  {option.label}
+                  <Check className={`ml-auto h-4 w-4 ${statusFilter === option.value ? "opacity-100" : "opacity-0"}`} />
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" data-testid="select-list-filter">
+                {selectedListLabel}
+                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem
+                onSelect={() => onListFilterChange("all")}
+                data-active={listFilter === "all"}
+              >
+                All Lists
+                <Check className={`ml-auto h-4 w-4 ${listFilter === "all" ? "opacity-100" : "opacity-0"}`} />
+              </DropdownMenuItem>
+              {lists.map((list) => (
+                <DropdownMenuItem
+                  key={list.id}
+                  onSelect={() => onListFilterChange(list.id)}
+                  data-active={listFilter === list.id}
+                >
+                  {list.name}
+                  <Check className={`ml-auto h-4 w-4 ${listFilter === list.id ? "opacity-100" : "opacity-0"}`} />
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

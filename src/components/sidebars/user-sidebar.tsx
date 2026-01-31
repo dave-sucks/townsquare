@@ -14,8 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { UserPlus, UserMinus, Loader2, ChevronDown, Check, Heart, Star } from "lucide-react";
+import { UserPlus, UserMinus, Loader2, ChevronDown, Check, Star } from "lucide-react";
 import { apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { PlacesList } from "@/components/shared/places-list";
@@ -114,17 +113,17 @@ function ProfileHeader({
   const handle = user.username || user.id;
 
   return (
-    <div className="flex items-center gap-4 p-4">
-      <Avatar className="h-16 w-16 border-2 border-border shrink-0">
+    <div className="flex items-center gap-3 p-3">
+      <Avatar className="h-14 w-14 border-2 border-border shrink-0">
         <AvatarImage src={user.profileImageUrl || undefined} alt={displayName} />
-        <AvatarFallback className="text-xl font-medium">{displayName.charAt(0).toUpperCase()}</AvatarFallback>
+        <AvatarFallback className="text-lg font-medium">{displayName.charAt(0).toUpperCase()}</AvatarFallback>
       </Avatar>
       
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <h1 className="text-lg font-semibold truncate" data-testid="text-profile-name">{displayName}</h1>
-            <p className="text-sm text-muted-foreground" data-testid="text-profile-username">@{handle}</p>
+            <h2 className="text-sm font-semibold truncate" data-testid="text-profile-name">{displayName}</h2>
+            <p className="text-xs text-muted-foreground" data-testid="text-profile-username">@{handle}</p>
           </div>
           
           {!isOwnProfile && (
@@ -146,7 +145,7 @@ function ProfileHeader({
           )}
         </div>
         
-        <div className="flex items-center gap-4 mt-2 text-sm">
+        <div className="flex items-center gap-4 mt-2 text-xs">
           <button className="hover:underline" data-testid="text-following">
             <span className="font-semibold">{followingCount}</span>
             <span className="text-muted-foreground ml-1">following</span>
@@ -188,7 +187,7 @@ function ReviewCard({
       data-testid={`review-card-${review.id}`}
       data-selected={isSelected}
     >
-      <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0">
+      <div className="relative w-14 h-14 rounded-md overflow-hidden bg-muted flex-shrink-0">
         {photoUrl ? (
           <img
             src={photoUrl}
@@ -197,28 +196,26 @@ function ReviewCard({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            <Star className="h-6 w-6" />
+            <Star className="h-5 w-5" />
           </div>
         )}
       </div>
 
       <div className="flex-1 min-w-0 overflow-hidden">
         <h3 className="font-medium text-sm truncate">{review.place.name}</h3>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-          <div className="flex">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star
-                key={star}
-                className={cn(
-                  "h-3 w-3",
-                  star <= review.rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground"
-                )}
-              />
-            ))}
-          </div>
+        <div className="flex items-center gap-1 mt-0.5">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <Star
+              key={star}
+              className={cn(
+                "h-3 w-3",
+                star <= review.rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground"
+              )}
+            />
+          ))}
         </div>
         {review.note && (
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
             {review.note}
           </p>
         )}
@@ -291,21 +288,25 @@ export function UserSidebar({
 
   const publicLists = lists.filter(l => l.visibility === "PUBLIC" || isOwnProfile);
 
+  const displayName = user.firstName 
+    ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ""}`
+    : user.username || "User";
+
   if (isLoading) {
     return (
       <div className="h-full flex flex-col bg-background">
-        <div className="flex items-center gap-2 p-2 border-b">
+        <div className="flex items-center gap-2 p-3 border-b">
           <SidebarTrigger data-testid="button-sidebar-toggle" />
-          <ThemeToggle />
+          <Skeleton className="h-4 w-24" />
         </div>
-        <div className="flex items-center gap-4 p-4 border-b">
-          <Skeleton className="h-16 w-16 rounded-full shrink-0" />
+        <div className="flex items-center gap-3 p-3 border-b">
+          <Skeleton className="h-14 w-14 rounded-full shrink-0" />
           <div className="flex-1 space-y-2">
-            <Skeleton className="h-5 w-32" />
-            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-24" />
             <div className="flex gap-4">
-              <Skeleton className="h-4 w-16" />
-              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-3 w-16" />
             </div>
           </div>
         </div>
@@ -315,11 +316,12 @@ export function UserSidebar({
 
   return (
     <div className="h-full flex flex-col bg-background" data-testid="user-sidebar">
+      <div className="flex items-center gap-2 p-3 border-b">
+        <SidebarTrigger data-testid="button-sidebar-toggle" />
+        <h1 className="font-semibold text-sm flex-1 truncate">{displayName}</h1>
+      </div>
+
       <div className="border-b">
-        <div className="flex items-center gap-2 p-2 border-b">
-          <SidebarTrigger data-testid="button-sidebar-toggle" />
-          <ThemeToggle />
-        </div>
         <ProfileHeader
           user={user}
           isOwnProfile={isOwnProfile}
@@ -335,14 +337,14 @@ export function UserSidebar({
         <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0">
           <TabsTrigger 
             value="places" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
             data-testid="tab-places"
           >
             Places
           </TabsTrigger>
           <TabsTrigger 
             value="feed" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
             data-testid="tab-feed"
           >
             Feed
@@ -350,7 +352,7 @@ export function UserSidebar({
         </TabsList>
 
         <TabsContent value="places" className="flex-1 flex flex-col min-h-0 mt-0">
-          <div className="flex gap-2 p-2 border-b">
+          <div className="flex gap-2 p-3 border-b">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" data-testid="select-status-filter">
@@ -417,15 +419,15 @@ export function UserSidebar({
 
         <TabsContent value="feed" className="flex-1 overflow-y-auto mt-0">
           {reviews.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Star className="mb-4 h-12 w-12 text-muted-foreground" />
-              <p className="text-lg font-medium">No reviews yet</p>
-              <p className="text-sm text-muted-foreground">
+            <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+              <Star className="mb-4 h-10 w-10 text-muted-foreground" />
+              <p className="text-sm font-medium">No reviews yet</p>
+              <p className="text-xs text-muted-foreground mt-1">
                 {isOwnProfile ? "Write your first review" : "This user hasn't written any reviews yet"}
               </p>
             </div>
           ) : (
-            <div className="flex flex-col gap-1 p-1">
+            <div className="flex flex-col gap-1 p-2">
               {reviews.map((review) => (
                 <ReviewCard
                   key={review.id}

@@ -229,6 +229,20 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
     applyMapStyle(map, style, labelDensity);
   }, [map, labelDensity]);
 
+  useEffect(() => {
+    const handleExternalStyleChange = (event: Event) => {
+      const customEvent = event as CustomEvent<MapStyleKey>;
+      if (customEvent.detail && map) {
+        setCurrentStyle(customEvent.detail);
+        saveMapStyle(customEvent.detail);
+        applyMapStyle(map, customEvent.detail, labelDensity);
+      }
+    };
+
+    window.addEventListener("map-style-change", handleExternalStyleChange);
+    return () => window.removeEventListener("map-style-change", handleExternalStyleChange);
+  }, [map, labelDensity]);
+
   const handleLabelDensityChange = useCallback((density: LabelDensity) => {
     if (!map) return;
     setLabelDensity(density);
