@@ -84,12 +84,10 @@ export function ListSidebar({
       <div className="h-full flex flex-col bg-background">
         <div className="flex items-center gap-2 p-3 border-b">
           <SidebarTrigger data-testid="button-sidebar-toggle" />
-          <Skeleton className="h-4 w-16 flex-1" />
-          <Skeleton className="h-5 w-12" />
+          <Skeleton className="h-4 w-32 flex-1" />
         </div>
-        <div className="p-3 border-b space-y-2">
-          <Skeleton className="h-4 w-48" />
-          <Skeleton className="h-3 w-32" />
+        <div className="p-3 border-b">
+          <Skeleton className="h-3 w-40" />
         </div>
         <div className="p-2 space-y-2">
           <Skeleton className="h-16 w-full" />
@@ -106,23 +104,24 @@ export function ListSidebar({
     <div className="h-full flex flex-col bg-background" data-testid="list-sidebar">
       <div className="flex items-center gap-2 p-3 border-b">
         <SidebarTrigger data-testid="button-sidebar-toggle" />
-        <span className="text-xs text-muted-foreground flex-1">{placeCount} {placeCount === 1 ? "place" : "places"}</span>
+        <span className="font-semibold text-sm flex-1 truncate" data-testid="text-list-name">{list.name}</span>
         {list.visibility === "PRIVATE" && (
           <Lock className="h-4 w-4 text-muted-foreground" />
         )}
       </div>
 
       <div className="p-3 border-b">
-        <h2 className="text-sm font-semibold truncate" data-testid="text-list-name">
-          {list.name}
-        </h2>
-        <Link 
-          href={`/u/${ownerHandle}`} 
-          className="text-xs text-muted-foreground hover:underline"
-          data-testid="link-list-owner"
-        >
-          by @{ownerHandle}
-        </Link>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>{placeCount} {placeCount === 1 ? "place" : "places"}</span>
+          <span>·</span>
+          <Link 
+            href={`/u/${ownerHandle}`} 
+            className="hover:underline"
+            data-testid="link-list-owner"
+          >
+            by @{ownerHandle}
+          </Link>
+        </div>
         {list.description && (
           <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
             {list.description}
