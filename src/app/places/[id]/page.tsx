@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Heart, CheckCircle, MapPin, ExternalLink, List, Lock, Globe, Trash2, Users, Star, Camera, Edit, Plus } from "lucide-react";
+import { Heart, CheckCircle, MapPin, ExternalLink, List, Lock, Globe, Trash2, Users, Star, Camera, Edit, Plus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { AddToListDialog } from "@/components/add-to-list-dialog";
 import { ReviewDialog } from "@/components/review-dialog";
 import { PhotoGallery } from "@/components/photo-gallery";
+import { AppShell, PageHeader, ContentContainer } from "@/components/layout";
 
 interface Place {
   id: string;
@@ -181,90 +182,54 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
     },
   });
 
-  if (!isAuthenticated) {
-    return (
-      <div className="container py-8">
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <MapPin className="mb-4 h-12 w-12 text-muted-foreground" />
-            <p className="text-lg font-medium">Please sign in</p>
-            <Button asChild className="mt-4">
-              <Link href="/">Go to Home</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const googleMapsUrl = place ? `https://www.google.com/maps/place/?q=place_id:${place.googlePlaceId}` : "";
 
-  if (isLoading) {
-    return (
-      <div className="container py-8 max-w-2xl">
-        <div className="space-y-4">
-          <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-6 w-64" />
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-24 w-full" />
-        </div>
-      </div>
-    );
-  }
-
-  if (!place) {
-    return (
-      <div className="container py-8 max-w-2xl">
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <MapPin className="mb-4 h-12 w-12 text-muted-foreground" />
-            <p className="text-lg font-medium">Place not found</p>
-            <Button asChild className="mt-4">
-              <Link href="/">Go to Map</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const googleMapsUrl = `https://www.google.com/maps/place/?q=place_id:${place.googlePlaceId}`;
-
-  return (
-    <div className="container py-8 max-w-2xl">
-      <div className="mb-6">
-        <Button variant="ghost" size="sm" asChild className="mb-4">
-          <Link href="/" data-testid="button-back-map">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Map
-          </Link>
+  const content = !isAuthenticated ? (
+    <Card>
+      <CardContent className="flex flex-col items-center justify-center py-12">
+        <MapPin className="mb-4 h-12 w-12 text-muted-foreground" />
+        <p className="text-lg font-medium">Please sign in</p>
+        <Button asChild className="mt-4">
+          <Link href="/">Go to Home</Link>
         </Button>
-
+      </CardContent>
+    </Card>
+  ) : isLoading ? (
+    <div className="space-y-4">
+      <Skeleton className="h-10 w-48" />
+      <Skeleton className="h-6 w-64" />
+      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-24 w-full" />
+    </div>
+  ) : !place ? (
+    <Card>
+      <CardContent className="flex flex-col items-center justify-center py-12">
+        <MapPin className="mb-4 h-12 w-12 text-muted-foreground" />
+        <p className="text-lg font-medium">Place not found</p>
+        <Button asChild className="mt-4">
+          <Link href="/">Go to Map</Link>
+        </Button>
+      </CardContent>
+    </Card>
+  ) : (
+    <>
+      <div className="mb-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-bold" data-testid="text-place-name">{place.name}</h1>
             <p className="text-muted-foreground mt-1" data-testid="text-place-address">{place.formattedAddress}</p>
           </div>
           {savedPlace && (
-            <Badge 
-              variant={savedPlace.status === "WANT" ? "secondary" : "default"}
-              data-testid="badge-place-status"
-            >
+            <Badge variant={savedPlace.status === "WANT" ? "secondary" : "default"} data-testid="badge-place-status">
               {savedPlace.status === "WANT" ? (
-                <>
-                  <Heart className="mr-1 h-3 w-3" />
-                  Want to visit
-                </>
+                <><Heart className="mr-1 h-3 w-3" />Want to visit</>
               ) : (
-                <>
-                  <CheckCircle className="mr-1 h-3 w-3" />
-                  Been there
-                </>
+                <><CheckCircle className="mr-1 h-3 w-3" />Been there</>
               )}
             </Badge>
           )}
           {!savedPlace && (
-            <Badge variant="outline" data-testid="badge-place-status">
-              Not saved
-            </Badge>
+            <Badge variant="outline" data-testid="badge-place-status">Not saved</Badge>
           )}
         </div>
       </div>
@@ -580,6 +545,13 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
         existingReview={myReview}
         onSuccess={() => refetch()}
       />
-    </div>
+    </>
+  );
+
+  return (
+    <AppShell user={user}>
+      <PageHeader title={place?.name || "Place Details"} backHref="/" />
+      <ContentContainer maxWidth="md">{content}</ContentContainer>
+    </AppShell>
   );
 }

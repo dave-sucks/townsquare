@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Heart, CheckCircle, ListPlus, FolderPlus, MapPin, Users, Star } from "lucide-react";
+import { Heart, CheckCircle, ListPlus, FolderPlus, MapPin, Users, Star } from "lucide-react";
 import { apiRequest } from "@/lib/query-client";
+import { AppShell, PageHeader, ContentContainer } from "@/components/layout";
 
 interface ActivityActor {
   id: string;
@@ -221,95 +222,82 @@ export default function HomePage() {
     }
   }, [data, cursor]);
 
-  if (authLoading || !isAuthenticated) {
-    return (
-      <div className="container py-8 max-w-2xl">
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardHeader className="p-4">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/4" />
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   const hasActivity = allActivities.length > 0;
 
-  return (
-    <div className="container py-8 max-w-2xl">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" size="icon" asChild data-testid="button-back-map">
-          <Link href="/">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-        </Button>
-        <h1 className="text-2xl font-bold">Home</h1>
-      </div>
-
-      {isLoading && !allActivities.length ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardHeader className="p-4">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/4" />
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-      ) : !hasActivity ? (
-        <Card className="text-center py-12" data-testid="empty-feed">
-          <CardContent>
-            <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-lg font-semibold mb-2">No activity yet</h2>
-            <p className="text-muted-foreground mb-4">
-              Follow someone or save a place to see activity here.
-            </p>
-            <div className="flex justify-center gap-3">
-              <Button asChild data-testid="button-browse-people">
-                <Link href="/people">Browse People</Link>
-              </Button>
-              <Button variant="outline" asChild data-testid="button-go-map">
-                <Link href="/">Go to Map</Link>
-              </Button>
+  const content = authLoading || !isAuthenticated ? (
+    <div className="space-y-4">
+      {[1, 2, 3].map((i) => (
+        <Card key={i}>
+          <CardHeader className="p-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/4" />
+              </div>
             </div>
-          </CardContent>
+          </CardHeader>
         </Card>
-      ) : (
-        <div className="space-y-4">
-          {allActivities.map((activity) => (
-            <ActivityCard key={activity.id} activity={activity} />
-          ))}
-
-          {data?.hasMore && (
-            <div className="text-center pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setCursor(data.nextCursor)}
-                disabled={isFetching}
-                data-testid="button-load-more"
-              >
-                {isFetching ? "Loading..." : "Load More"}
-              </Button>
+      ))}
+    </div>
+  ) : isLoading && !allActivities.length ? (
+    <div className="space-y-4">
+      {[1, 2, 3].map((i) => (
+        <Card key={i}>
+          <CardHeader className="p-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/4" />
+              </div>
             </div>
-          )}
+          </CardHeader>
+        </Card>
+      ))}
+    </div>
+  ) : !hasActivity ? (
+    <Card className="text-center py-12" data-testid="empty-feed">
+      <CardContent>
+        <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+        <h2 className="text-lg font-semibold mb-2">No activity yet</h2>
+        <p className="text-muted-foreground mb-4">
+          Follow someone or save a place to see activity here.
+        </p>
+        <div className="flex justify-center gap-3">
+          <Button asChild data-testid="button-browse-people">
+            <Link href="/people">Browse People</Link>
+          </Button>
+          <Button variant="outline" asChild data-testid="button-go-map">
+            <Link href="/">Go to Map</Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  ) : (
+    <div className="space-y-4">
+      {allActivities.map((activity) => (
+        <ActivityCard key={activity.id} activity={activity} />
+      ))}
+      {data?.hasMore && (
+        <div className="text-center pt-4">
+          <Button
+            variant="outline"
+            onClick={() => setCursor(data.nextCursor)}
+            disabled={isFetching}
+            data-testid="button-load-more"
+          >
+            {isFetching ? "Loading..." : "Load More"}
+          </Button>
         </div>
       )}
     </div>
+  );
+
+  return (
+    <AppShell user={user}>
+      <PageHeader title="Home" />
+      <ContentContainer maxWidth="md">{content}</ContentContainer>
+    </AppShell>
   );
 }

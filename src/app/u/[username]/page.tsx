@@ -9,9 +9,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Heart, CheckCircle, MapPin, List as ListIcon, Lock, Globe, User, Users, UserPlus, UserMinus, Loader2, Star } from "lucide-react";
+import { Heart, CheckCircle, MapPin, List as ListIcon, Lock, Globe, User, Users, UserPlus, UserMinus, Loader2, Star } from "lucide-react";
 import { apiRequest } from "@/lib/query-client";
 import { useAuth } from "@/hooks/use-auth";
+import { AppShell, PageHeader, ContentContainer } from "@/components/layout";
 
 interface User {
   id: string;
@@ -116,90 +117,68 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
   const isFollowLoading = followMutation.isPending || unfollowMutation.isPending;
 
   const handleFollow = () => {
-    if (!user) return;
+    if (!data?.user) return;
     if (isFollowing) {
-      unfollowMutation.mutate(user.id);
+      unfollowMutation.mutate(data.user.id);
     } else {
-      followMutation.mutate(user.id);
+      followMutation.mutate(data.user.id);
     }
   };
 
-  const displayName = user?.firstName 
-    ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ""}`
-    : user?.username || "User";
+  const { user: currentUser } = useAuth();
+  const profileUser = data?.user;
 
-  if (!isAuthenticated) {
-    return (
-      <div className="container py-8 max-w-2xl">
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <User className="mb-4 h-12 w-12 text-muted-foreground" />
-            <p className="text-lg font-medium">Please sign in</p>
-            <Button asChild className="mt-4">
-              <Link href="/">Go to Home</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const displayName = profileUser?.firstName 
+    ? `${profileUser.firstName}${profileUser.lastName ? ` ${profileUser.lastName}` : ""}`
+    : profileUser?.username || "User";
 
-  if (isLoading) {
-    return (
-      <div className="container py-8 max-w-2xl">
-        <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-16 w-16 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-6 w-32" />
-              <Skeleton className="h-4 w-24" />
-            </div>
-          </div>
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-24 w-full" />
+  const content = !isAuthenticated ? (
+    <Card>
+      <CardContent className="flex flex-col items-center justify-center py-12">
+        <User className="mb-4 h-12 w-12 text-muted-foreground" />
+        <p className="text-lg font-medium">Please sign in</p>
+        <Button asChild className="mt-4">
+          <Link href="/">Go to Home</Link>
+        </Button>
+      </CardContent>
+    </Card>
+  ) : isLoading ? (
+    <div className="space-y-4">
+      <div className="flex items-center gap-4">
+        <Skeleton className="h-16 w-16 rounded-full" />
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-4 w-24" />
         </div>
       </div>
-    );
-  }
-
-  if (error || !user) {
-    return (
-      <div className="container py-8 max-w-2xl">
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <User className="mb-4 h-12 w-12 text-muted-foreground" />
-            <p className="text-lg font-medium">User not found</p>
-            <Button asChild className="mt-4">
-              <Link href="/people">Browse People</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="container py-8 max-w-2xl">
-      <Button variant="ghost" size="sm" asChild className="mb-6">
-        <Link href={isOwnProfile ? "/" : "/people"} data-testid="button-back">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          {isOwnProfile ? "Back to Map" : "Back to People"}
-        </Link>
-      </Button>
-
+      <Skeleton className="h-10 w-full" />
+      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-24 w-full" />
+    </div>
+  ) : error || !profileUser ? (
+    <Card>
+      <CardContent className="flex flex-col items-center justify-center py-12">
+        <User className="mb-4 h-12 w-12 text-muted-foreground" />
+        <p className="text-lg font-medium">User not found</p>
+        <Button asChild className="mt-4">
+          <Link href="/people">Browse People</Link>
+        </Button>
+      </CardContent>
+    </Card>
+  ) : (
+    <>
       <Card className="mb-6">
         <CardHeader>
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
-                <AvatarImage src={user.profileImageUrl || undefined} alt={displayName} />
+                <AvatarImage src={profileUser.profileImageUrl || undefined} alt={displayName} />
                 <AvatarFallback className="text-xl">{displayName.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div>
                 <CardTitle className="text-xl" data-testid="text-user-name">{displayName}</CardTitle>
-                {user.username && (
-                  <CardDescription data-testid="text-username">@{user.username}</CardDescription>
+                {profileUser.username && (
+                  <CardDescription data-testid="text-username">@{profileUser.username}</CardDescription>
                 )}
                 <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                   <span data-testid="text-followers">{followerCount} followers</span>
@@ -434,6 +413,13 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
           )}
         </TabsContent>
       </Tabs>
-    </div>
+    </>
+  );
+
+  return (
+    <AppShell user={currentUser}>
+      <PageHeader title={displayName} backHref={isOwnProfile ? "/" : "/people"} />
+      <ContentContainer maxWidth="md">{content}</ContentContainer>
+    </AppShell>
   );
 }
