@@ -253,7 +253,7 @@ export function Dashboard({ user }: { user: UserData }) {
           showSettings={true}
         />
 
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 md:left-[calc(20rem+1.5rem)] md:translate-x-0 z-10 w-80 max-w-[calc(100vw-2rem)]">
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 md:left-[calc(25rem+1.5rem)] md:translate-x-0 z-10 w-80 max-w-[calc(100vw-2rem)]">
           <div className="bg-white/90 dark:bg-background/90 backdrop-blur-md rounded-lg shadow-lg border">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -317,7 +317,7 @@ export function Dashboard({ user }: { user: UserData }) {
           </div>
         </div>
 
-        <div className="absolute top-0 left-0 bottom-0 z-10 w-80 p-3 hidden md:block">
+        <div className="absolute top-0 left-0 bottom-0 z-10 w-[25rem] p-3 hidden md:block">
           <div className="h-full bg-background rounded-lg border shadow-lg overflow-hidden">
             <PlacesPanel
               places={filteredPlaces}

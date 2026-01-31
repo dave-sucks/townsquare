@@ -168,7 +168,7 @@ const ReviewRow = forwardRef<HTMLDivElement, {
 }>(({ review, isSelected, onSelect }, ref) => {
   const photoRef = review.place.photoRefs?.[0];
   const photoUrl = photoRef 
-    ? `/api/places/photo?photoRef=${encodeURIComponent(photoRef)}&maxWidth=100`
+    ? `/api/places/photo?photoRef=${encodeURIComponent(photoRef)}&maxWidth=200`
     : null;
   
   const placeType = formatPlaceType(review.place.primaryType);
@@ -186,46 +186,38 @@ const ReviewRow = forwardRef<HTMLDivElement, {
       <div
         ref={ref}
         className={cn(
-          "flex items-center gap-3 p-1 rounded-lg cursor-pointer transition-colors",
+          "rounded-lg cursor-pointer transition-colors overflow-hidden",
           isSelected ? "bg-accent" : "hover:bg-accent"
         )}
         data-selected={isSelected}
       >
-        <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0">
-          {photoUrl ? (
+        {photoUrl && (
+          <div className="relative w-full aspect-video overflow-hidden">
             <img
               src={photoUrl}
               alt={review.place.name}
               className="w-full h-full object-cover"
             />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              <Star className="h-6 w-6" />
-            </div>
-          )}
-        </div>
-
-        <div className="flex-1 min-w-0 overflow-hidden">
-          <h3 className="font-medium text-sm truncate">
-            {review.place.name}
-          </h3>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-            <Star className="h-3 w-3 fill-current text-amber-500" />
-            <span>{review.rating}/10</span>
-            {placeType && (
-              <>
-                <span className="mx-1">·</span>
-                <span className="truncate">{placeType}</span>
-              </>
-            )}
           </div>
-          {review.note ? (
-            <p className="text-xs text-muted-foreground truncate mt-0.5">
+        )}
+        <div className="p-3">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-medium text-sm">
+              {review.place.name}
+            </h3>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+              <Star className="h-3 w-3 fill-current text-amber-500" />
+              <span>{review.rating}/10</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+            {placeType && <span>{placeType}</span>}
+            {placeType && address && <span className="mx-1">·</span>}
+            <span className="truncate">{address}</span>
+          </div>
+          {review.note && (
+            <p className="text-sm text-foreground mt-2 whitespace-pre-wrap">
               {review.note}
-            </p>
-          ) : (
-            <p className="text-xs text-muted-foreground truncate mt-0.5">
-              {address}
             </p>
           )}
         </div>
@@ -262,26 +254,16 @@ export function ProfilePlacesPanel({
     <div className="h-full flex flex-col bg-background" data-testid="profile-places-panel">
       <div className="sticky top-0 z-10 bg-background border-b">
         <Tabs value={selectedTab} onValueChange={(v) => onTabChange(v as "places" | "feed")} className="w-full">
-          <TabsList className="w-full justify-start bg-transparent rounded-none h-auto p-0 px-3 gap-4">
-            <TabsTrigger 
-              value="places" 
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent px-0 py-3"
-              data-testid="profile-tab-places"
-            >
-              <MapPin className="mr-1.5 h-4 w-4" />
-              Places
-              <span className="ml-1.5 text-muted-foreground">{places.length}</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="feed"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent px-0 py-3"
-              data-testid="profile-tab-feed"
-            >
-              <Star className="mr-1.5 h-4 w-4" />
-              Feed
-              <span className="ml-1.5 text-muted-foreground">{reviews.length}</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="p-3">
+            <TabsList>
+              <TabsTrigger value="places" data-testid="profile-tab-places">
+                Places
+              </TabsTrigger>
+              <TabsTrigger value="feed" data-testid="profile-tab-feed">
+                Feed
+              </TabsTrigger>
+            </TabsList>
+          </div>
         </Tabs>
 
         {selectedTab === "places" && (

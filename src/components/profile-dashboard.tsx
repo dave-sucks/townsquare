@@ -121,47 +121,53 @@ function ProfileHeader({
   const handle = user.username || user.id;
 
   return (
-    <div className="flex items-center gap-4 p-4 border-b bg-background">
-      <Avatar className="h-16 w-16 border-2 border-border shrink-0">
-        <AvatarImage src={user.profileImageUrl || undefined} alt={displayName} />
-        <AvatarFallback className="text-xl font-medium">{displayName.charAt(0).toUpperCase()}</AvatarFallback>
-      </Avatar>
-      
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-lg font-semibold truncate" data-testid="text-profile-name">{displayName}</h1>
-            <p className="text-sm text-muted-foreground" data-testid="text-profile-username">@{handle}</p>
+    <div className="border-b bg-background">
+      <div className="flex items-center gap-2 p-2 border-b">
+        <SidebarTrigger data-testid="button-sidebar-toggle" />
+        <ThemeToggle />
+      </div>
+      <div className="flex items-center gap-4 p-4">
+        <Avatar className="h-16 w-16 border-2 border-border shrink-0">
+          <AvatarImage src={user.profileImageUrl || undefined} alt={displayName} />
+          <AvatarFallback className="text-xl font-medium">{displayName.charAt(0).toUpperCase()}</AvatarFallback>
+        </Avatar>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-lg font-semibold truncate" data-testid="text-profile-name">{displayName}</h1>
+              <p className="text-sm text-muted-foreground" data-testid="text-profile-username">@{handle}</p>
+            </div>
+            
+            {!isOwnProfile && (
+              <Button
+                variant={isFollowing ? "outline" : "default"}
+                size="sm"
+                onClick={onFollow}
+                disabled={isFollowLoading}
+                data-testid="button-follow"
+              >
+                {isFollowLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : isFollowing ? (
+                  <><UserMinus className="mr-1.5 h-4 w-4" />Following</>
+                ) : (
+                  <><UserPlus className="mr-1.5 h-4 w-4" />Follow</>
+                )}
+              </Button>
+            )}
           </div>
           
-          {!isOwnProfile && (
-            <Button
-              variant={isFollowing ? "outline" : "default"}
-              size="sm"
-              onClick={onFollow}
-              disabled={isFollowLoading}
-              data-testid="button-follow"
-            >
-              {isFollowLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : isFollowing ? (
-                <><UserMinus className="mr-1.5 h-4 w-4" />Following</>
-              ) : (
-                <><UserPlus className="mr-1.5 h-4 w-4" />Follow</>
-              )}
-            </Button>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-4 mt-2 text-sm">
-          <button className="hover:underline" data-testid="text-following">
-            <span className="font-semibold">{followingCount}</span>
-            <span className="text-muted-foreground ml-1">following</span>
-          </button>
-          <button className="hover:underline" data-testid="text-followers">
-            <span className="font-semibold">{followerCount}</span>
-            <span className="text-muted-foreground ml-1">{followerCount === 1 ? "follower" : "followers"}</span>
-          </button>
+          <div className="flex items-center gap-4 mt-2 text-sm">
+            <button className="hover:underline" data-testid="text-following">
+              <span className="font-semibold">{followingCount}</span>
+              <span className="text-muted-foreground ml-1">following</span>
+            </button>
+            <button className="hover:underline" data-testid="text-followers">
+              <span className="font-semibold">{followerCount}</span>
+              <span className="text-muted-foreground ml-1">{followerCount === 1 ? "follower" : "followers"}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -365,12 +371,8 @@ export function ProfileDashboard({ username, currentUser, isAuthenticated }: Pro
           showSettings={true}
         />
 
-        <div className="absolute top-0 left-0 bottom-0 z-10 w-80 p-3 hidden md:block">
+        <div className="absolute top-0 left-0 bottom-0 z-10 w-[25rem] p-3 hidden md:block">
           <div className="h-full bg-background rounded-lg border shadow-lg overflow-hidden flex flex-col">
-            <div className="flex items-center gap-2 p-2 border-b">
-              <SidebarTrigger data-testid="button-sidebar-toggle" />
-              <ThemeToggle />
-            </div>
             {isLoading || !profileUser ? (
               <ProfileSkeleton />
             ) : (
