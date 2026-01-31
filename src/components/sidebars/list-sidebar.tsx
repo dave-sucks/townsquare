@@ -85,9 +85,10 @@ export function ListSidebar({
         <div className="flex items-center gap-2 p-3 border-b">
           <SidebarTrigger data-testid="button-sidebar-toggle" />
           <Skeleton className="h-4 w-32 flex-1" />
+          <Skeleton className="h-4 w-6" />
         </div>
         <div className="p-3 border-b">
-          <Skeleton className="h-3 w-40" />
+          <Skeleton className="h-3 w-24" />
         </div>
         <div className="p-2 space-y-2">
           <Skeleton className="h-16 w-full" />
@@ -105,7 +106,7 @@ export function ListSidebar({
       <div className="flex items-center gap-2 p-3 border-b">
         <SidebarTrigger data-testid="button-sidebar-toggle" />
         <span className="font-semibold text-sm flex-1 truncate" data-testid="text-list-name">{list.name}</span>
-        <span className="text-sm text-muted-foreground shrink-0">{placeCount}</span>
+        <span className="font-semibold text-sm shrink-0">{placeCount}</span>
         {list.visibility === "PRIVATE" && (
           <Lock className="h-4 w-4 text-muted-foreground" />
         )}
