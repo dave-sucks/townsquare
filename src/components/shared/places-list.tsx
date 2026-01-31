@@ -2,7 +2,6 @@
 
 import { forwardRef } from "react";
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Heart, CheckCircle, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -157,13 +156,11 @@ export function PlacesList({
 
   if (places.length === 0) {
     return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <MapPin className="mb-4 h-12 w-12 text-muted-foreground" />
-          <p className="text-lg font-medium">{emptyMessage}</p>
-          <p className="text-sm text-muted-foreground">{emptySubMessage}</p>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+        <MapPin className="mb-4 h-10 w-10 text-muted-foreground" />
+        <p className="text-sm font-medium">{emptyMessage}</p>
+        <p className="text-xs text-muted-foreground mt-1">{emptySubMessage}</p>
+      </div>
     );
   }
 
