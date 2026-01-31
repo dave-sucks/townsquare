@@ -13,7 +13,35 @@ Core features:
 - Bidirectional list↔map selection synchronization
 - Map overlay preview card for selected places
 
-## Recent Changes (Milestone 5 - Reviews & Photos)
+## Recent Changes (Milestone 6 - Lists & Place Details Redesign)
+
+**Date: January 31, 2026**
+
+### Lists Page Redesign
+- New ListCard component with photo carousel from places, place count badge, heart/add actions
+- Grid layout for lists (4 columns on large screens, responsive down to 1 column)
+- Cards show title, location (from first place), and creator info with avatar
+- Photo carousel with prev/next buttons and dot indicators
+- Private lists show lock badge
+
+### List Detail Page Redesign
+- Hero photo grid at top with overlaid title, creator info, and place count
+- Dark gradient overlay for text readability
+- Description section with "Read more" toggle for long text
+- Places section with numbered list, thumbnails, and quick actions
+- Map panel on right side (sticky on desktop) with embedded Google Map
+- "View on Map" button to navigate to filtered map view
+
+### Place Details System
+- PlacePhotoGrid component with 1 large + 4 thumbnail layout
+- PlaceDetailsSheet modal with tabs (Overview, Friends, Location)
+- Full page place detail (/places/[id]) with tabs (Overview, Lists, Reviews, Location)
+- Consistent header pattern with back button, save/add to trip actions
+- Friends section showing followed users who saved the place
+
+---
+
+## Previous Changes (Milestone 5 - Reviews & Photos)
 
 **Date: January 31, 2026**
 
