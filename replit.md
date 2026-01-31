@@ -14,7 +14,7 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 - **State Management**: TanStack React Query for server-side state.
 - **UI Components**: shadcn/ui component library, built on Radix UI primitives (nova style, stone theme).
 - **Styling**: Tailwind CSS, utilizing CSS variables for theming.
-- **Layout**: Full-width Google Map as the primary content area, with floating UI elements for search, settings, and place lists. Responsive design includes a floating sidebar for desktop and an expandable bottom sheet for mobile.
+- **Layout**: Full-width Google Map as the primary content area, with floating UI elements for search, settings, and place lists. Responsive design includes a floating sidebar for desktop and an interactive draggable bottom sheet for mobile with three snap points (collapsed ~56px, mid ~30%, expanded ~90%), velocity-based snapping, and proper scroll/drag handoff.
 - **Map Features**: Dynamic map styling with multiple themes, map settings popover for radius, traffic, and transit layers.
 - **Place Interaction**: Bidirectional synchronization between the place list and map, including visual cues for selection, map panning, and scrolling.
 - **Lists**: Users can create private or public lists to organize saved places, with a dedicated management page and individual list detail views.
