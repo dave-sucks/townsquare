@@ -118,22 +118,43 @@ export async function handleCallback(url: URL): Promise<{ success: boolean; erro
 
     const claims = tokens.claims() as UserClaims;
     
-    const user = await prisma.user.upsert({
-      where: { id: claims.sub },
-      update: {
-        email: claims.email || null,
-        firstName: claims.first_name || null,
-        lastName: claims.last_name || null,
-        profileImageUrl: claims.profile_image_url || null,
-      },
-      create: {
-        id: claims.sub,
-        email: claims.email || null,
-        firstName: claims.first_name || null,
-        lastName: claims.last_name || null,
-        profileImageUrl: claims.profile_image_url || null,
-      },
-    });
+    let user = await prisma.user.findUnique({ where: { id: claims.sub } });
+    
+    if (!user && claims.email) {
+      const existingUserWithEmail = await prisma.user.findUnique({ where: { email: claims.email } });
+      if (existingUserWithEmail) {
+        user = await prisma.user.update({
+          where: { id: existingUserWithEmail.id },
+          data: {
+            firstName: claims.first_name || existingUserWithEmail.firstName,
+            lastName: claims.last_name || existingUserWithEmail.lastName,
+            profileImageUrl: claims.profile_image_url || existingUserWithEmail.profileImageUrl,
+          },
+        });
+      }
+    }
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          id: claims.sub,
+          email: claims.email || null,
+          firstName: claims.first_name || null,
+          lastName: claims.last_name || null,
+          profileImageUrl: claims.profile_image_url || null,
+        },
+      });
+    } else if (user.id === claims.sub) {
+      user = await prisma.user.update({
+        where: { id: claims.sub },
+        data: {
+          email: claims.email || null,
+          firstName: claims.first_name || null,
+          lastName: claims.last_name || null,
+          profileImageUrl: claims.profile_image_url || null,
+        },
+      });
+    }
 
     session.userId = user.id;
     session.claims = claims;

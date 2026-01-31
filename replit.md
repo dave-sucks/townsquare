@@ -13,7 +13,42 @@ Core features:
 - Bidirectional list↔map selection synchronization
 - Map overlay preview card for selected places
 
-## Recent Changes (Milestone 3.5 - Pages & Deep Links)
+## Recent Changes (Milestone 4 - Social Following & Activity Feed)
+
+**Date: January 31, 2026**
+
+### Follow System
+- Users can follow and unfollow other users
+- Follow model with unique constraint on (followerId, followingId), prevents self-follows
+- API routes at `/api/follows` for POST (follow) and DELETE (unfollow)
+- Follow/Unfollow buttons on profile pages and people directory
+- Follower/following counts displayed on profile pages
+
+### Activity Feed (/home)
+- Shows activity from current user and users they follow
+- Activity types: PLACE_SAVED_WANT, PLACE_MARKED_BEEN, PLACE_ADDED_TO_LIST, LIST_CREATED
+- Activity cards with user avatar, action description, place/list links
+- Infinite scroll pagination with cursor-based loading
+- Empty state with links to browse people or go to map
+- Deduplication prevents duplicate activities per user/type/target/day
+
+### Activity Tracking
+- All save/been/add-to-list/create-list actions now create Activity records
+- DedupeKey format: `{actorId}:{type}:{targetId}:{date}` for daily deduplication
+- Activity helper function at `src/lib/activity.ts`
+
+### Social Context on Places
+- Place detail pages now show "Friends who saved this place" section
+- Displays followed users who have also saved the same place
+- Shows their status (Want/Been) with links to their profiles
+
+### Navigation Updates
+- "Activity Feed" link added to user dropdown menu
+- Links to /home accessible from the map view
+
+---
+
+## Previous Changes (Milestone 3.5 - Pages & Deep Links)
 
 **Date: January 31, 2026**
 

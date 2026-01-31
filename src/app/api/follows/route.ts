@@ -72,18 +72,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { userId } = body;
+    const followingId = body.followingId || body.userId;
 
-    if (!userId) {
-      return NextResponse.json({ error: "userId is required" }, { status: 400 });
+    if (!followingId) {
+      return NextResponse.json({ error: "followingId is required" }, { status: 400 });
     }
 
-    if (userId === user.id) {
+    if (followingId === user.id) {
       return NextResponse.json({ error: "Cannot follow yourself" }, { status: 400 });
     }
 
     const targetUser = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: followingId },
     });
 
     if (!targetUser) {
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       where: {
         followerId_followingId: {
           followerId: user.id,
-          followingId: userId,
+          followingId: followingId,
         },
       },
     });
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     const follow = await prisma.follow.create({
       data: {
         followerId: user.id,
-        followingId: userId,
+        followingId: followingId,
       },
     });
 
@@ -124,18 +124,18 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
+    const body = await request.json();
+    const followingId = body.followingId || body.userId;
 
-    if (!userId) {
-      return NextResponse.json({ error: "userId is required" }, { status: 400 });
+    if (!followingId) {
+      return NextResponse.json({ error: "followingId is required" }, { status: 400 });
     }
 
     const existingFollow = await prisma.follow.findUnique({
       where: {
         followerId_followingId: {
           followerId: user.id,
-          followingId: userId,
+          followingId: followingId,
         },
       },
     });
@@ -148,7 +148,7 @@ export async function DELETE(request: NextRequest) {
       where: {
         followerId_followingId: {
           followerId: user.id,
-          followingId: userId,
+          followingId: followingId,
         },
       },
     });

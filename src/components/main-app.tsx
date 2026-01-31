@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { MapPin, Search, LogOut, Heart, CheckCircle, Plus, List as ListIcon, Users, User } from "lucide-react";
+import { MapPin, Search, LogOut, Heart, CheckCircle, Plus, List as ListIcon, Users, User, Home } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { PlaceMap } from "@/components/place-map";
@@ -353,6 +353,12 @@ export function MainApp({ user }: { user: UserData }) {
                 <p className="text-sm font-medium">{userName}</p>
               </div>
               <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/home" className="flex items-center" data-testid="link-home-feed">
+                  <Home className="mr-2 h-4 w-4" />
+                  Activity Feed
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href={`/u/${user.username || user.id}`} className="flex items-center" data-testid="link-my-profile">
                   <User className="mr-2 h-4 w-4" />

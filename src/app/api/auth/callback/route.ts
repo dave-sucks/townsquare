@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       const baseUrl = process.env.REPLIT_DEPLOYMENT 
         ? `https://${process.env.REPLIT_DEPLOYMENT_URL}` 
         : `https://${process.env.REPLIT_DEV_DOMAIN}`;
-      return NextResponse.redirect(new URL("/", baseUrl));
+      return NextResponse.redirect(new URL("/home", baseUrl));
     } else {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
