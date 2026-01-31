@@ -4,10 +4,14 @@ import { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardR
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   type MapStyleKey,
+  type LabelDensity,
   applyMapStyle,
   getStoredMapStyle,
   saveMapStyle,
+  getStoredLabelDensity,
+  saveLabelDensity,
   RETRO_STYLE,
+  DEFAULT_LABEL_DENSITY,
 } from "@/lib/map-styles";
 import { MapSettingsPopover } from "@/components/map-settings-popover";
 
@@ -123,6 +127,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
   const [showTraffic, setShowTraffic] = useState(false);
   const [showTransit, setShowTransit] = useState(false);
   const [radius, setRadius] = useState(1);
+  const [labelDensity, setLabelDensity] = useState<LabelDensity>(DEFAULT_LABEL_DENSITY);
   
   const trafficLayerRef = useRef<google.maps.TrafficLayer | null>(null);
   const transitLayerRef = useRef<google.maps.TransitLayer | null>(null);
@@ -141,6 +146,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
 
     const storedView = getStoredMapView();
     const storedStyle = getStoredMapStyle();
+    const storedDensity = getStoredLabelDensity();
     const initialCenter = storedView?.center || DEFAULT_CENTER;
     const initialZoom = storedView?.zoom || DEFAULT_ZOOM;
 
@@ -168,11 +174,11 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
 
     setMap(mapInstance);
     setCurrentStyle(storedStyle);
+    setLabelDensity(storedDensity);
     setIsLoading(false);
 
-    if (storedStyle !== "retro") {
-      applyMapStyle(mapInstance, storedStyle);
-    }
+    // Apply the stored style and label density
+    applyMapStyle(mapInstance, storedStyle, storedDensity);
   }, []);
 
   useEffect(() => {
@@ -218,8 +224,15 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
     if (!map) return;
     setCurrentStyle(style);
     saveMapStyle(style);
-    applyMapStyle(map, style);
-  }, [map]);
+    applyMapStyle(map, style, labelDensity);
+  }, [map, labelDensity]);
+
+  const handleLabelDensityChange = useCallback((density: LabelDensity) => {
+    if (!map) return;
+    setLabelDensity(density);
+    saveLabelDensity(density);
+    applyMapStyle(map, currentStyle, density);
+  }, [map, currentStyle]);
 
   const handleTrafficChange = useCallback((show: boolean) => {
     setShowTraffic(show);
@@ -337,6 +350,8 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
           onTransitChange={handleTransitChange}
           radius={radius}
           onRadiusChange={handleRadiusChange}
+          labelDensity={labelDensity}
+          onLabelDensityChange={handleLabelDensityChange}
         />
       )}
     </div>

@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 import {
   MAP_STYLES,
   type MapStyleKey,
+  type LabelDensity,
+  LABEL_DENSITY_OPTIONS,
 } from "@/lib/map-styles";
 
 interface MapSettingsPopoverProps {
@@ -21,6 +23,8 @@ interface MapSettingsPopoverProps {
   onTransitChange: (show: boolean) => void;
   radius: number;
   onRadiusChange: (radius: number) => void;
+  labelDensity: LabelDensity;
+  onLabelDensityChange: (density: LabelDensity) => void;
 }
 
 const RADIUS_STEPS = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 7, 10];
@@ -138,6 +142,8 @@ export function MapSettingsPopover({
   onTransitChange,
   radius,
   onRadiusChange,
+  labelDensity,
+  onLabelDensityChange,
 }: MapSettingsPopoverProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -209,6 +215,27 @@ export function MapSettingsPopover({
                     )}>
                       {style.name}
                     </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground uppercase tracking-wide">Label Density</Label>
+              <div className="grid grid-cols-4 gap-1">
+                {LABEL_DENSITY_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={() => onLabelDensityChange(option.id)}
+                    className={cn(
+                      "px-2 py-1.5 text-xs rounded-md transition-colors",
+                      labelDensity === option.id
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted hover-elevate"
+                    )}
+                    data-testid={`button-density-${option.id}`}
+                  >
+                    {option.name}
                   </button>
                 ))}
               </div>

@@ -78,20 +78,79 @@ export function getMapStyleConfig(styleKey: MapStyleKey): MapStyleConfig {
   return MAP_STYLES.find((s) => s.id === styleKey) || MAP_STYLES[0];
 }
 
-export function applyMapStyle(map: google.maps.Map, styleKey: MapStyleKey) {
+export function applyMapStyle(map: google.maps.Map, styleKey: MapStyleKey, labelDensity?: LabelDensity) {
   const config = getMapStyleConfig(styleKey);
+  const density = labelDensity || getStoredLabelDensity();
+  const labelStyles = getLabelDensityStyles(density);
   
   if (config.mapTypeId) {
     map.setMapTypeId(config.mapTypeId);
-    map.setOptions({ styles: [] });
+    // For satellite/terrain, we can still apply label density
+    map.setOptions({ styles: labelStyles });
   } else {
     map.setMapTypeId("roadmap");
-    map.setOptions({ styles: config.styles || [] });
+    // Merge base style with label density styles
+    const combinedStyles = [...(config.styles || []), ...labelStyles];
+    map.setOptions({ styles: combinedStyles });
   }
 }
 
 // Storage key for persisting map style preference
 export const MAP_STYLE_STORAGE_KEY = "beli-map-style";
+export const MAP_LABEL_DENSITY_STORAGE_KEY = "beli-map-label-density";
+
+export type LabelDensity = "minimal" | "low" | "normal" | "full";
+
+export const LABEL_DENSITY_OPTIONS: { id: LabelDensity; name: string; description: string }[] = [
+  { id: "minimal", name: "Minimal", description: "Only major roads" },
+  { id: "low", name: "Low", description: "Less clutter" },
+  { id: "normal", name: "Normal", description: "Default" },
+  { id: "full", name: "Full", description: "All labels" },
+];
+
+export const DEFAULT_LABEL_DENSITY: LabelDensity = "low";
+
+// Label density style overrides - these get merged with the base style
+export function getLabelDensityStyles(density: LabelDensity): google.maps.MapTypeStyle[] {
+  switch (density) {
+    case "minimal":
+      return [
+        // Hide all POI labels
+        { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
+        // Hide transit labels
+        { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] },
+        // Hide local road labels
+        { featureType: "road.local", elementType: "labels", stylers: [{ visibility: "off" }] },
+        // Hide neighborhood labels
+        { featureType: "administrative.neighborhood", elementType: "labels", stylers: [{ visibility: "off" }] },
+        // Simplify highway labels
+        { featureType: "road.highway", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+      ];
+    case "low":
+      return [
+        // Hide most POI labels except parks
+        { featureType: "poi.business", elementType: "labels", stylers: [{ visibility: "off" }] },
+        { featureType: "poi.attraction", elementType: "labels", stylers: [{ visibility: "off" }] },
+        { featureType: "poi.place_of_worship", elementType: "labels", stylers: [{ visibility: "off" }] },
+        { featureType: "poi.school", elementType: "labels", stylers: [{ visibility: "off" }] },
+        { featureType: "poi.medical", elementType: "labels", stylers: [{ visibility: "off" }] },
+        { featureType: "poi.government", elementType: "labels", stylers: [{ visibility: "off" }] },
+        { featureType: "poi.sports_complex", elementType: "labels", stylers: [{ visibility: "off" }] },
+        // Hide transit labels
+        { featureType: "transit", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+        // Simplify local road labels
+        { featureType: "road.local", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+      ];
+    case "normal":
+      return [
+        // Hide some business clutter
+        { featureType: "poi.business", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+      ];
+    case "full":
+    default:
+      return [];
+  }
+}
 
 export function getStoredMapStyle(): MapStyleKey {
   if (typeof window === "undefined") return DEFAULT_MAP_STYLE;
@@ -110,6 +169,28 @@ export function saveMapStyle(styleKey: MapStyleKey) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(MAP_STYLE_STORAGE_KEY, styleKey);
+  } catch (e) {
+    // Ignore
+  }
+}
+
+export function getStoredLabelDensity(): LabelDensity {
+  if (typeof window === "undefined") return DEFAULT_LABEL_DENSITY;
+  try {
+    const stored = localStorage.getItem(MAP_LABEL_DENSITY_STORAGE_KEY);
+    if (stored && LABEL_DENSITY_OPTIONS.some(o => o.id === stored)) {
+      return stored as LabelDensity;
+    }
+  } catch (e) {
+    // Ignore
+  }
+  return DEFAULT_LABEL_DENSITY;
+}
+
+export function saveLabelDensity(density: LabelDensity) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(MAP_LABEL_DENSITY_STORAGE_KEY, density);
   } catch (e) {
     // Ignore
   }
