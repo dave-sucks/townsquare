@@ -8,60 +8,61 @@ datasource db {
 }
 
 model User {
-  id              String   @id @default(uuid())
-  email           String?  @unique
-  firstName       String?  @map("first_name")
-  lastName        String?  @map("last_name")
-  profileImageUrl String?  @map("profile_image_url")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  email           String?      @unique(map: "users_email_unique")
+  username        String?      @unique(map: "users_username_unique")
+  passwordHash    String?      @map("password_hash")
+  firstName       String?      @map("first_name")
+  lastName        String?      @map("last_name")
+  profileImageUrl String?      @map("profile_image_url")
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
   savedPlaces     SavedPlace[]
-  
+
   @@map("users")
 }
 
 model Session {
-  sid    String   @id
-  sess   Json
-  expire DateTime
-  
-  @@index([expire], name: "IDX_session_expire")
-  @@map("sessions")
+  sid    String   @id @db.VarChar
+  sess   Json     @db.Json
+  expire DateTime @db.Timestamp(6)
+
+  @@index([expire], map: "IDX_session_expire")
+  @@map("session")
 }
 
 model Place {
-  id               String   @id @default(uuid())
-  googlePlaceId    String   @unique @map("google_place_id")
+  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  googlePlaceId    String       @unique(map: "places_google_place_id_unique") @map("google_place_id")
   name             String
-  formattedAddress String   @map("formatted_address")
-  lat              Float
-  lng              Float
-  primaryType      String?  @map("primary_type")
+  formattedAddress String       @map("formatted_address")
+  lat              Float        @db.Real
+  lng              Float        @db.Real
+  primaryType      String?      @map("primary_type")
   types            Json?
-  priceLevel       Int?     @map("price_level")
-  photoRefs        Json?    @map("photo_refs")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  priceLevel       String?      @map("price_level")
+  photoRefs        Json?        @map("photo_refs")
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt        DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
   savedPlaces      SavedPlace[]
-  
+
   @@map("places")
 }
 
-enum SavedPlaceStatus {
-  WANT
-  BEEN
-}
-
 model SavedPlace {
-  id        String           @id @default(uuid())
-  userId    String           @map("user_id")
-  placeId   String           @map("place_id")
-  status    SavedPlaceStatus
-  visitedAt DateTime?        @map("visited_at")
-  createdAt DateTime         @default(now()) @map("created_at")
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  place     Place            @relation(fields: [placeId], references: [id], onDelete: Cascade)
-  
+  id        String             @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  userId    String             @map("user_id") @db.VarChar(36)
+  placeId   String             @map("place_id") @db.VarChar(36)
+  status    saved_place_status
+  visitedAt DateTime?          @map("visited_at") @db.Timestamp(6)
+  createdAt DateTime           @default(now()) @map("created_at") @db.Timestamp(6)
+  place     Place              @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([userId, placeId])
   @@map("saved_places")
+}
+
+enum saved_place_status {
+  WANT
+  BEEN
 }

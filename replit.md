@@ -5,81 +5,90 @@
 This is a web-first clone of the Beli app, focused on discovering, saving, and viewing places on a map. The application allows users to search for places using Google Places API, save them with a status (WANT to visit or BEEN there), and view all saved places on an interactive Google Map.
 
 Core features:
-- User authentication (email/password signup and login)
+- User authentication via Replit Auth (OIDC)
 - Google Places search with autocomplete
 - Save places with WANT/BEEN status
-- Interactive map displaying saved places with pins
-- Place detail pages with status management
+- Interactive map displaying saved places with color-coded pins (red=WANT, green=BEEN)
+- Tabs to filter saved places
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tailwind or custom components.
 
 ## System Architecture
 
 ### Frontend Architecture
-- **Framework**: React with TypeScript, using Vite as the build tool
-- **Routing**: Wouter for client-side routing (lightweight alternative to React Router)
-- **State Management**: TanStack React Query for server state, React Context for auth state
-- **UI Components**: shadcn/ui component library with Radix UI primitives
-- **Styling**: Tailwind CSS with CSS variables for theming, class-variance-authority (cva) for component variants
+- **Framework**: Next.js 16 with App Router and TypeScript
+- **State Management**: TanStack React Query for server state
+- **UI Components**: shadcn/ui component library with Radix UI primitives (nova style, stone theme)
+- **Styling**: Tailwind CSS with CSS variables for theming
 
-The frontend follows a page-based structure under `client/src/pages/` with shared components in `client/src/components/`. All UI must use shadcn/ui components exclusively - no other UI libraries.
+The frontend follows a page-based structure under `src/app/` with shared components in `src/components/`.
 
 ### Backend Architecture
-- **Framework**: Express.js with TypeScript
-- **Session Management**: express-session with PostgreSQL session store (connect-pg-simple)
-- **Authentication**: Custom session-based auth with bcryptjs for password hashing
+- **Framework**: Next.js API Routes (App Router)
+- **Session Management**: iron-session for encrypted cookies
+- **Authentication**: Replit Auth via OpenID Connect (OIDC)
 - **API Structure**: RESTful endpoints under `/api/` prefix
 
-The server uses a storage abstraction layer (`server/storage.ts`) that implements `IStorage` interface for database operations, making it easier to test and swap implementations.
-
 ### Data Storage
-- **Database**: PostgreSQL
-- **ORM**: Drizzle ORM with drizzle-zod for schema validation
-- **Schema Location**: `shared/schema.ts` (shared between client and server)
+- **Database**: PostgreSQL (Neon-backed on Replit)
+- **ORM**: Prisma 7 with pg adapter
+- **Schema Location**: `prisma/schema.prisma`
 
 Database tables:
-- `users`: User accounts with email, username, password hash
+- `users`: User accounts with Replit user ID, email, firstName, lastName, profileImageUrl
+- `session`: Session data (for express session compatibility)
 - `places`: Cached place data from Google Places API (uses Google Place ID as unique identifier)
 - `saved_places`: Junction table linking users to places with status (WANT/BEEN enum)
 
 ### Authentication Flow
-- Session-based authentication stored in PostgreSQL
-- Protected routes check `req.session.userId` 
-- Frontend uses AuthContext provider to manage user state
-- Auth state is fetched on app load via `/api/auth/me`
+- Replit Auth via OIDC provider at https://replit.com/oidc
+- Session stored in encrypted cookie via iron-session
+- Protected API routes check session for userId
+- Frontend uses useAuth hook to manage user state
+- Auth state is fetched on app load via `/api/auth/user`
 
 ### External Integrations
 - **Google Places API**: Used for place search autocomplete and fetching place details
 - **Google Maps JavaScript API**: Renders interactive map with saved place markers
 
-### Build System
-- Development: Vite dev server with HMR, proxied through Express
-- Production: Vite builds static assets to `dist/public`, esbuild bundles server to `dist/index.cjs`
-- Build script in `script/build.ts` handles both client and server bundling
+### API Routes
+- `GET /api/login` - Initiates OIDC login flow
+- `GET /api/logout` - Logs out user and destroys session
+- `GET /api/auth/callback` - OIDC callback handler
+- `GET /api/auth/user` - Get current authenticated user
+- `GET /api/places/search?q=...` - Search places via Google Places Autocomplete
+- `GET /api/places/details?place_id=...` - Get place details
+- `GET /api/saved-places` - Get user's saved places
+- `POST /api/saved-places` - Save a new place
+- `PATCH /api/saved-places/[id]` - Update saved place status
+- `DELETE /api/saved-places/[id]` - Remove saved place
 
 ## External Dependencies
 
 ### APIs and Services
-- **Google Places API**: Required for place search functionality. Needs `GOOGLE_PLACES_API_KEY` environment variable.
-- **Google Maps JavaScript API**: Required for map display. Uses same API key.
+- **Google Places API**: Required for place search functionality.
+- **Google Maps JavaScript API**: Required for map display.
 - **PostgreSQL Database**: Required. Connection via `DATABASE_URL` environment variable.
+- **Replit Auth**: OIDC authentication via Replit.
 
 ### Key npm Dependencies
-- `drizzle-orm` + `drizzle-kit`: Database ORM and migrations
-- `express` + `express-session`: HTTP server and session handling
-- `connect-pg-simple`: PostgreSQL session store
-- `bcryptjs`: Password hashing
+- `prisma` + `@prisma/client` + `@prisma/adapter-pg`: Database ORM
+- `iron-session`: Session management
+- `openid-client`: OIDC authentication
 - `@tanstack/react-query`: Server state management
-- `zod` + `drizzle-zod`: Schema validation
-- `wouter`: Client-side routing
 - shadcn/ui components (various `@radix-ui/*` packages)
+- `lucide-react`: Icons
 
 ### Environment Variables Required
 - `DATABASE_URL`: PostgreSQL connection string
-- `SESSION_SECRET`: Secret key for session encryption (defaults to a placeholder in dev)
-- `GOOGLE_PLACES_API_KEY`: API key for Google Places and Maps APIs
+- `SESSION_SECRET`: Secret key for session encryption
+- `GOOGLE_MAPS_API_KEY`: API key for Google Places and Maps APIs
+- `REPL_ID`: Replit deployment ID (auto-provided)
+- `REPLIT_DEV_DOMAIN`: Development domain (auto-provided)
 
 ### Database Migrations
-Run `npm run db:push` to push schema changes to the database using Drizzle Kit.
+Run `npx prisma db push` to push schema changes to the database.
+Run `npx prisma generate` to regenerate the Prisma client after schema changes.
