@@ -20,6 +20,7 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 - **Lists**: Users can create private or public lists to organize saved places, with a dedicated management page and individual list detail views.
 - **Place Details**: Dedicated full-page and modal views for place details, including photos, user reviews, and social context (friends who saved).
 - **Social Features**: User profiles, a people directory, and an activity feed displaying actions from the user and followed accounts.
+- **Profile Pages**: Map-based dashboard layout matching the main app, with floating sidebar containing profile header (photo, name, followers/following, follow button) and tabbed content for Places and Feed. Places tab shows saved places with status and list filters; Feed tab shows reviews. Both tabs have 1:1 map interaction - clicking a card highlights it on the map and vice versa.
 
 ### Backend Architecture
 - **Framework**: Next.js API Routes (App Router).

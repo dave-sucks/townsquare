@@ -93,7 +93,52 @@ export async function GET(
             googlePlaceId: true,
             name: true,
             formattedAddress: true,
+            lat: true,
+            lng: true,
+            primaryType: true,
+            types: true,
+            priceLevel: true,
+            photoRefs: true,
           },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // Get all saved places with full place data for map display
+    const allSavedPlaces = await prisma.savedPlace.findMany({
+      where: { userId: user.id },
+      include: {
+        place: {
+          select: {
+            id: true,
+            googlePlaceId: true,
+            name: true,
+            formattedAddress: true,
+            lat: true,
+            lng: true,
+            primaryType: true,
+            types: true,
+            priceLevel: true,
+            photoRefs: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // Get list places for list filtering (only visible lists)
+    const listsWithPlaces = await prisma.list.findMany({
+      where: {
+        userId: user.id,
+        ...(isOwnProfile ? {} : { visibility: "PUBLIC" }),
+      },
+      include: {
+        listPlaces: {
+          select: { placeId: true },
+        },
+        _count: {
+          select: { listPlaces: true },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -107,7 +152,8 @@ export async function GET(
       followingCount,
       wantPlaces,
       beenPlaces,
-      lists,
+      allSavedPlaces,
+      lists: listsWithPlaces,
       reviews,
     });
   } catch (error: any) {
