@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Heart, CheckCircle, ChevronUp, List } from "lucide-react";
+import { Search, Heart, CheckCircle } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { PlaceMap } from "@/components/place-map";
@@ -82,7 +82,6 @@ export function Dashboard({ user }: { user: UserData }) {
   const [selectedListId, setSelectedListId] = useState<string>("all");
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [addToListDialogOpen, setAddToListDialogOpen] = useState(false);
   const [addToListPlaceId, setAddToListPlaceId] = useState<string | null>(null);
   const [addToListPlaceName, setAddToListPlaceName] = useState("");
@@ -340,47 +339,31 @@ export function Dashboard({ user }: { user: UserData }) {
         </div>
 
         <div 
-          className={`absolute left-0 right-0 bottom-0 z-10 md:hidden bg-background rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] transition-all duration-300 ease-out ${
-            mobileSheetOpen ? 'h-[70vh]' : 'h-auto'
-          }`}
+          className="absolute left-0 right-0 bottom-0 z-10 md:hidden bg-background rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] h-[45vh] flex flex-col"
           data-testid="mobile-places-panel"
         >
-          <button
-            onClick={() => setMobileSheetOpen(!mobileSheetOpen)}
-            className="w-full flex flex-col items-center py-2 cursor-pointer"
-            data-testid="button-mobile-places-toggle"
-          >
-            <div className="w-10 h-1 bg-muted-foreground/30 rounded-full mb-2" />
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <List className="h-4 w-4" />
-              My Places ({filteredPlaces.length})
-              <ChevronUp className={`h-4 w-4 transition-transform ${mobileSheetOpen ? 'rotate-180' : ''}`} />
-            </div>
-          </button>
-          {mobileSheetOpen && (
-            <div className="flex-1 overflow-hidden h-[calc(70vh-48px)]">
-              <PlacesPanel
-                places={filteredPlaces}
-                lists={lists}
-                isLoading={isLoadingPlaces}
-                selectedPlaceId={selectedPlaceId}
-                selectedTab={selectedTab}
-                selectedListId={selectedListId}
-                listFilteredPlaces={listFilteredPlaces}
-                onTabChange={setSelectedTab}
-                onListChange={setSelectedListId}
-                onPlaceSelect={(id) => {
-                  handleListItemClick(id);
-                  setMobileSheetOpen(false);
-                }}
-                onToggleStatus={handleToggleStatus}
-                onDelete={handleDelete}
-                isUpdating={updateStatusMutation.isPending}
-                isDeleting={deletePlaceMutation.isPending}
-                placeRowRefs={placeRowRefs}
-              />
-            </div>
-          )}
+          <div className="flex flex-col items-center pt-2 pb-1 shrink-0">
+            <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <PlacesPanel
+              places={filteredPlaces}
+              lists={lists}
+              isLoading={isLoadingPlaces}
+              selectedPlaceId={selectedPlaceId}
+              selectedTab={selectedTab}
+              selectedListId={selectedListId}
+              listFilteredPlaces={listFilteredPlaces}
+              onTabChange={setSelectedTab}
+              onListChange={setSelectedListId}
+              onPlaceSelect={handleListItemClick}
+              onToggleStatus={handleToggleStatus}
+              onDelete={handleDelete}
+              isUpdating={updateStatusMutation.isPending}
+              isDeleting={deletePlaceMutation.isPending}
+              placeRowRefs={placeRowRefs}
+            />
+          </div>
         </div>
       </div>
 
