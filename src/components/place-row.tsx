@@ -2,8 +2,7 @@
 
 import { forwardRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { Heart, CheckCircle, Star } from "lucide-react";
+import { Heart, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Place {
@@ -82,12 +81,10 @@ export const PlaceRow = forwardRef<HTMLDivElement, PlaceRowProps>(
         >
           <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0">
             {photoUrl ? (
-              <Image
+              <img
                 src={photoUrl}
                 alt={savedPlace.place.name}
-                fill
-                className="object-cover"
-                sizes="64px"
+                className="w-full h-full object-cover"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground">
