@@ -10,7 +10,8 @@ export async function GET() {
   }
 
   try {
-    const lists = await prisma.list.findMany({
+    // Get user's own lists
+    const myLists = await prisma.list.findMany({
       where: { userId: user.id },
       include: {
         user: {
@@ -43,7 +44,44 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ lists });
+    // Get public lists from other users
+    const discoverLists = await prisma.list.findMany({
+      where: {
+        userId: { not: user.id },
+        visibility: "PUBLIC",
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            profileImageUrl: true,
+          },
+        },
+        listPlaces: {
+          take: 5,
+          orderBy: { addedAt: "desc" },
+          include: {
+            place: {
+              select: {
+                id: true,
+                name: true,
+                formattedAddress: true,
+                photoRefs: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: { listPlaces: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json({ lists: myLists, discoverLists });
   } catch (error: any) {
     console.error("Get lists error:", error);
     return NextResponse.json({ error: "Failed to get lists" }, { status: 500 });

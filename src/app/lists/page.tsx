@@ -53,13 +53,14 @@ export default function ListsPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
-  const { data: listsData, isLoading } = useQuery<{ lists: ListData[] }>({
+  const { data: listsData, isLoading } = useQuery<{ lists: ListData[]; discoverLists: ListData[] }>({
     queryKey: ["lists"],
     queryFn: () => apiRequest("/api/lists"),
     enabled: isAuthenticated,
   });
 
   const lists = listsData?.lists || [];
+  const discoverLists = listsData?.discoverLists || [];
 
   const createListMutation = useMutation({
     mutationFn: async (data: { name: string; description?: string }) => {
@@ -123,33 +124,67 @@ export default function ListsPage() {
         </div>
       ))}
     </div>
-  ) : lists.length === 0 ? (
-    <Card>
-      <CardContent className="flex flex-col items-center justify-center py-12">
-        <ListIcon className="mb-4 h-12 w-12 text-muted-foreground" />
-        <p className="text-lg font-medium">No lists yet</p>
-        <p className="text-sm text-muted-foreground">Create your first list to organize places</p>
-      </CardContent>
-    </Card>
   ) : (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {lists.map((list) => (
-        <ListCard
-          key={list.id}
-          id={list.id}
-          name={list.name}
-          description={list.description}
-          visibility={list.visibility}
-          placeCount={list._count.listPlaces}
-          places={list.listPlaces?.map((lp) => ({
-            id: lp.place.id,
-            name: lp.place.name,
-            formattedAddress: lp.place.formattedAddress,
-            photoRefs: lp.place.photoRefs as string[] | null,
-          }))}
-          user={list.user}
-        />
-      ))}
+    <div className="space-y-8">
+      {/* My Lists Section */}
+      <section>
+        <h2 className="mb-4 text-lg font-semibold" data-testid="text-my-lists-header">My Lists</h2>
+        {lists.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-8">
+              <ListIcon className="mb-3 h-10 w-10 text-muted-foreground" />
+              <p className="font-medium">No lists yet</p>
+              <p className="text-sm text-muted-foreground">Create your first list to organize places</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {lists.map((list) => (
+              <ListCard
+                key={list.id}
+                id={list.id}
+                name={list.name}
+                description={list.description}
+                visibility={list.visibility}
+                placeCount={list._count.listPlaces}
+                places={list.listPlaces?.map((lp) => ({
+                  id: lp.place.id,
+                  name: lp.place.name,
+                  formattedAddress: lp.place.formattedAddress,
+                  photoRefs: lp.place.photoRefs as string[] | null,
+                }))}
+                user={list.user}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Discover Lists Section */}
+      {discoverLists.length > 0 && (
+        <section>
+          <h2 className="mb-4 text-lg font-semibold" data-testid="text-discover-lists-header">Discover</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {discoverLists.map((list) => (
+              <ListCard
+                key={list.id}
+                id={list.id}
+                name={list.name}
+                description={list.description}
+                visibility={list.visibility}
+                placeCount={list._count.listPlaces}
+                places={list.listPlaces?.map((lp) => ({
+                  id: lp.place.id,
+                  name: lp.place.name,
+                  formattedAddress: lp.place.formattedAddress,
+                  photoRefs: lp.place.photoRefs as string[] | null,
+                }))}
+                user={list.user}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 

@@ -283,6 +283,7 @@ export default function ListDetailPage({ params }: { params: Promise<{ id: strin
                     fill
                     className="object-cover"
                     sizes="50vw"
+                    unoptimized
                   />
                 </div>
                 <div className="col-span-2 grid grid-cols-2 gap-1">
@@ -294,6 +295,7 @@ export default function ListDetailPage({ params }: { params: Promise<{ id: strin
                         fill
                         className="object-cover"
                         sizes="25vw"
+                        unoptimized
                       />
                     </div>
                   ))}
