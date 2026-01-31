@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Heart, CheckCircle } from "lucide-react";
+import { Search, Heart, CheckCircle, SlidersHorizontal } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { PlaceMap } from "@/components/place-map";
@@ -89,6 +89,7 @@ export function Dashboard({ user }: { user: UserData }) {
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [reviewPlaceId, setReviewPlaceId] = useState<string | null>(null);
   const [reviewPlaceName, setReviewPlaceName] = useState("");
+  const [mapSettingsOpen, setMapSettingsOpen] = useState(false);
   const placeRowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const { data: savedPlacesData, isLoading: isLoadingPlaces } = useQuery<{ savedPlaces: SavedPlace[] }>({
@@ -251,9 +252,87 @@ export function Dashboard({ user }: { user: UserData }) {
           selectedPlaceId={selectedPlaceId}
           onMarkerClick={handleMarkerClick}
           showSettings={true}
+          isSettingsOpen={mapSettingsOpen}
+          onSettingsOpenChange={setMapSettingsOpen}
         />
 
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 md:left-[calc(25rem+1.5rem)] md:translate-x-0 z-10 w-80 max-w-[calc(100vw-2rem)]">
+        {/* Mobile: Full width search bar at top with Filters button */}
+        <div className="absolute top-3 left-3 right-3 z-10 md:hidden">
+          <div className="flex gap-2">
+            <div className="flex-1 bg-white/90 dark:bg-background/90 backdrop-blur-md rounded-lg shadow-lg border">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search for a place..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                  data-testid="input-search-place-mobile"
+                />
+              </div>
+              {(isSearching || searchResults.length > 0 || (searchQuery && searchResults.length === 0)) && (
+                <div className="border-t max-h-60 overflow-y-auto">
+                  {isSearching && (
+                    <div className="space-y-2 p-3">
+                      <Skeleton className="h-10 w-full" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                  )}
+                  {!isSearching && searchResults.length > 0 && (
+                    <div className="py-1">
+                      {searchResults.map((result) => (
+                        <div 
+                          key={result.place_id} 
+                          className="px-3 py-2 hover-elevate cursor-pointer" 
+                          data-testid={`search-result-mobile-${result.place_id}`}
+                        >
+                          <p className="font-medium text-sm">{result.structured_formatting.main_text}</p>
+                          <p className="text-xs text-muted-foreground truncate">{result.structured_formatting.secondary_text}</p>
+                          <div className="mt-1.5 flex gap-1.5">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs"
+                              onClick={() => savePlaceMutation.mutate({ placeId: result.place_id, status: "WANT" })}
+                              disabled={savePlaceMutation.isPending}
+                            >
+                              <Heart className="mr-1 h-3 w-3" />Want
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs"
+                              onClick={() => savePlaceMutation.mutate({ placeId: result.place_id, status: "BEEN" })}
+                              disabled={savePlaceMutation.isPending}
+                            >
+                              <CheckCircle className="mr-1 h-3 w-3" />Been
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {!isSearching && searchQuery && searchResults.length === 0 && (
+                    <p className="p-3 text-center text-sm text-muted-foreground">No places found</p>
+                  )}
+                </div>
+              )}
+            </div>
+            <Button
+              size="icon"
+              variant="outline"
+              className="h-10 w-10 bg-white/90 dark:bg-background/90 backdrop-blur-md shadow-lg shrink-0"
+              onClick={() => setMapSettingsOpen(!mapSettingsOpen)}
+              data-mobile-filters-trigger
+              data-testid="button-filters-mobile"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Desktop: Search bar in top right */}
+        <div className="absolute top-3 right-3 z-10 w-80 hidden md:block">
           <div className="bg-white/90 dark:bg-background/90 backdrop-blur-md rounded-lg shadow-lg border">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

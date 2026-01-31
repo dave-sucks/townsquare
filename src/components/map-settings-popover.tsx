@@ -25,6 +25,8 @@ interface MapSettingsPopoverProps {
   onRadiusChange: (radius: number) => void;
   labelDensity: LabelDensity;
   onLabelDensityChange: (density: LabelDensity) => void;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const RADIUS_STEPS = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 7, 10];
@@ -144,9 +146,20 @@ export function MapSettingsPopover({
   onRadiusChange,
   labelDensity,
   onLabelDensityChange,
+  isOpen: controlledIsOpen,
+  onOpenChange,
 }: MapSettingsPopoverProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [internalIsExpanded, setInternalIsExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const isExpanded = controlledIsOpen !== undefined ? controlledIsOpen : internalIsExpanded;
+  const setIsExpanded = (open: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(open);
+    } else {
+      setInternalIsExpanded(open);
+    }
+  };
 
   const currentRadiusIndex = RADIUS_STEPS.findIndex((r) => r >= radius) || 0;
   const displayRadius = RADIUS_STEPS[currentRadiusIndex] || 1;
@@ -155,6 +168,7 @@ export function MapSettingsPopover({
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (target.closest("[data-radix-popper-content-wrapper]")) return;
+      if (target.closest("[data-mobile-filters-trigger]")) return;
       if (!containerRef.current?.contains(target)) {
         setIsExpanded(false);
       }

@@ -35,6 +35,8 @@ interface PlaceMapProps {
   selectedPlaceId: string | null;
   onMarkerClick: (savedPlaceId: string) => void;
   showSettings?: boolean;
+  isSettingsOpen?: boolean;
+  onSettingsOpenChange?: (open: boolean) => void;
 }
 
 export interface PlaceMapHandle {
@@ -114,7 +116,7 @@ const RADIUS_TO_ZOOM: Record<number, number> = {
 };
 
 export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function PlaceMap(
-  { places, selectedPlaceId, onMarkerClick, showSettings = true },
+  { places, selectedPlaceId, onMarkerClick, showSettings = true, isSettingsOpen, onSettingsOpenChange },
   ref
 ) {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -352,6 +354,8 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
           onRadiusChange={handleRadiusChange}
           labelDensity={labelDensity}
           onLabelDensityChange={handleLabelDensityChange}
+          isOpen={isSettingsOpen}
+          onOpenChange={onSettingsOpenChange}
         />
       )}
     </div>
