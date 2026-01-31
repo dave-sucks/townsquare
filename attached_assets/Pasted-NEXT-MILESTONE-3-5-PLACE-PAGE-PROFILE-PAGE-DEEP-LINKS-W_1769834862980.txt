@@ -1,0 +1,89 @@
+NEXT — MILESTONE 3.5: PLACE PAGE + PROFILE PAGE + DEEP LINKS
+We currently have a working “dashboard” split view with:
+- Add Place (Google Places search)
+- Save Want/Been
+- Lists and Add-to-List
+- Map pins and a map preview Card overlay with actions
+
+BUT we do NOT yet have:
+- a Place detail page (/places/[id])
+- a User profile page (/u/[username])
+- navigation from the dashboard into those pages
+
+This milestone adds those foundational pages and links so we can build social feed/follows next.
+
+HARD UI RULES (UNCHANGED):
+1) All non-map UI MUST use shadcn/ui components only.
+2) Do NOT add ad-hoc Tailwind class strings throughout pages.
+   - If layout/styling adjustments are needed, do it via wrapper components using cva variants.
+3) Map canvas can remain a plain div; all overlays/panels/menus/dialogs must be shadcn.
+4) No new UI libraries.
+
+SCOPE:
+
+A) Place detail page
+Create /places/[id] that:
+- fetches Place + current user’s SavedPlace status + lists containing this place
+- shows:
+  - place name
+  - address
+  - current status pill (Want / Been / Not saved)
+  - primary actions:
+    - Mark as Want / Mark as Been (toggle)
+    - Add to List (Dialog)
+    - Open in Google Maps (external link)
+- shows a “Lists” section:
+  - lists (name + visibility badge) that include this place (for current user only for now)
+  - ability to remove from list
+- DO NOT implement reviews/photos yet; add a placeholder “Reviews coming soon” section.
+
+B) Dashboard deep linking
+From the dashboard/map preview card and left list:
+- Clicking the place name should navigate to /places/[id]
+- Add a clear “Open details” button in the map preview Card
+- Keep selection behavior on the dashboard unchanged.
+
+C) Users + Profile page
+Create /u/[username] profile page that:
+- shows user header (avatar, username)
+- tabs:
+  1) Want
+  2) Been
+  3) Lists (PUBLIC lists only for other users; for self show both)
+- Each tab shows places or lists using existing PlaceRow / ListRow components.
+- NO follows/feed yet (that is next milestone), but include a placeholder button area:
+  - if viewing someone else: show disabled Follow button with label “Coming next”
+  - if viewing self: show “Edit profile” placeholder.
+
+D) Minimal People directory (for navigation/testing)
+Create /people
+- list all users (excluding current user)
+- search by username
+- clicking a user navigates to /u/[username]
+This is just to make profile pages reachable until follow system exists.
+
+DATA / DB:
+- No schema changes required unless you are missing a stable username field.
+- If username does not exist, add User.username (unique, required) and migrate.
+
+ACCEPTANCE CRITERIA:
+- I can click a place in the dashboard and open /places/[id]
+- /places/[id] shows status + allows Want/Been toggles + Add to List
+- I can navigate to /people and open /u/[username]
+- /u/[username] shows Want/Been tabs from DB
+- UI uses shadcn components only (non-map)
+- No tailwind class soup introduced in pages
+
+WORKFLOW:
+1) Add required route files and server queries
+2) Wire deep links from dashboard list and map preview
+3) Build /people and /u/[username]
+4) Confirm all navigation works end-to-end
+
+After finishing, summarize:
+- which routes were added
+- where navigation links were inserted
+- any DB changes (username) if needed
+
+Do NOT implement follows/feed or reviews/photos yet.
+That comes immediately after this milestone.
