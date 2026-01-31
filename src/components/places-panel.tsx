@@ -1,10 +1,9 @@
 "use client";
 
-import { useRef } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin } from "lucide-react";
 import { PlaceRow } from "@/components/place-row";
 
@@ -31,13 +30,22 @@ interface SavedPlace {
   place: Place;
 }
 
+interface ListData {
+  id: string;
+  name: string;
+  _count: { listPlaces: number };
+}
+
 interface PlacesPanelProps {
   places: SavedPlace[];
+  lists: ListData[];
   isLoading: boolean;
   selectedPlaceId: string | null;
   selectedTab: string;
+  selectedListId: string;
   listFilteredPlaces: SavedPlace[];
   onTabChange: (tab: string) => void;
+  onListChange: (listId: string) => void;
   onPlaceSelect: (placeId: string) => void;
   onToggleStatus: (id: string) => void;
   onDelete: (id: string) => void;
@@ -48,11 +56,14 @@ interface PlacesPanelProps {
 
 export function PlacesPanel({
   places,
+  lists,
   isLoading,
   selectedPlaceId,
   selectedTab,
+  selectedListId,
   listFilteredPlaces,
   onTabChange,
+  onListChange,
   onPlaceSelect,
   onToggleStatus,
   onDelete,
@@ -67,31 +78,30 @@ export function PlacesPanel({
           <SidebarTrigger data-testid="button-sidebar-toggle" />
           <h1 className="font-semibold text-sm">Places</h1>
         </div>
-        <div className="flex gap-1 p-2">
-          <Button
-            size="sm"
-            variant={selectedTab === "all" ? "default" : "ghost"}
-            onClick={() => onTabChange("all")}
-            data-testid="tab-all"
-          >
-            All ({listFilteredPlaces.length})
-          </Button>
-          <Button
-            size="sm"
-            variant={selectedTab === "want" ? "default" : "ghost"}
-            onClick={() => onTabChange("want")}
-            data-testid="tab-want"
-          >
-            Want ({listFilteredPlaces.filter((p) => p.status === "WANT").length})
-          </Button>
-          <Button
-            size="sm"
-            variant={selectedTab === "been" ? "default" : "ghost"}
-            onClick={() => onTabChange("been")}
-            data-testid="tab-been"
-          >
-            Been ({listFilteredPlaces.filter((p) => p.status === "BEEN").length})
-          </Button>
+        <div className="flex gap-2 p-2">
+          <Select value={selectedTab} onValueChange={onTabChange}>
+            <SelectTrigger className="w-auto h-8 text-xs" data-testid="select-status-filter">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="want">Want</SelectItem>
+              <SelectItem value="been">Been</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={selectedListId} onValueChange={onListChange}>
+            <SelectTrigger className="w-auto h-8 text-xs" data-testid="select-list-filter">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Lists</SelectItem>
+              {lists.map((list) => (
+                <SelectItem key={list.id} value={list.id}>
+                  {list.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -107,7 +117,7 @@ export function PlacesPanel({
             <CardContent className="flex flex-col items-center justify-center py-12">
               <MapPin className="mb-4 h-12 w-12 text-muted-foreground" />
               <p className="text-lg font-medium">No places yet</p>
-              <p className="text-sm text-muted-foreground">Add your first place to get started</p>
+              <p className="text-sm text-muted-foreground">Search for a place on the map to add it</p>
             </CardContent>
           </Card>
         ) : (

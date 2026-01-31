@@ -5,8 +5,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, Heart, CheckCircle, Plus } from "lucide-react";
+import { Search, Heart, CheckCircle } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { PlaceMap } from "@/components/place-map";
@@ -15,7 +14,6 @@ import { AddToListDialog } from "@/components/add-to-list-dialog";
 import { ReviewDialog } from "@/components/review-dialog";
 import { PlacesPanel } from "@/components/places-panel";
 import { AppShell } from "@/components/layout";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 
 interface UserData {
   id: string;
@@ -82,7 +80,6 @@ export function Dashboard({ user }: { user: UserData }) {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedTab, setSelectedTab] = useState("all");
   const [selectedListId, setSelectedListId] = useState<string>("all");
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [addToListDialogOpen, setAddToListDialogOpen] = useState(false);
@@ -159,7 +156,6 @@ export function Dashboard({ user }: { user: UserData }) {
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       setSearchQuery("");
       setSearchResults([]);
-      setDialogOpen(false);
       toast.success("Place saved!");
     },
     onError: (error: Error) => toast.error(error.message || "Failed to save place"),
@@ -256,88 +252,82 @@ export function Dashboard({ user }: { user: UserData }) {
           showSettings={true}
         />
 
-        <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
-          <div className="md:hidden">
-            <SidebarTrigger data-testid="button-sidebar-toggle" />
-          </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="shadow-lg" data-testid="button-add-place">
-                <Plus className="mr-1 h-4 w-4" />
-                Add Place
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Add a Place</DialogTitle>
-                <DialogDescription>Search for a place and save it to your list</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search for a place..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                    data-testid="input-search-place"
-                  />
-                </div>
-                <div className="max-h-60 overflow-y-auto">
-                  {isSearching && (
-                    <div className="space-y-2 p-2">
-                      <Skeleton className="h-12 w-full" />
-                      <Skeleton className="h-12 w-full" />
-                    </div>
-                  )}
-                  {!isSearching && searchResults.length > 0 && (
-                    <div className="space-y-1">
-                      {searchResults.map((result) => (
-                        <div key={result.place_id} className="rounded-md border p-3" data-testid={`search-result-${result.place_id}`}>
-                          <p className="font-medium">{result.structured_formatting.main_text}</p>
-                          <p className="text-sm text-muted-foreground">{result.structured_formatting.secondary_text}</p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => savePlaceMutation.mutate({ placeId: result.place_id, status: "WANT" })}
-                              disabled={savePlaceMutation.isPending}
-                              data-testid={`button-save-want-${result.place_id}`}
-                            >
-                              <Heart className="mr-1 h-3 w-3" />Want
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => savePlaceMutation.mutate({ placeId: result.place_id, status: "BEEN" })}
-                              disabled={savePlaceMutation.isPending}
-                              data-testid={`button-save-been-${result.place_id}`}
-                            >
-                              <CheckCircle className="mr-1 h-3 w-3" />Been
-                            </Button>
-                          </div>
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 md:left-[calc(20rem+1.5rem)] md:translate-x-0 z-10 w-80 max-w-[calc(100vw-2rem)]">
+          <div className="bg-white/90 dark:bg-background/90 backdrop-blur-md rounded-lg shadow-lg border">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search for a place..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                data-testid="input-search-place"
+              />
+            </div>
+            {(isSearching || searchResults.length > 0 || (searchQuery && searchResults.length === 0)) && (
+              <div className="border-t max-h-60 overflow-y-auto">
+                {isSearching && (
+                  <div className="space-y-2 p-3">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                )}
+                {!isSearching && searchResults.length > 0 && (
+                  <div className="py-1">
+                    {searchResults.map((result) => (
+                      <div 
+                        key={result.place_id} 
+                        className="px-3 py-2 hover-elevate cursor-pointer" 
+                        data-testid={`search-result-${result.place_id}`}
+                      >
+                        <p className="font-medium text-sm">{result.structured_formatting.main_text}</p>
+                        <p className="text-xs text-muted-foreground truncate">{result.structured_formatting.secondary_text}</p>
+                        <div className="mt-1.5 flex gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            onClick={() => savePlaceMutation.mutate({ placeId: result.place_id, status: "WANT" })}
+                            disabled={savePlaceMutation.isPending}
+                            data-testid={`button-save-want-${result.place_id}`}
+                          >
+                            <Heart className="mr-1 h-3 w-3" />Want
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            onClick={() => savePlaceMutation.mutate({ placeId: result.place_id, status: "BEEN" })}
+                            disabled={savePlaceMutation.isPending}
+                            data-testid={`button-save-been-${result.place_id}`}
+                          >
+                            <CheckCircle className="mr-1 h-3 w-3" />Been
+                          </Button>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                  {!isSearching && searchQuery && searchResults.length === 0 && (
-                    <p className="p-4 text-center text-sm text-muted-foreground">No places found</p>
-                  )}
-                </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {!isSearching && searchQuery && searchResults.length === 0 && (
+                  <p className="p-3 text-center text-sm text-muted-foreground">No places found</p>
+                )}
               </div>
-            </DialogContent>
-          </Dialog>
+            )}
+          </div>
         </div>
 
         <div className="absolute top-0 left-0 bottom-0 z-10 w-80 p-3 hidden md:block">
           <div className="h-full bg-background rounded-lg border shadow-lg overflow-hidden">
             <PlacesPanel
               places={filteredPlaces}
+              lists={lists}
               isLoading={isLoadingPlaces}
               selectedPlaceId={selectedPlaceId}
               selectedTab={selectedTab}
+              selectedListId={selectedListId}
               listFilteredPlaces={listFilteredPlaces}
               onTabChange={setSelectedTab}
+              onListChange={setSelectedListId}
               onPlaceSelect={handleListItemClick}
               onToggleStatus={handleToggleStatus}
               onDelete={handleDelete}
