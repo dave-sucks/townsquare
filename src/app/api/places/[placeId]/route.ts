@@ -73,11 +73,67 @@ export async function GET(
       take: 10,
     });
 
+    const myReview = await prisma.review.findUnique({
+      where: {
+        userId_placeId: {
+          userId: user.id,
+          placeId: place.id,
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            profileImageUrl: true,
+          },
+        },
+        photos: {
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    const reviews = await prisma.review.findMany({
+      where: { placeId: place.id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            profileImageUrl: true,
+          },
+        },
+        photos: {
+          orderBy: { createdAt: "desc" },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const followedIds = new Set(followingIds);
+    followedIds.add(user.id);
+    const followedReviews = reviews.filter((r) => followedIds.has(r.userId));
+    const otherReviews = reviews.filter((r) => !followedIds.has(r.userId));
+    const sortedReviews = [...followedReviews, ...otherReviews];
+
+    const photos = await prisma.photo.findMany({
+      where: { placeId: place.id },
+      orderBy: { createdAt: "desc" },
+    });
+
     return NextResponse.json({
       place,
       savedPlace,
       listsContainingPlace,
       friendsWhoSaved,
+      myReview,
+      reviews: sortedReviews,
+      photos,
     });
   } catch (error: any) {
     console.error("Get place error:", error);

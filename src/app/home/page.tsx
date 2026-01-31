@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Heart, CheckCircle, ListPlus, FolderPlus, MapPin, Users } from "lucide-react";
+import { ArrowLeft, Heart, CheckCircle, ListPlus, FolderPlus, MapPin, Users, Star } from "lucide-react";
 import { apiRequest } from "@/lib/query-client";
 
 interface ActivityActor {
@@ -40,7 +40,7 @@ interface Activity {
   type: "PLACE_SAVED_WANT" | "PLACE_MARKED_BEEN" | "PLACE_ADDED_TO_LIST" | "LIST_CREATED" | "REVIEW_CREATED";
   placeId: string | null;
   listId: string | null;
-  metadata: { placeName?: string; listName?: string } | null;
+  metadata: { placeName?: string; listName?: string; rating?: number } | null;
   createdAt: string;
   actor: ActivityActor;
   place: ActivityPlace | null;
@@ -63,6 +63,8 @@ function getActivityIcon(type: Activity["type"]) {
       return <ListPlus className="h-4 w-4 text-blue-500" />;
     case "LIST_CREATED":
       return <FolderPlus className="h-4 w-4 text-purple-500" />;
+    case "REVIEW_CREATED":
+      return <Star className="h-4 w-4 text-yellow-500" />;
     default:
       return <MapPin className="h-4 w-4" />;
   }
@@ -96,6 +98,14 @@ function getActivityText(activity: Activity) {
       return (
         <>
           created a new list: <span className="font-medium">{listName}</span>
+        </>
+      );
+    case "REVIEW_CREATED":
+      const rating = activity.metadata?.rating;
+      return (
+        <>
+          reviewed <span className="font-medium">{placeName}</span>
+          {rating !== undefined && <span className="ml-1">— {rating}/10</span>}
         </>
       );
     default:

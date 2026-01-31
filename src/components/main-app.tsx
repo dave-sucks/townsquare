@@ -21,6 +21,7 @@ import { PlaceMap } from "@/components/place-map";
 import { PlaceRow } from "@/components/place-row";
 import { PlacePreview } from "@/components/place-preview";
 import { AddToListDialog } from "@/components/add-to-list-dialog";
+import { ReviewDialog } from "@/components/review-dialog";
 
 interface UserData {
   id: string;
@@ -76,6 +77,13 @@ interface ListWithPlaces {
   listPlaces: Array<{ placeId: string }>;
 }
 
+interface ReviewData {
+  id: string;
+  placeId: string;
+  rating: number;
+  note: string | null;
+}
+
 export function MainApp({ user }: { user: UserData }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<PlacePrediction[]>([]);
@@ -87,6 +95,9 @@ export function MainApp({ user }: { user: UserData }) {
   const [addToListDialogOpen, setAddToListDialogOpen] = useState(false);
   const [addToListPlaceId, setAddToListPlaceId] = useState<string | null>(null);
   const [addToListPlaceName, setAddToListPlaceName] = useState("");
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [reviewPlaceId, setReviewPlaceId] = useState<string | null>(null);
+  const [reviewPlaceName, setReviewPlaceName] = useState("");
   
   const placeRowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
@@ -111,6 +122,14 @@ export function MainApp({ user }: { user: UserData }) {
   });
 
   const selectedListPlaceIds = selectedListData?.list?.listPlaces?.map(lp => lp.placeId) || [];
+
+  const { data: reviewsData } = useQuery<ReviewData[]>({
+    queryKey: ["my-reviews", user.id],
+    queryFn: () => apiRequest(`/api/reviews?userId=${user.id}`),
+  });
+
+  const myReviews = reviewsData || [];
+  const reviewsByPlaceId = new Map(myReviews.map(r => [r.placeId, r]));
 
   const searchPlaces = useCallback(async (query: string) => {
     if (!query.trim()) {
@@ -248,6 +267,12 @@ export function MainApp({ user }: { user: UserData }) {
     setAddToListPlaceId(placeId);
     setAddToListPlaceName(placeName);
     setAddToListDialogOpen(true);
+  }, []);
+
+  const handleAddReview = useCallback((placeId: string, placeName: string) => {
+    setReviewPlaceId(placeId);
+    setReviewPlaceName(placeName);
+    setReviewDialogOpen(true);
   }, []);
 
   const userName = user.firstName || user.email?.split("@")[0] || "User";
@@ -479,6 +504,7 @@ export function MainApp({ user }: { user: UserData }) {
             {selectedPlace && (
               <PlacePreview
                 savedPlace={selectedPlace}
+                myReview={reviewsByPlaceId.get(selectedPlace.placeId)}
                 onClose={handleClosePreview}
                 onToggleStatus={() =>
                   updateStatusMutation.mutate({
@@ -488,6 +514,7 @@ export function MainApp({ user }: { user: UserData }) {
                 }
                 onDelete={() => deletePlaceMutation.mutate(selectedPlace.id)}
                 onAddToList={() => handleAddToList(selectedPlace.placeId, selectedPlace.place.name)}
+                onAddReview={() => handleAddReview(selectedPlace.placeId, selectedPlace.place.name)}
                 isUpdating={updateStatusMutation.isPending}
                 isDeleting={deletePlaceMutation.isPending}
               />
@@ -502,6 +529,18 @@ export function MainApp({ user }: { user: UserData }) {
           onOpenChange={setAddToListDialogOpen}
           placeId={addToListPlaceId}
           placeName={addToListPlaceName}
+        />
+      )}
+
+      {reviewPlaceId && (
+        <ReviewDialog
+          open={reviewDialogOpen}
+          onOpenChange={setReviewDialogOpen}
+          placeId={reviewPlaceId}
+          placeName={reviewPlaceName}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["my-reviews", user.id] });
+          }}
         />
       )}
     </div>

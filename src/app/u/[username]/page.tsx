@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Heart, CheckCircle, MapPin, List as ListIcon, Lock, Globe, User, Users, UserPlus, UserMinus, Loader2 } from "lucide-react";
+import { ArrowLeft, Heart, CheckCircle, MapPin, List as ListIcon, Lock, Globe, User, Users, UserPlus, UserMinus, Loader2, Star } from "lucide-react";
 import { apiRequest } from "@/lib/query-client";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -45,6 +45,15 @@ interface ListData {
   };
 }
 
+interface ReviewData {
+  id: string;
+  rating: number;
+  note: string | null;
+  visitedAt: string | null;
+  createdAt: string;
+  place: Place;
+}
+
 interface ProfileData {
   user: User;
   isOwnProfile: boolean;
@@ -54,6 +63,7 @@ interface ProfileData {
   wantPlaces: SavedPlace[];
   beenPlaces: SavedPlace[];
   lists: ListData[];
+  reviews: ReviewData[];
 }
 
 export default function UserProfilePage({ params }: { params: Promise<{ username: string }> }) {
@@ -101,6 +111,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
   const wantPlaces = data?.wantPlaces || [];
   const beenPlaces = data?.beenPlaces || [];
   const lists = data?.lists || [];
+  const reviews = data?.reviews || [];
 
   const isFollowLoading = followMutation.isPending || unfollowMutation.isPending;
 
@@ -224,7 +235,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
       </Card>
 
       <Tabs defaultValue="want" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-4">
+        <TabsList className="grid w-full grid-cols-4 mb-4">
           <TabsTrigger value="want" data-testid="tab-want">
             <Heart className="mr-1 h-4 w-4" />
             Want ({wantPlaces.length})
@@ -232,6 +243,10 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
           <TabsTrigger value="been" data-testid="tab-been">
             <CheckCircle className="mr-1 h-4 w-4" />
             Been ({beenPlaces.length})
+          </TabsTrigger>
+          <TabsTrigger value="reviews" data-testid="tab-reviews">
+            <Star className="mr-1 h-4 w-4" />
+            Reviews ({reviews.length})
           </TabsTrigger>
           <TabsTrigger value="lists" data-testid="tab-lists">
             <ListIcon className="mr-1 h-4 w-4" />
@@ -316,6 +331,52 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
                       <Badge>
                         <CheckCircle className="mr-1 h-3 w-3" />
                         Been
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="reviews">
+          {reviews.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Star className="mb-4 h-12 w-12 text-muted-foreground" />
+                <p className="text-lg font-medium">No reviews yet</p>
+                <p className="text-sm text-muted-foreground">
+                  {isOwnProfile ? "Share your experiences by reviewing places" : "This user hasn't reviewed any places yet"}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {reviews.map((review) => (
+                <Card key={review.id} data-testid={`review-${review.id}`}>
+                  <CardHeader className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-base truncate">
+                          <Link 
+                            href={`/places/${review.place.googlePlaceId}`}
+                            className="hover:underline"
+                            data-testid={`link-review-place-${review.id}`}
+                          >
+                            {review.place.name}
+                          </Link>
+                        </CardTitle>
+                        <CardDescription className="mt-1 truncate">
+                          {review.place.formattedAddress}
+                        </CardDescription>
+                        {review.note && (
+                          <p className="text-sm mt-2 text-muted-foreground line-clamp-2">{review.note}</p>
+                        )}
+                      </div>
+                      <Badge variant="secondary">
+                        <Star className="mr-1 h-3 w-3 fill-current" />
+                        {review.rating}/10
                       </Badge>
                     </div>
                   </CardHeader>

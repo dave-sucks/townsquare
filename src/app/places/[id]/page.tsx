@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Heart, CheckCircle, MapPin, ExternalLink, List, Lock, Globe, Trash2, Users } from "lucide-react";
+import { ArrowLeft, Heart, CheckCircle, MapPin, ExternalLink, List, Lock, Globe, Trash2, Users, Star, Camera, Edit, Plus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { AddToListDialog } from "@/components/add-to-list-dialog";
+import { ReviewDialog } from "@/components/review-dialog";
+import { PhotoGallery } from "@/components/photo-gallery";
 
 interface Place {
   id: string;
@@ -57,17 +59,47 @@ interface FriendSavedPlace {
   };
 }
 
+interface Photo {
+  id: string;
+  url: string;
+  width: number | null;
+  height: number | null;
+}
+
+interface Review {
+  id: string;
+  userId: string;
+  placeId: string;
+  rating: number;
+  note: string | null;
+  visitedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    username: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    profileImageUrl: string | null;
+  };
+  photos: Photo[];
+}
+
 interface PlaceDetailData {
   place: Place;
   savedPlace: SavedPlace | null;
   listsContainingPlace: ListData[];
   friendsWhoSaved: FriendSavedPlace[];
+  myReview: Review | null;
+  reviews: Review[];
+  photos: Photo[];
 }
 
 export default function PlaceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: placeId } = use(params);
   const { user, isAuthenticated } = useAuth();
   const [addToListDialogOpen, setAddToListDialogOpen] = useState(false);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
   const { data, isLoading, refetch } = useQuery<PlaceDetailData>({
     queryKey: ["place-detail", placeId],
@@ -79,6 +111,23 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
   const savedPlace = data?.savedPlace;
   const listsContainingPlace = data?.listsContainingPlace || [];
   const friendsWhoSaved = data?.friendsWhoSaved || [];
+  const myReview = data?.myReview;
+  const reviews = data?.reviews || [];
+  const photos = data?.photos || [];
+
+  const deleteReviewMutation = useMutation({
+    mutationFn: async (reviewId: string) => {
+      return apiRequest(`/api/reviews/${reviewId}`, { method: "DELETE" });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["place-detail", placeId] });
+      queryClient.invalidateQueries({ queryKey: ["reviews"] });
+      toast.success("Review deleted!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete review");
+    },
+  });
 
   const saveOrUpdatePlaceMutation = useMutation({
     mutationFn: async (status: "WANT" | "BEEN") => {
@@ -363,14 +412,156 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="text-base">Reviews</CardTitle>
+          <CardTitle className="text-base">
+            <Star className="inline-block mr-2 h-4 w-4" />
+            Your Review
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground" data-testid="text-reviews-placeholder">
-            Reviews coming soon
-          </p>
+          {myReview ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Badge variant="default" data-testid="badge-my-rating">
+                    <Star className="mr-1 h-3 w-3 fill-current" />
+                    {myReview.rating}/10
+                  </Badge>
+                  {myReview.visitedAt && (
+                    <span className="text-sm text-muted-foreground">
+                      Visited {new Date(myReview.visitedAt).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setReviewDialogOpen(true)}
+                    data-testid="button-edit-review"
+                  >
+                    <Edit className="mr-1 h-3 w-3" />
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => deleteReviewMutation.mutate(myReview.id)}
+                    disabled={deleteReviewMutation.isPending}
+                    data-testid="button-delete-review"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              {myReview.note && (
+                <p className="text-sm" data-testid="text-my-review-note">{myReview.note}</p>
+              )}
+              {myReview.photos.length > 0 && (
+                <div className="flex gap-2 flex-wrap">
+                  {myReview.photos.map((photo) => (
+                    <img
+                      key={photo.id}
+                      src={photo.url}
+                      alt="Review photo"
+                      className="h-16 w-16 rounded-md object-cover"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center py-4">
+              <p className="text-sm text-muted-foreground mb-3">
+                Share your experience at this place
+              </p>
+              <Button onClick={() => setReviewDialogOpen(true)} data-testid="button-add-review">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Review
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">
+            <Camera className="inline-block mr-2 h-4 w-4" />
+            Photos
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PhotoGallery photos={photos} />
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">All Reviews</CardTitle>
+          <CardDescription>{reviews.length} reviews</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {reviews.length === 0 ? (
+            <p className="text-sm text-muted-foreground" data-testid="text-no-reviews">
+              No reviews yet. Be the first to review!
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {reviews.map((review) => {
+                const displayName = review.user.firstName
+                  ? `${review.user.firstName}${review.user.lastName ? ` ${review.user.lastName}` : ""}`
+                  : review.user.username || "User";
+                return (
+                  <div key={review.id} className="border-b pb-4 last:border-0 last:pb-0" data-testid={`review-${review.id}`}>
+                    <div className="flex items-start gap-3">
+                      <Link href={`/u/${review.user.username || review.user.id}`}>
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={review.user.profileImageUrl || undefined} alt={displayName} />
+                          <AvatarFallback>{displayName.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                      </Link>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Link 
+                            href={`/u/${review.user.username || review.user.id}`}
+                            className="font-medium text-sm hover:underline"
+                          >
+                            {displayName}
+                          </Link>
+                          <Badge variant="secondary" className="shrink-0">
+                            <Star className="mr-1 h-3 w-3 fill-current" />
+                            {review.rating}/10
+                          </Badge>
+                          {review.visitedAt && (
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(review.visitedAt).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                        {review.note && (
+                          <p className="text-sm mt-1 text-muted-foreground">{review.note}</p>
+                        )}
+                        {review.photos.length > 0 && (
+                          <div className="flex gap-2 flex-wrap mt-2">
+                            {review.photos.slice(0, 4).map((photo) => (
+                              <img
+                                key={photo.id}
+                                src={photo.url}
+                                alt="Review photo"
+                                className="h-12 w-12 rounded-md object-cover"
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -379,6 +570,15 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
         onOpenChange={setAddToListDialogOpen}
         placeId={place.googlePlaceId}
         placeName={place.name}
+      />
+
+      <ReviewDialog
+        open={reviewDialogOpen}
+        onOpenChange={setReviewDialogOpen}
+        placeId={place.id}
+        placeName={place.name}
+        existingReview={myReview}
+        onSuccess={() => refetch()}
       />
     </div>
   );

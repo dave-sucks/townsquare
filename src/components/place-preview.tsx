@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, CheckCircle, X, Trash2, ExternalLink, List, ArrowRight } from "lucide-react";
+import { Heart, CheckCircle, X, Trash2, ExternalLink, List, ArrowRight, Star, Plus } from "lucide-react";
 
 interface Place {
   id: string;
@@ -29,22 +29,32 @@ interface SavedPlace {
   place: Place;
 }
 
+interface Review {
+  id: string;
+  rating: number;
+  note: string | null;
+}
+
 interface PlacePreviewProps {
   savedPlace: SavedPlace;
+  myReview?: Review | null;
   onClose: () => void;
   onToggleStatus: () => void;
   onDelete: () => void;
   onAddToList: () => void;
+  onAddReview?: () => void;
   isUpdating?: boolean;
   isDeleting?: boolean;
 }
 
 export function PlacePreview({
   savedPlace,
+  myReview,
   onClose,
   onToggleStatus,
   onDelete,
   onAddToList,
+  onAddReview,
   isUpdating,
   isDeleting,
 }: PlacePreviewProps) {
@@ -83,7 +93,7 @@ export function PlacePreview({
         </div>
       </CardHeader>
       <CardContent className="p-4 pt-2">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
           <Badge variant={savedPlace.status === "WANT" ? "secondary" : "default"}>
             {savedPlace.status === "WANT" ? (
               <>
@@ -97,6 +107,12 @@ export function PlacePreview({
               </>
             )}
           </Badge>
+          {myReview && (
+            <Badge variant="outline" data-testid="badge-preview-rating">
+              <Star className="mr-1 h-3 w-3 fill-current text-yellow-500" />
+              {myReview.rating}/10
+            </Badge>
+          )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button
@@ -148,6 +164,17 @@ export function PlacePreview({
               Open Details
             </Link>
           </Button>
+          {!myReview && onAddReview && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onAddReview}
+              data-testid="preview-button-add-review"
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              Add Review
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

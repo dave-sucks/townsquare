@@ -13,7 +13,43 @@ Core features:
 - Bidirectional list↔map selection synchronization
 - Map overlay preview card for selected places
 
-## Recent Changes (Milestone 4 - Social Following & Activity Feed)
+## Recent Changes (Milestone 5 - Reviews & Photos)
+
+**Date: January 31, 2026**
+
+### Review System
+- Users can write one review per place with 0-10 rating scale
+- Review model with unique constraint on (userId, placeId)
+- Review CRUD API routes at `/api/reviews` and `/api/reviews/[id]`
+- ReviewDialog component with rating slider, note field, date picker, and photo upload
+- Reviews displayed on place detail pages with followed users' reviews prioritized first
+- Review creation triggers REVIEW_CREATED activity with rating in metadata
+
+### Photo Upload System
+- Photo model linked to reviews and/or places
+- Replit Object Storage integration for cloud photo storage
+- Two-step upload flow: request presigned URL → upload to GCS directly
+- PhotoGallery component with lightbox viewer for browsing photos
+- API routes at `/api/photos` and `/api/uploads/request-url`
+
+### User Profile Updates
+- New "Reviews" tab added to 4-tab layout (Want/Been/Reviews/Lists)
+- Profile API now returns user's reviews with place info
+- Review cards show rating badge, place name, note preview
+
+### Map Preview Enhancements
+- Preview card displays rating badge when user has reviewed the place
+- "Add Review" button appears when place has no review yet
+- Reviews data fetched via `/api/reviews?userId={userId}` for current user's reviews
+- ReviewDialog invalidates all "my-reviews" queries using predicate to ensure map preview updates after review creation
+
+### Activity Feed Updates
+- REVIEW_CREATED activities rendered with rating information
+- Activity metadata now includes rating for review activities
+
+---
+
+## Previous Changes (Milestone 4 - Social Following & Activity Feed)
 
 **Date: January 31, 2026**
 
@@ -26,7 +62,7 @@ Core features:
 
 ### Activity Feed (/home)
 - Shows activity from current user and users they follow
-- Activity types: PLACE_SAVED_WANT, PLACE_MARKED_BEEN, PLACE_ADDED_TO_LIST, LIST_CREATED
+- Activity types: PLACE_SAVED_WANT, PLACE_MARKED_BEEN, PLACE_ADDED_TO_LIST, LIST_CREATED, REVIEW_CREATED
 - Activity cards with user avatar, action description, place/list links
 - Infinite scroll pagination with cursor-based loading
 - Empty state with links to browse people or go to map

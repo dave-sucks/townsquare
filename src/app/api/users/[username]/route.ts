@@ -84,6 +84,21 @@ export async function GET(
       orderBy: { createdAt: "desc" },
     });
 
+    const reviews = await prisma.review.findMany({
+      where: { userId: user.id },
+      include: {
+        place: {
+          select: {
+            id: true,
+            googlePlaceId: true,
+            name: true,
+            formattedAddress: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
     return NextResponse.json({
       user,
       isOwnProfile,
@@ -93,6 +108,7 @@ export async function GET(
       wantPlaces,
       beenPlaces,
       lists,
+      reviews,
     });
   } catch (error: any) {
     console.error("Get user profile error:", error);
