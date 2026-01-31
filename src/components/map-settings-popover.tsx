@@ -176,9 +176,9 @@ export function MapSettingsPopover({
   const sliderValue = (currentRadiusIndex / (RADIUS_STEPS.length - 1)) * 100;
 
   return (
-    <div ref={containerRef} className="absolute bottom-4 left-4 z-10">
+    <div ref={containerRef} className="absolute bottom-4 right-4 z-10">
       {isExpanded && (
-        <div className="absolute bottom-[calc(100%+8px)] left-0 w-[300px] bg-background/95 backdrop-blur-xl border rounded-lg shadow-lg animate-in slide-in-from-bottom-2 duration-200">
+        <div className="absolute bottom-[calc(100%+8px)] right-0 w-[300px] bg-background/95 backdrop-blur-xl border rounded-lg shadow-lg animate-in slide-in-from-bottom-2 duration-200">
           <div className="flex items-center justify-between p-3 border-b">
             <h3 className="font-medium text-sm">Map details</h3>
             <Button

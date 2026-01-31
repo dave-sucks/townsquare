@@ -154,8 +154,8 @@ export function PlacesPanel({
           </TabsList>
         </Tabs>
       </div>
-      <ScrollArea className="flex-1">
-        <div className="p-3 space-y-2">
+      <ScrollArea className="flex-1 touch-pan-y">
+        <div className="p-3 space-y-2 touch-pan-y">
           {isLoading ? (
             <div className="space-y-3">
               <Skeleton className="h-20 w-full" />
@@ -285,7 +285,7 @@ export function PlacesPanel({
           </Button>
         </div>
       </div>
-      {bottomSheetState !== "collapsed" && <div className="flex-1 flex flex-col overflow-hidden">{PanelContent}</div>}
+      {bottomSheetState !== "collapsed" && <div className="flex-1 flex flex-col min-h-0 overflow-hidden">{PanelContent}</div>}
     </div>
   );
 }

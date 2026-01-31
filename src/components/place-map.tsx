@@ -147,11 +147,11 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
     const mapInstance = new google.maps.Map(mapRef.current, {
       center: initialCenter,
       zoom: initialZoom,
-      disableDefaultUI: false,
-      zoomControl: true,
+      disableDefaultUI: true,
+      zoomControl: false,
       mapTypeControl: false,
       streetViewControl: false,
-      fullscreenControl: true,
+      fullscreenControl: false,
       styles: RETRO_STYLE,
     });
 
