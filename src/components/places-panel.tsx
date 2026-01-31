@@ -297,7 +297,7 @@ export function PlacesPanel({
         </div>
       </div>
       {bottomSheetState !== "collapsed" && (
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
           {FilterControls}
           <div className="p-3 space-y-2">
             {PlacesList}

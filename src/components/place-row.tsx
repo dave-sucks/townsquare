@@ -73,14 +73,14 @@ export const PlaceRow = forwardRef<HTMLDivElement, PlaceRowProps>(
     return (
       <Card
         ref={ref}
-        className={cn(placeRowVariants({ selected: isSelected }))}
+        className={cn("overflow-hidden", placeRowVariants({ selected: isSelected }))}
         onClick={onSelect}
         data-testid={`place-card-${savedPlace.id}`}
         data-selected={isSelected}
       >
         <CardHeader className="p-4">
           <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 overflow-hidden">
               <CardTitle className="text-base truncate">
                 <Link
                   href={`/places/${savedPlace.place.googlePlaceId}`}
