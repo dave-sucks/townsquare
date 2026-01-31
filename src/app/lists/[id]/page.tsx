@@ -287,7 +287,13 @@ export default function ListDetailPage({ params }: { params: Promise<{ id: strin
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-base truncate">
-                      {listPlace.place.name}
+                      <Link 
+                        href={`/places/${listPlace.place.googlePlaceId}`}
+                        className="hover:underline"
+                        data-testid={`link-list-place-${listPlace.id}`}
+                      >
+                        {listPlace.place.name}
+                      </Link>
                     </CardTitle>
                     <CardDescription className="mt-1 truncate">
                       {listPlace.place.formattedAddress}

@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { MapPin, Search, LogOut, Heart, CheckCircle, Plus, List as ListIcon } from "lucide-react";
+import { MapPin, Search, LogOut, Heart, CheckCircle, Plus, List as ListIcon, Users, User } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { PlaceMap } from "@/components/place-map";
@@ -22,9 +22,10 @@ import { PlaceRow } from "@/components/place-row";
 import { PlacePreview } from "@/components/place-preview";
 import { AddToListDialog } from "@/components/add-to-list-dialog";
 
-interface User {
+interface UserData {
   id: string;
   email: string | null;
+  username: string | null;
   firstName: string | null;
   lastName: string | null;
   profileImageUrl: string | null;
@@ -75,7 +76,7 @@ interface ListWithPlaces {
   listPlaces: Array<{ placeId: string }>;
 }
 
-export function MainApp({ user }: { user: User }) {
+export function MainApp({ user }: { user: UserData }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<PlacePrediction[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -351,6 +352,19 @@ export function MainApp({ user }: { user: User }) {
               <div className="flex items-center justify-start gap-2 p-2">
                 <p className="text-sm font-medium">{userName}</p>
               </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href={`/u/${user.username || user.id}`} className="flex items-center" data-testid="link-my-profile">
+                  <User className="mr-2 h-4 w-4" />
+                  My Profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/people" className="flex items-center" data-testid="link-people">
+                  <Users className="mr-2 h-4 w-4" />
+                  Browse People
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <a href="/api/logout" className="flex items-center" data-testid="button-logout">

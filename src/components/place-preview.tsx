@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, CheckCircle, X, Trash2, ExternalLink, List } from "lucide-react";
+import { Heart, CheckCircle, X, Trash2, ExternalLink, List, ArrowRight } from "lucide-react";
 
 interface Place {
   id: string;
@@ -58,7 +59,13 @@ export function PlacePreview({
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <CardTitle className="text-base truncate" data-testid="preview-place-name">
-              {savedPlace.place.name}
+              <Link 
+                href={`/places/${savedPlace.place.googlePlaceId}`}
+                className="hover:underline"
+                data-testid="link-preview-place-name"
+              >
+                {savedPlace.place.name}
+              </Link>
             </CardTitle>
             <CardDescription className="mt-1 truncate" data-testid="preview-place-address">
               {savedPlace.place.formattedAddress}
@@ -129,6 +136,17 @@ export function PlacePreview({
               <ExternalLink className="mr-1 h-4 w-4" />
               Google Maps
             </a>
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            asChild
+            data-testid="preview-button-open-details"
+          >
+            <Link href={`/places/${savedPlace.place.googlePlaceId}`}>
+              <ArrowRight className="mr-1 h-4 w-4" />
+              Open Details
+            </Link>
           </Button>
         </div>
       </CardContent>

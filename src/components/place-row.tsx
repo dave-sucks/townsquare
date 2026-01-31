@@ -1,10 +1,11 @@
 "use client";
 
 import { forwardRef } from "react";
+import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, CheckCircle, Trash2 } from "lucide-react";
+import { Heart, CheckCircle, Trash2, ExternalLink } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
@@ -81,7 +82,14 @@ export const PlaceRow = forwardRef<HTMLDivElement, PlaceRowProps>(
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <CardTitle className="text-base truncate">
-                {savedPlace.place.name}
+                <Link
+                  href={`/places/${savedPlace.place.googlePlaceId}`}
+                  className="hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                  data-testid={`link-place-name-${savedPlace.id}`}
+                >
+                  {savedPlace.place.name}
+                </Link>
               </CardTitle>
               <CardDescription className="mt-1 truncate">
                 {savedPlace.place.formattedAddress}
@@ -101,7 +109,7 @@ export const PlaceRow = forwardRef<HTMLDivElement, PlaceRowProps>(
               )}
             </Badge>
           </div>
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 flex gap-2 flex-wrap">
             <Button
               size="sm"
               variant="outline"
@@ -113,6 +121,20 @@ export const PlaceRow = forwardRef<HTMLDivElement, PlaceRowProps>(
               data-testid={`button-toggle-status-${savedPlace.id}`}
             >
               {savedPlace.status === "WANT" ? "Mark as Been" : "Mark as Want"}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              asChild
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Link 
+                href={`/places/${savedPlace.place.googlePlaceId}`}
+                data-testid={`button-open-details-${savedPlace.id}`}
+              >
+                <ExternalLink className="mr-1 h-3 w-3" />
+                Details
+              </Link>
             </Button>
             <Button
               size="sm"
