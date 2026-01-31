@@ -21,6 +21,8 @@ model User {
   followers       Follow[]     @relation("following")
   following       Follow[]     @relation("follower")
   activities      Activity[]
+  reviews         Review[]
+  photos          Photo[]
 
   @@map("users")
 }
@@ -50,6 +52,8 @@ model Place {
   savedPlaces      SavedPlace[]
   listPlaces       ListPlace[]
   activities       Activity[]
+  reviews          Review[]
+  photos           Photo[]
 
   @@map("places")
 }
@@ -145,4 +149,40 @@ model Activity {
   @@index([actorId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
   @@map("activities")
+}
+
+model Review {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  userId    String    @map("user_id") @db.VarChar(36)
+  placeId   String    @map("place_id") @db.VarChar(36)
+  rating    Int
+  note      String?
+  visitedAt DateTime? @map("visited_at") @db.Timestamp(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place     Place     @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  photos    Photo[]
+
+  @@unique([userId, placeId])
+  @@index([placeId])
+  @@map("reviews")
+}
+
+model Photo {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  userId    String   @map("user_id") @db.VarChar(36)
+  placeId   String   @map("place_id") @db.VarChar(36)
+  reviewId  String?  @map("review_id") @db.VarChar(36)
+  url       String
+  width     Int?
+  height    Int?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place     Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  review    Review?  @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+
+  @@index([placeId, createdAt(sort: Desc)])
+  @@index([reviewId, createdAt(sort: Desc)])
+  @@map("photos")
 }
