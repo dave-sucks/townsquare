@@ -1,7 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  type MapStyleKey,
+  applyMapStyle,
+  getStoredMapStyle,
+  saveMapStyle,
+  RETRO_STYLE,
+} from "@/lib/map-styles";
+import { MapSettingsPopover } from "@/components/map-settings-popover";
 
 interface Place {
   id: string;
@@ -22,6 +30,12 @@ interface PlaceMapProps {
   places: SavedPlace[];
   selectedPlaceId: string | null;
   onMarkerClick: (savedPlaceId: string) => void;
+  showSettings?: boolean;
+}
+
+export interface PlaceMapHandle {
+  panTo: (lat: number, lng: number) => void;
+  setZoom: (zoom: number) => void;
 }
 
 declare global {
@@ -67,70 +81,80 @@ function saveMapView(center: { lat: number; lng: number }, zoom: number) {
   }
 }
 
-const MARKER_SIZE = {
-  default: 24,
-  selected: 32,
-};
-
-function createMarkerContent(status: "WANT" | "BEEN", isSelected: boolean): HTMLElement {
-  const size = isSelected ? MARKER_SIZE.selected : MARKER_SIZE.default;
+function createMarkerIcon(status: "WANT" | "BEEN", isSelected: boolean): google.maps.Symbol {
   const color = isSelected ? MARKER_COLORS.selected : (status === "WANT" ? MARKER_COLORS.want : MARKER_COLORS.been);
-  const iconSize = isSelected ? 16 : 12;
+  const scale = isSelected ? 10 : 8;
   
-  const pinElement = document.createElement("div");
-  pinElement.style.cssText = `
-    background-color: ${color};
-    border-radius: 50%;
-    width: ${size}px;
-    height: ${size}px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: ${isSelected ? "3px" : "2px"} solid white;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    transition: all 0.2s ease;
-    cursor: pointer;
-    ${isSelected ? "z-index: 1000;" : ""}
-  `;
-  
-  pinElement.innerHTML = `
-    <svg width="${iconSize}" height="${iconSize}" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
-      ${status === "WANT" 
-        ? '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>'
-        : '<path d="M20 6 9 17l-5-5"/>'
-      }
-    </svg>
-  `;
-
-  return pinElement;
+  return {
+    path: google.maps.SymbolPath.CIRCLE,
+    scale: scale,
+    fillColor: color,
+    fillOpacity: 1,
+    strokeColor: "white",
+    strokeWeight: isSelected ? 3 : 2,
+  };
 }
 
-export function PlaceMap({ places, selectedPlaceId, onMarkerClick }: PlaceMapProps) {
+const RADIUS_TO_ZOOM: Record<number, number> = {
+  0.25: 15.5,
+  0.5: 14.5,
+  0.75: 14,
+  1: 13.5,
+  1.5: 13,
+  2: 12.5,
+  3: 12,
+  4: 11.5,
+  5: 11,
+  7: 10.5,
+  10: 10,
+};
+
+export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function PlaceMap(
+  { places, selectedPlaceId, onMarkerClick, showSettings = true },
+  ref
+) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const markersRef = useRef<Map<string, google.maps.marker.AdvancedMarkerElement>>(new Map());
+  const markersRef = useRef<Map<string, google.maps.Marker>>(new Map());
+  
+  const [currentStyle, setCurrentStyle] = useState<MapStyleKey>("retro");
+  const [showTraffic, setShowTraffic] = useState(false);
+  const [showTransit, setShowTransit] = useState(false);
+  const [radius, setRadius] = useState(1);
+  
+  const trafficLayerRef = useRef<google.maps.TrafficLayer | null>(null);
+  const transitLayerRef = useRef<google.maps.TransitLayer | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    panTo: (lat: number, lng: number) => {
+      map?.panTo({ lat, lng });
+    },
+    setZoom: (zoom: number) => {
+      map?.setZoom(zoom);
+    },
+  }));
 
   const initMapCallback = useCallback(() => {
     if (!mapRef.current || !window.google) return;
 
     const storedView = getStoredMapView();
+    const storedStyle = getStoredMapStyle();
     const initialCenter = storedView?.center || DEFAULT_CENTER;
     const initialZoom = storedView?.zoom || DEFAULT_ZOOM;
 
     const mapInstance = new google.maps.Map(mapRef.current, {
       center: initialCenter,
       zoom: initialZoom,
-      mapId: "beli-map",
       disableDefaultUI: false,
       zoomControl: true,
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: true,
+      styles: RETRO_STYLE,
     });
 
-    // Persist map view on idle (after user interaction)
     mapInstance.addListener("idle", () => {
       const center = mapInstance.getCenter();
       const zoom = mapInstance.getZoom();
@@ -139,8 +163,16 @@ export function PlaceMap({ places, selectedPlaceId, onMarkerClick }: PlaceMapPro
       }
     });
 
+    trafficLayerRef.current = new google.maps.TrafficLayer();
+    transitLayerRef.current = new google.maps.TransitLayer();
+
     setMap(mapInstance);
+    setCurrentStyle(storedStyle);
     setIsLoading(false);
+
+    if (storedStyle !== "retro") {
+      applyMapStyle(mapInstance, storedStyle);
+    }
   }, []);
 
   useEffect(() => {
@@ -167,7 +199,7 @@ export function PlaceMap({ places, selectedPlaceId, onMarkerClick }: PlaceMapPro
     window.__googleMapsCallbacks = [initMapCallback];
 
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=marker&v=weekly`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly`;
     script.async = true;
     script.defer = true;
     script.onload = () => {
@@ -182,11 +214,40 @@ export function PlaceMap({ places, selectedPlaceId, onMarkerClick }: PlaceMapPro
     document.head.appendChild(script);
   }, [initMapCallback]);
 
+  const handleStyleChange = useCallback((style: MapStyleKey) => {
+    if (!map) return;
+    setCurrentStyle(style);
+    saveMapStyle(style);
+    applyMapStyle(map, style);
+  }, [map]);
+
+  const handleTrafficChange = useCallback((show: boolean) => {
+    setShowTraffic(show);
+    if (trafficLayerRef.current) {
+      trafficLayerRef.current.setMap(show ? map : null);
+    }
+  }, [map]);
+
+  const handleTransitChange = useCallback((show: boolean) => {
+    setShowTransit(show);
+    if (transitLayerRef.current) {
+      transitLayerRef.current.setMap(show ? map : null);
+    }
+  }, [map]);
+
+  const handleRadiusChange = useCallback((newRadius: number) => {
+    setRadius(newRadius);
+    if (map) {
+      const zoom = RADIUS_TO_ZOOM[newRadius] || 12;
+      map.setZoom(zoom);
+    }
+  }, [map]);
+
   useEffect(() => {
     if (!map || !window.google) return;
 
     markersRef.current.forEach((marker) => {
-      marker.map = null;
+      marker.setMap(null);
     });
     markersRef.current.clear();
 
@@ -199,15 +260,15 @@ export function PlaceMap({ places, selectedPlaceId, onMarkerClick }: PlaceMapPro
       const position = { lat: place.lat, lng: place.lng };
       const isSelected = id === selectedPlaceId;
 
-      const marker = new google.maps.marker.AdvancedMarkerElement({
+      const marker = new google.maps.Marker({
         map,
         position,
         title: place.name,
-        content: createMarkerContent(status, isSelected),
+        icon: createMarkerIcon(status, isSelected),
         zIndex: isSelected ? 1000 : 1,
       });
 
-      marker.addListener("gmp-click", () => {
+      marker.addListener("click", () => {
         onMarkerClick(id);
       });
 
@@ -244,8 +305,8 @@ export function PlaceMap({ places, selectedPlaceId, onMarkerClick }: PlaceMapPro
       const savedPlace = places.find(p => p.id === id);
       if (savedPlace) {
         const isSelected = id === selectedPlaceId;
-        marker.content = createMarkerContent(savedPlace.status, isSelected);
-        marker.zIndex = isSelected ? 1000 : 1;
+        marker.setIcon(createMarkerIcon(savedPlace.status, isSelected));
+        marker.setZIndex(isSelected ? 1000 : 1);
       }
     });
   }, [selectedPlaceId, places, map]);
@@ -266,6 +327,18 @@ export function PlaceMap({ places, selectedPlaceId, onMarkerClick }: PlaceMapPro
         </div>
       )}
       <div ref={mapRef} className="h-full w-full" data-testid="map-container" />
+      {showSettings && !isLoading && (
+        <MapSettingsPopover
+          currentStyle={currentStyle}
+          onStyleChange={handleStyleChange}
+          showTraffic={showTraffic}
+          onTrafficChange={handleTrafficChange}
+          showTransit={showTransit}
+          onTransitChange={handleTransitChange}
+          radius={radius}
+          onRadiusChange={handleRadiusChange}
+        />
+      )}
     </div>
   );
-}
+});

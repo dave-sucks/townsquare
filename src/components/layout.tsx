@@ -228,14 +228,13 @@ export function SplitView({
   minRightSize = 30,
 }: SplitViewProps) {
   return (
-    <ResizablePanelGroup direction="horizontal" className="flex-1">
-      <ResizablePanel defaultSize={defaultLeftSize} minSize={minLeftSize}>
+    <div className="flex flex-1 overflow-hidden">
+      <div style={{ width: `${defaultLeftSize}%`, minWidth: `${minLeftSize}%` }} className="flex-shrink-0">
         <ScrollArea className="h-full">{left}</ScrollArea>
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel defaultSize={100 - defaultLeftSize} minSize={minRightSize}>
+      </div>
+      <div style={{ width: `${100 - defaultLeftSize}%`, minWidth: `${minRightSize}%` }} className="flex-1">
         {right}
-      </ResizablePanel>
-    </ResizablePanelGroup>
+      </div>
+    </div>
   );
 }

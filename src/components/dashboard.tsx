@@ -4,20 +4,18 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Search, Heart, CheckCircle, Plus } from "lucide-react";
+import { Search, Heart, CheckCircle, Plus } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { PlaceMap } from "@/components/place-map";
-import { PlaceRow } from "@/components/place-row";
 import { PlaceDetailsSheet } from "@/components/place-details-sheet";
 import { AddToListDialog } from "@/components/add-to-list-dialog";
 import { ReviewDialog } from "@/components/review-dialog";
-import { AppShell, PageHeader, SplitView } from "@/components/layout";
+import { PlacesPanel } from "@/components/places-panel";
+import { AppShell } from "@/components/layout";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 interface UserData {
   id: string;
@@ -239,147 +237,118 @@ export function Dashboard({ user }: { user: UserData }) {
     setReviewDialogOpen(true);
   }, []);
 
+  const handleToggleStatus = useCallback((id: string) => {
+    const place = savedPlaces.find(p => p.id === id);
+    if (place) {
+      updateStatusMutation.mutate({ id, status: place.status === "WANT" ? "BEEN" : "WANT" });
+    }
+  }, [savedPlaces, updateStatusMutation]);
+
+  const handleDelete = useCallback((id: string) => {
+    deletePlaceMutation.mutate(id);
+  }, [deletePlaceMutation]);
+
   return (
     <AppShell user={user}>
-      <PageHeader title="Map">
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" data-testid="button-add-place">
-              <Plus className="mr-1 h-4 w-4" />
-              Add Place
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Add a Place</DialogTitle>
-              <DialogDescription>Search for a place and save it to your list</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search for a place..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                  data-testid="input-search-place"
-                />
-              </div>
-              <div className="max-h-60 overflow-y-auto">
-                {isSearching && (
-                  <div className="space-y-2 p-2">
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                  </div>
-                )}
-                {!isSearching && searchResults.length > 0 && (
-                  <div className="space-y-1">
-                    {searchResults.map((result) => (
-                      <div key={result.place_id} className="rounded-md border p-3" data-testid={`search-result-${result.place_id}`}>
-                        <p className="font-medium">{result.structured_formatting.main_text}</p>
-                        <p className="text-sm text-muted-foreground">{result.structured_formatting.secondary_text}</p>
-                        <div className="mt-2 flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => savePlaceMutation.mutate({ placeId: result.place_id, status: "WANT" })}
-                            disabled={savePlaceMutation.isPending}
-                            data-testid={`button-save-want-${result.place_id}`}
-                          >
-                            <Heart className="mr-1 h-3 w-3" />Want
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => savePlaceMutation.mutate({ placeId: result.place_id, status: "BEEN" })}
-                            disabled={savePlaceMutation.isPending}
-                            data-testid={`button-save-been-${result.place_id}`}
-                          >
-                            <CheckCircle className="mr-1 h-3 w-3" />Been
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {!isSearching && searchQuery && searchResults.length === 0 && (
-                  <p className="p-4 text-center text-sm text-muted-foreground">No places found</p>
-                )}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </PageHeader>
+      <div className="relative flex-1 overflow-hidden">
+        <PlaceMap
+          places={filteredPlaces}
+          selectedPlaceId={selectedPlaceId}
+          onMarkerClick={handleMarkerClick}
+          showSettings={true}
+        />
 
-      <SplitView
-        left={
-          <div className="p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <Select value={selectedListId} onValueChange={setSelectedListId}>
-                <SelectTrigger className="flex-1" data-testid="select-list-filter">
-                  <SelectValue placeholder="All Places" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Places</SelectItem>
-                  {lists.map((list) => (
-                    <SelectItem key={list.id} value={list.id}>
-                      {list.name} ({list._count.listPlaces})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="all" data-testid="tab-all">All ({listFilteredPlaces.length})</TabsTrigger>
-                <TabsTrigger value="want" data-testid="tab-want">Want ({listFilteredPlaces.filter((p) => p.status === "WANT").length})</TabsTrigger>
-                <TabsTrigger value="been" data-testid="tab-been">Been ({listFilteredPlaces.filter((p) => p.status === "BEEN").length})</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            {isLoadingPlaces ? (
-              <div className="space-y-3">
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-20 w-full" />
-              </div>
-            ) : filteredPlaces.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <MapPin className="mb-4 h-12 w-12 text-muted-foreground" />
-                  <p className="text-lg font-medium">No places yet</p>
-                  <p className="text-sm text-muted-foreground">Add your first place to get started</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-2">
-                {filteredPlaces.map((savedPlace) => (
-                  <PlaceRow
-                    key={savedPlace.id}
-                    ref={(el) => {
-                      if (el) placeRowRefs.current.set(savedPlace.id, el);
-                      else placeRowRefs.current.delete(savedPlace.id);
-                    }}
-                    savedPlace={savedPlace}
-                    isSelected={savedPlace.id === selectedPlaceId}
-                    onSelect={() => handleListItemClick(savedPlace.id)}
-                    onToggleStatus={() => updateStatusMutation.mutate({ id: savedPlace.id, status: savedPlace.status === "WANT" ? "BEEN" : "WANT" })}
-                    onDelete={() => deletePlaceMutation.mutate(savedPlace.id)}
-                    isUpdating={updateStatusMutation.isPending}
-                    isDeleting={deletePlaceMutation.isPending}
-                  />
-                ))}
-              </div>
-            )}
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+          <div className="md:hidden">
+            <SidebarTrigger data-testid="button-sidebar-toggle" />
           </div>
-        }
-        right={
-          <PlaceMap
-            places={filteredPlaces}
-            selectedPlaceId={selectedPlaceId}
-            onMarkerClick={handleMarkerClick}
-          />
-        }
-      />
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="shadow-lg" data-testid="button-add-place">
+                <Plus className="mr-1 h-4 w-4" />
+                Add Place
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add a Place</DialogTitle>
+                <DialogDescription>Search for a place and save it to your list</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search for a place..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                    data-testid="input-search-place"
+                  />
+                </div>
+                <div className="max-h-60 overflow-y-auto">
+                  {isSearching && (
+                    <div className="space-y-2 p-2">
+                      <Skeleton className="h-12 w-full" />
+                      <Skeleton className="h-12 w-full" />
+                    </div>
+                  )}
+                  {!isSearching && searchResults.length > 0 && (
+                    <div className="space-y-1">
+                      {searchResults.map((result) => (
+                        <div key={result.place_id} className="rounded-md border p-3" data-testid={`search-result-${result.place_id}`}>
+                          <p className="font-medium">{result.structured_formatting.main_text}</p>
+                          <p className="text-sm text-muted-foreground">{result.structured_formatting.secondary_text}</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => savePlaceMutation.mutate({ placeId: result.place_id, status: "WANT" })}
+                              disabled={savePlaceMutation.isPending}
+                              data-testid={`button-save-want-${result.place_id}`}
+                            >
+                              <Heart className="mr-1 h-3 w-3" />Want
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => savePlaceMutation.mutate({ placeId: result.place_id, status: "BEEN" })}
+                              disabled={savePlaceMutation.isPending}
+                              data-testid={`button-save-been-${result.place_id}`}
+                            >
+                              <CheckCircle className="mr-1 h-3 w-3" />Been
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {!isSearching && searchQuery && searchResults.length === 0 && (
+                    <p className="p-4 text-center text-sm text-muted-foreground">No places found</p>
+                  )}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <PlacesPanel
+          places={filteredPlaces}
+          lists={lists}
+          isLoading={isLoadingPlaces}
+          selectedPlaceId={selectedPlaceId}
+          selectedListId={selectedListId}
+          selectedTab={selectedTab}
+          listFilteredPlaces={listFilteredPlaces}
+          onListChange={setSelectedListId}
+          onTabChange={setSelectedTab}
+          onPlaceSelect={handleListItemClick}
+          onToggleStatus={handleToggleStatus}
+          onDelete={handleDelete}
+          isUpdating={updateStatusMutation.isPending}
+          isDeleting={deletePlaceMutation.isPending}
+          placeRowRefs={placeRowRefs}
+        />
+      </div>
 
       <PlaceDetailsSheet
         savedPlace={selectedPlace || null}
