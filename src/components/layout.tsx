@@ -9,26 +9,32 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
   SidebarInset,
+  SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { MapPin, Home, Users, List, LogOut, MoreHorizontal, ArrowLeft } from "lucide-react";
+import { MapPin, Home, Users, List, LogOut, Settings, ChevronsUpDown, ArrowLeft, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface User {
   id: string;
@@ -41,7 +47,7 @@ interface User {
 
 const NAV_ITEMS = [
   { href: "/", label: "Map", icon: MapPin },
-  { href: "/home", label: "Home", icon: Home },
+  { href: "/home", label: "Activity", icon: Activity },
   { href: "/people", label: "People", icon: Users },
   { href: "/lists", label: "Lists", icon: List },
 ] as const;
@@ -68,74 +74,136 @@ export function AppShell({
 function SidebarNav({ user }: { user: User | null }) {
   const pathname = usePathname();
   const userName = user?.firstName || user?.email?.split("@")[0] || "User";
+  const userEmail = user?.email || "";
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b">
-        <div className="flex items-center gap-2 px-2 py-1">
-          <MapPin className="h-5 w-5 text-primary shrink-0" />
-          <span className="font-semibold group-data-[collapsible=icon]:hidden">Beli</span>
-        </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarMenu className="p-2">
-          {NAV_ITEMS.map((item) => {
-            const isActive = pathname === item.href || 
-              (item.href !== "/" && pathname.startsWith(item.href));
-            return (
-              <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive}
-                  tooltip={item.label}
-                >
-                  <Link href={item.href} data-testid={`nav-${item.label.toLowerCase()}`}>
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            );
-          })}
+      <SidebarHeader className="group-data-[collapsible=icon]:p-0">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              size="lg"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              asChild
+            >
+              <Link href="/">
+                <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                  <MapPin className="size-4" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                  <span className="truncate font-semibold">Beli</span>
+                  <span className="truncate text-xs text-muted-foreground">Places you love</span>
+                </div>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
         </SidebarMenu>
+      </SidebarHeader>
+
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {NAV_ITEMS.map((item) => {
+                const isActive = pathname === item.href || 
+                  (item.href !== "/" && pathname.startsWith(item.href));
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      tooltip={item.label}
+                    >
+                      <Link href={item.href} data-testid={`nav-${item.label.toLowerCase()}`}>
+                        <item.icon className="size-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t">
-        {user ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <SidebarMenuButton
-                className="w-full"
-                data-testid="button-user-menu"
-              >
-                <Avatar className="h-6 w-6">
-                  <AvatarImage src={user.profileImageUrl || undefined} alt={userName} />
-                  <AvatarFallback className="text-xs">{userName.charAt(0).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <span className="truncate">{userName}</span>
-                <MoreHorizontal className="ml-auto h-4 w-4" />
-              </SidebarMenuButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="top" align="start" className="w-48">
-              <DropdownMenuItem asChild>
-                <Link href={`/u/${user.username || user.id}`} data-testid="link-my-profile">
-                  My Profile
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <a href="/api/logout" data-testid="button-logout">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
+
+      <SidebarFooter className="group-data-[collapsible=icon]:p-0">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton
+                    size="lg"
+                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                    data-testid="button-user-menu"
+                  >
+                    <Avatar className="h-8 w-8 rounded-lg">
+                      <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
+                      <AvatarFallback className="rounded-lg">
+                        {userName.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                      <span className="truncate font-medium">{userName}</span>
+                      <span className="truncate text-xs text-muted-foreground">{userEmail}</span>
+                    </div>
+                    <ChevronsUpDown className="ml-auto size-4 group-data-[collapsible=icon]:hidden" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                  side="bottom"
+                  align="end"
+                  sideOffset={4}
+                >
+                  <DropdownMenuLabel className="p-0 font-normal">
+                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                      <Avatar className="h-8 w-8 rounded-lg">
+                        <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
+                        <AvatarFallback className="rounded-lg">
+                          {userName.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="grid flex-1 text-left text-sm leading-tight">
+                        <span className="truncate font-semibold">{userName}</span>
+                        <span className="truncate text-xs">{userEmail}</span>
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/u/${user.username || user.id}`} className="flex items-center gap-2 w-full" data-testid="link-my-profile">
+                        <Users className="size-4" />
+                        My Profile
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <a href="/api/logout" className="flex items-center gap-2 w-full" data-testid="button-logout">
+                      <LogOut className="size-4" />
+                      Log out
+                    </a>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <SidebarMenuButton asChild size="lg">
+                <a href="/api/login" data-testid="button-login">
+                  <Avatar className="h-8 w-8 rounded-lg">
+                    <AvatarFallback className="rounded-lg">?</AvatarFallback>
+                  </Avatar>
+                  <span className="group-data-[collapsible=icon]:hidden">Sign In</span>
                 </a>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <SidebarMenuButton asChild>
-            <a href="/api/login" data-testid="button-login">Sign In</a>
-          </SidebarMenuButton>
-        )}
+              </SidebarMenuButton>
+            )}
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   );
 }
@@ -167,14 +235,17 @@ export function PageHeader({ title, children, size, showTrigger = true, backHref
     <header className={pageHeaderVariants({ size })}>
       {showTrigger && <SidebarTrigger data-testid="button-sidebar-toggle" />}
       {backHref && (
-        <Button variant="ghost" size="icon" asChild className="h-8 w-8">
+        <Button variant="ghost" size="icon" asChild>
           <Link href={backHref} data-testid="button-back">
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
       )}
       {title && <h1 className="font-semibold text-sm">{title}</h1>}
-      {children && <div className="ml-auto flex items-center gap-2">{children}</div>}
+      <div className="ml-auto flex items-center gap-2">
+        <ThemeToggle />
+        {children}
+      </div>
     </header>
   );
 }
