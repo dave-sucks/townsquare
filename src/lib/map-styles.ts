@@ -108,7 +108,7 @@ export const LABEL_DENSITY_OPTIONS: { id: LabelDensity; name: string; descriptio
   { id: "full", name: "Full", description: "All labels" },
 ];
 
-export const DEFAULT_LABEL_DENSITY: LabelDensity = "low";
+export const DEFAULT_LABEL_DENSITY: LabelDensity = "minimal";
 
 // Label density style overrides - these get merged with the base style
 export function getLabelDensityStyles(density: LabelDensity): google.maps.MapTypeStyle[] {
