@@ -4,12 +4,13 @@ import { use } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Heart, CheckCircle, MapPin, List as ListIcon, Lock, Globe, User, Users, UserPlus, UserMinus, Loader2, Star } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Heart, CheckCircle, MapPin, List as ListIcon, Lock, Globe, User, UserPlus, UserMinus, Loader2, Star } from "lucide-react";
 import { apiRequest } from "@/lib/query-client";
 import { useAuth } from "@/hooks/use-auth";
 import { AppShell, PageHeader, ContentContainer } from "@/components/layout";
@@ -67,9 +68,131 @@ interface ProfileData {
   reviews: ReviewData[];
 }
 
+function ProfileSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex gap-6 items-start">
+        <Skeleton className="h-20 w-20 rounded-full shrink-0" />
+        <div className="flex-1 space-y-3">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-4 w-24" />
+          <div className="flex gap-4">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+        </div>
+      </div>
+      <Skeleton className="h-10 w-full" />
+      <div className="grid grid-cols-2 gap-3">
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    </div>
+  );
+}
+
+function PlaceCard({ place, status, testId }: { place: Place; status: "WANT" | "BEEN"; testId: string }) {
+  return (
+    <Link href={`/places/${place.googlePlaceId}`} data-testid={testId}>
+      <Card className="hover-elevate cursor-pointer h-full">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0">
+              <MapPin className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm truncate">{place.name}</p>
+              <p className="text-xs text-muted-foreground truncate mt-0.5">{place.formattedAddress}</p>
+            </div>
+          </div>
+          <div className="mt-3 flex items-center gap-1.5">
+            {status === "WANT" ? (
+              <Badge variant="secondary" className="text-xs">
+                <Heart className="mr-1 h-3 w-3" />
+                Want
+              </Badge>
+            ) : (
+              <Badge className="text-xs">
+                <CheckCircle className="mr-1 h-3 w-3" />
+                Been
+              </Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
+function ReviewCard({ review, testId }: { review: ReviewData; testId: string }) {
+  return (
+    <Link href={`/places/${review.place.googlePlaceId}`} data-testid={testId}>
+      <Card className="hover-elevate cursor-pointer h-full">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0">
+              <Star className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm truncate">{review.place.name}</p>
+              <p className="text-xs text-muted-foreground truncate mt-0.5">{review.place.formattedAddress}</p>
+            </div>
+          </div>
+          {review.note && (
+            <p className="text-sm text-muted-foreground mt-3 line-clamp-2">{review.note}</p>
+          )}
+          <div className="mt-3 flex items-center gap-1.5">
+            <Badge variant="secondary" className="text-xs">
+              <Star className="mr-1 h-3 w-3 fill-current" />
+              {review.rating}/10
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
+function ListCard({ list, testId }: { list: ListData; testId: string }) {
+  return (
+    <Link href={`/lists/${list.id}`} data-testid={testId}>
+      <Card className="hover-elevate cursor-pointer h-full">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0">
+              <ListIcon className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm truncate">{list.name}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{list._count.listPlaces} places</p>
+            </div>
+            {list.visibility === "PRIVATE" ? (
+              <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
+            ) : (
+              <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
+function EmptyState({ icon: Icon, title, subtitle }: { icon: typeof Heart; title: string; subtitle: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
+        <Icon className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <p className="font-medium">{title}</p>
+      <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
+    </div>
+  );
+}
+
 export default function UserProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = use(params);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user: currentUser } = useAuth();
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery<ProfileData>({
@@ -104,7 +227,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
     },
   });
 
-  const user = data?.user;
+  const profileUser = data?.user;
   const isOwnProfile = data?.isOwnProfile || false;
   const isFollowing = data?.isFollowing || false;
   const followerCount = data?.followerCount || 0;
@@ -117,308 +240,224 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
   const isFollowLoading = followMutation.isPending || unfollowMutation.isPending;
 
   const handleFollow = () => {
-    if (!data?.user) return;
+    if (!profileUser) return;
     if (isFollowing) {
-      unfollowMutation.mutate(data.user.id);
+      unfollowMutation.mutate(profileUser.id);
     } else {
-      followMutation.mutate(data.user.id);
+      followMutation.mutate(profileUser.id);
     }
   };
 
-  const { user: currentUser } = useAuth();
-  const profileUser = data?.user;
-
   const displayName = profileUser?.firstName 
     ? `${profileUser.firstName}${profileUser.lastName ? ` ${profileUser.lastName}` : ""}`
-    : profileUser?.username || "User";
+    : profileUser?.username || username;
+  
+  const handle = profileUser?.username || username;
 
   const content = !isAuthenticated ? (
-    <Card>
-      <CardContent className="flex flex-col items-center justify-center py-12">
-        <User className="mb-4 h-12 w-12 text-muted-foreground" />
-        <p className="text-lg font-medium">Please sign in</p>
-        <Button asChild className="mt-4">
-          <Link href="/">Go to Home</Link>
-        </Button>
-      </CardContent>
-    </Card>
+    <div className="flex flex-col items-center justify-center py-16">
+      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+        <User className="h-8 w-8 text-muted-foreground" />
+      </div>
+      <p className="text-lg font-medium">Please sign in</p>
+      <p className="text-sm text-muted-foreground mt-1">Sign in to view profiles</p>
+      <Button asChild className="mt-4">
+        <Link href="/">Go to Home</Link>
+      </Button>
+    </div>
   ) : isLoading ? (
-    <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <Skeleton className="h-16 w-16 rounded-full" />
-        <div className="space-y-2">
-          <Skeleton className="h-6 w-32" />
-          <Skeleton className="h-4 w-24" />
+    <ProfileSkeleton />
+  ) : error || !profileUser ? (
+    <div className="flex flex-col items-center justify-center py-16">
+      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+        <User className="h-8 w-8 text-muted-foreground" />
+      </div>
+      <p className="text-lg font-medium">User not found</p>
+      <p className="text-sm text-muted-foreground mt-1">This profile doesn't exist</p>
+      <Button asChild className="mt-4">
+        <Link href="/people">Browse People</Link>
+      </Button>
+    </div>
+  ) : (
+    <div className="space-y-6">
+      <div className="flex gap-5 items-start">
+        <Avatar className="h-20 w-20 border-2 border-border shrink-0">
+          <AvatarImage src={profileUser.profileImageUrl || undefined} alt={displayName} />
+          <AvatarFallback className="text-2xl font-medium">{displayName.charAt(0).toUpperCase()}</AvatarFallback>
+        </Avatar>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-xl font-semibold truncate" data-testid="text-user-name">{displayName}</h1>
+              <p className="text-sm text-muted-foreground" data-testid="text-username">@{handle}</p>
+            </div>
+            
+            {isOwnProfile ? (
+              <Button variant="outline" size="sm" disabled data-testid="button-edit-profile">
+                Edit Profile
+              </Button>
+            ) : (
+              <Button
+                variant={isFollowing ? "outline" : "default"}
+                size="sm"
+                onClick={handleFollow}
+                disabled={isFollowLoading}
+                data-testid="button-follow"
+              >
+                {isFollowLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : isFollowing ? (
+                  <><UserMinus className="mr-1.5 h-4 w-4" />Following</>
+                ) : (
+                  <><UserPlus className="mr-1.5 h-4 w-4" />Follow</>
+                )}
+              </Button>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-4 mt-3 text-sm">
+            <button className="hover:underline" data-testid="text-following">
+              <span className="font-semibold">{followingCount}</span>
+              <span className="text-muted-foreground ml-1">following</span>
+            </button>
+            <button className="hover:underline" data-testid="text-followers">
+              <span className="font-semibold">{followerCount}</span>
+              <span className="text-muted-foreground ml-1">{followerCount === 1 ? "follower" : "followers"}</span>
+            </button>
+          </div>
         </div>
       </div>
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-24 w-full" />
-      <Skeleton className="h-24 w-full" />
-    </div>
-  ) : error || !profileUser ? (
-    <Card>
-      <CardContent className="flex flex-col items-center justify-center py-12">
-        <User className="mb-4 h-12 w-12 text-muted-foreground" />
-        <p className="text-lg font-medium">User not found</p>
-        <Button asChild className="mt-4">
-          <Link href="/people">Browse People</Link>
-        </Button>
-      </CardContent>
-    </Card>
-  ) : (
-    <>
-      <Card className="mb-6">
-        <CardHeader>
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={profileUser.profileImageUrl || undefined} alt={displayName} />
-                <AvatarFallback className="text-xl">{displayName.charAt(0).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div>
-                <CardTitle className="text-xl" data-testid="text-user-name">{displayName}</CardTitle>
-                {profileUser.username && (
-                  <CardDescription data-testid="text-username">@{profileUser.username}</CardDescription>
-                )}
-                <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                  <span data-testid="text-followers">{followerCount} followers</span>
-                  <span data-testid="text-following">{followingCount} following</span>
-                </div>
-              </div>
-            </div>
-            <div>
-              {isOwnProfile ? (
-                <Button variant="outline" disabled data-testid="button-edit-profile">
-                  Edit Profile
-                </Button>
-              ) : (
-                <Button
-                  variant={isFollowing ? "outline" : "default"}
-                  onClick={handleFollow}
-                  disabled={isFollowLoading}
-                  data-testid="button-follow"
-                >
-                  {isFollowLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : isFollowing ? (
-                    <UserMinus className="mr-2 h-4 w-4" />
-                  ) : (
-                    <UserPlus className="mr-2 h-4 w-4" />
-                  )}
-                  {isFollowing ? "Unfollow" : "Follow"}
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
 
-      <Tabs defaultValue="want" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mb-4">
-          <TabsTrigger value="want" data-testid="tab-want">
-            <Heart className="mr-1 h-4 w-4" />
-            Want ({wantPlaces.length})
+      <Separator />
+
+      <Tabs defaultValue="places" className="w-full">
+        <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-auto p-0 gap-6">
+          <TabsTrigger 
+            value="places" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent px-0 pb-3"
+            data-testid="tab-places"
+          >
+            <MapPin className="mr-1.5 h-4 w-4" />
+            Places
+            <span className="ml-1.5 text-muted-foreground">{wantPlaces.length + beenPlaces.length}</span>
           </TabsTrigger>
-          <TabsTrigger value="been" data-testid="tab-been">
-            <CheckCircle className="mr-1 h-4 w-4" />
-            Been ({beenPlaces.length})
+          <TabsTrigger 
+            value="reviews"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent px-0 pb-3"
+            data-testid="tab-reviews"
+          >
+            <Star className="mr-1.5 h-4 w-4" />
+            Reviews
+            <span className="ml-1.5 text-muted-foreground">{reviews.length}</span>
           </TabsTrigger>
-          <TabsTrigger value="reviews" data-testid="tab-reviews">
-            <Star className="mr-1 h-4 w-4" />
-            Reviews ({reviews.length})
-          </TabsTrigger>
-          <TabsTrigger value="lists" data-testid="tab-lists">
-            <ListIcon className="mr-1 h-4 w-4" />
-            Lists ({lists.length})
+          <TabsTrigger 
+            value="lists"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent px-0 pb-3"
+            data-testid="tab-lists"
+          >
+            <ListIcon className="mr-1.5 h-4 w-4" />
+            Lists
+            <span className="ml-1.5 text-muted-foreground">{lists.length}</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="want">
-          {wantPlaces.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Heart className="mb-4 h-12 w-12 text-muted-foreground" />
-                <p className="text-lg font-medium">No places yet</p>
-                <p className="text-sm text-muted-foreground">
-                  {isOwnProfile ? "Add places you want to visit" : "This user hasn't saved any places yet"}
-                </p>
-              </CardContent>
-            </Card>
+        <TabsContent value="places" className="mt-6">
+          {wantPlaces.length === 0 && beenPlaces.length === 0 ? (
+            <EmptyState 
+              icon={MapPin}
+              title="No places saved"
+              subtitle={isOwnProfile ? "Start saving places you want to visit" : "This user hasn't saved any places yet"}
+            />
           ) : (
-            <div className="space-y-3">
-              {wantPlaces.map((savedPlace) => (
-                <Card key={savedPlace.id} data-testid={`want-place-${savedPlace.id}`}>
-                  <CardHeader className="p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-base truncate">
-                          <Link 
-                            href={`/places/${savedPlace.place.googlePlaceId}`}
-                            className="hover:underline"
-                            data-testid={`link-want-place-${savedPlace.id}`}
-                          >
-                            {savedPlace.place.name}
-                          </Link>
-                        </CardTitle>
-                        <CardDescription className="mt-1 truncate">
-                          {savedPlace.place.formattedAddress}
-                        </CardDescription>
-                      </div>
-                      <Badge variant="secondary">
-                        <Heart className="mr-1 h-3 w-3" />
-                        Want
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                </Card>
-              ))}
+            <div className="space-y-6">
+              {wantPlaces.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Heart className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="text-sm font-medium text-muted-foreground">Want to visit</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {wantPlaces.map((savedPlace) => (
+                      <PlaceCard 
+                        key={savedPlace.id} 
+                        place={savedPlace.place} 
+                        status="WANT"
+                        testId={`want-place-${savedPlace.id}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {beenPlaces.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="text-sm font-medium text-muted-foreground">Been there</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {beenPlaces.map((savedPlace) => (
+                      <PlaceCard 
+                        key={savedPlace.id} 
+                        place={savedPlace.place} 
+                        status="BEEN"
+                        testId={`been-place-${savedPlace.id}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </TabsContent>
 
-        <TabsContent value="been">
-          {beenPlaces.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <CheckCircle className="mb-4 h-12 w-12 text-muted-foreground" />
-                <p className="text-lg font-medium">No places yet</p>
-                <p className="text-sm text-muted-foreground">
-                  {isOwnProfile ? "Mark places you've visited" : "This user hasn't visited any places yet"}
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {beenPlaces.map((savedPlace) => (
-                <Card key={savedPlace.id} data-testid={`been-place-${savedPlace.id}`}>
-                  <CardHeader className="p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-base truncate">
-                          <Link 
-                            href={`/places/${savedPlace.place.googlePlaceId}`}
-                            className="hover:underline"
-                            data-testid={`link-been-place-${savedPlace.id}`}
-                          >
-                            {savedPlace.place.name}
-                          </Link>
-                        </CardTitle>
-                        <CardDescription className="mt-1 truncate">
-                          {savedPlace.place.formattedAddress}
-                        </CardDescription>
-                      </div>
-                      <Badge>
-                        <CheckCircle className="mr-1 h-3 w-3" />
-                        Been
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="reviews">
+        <TabsContent value="reviews" className="mt-6">
           {reviews.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Star className="mb-4 h-12 w-12 text-muted-foreground" />
-                <p className="text-lg font-medium">No reviews yet</p>
-                <p className="text-sm text-muted-foreground">
-                  {isOwnProfile ? "Share your experiences by reviewing places" : "This user hasn't reviewed any places yet"}
-                </p>
-              </CardContent>
-            </Card>
+            <EmptyState 
+              icon={Star}
+              title="No reviews yet"
+              subtitle={isOwnProfile ? "Share your experiences by reviewing places" : "This user hasn't reviewed any places yet"}
+            />
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {reviews.map((review) => (
-                <Card key={review.id} data-testid={`review-${review.id}`}>
-                  <CardHeader className="p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-base truncate">
-                          <Link 
-                            href={`/places/${review.place.googlePlaceId}`}
-                            className="hover:underline"
-                            data-testid={`link-review-place-${review.id}`}
-                          >
-                            {review.place.name}
-                          </Link>
-                        </CardTitle>
-                        <CardDescription className="mt-1 truncate">
-                          {review.place.formattedAddress}
-                        </CardDescription>
-                        {review.note && (
-                          <p className="text-sm mt-2 text-muted-foreground line-clamp-2">{review.note}</p>
-                        )}
-                      </div>
-                      <Badge variant="secondary">
-                        <Star className="mr-1 h-3 w-3 fill-current" />
-                        {review.rating}/10
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                </Card>
+                <ReviewCard 
+                  key={review.id} 
+                  review={review}
+                  testId={`review-${review.id}`}
+                />
               ))}
             </div>
           )}
         </TabsContent>
 
-        <TabsContent value="lists">
+        <TabsContent value="lists" className="mt-6">
           {lists.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <ListIcon className="mb-4 h-12 w-12 text-muted-foreground" />
-                <p className="text-lg font-medium">No lists yet</p>
-                <p className="text-sm text-muted-foreground">
-                  {isOwnProfile 
-                    ? "Create lists to organize your places" 
-                    : "This user hasn't created any public lists yet"}
-                </p>
-              </CardContent>
-            </Card>
+            <EmptyState 
+              icon={ListIcon}
+              title="No lists yet"
+              subtitle={isOwnProfile ? "Create lists to organize your places" : "This user hasn't created any public lists yet"}
+            />
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {lists.map((list) => (
-                <Card key={list.id} data-testid={`list-${list.id}`}>
-                  <CardHeader className="p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-base truncate">
-                          <Link 
-                            href={`/lists/${list.id}`}
-                            className="hover:underline"
-                            data-testid={`link-list-${list.id}`}
-                          >
-                            {list.name}
-                          </Link>
-                        </CardTitle>
-                        <CardDescription className="mt-1">
-                          {list._count.listPlaces} places
-                        </CardDescription>
-                      </div>
-                      <Badge variant="outline">
-                        {list.visibility === "PRIVATE" ? (
-                          <Lock className="h-3 w-3" />
-                        ) : (
-                          <Globe className="h-3 w-3" />
-                        )}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                </Card>
+                <ListCard 
+                  key={list.id} 
+                  list={list}
+                  testId={`list-${list.id}`}
+                />
               ))}
             </div>
           )}
         </TabsContent>
       </Tabs>
-    </>
+    </div>
   );
 
   return (
     <AppShell user={currentUser}>
-      <PageHeader title={displayName} backHref={isOwnProfile ? "/" : "/people"} />
+      <PageHeader backHref={isOwnProfile ? "/" : "/people"} />
       <ContentContainer maxWidth="md">{content}</ContentContainer>
     </AppShell>
   );
