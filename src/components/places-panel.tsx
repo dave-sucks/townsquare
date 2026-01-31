@@ -4,7 +4,6 @@ import * as React from "react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, ChevronUp, ChevronDown, Minus } from "lucide-react";
@@ -175,19 +174,35 @@ export function PlacesPanel({
           ))}
         </SelectContent>
       </Select>
-      <Tabs value={selectedTab} onValueChange={onTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="all" data-testid="tab-all">
-            All ({listFilteredPlaces.length})
-          </TabsTrigger>
-          <TabsTrigger value="want" data-testid="tab-want">
-            Want ({listFilteredPlaces.filter((p) => p.status === "WANT").length})
-          </TabsTrigger>
-          <TabsTrigger value="been" data-testid="tab-been">
-            Been ({listFilteredPlaces.filter((p) => p.status === "BEEN").length})
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <div className="flex gap-1">
+        <Button
+          size="sm"
+          variant={selectedTab === "all" ? "default" : "ghost"}
+          onClick={() => onTabChange("all")}
+          data-testid="tab-all"
+          className="flex-1"
+        >
+          All ({listFilteredPlaces.length})
+        </Button>
+        <Button
+          size="sm"
+          variant={selectedTab === "want" ? "default" : "ghost"}
+          onClick={() => onTabChange("want")}
+          data-testid="tab-want"
+          className="flex-1"
+        >
+          Want ({listFilteredPlaces.filter((p) => p.status === "WANT").length})
+        </Button>
+        <Button
+          size="sm"
+          variant={selectedTab === "been" ? "default" : "ghost"}
+          onClick={() => onTabChange("been")}
+          data-testid="tab-been"
+          className="flex-1"
+        >
+          Been ({listFilteredPlaces.filter((p) => p.status === "BEEN").length})
+        </Button>
+      </div>
     </div>
   );
 

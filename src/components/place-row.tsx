@@ -2,27 +2,9 @@
 
 import { forwardRef } from "react";
 import Link from "next/link";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Heart, CheckCircle, Trash2, ExternalLink } from "lucide-react";
-import { cva, type VariantProps } from "class-variance-authority";
+import Image from "next/image";
+import { Heart, CheckCircle, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const placeRowVariants = cva(
-  "cursor-pointer transition-colors",
-  {
-    variants: {
-      selected: {
-        true: "ring-2 ring-primary ring-offset-2",
-        false: "hover-elevate",
-      },
-    },
-    defaultVariants: {
-      selected: false,
-    },
-  }
-);
 
 interface Place {
   id: string;
@@ -47,7 +29,7 @@ interface SavedPlace {
   place: Place;
 }
 
-interface PlaceRowProps extends VariantProps<typeof placeRowVariants> {
+interface PlaceRowProps {
   savedPlace: SavedPlace;
   isSelected: boolean;
   onSelect: () => void;
@@ -57,100 +39,91 @@ interface PlaceRowProps extends VariantProps<typeof placeRowVariants> {
   isDeleting?: boolean;
 }
 
+function formatPlaceType(type: string | null): string {
+  if (!type) return "";
+  return type
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (l) => l.toUpperCase());
+}
+
 export const PlaceRow = forwardRef<HTMLDivElement, PlaceRowProps>(
   (
     {
       savedPlace,
       isSelected,
       onSelect,
-      onToggleStatus,
-      onDelete,
-      isUpdating,
-      isDeleting,
     },
     ref
   ) => {
+    const photoRef = savedPlace.place.photoRefs?.[0];
+    const photoUrl = photoRef 
+      ? `/api/places/photo?photoRef=${encodeURIComponent(photoRef)}&maxWidth=100`
+      : null;
+    
+    const placeType = formatPlaceType(savedPlace.place.primaryType);
+    const address = savedPlace.place.formattedAddress.split(",")[0];
+
     return (
-      <Card
-        ref={ref}
-        className={cn("overflow-hidden", placeRowVariants({ selected: isSelected }))}
-        onClick={onSelect}
-        data-testid={`place-card-${savedPlace.id}`}
-        data-selected={isSelected}
+      <Link
+        href={`/places/${savedPlace.place.googlePlaceId}`}
+        data-testid={`place-row-${savedPlace.id}`}
+        onClick={() => onSelect()}
       >
-        <CardHeader className="p-4">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0 overflow-hidden">
-              <CardTitle className="text-base truncate">
-                <Link
-                  href={`/places/${savedPlace.place.googlePlaceId}`}
-                  className="hover:underline"
-                  onClick={(e) => e.stopPropagation()}
-                  data-testid={`link-place-name-${savedPlace.id}`}
-                >
-                  {savedPlace.place.name}
-                </Link>
-              </CardTitle>
-              <CardDescription className="mt-1 truncate">
-                {savedPlace.place.formattedAddress}
-              </CardDescription>
-            </div>
-            <Badge variant={savedPlace.status === "WANT" ? "secondary" : "default"}>
+        <div
+          ref={ref}
+          className={cn(
+            "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors",
+            isSelected 
+              ? "bg-accent" 
+              : "hover:bg-accent/50"
+          )}
+          data-testid={`place-card-${savedPlace.id}`}
+          data-selected={isSelected}
+        >
+          <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0">
+            {photoUrl ? (
+              <Image
+                src={photoUrl}
+                alt={savedPlace.place.name}
+                fill
+                className="object-cover"
+                sizes="64px"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                {savedPlace.status === "WANT" ? (
+                  <Heart className="h-6 w-6" />
+                ) : (
+                  <CheckCircle className="h-6 w-6" />
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <h3 className="font-medium text-sm truncate">
+              {savedPlace.place.name}
+            </h3>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
               {savedPlace.status === "WANT" ? (
-                <>
-                  <Heart className="mr-1 h-3 w-3" />
-                  Want
-                </>
+                <Heart className="h-3 w-3 fill-current text-rose-500" />
               ) : (
+                <CheckCircle className="h-3 w-3 text-emerald-500" />
+              )}
+              <span>{savedPlace.status === "WANT" ? "Want" : "Been"}</span>
+              {placeType && (
                 <>
-                  <CheckCircle className="mr-1 h-3 w-3" />
-                  Been
+                  <span className="mx-1">·</span>
+                  <span className="truncate">{placeType}</span>
                 </>
               )}
-            </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground truncate mt-0.5">
+              {address}
+            </p>
           </div>
-          <div className="mt-3 flex gap-2 flex-wrap">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleStatus();
-              }}
-              disabled={isUpdating}
-              data-testid={`button-toggle-status-${savedPlace.id}`}
-            >
-              {savedPlace.status === "WANT" ? "Mark as Been" : "Mark as Want"}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              asChild
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Link 
-                href={`/places/${savedPlace.place.googlePlaceId}`}
-                data-testid={`button-open-details-${savedPlace.id}`}
-              >
-                <ExternalLink className="mr-1 h-3 w-3" />
-                Details
-              </Link>
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              disabled={isDeleting}
-              data-testid={`button-delete-${savedPlace.id}`}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardHeader>
-      </Card>
+        </div>
+      </Link>
     );
   }
 );

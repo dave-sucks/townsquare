@@ -215,12 +215,10 @@ export function Dashboard({ user }: { user: UserData }) {
 
   const handleListItemClick = useCallback((savedPlaceId: string) => {
     setSelectedPlaceId(savedPlaceId);
-    setSheetOpen(true);
   }, []);
 
   const handleMarkerClick = useCallback((savedPlaceId: string) => {
     setSelectedPlaceId(savedPlaceId);
-    setSheetOpen(true);
     const rowElement = placeRowRefs.current.get(savedPlaceId);
     if (rowElement) rowElement.scrollIntoView({ behavior: "smooth", block: "center" });
   }, []);
