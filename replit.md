@@ -8,8 +8,41 @@ Core features:
 - User authentication via Replit Auth (OIDC)
 - Google Places search with autocomplete
 - Save places with WANT/BEEN status
-- Interactive map displaying saved places with color-coded pins (red=WANT, green=BEEN)
+- Interactive map displaying saved places with color-coded pins (red=WANT, green=BEEN, blue=SELECTED)
 - Tabs to filter saved places
+- Bidirectional list↔map selection synchronization
+- Map overlay preview card for selected places
+
+## Recent Changes (Phase 2 - Interaction Tightening)
+
+**Date: January 31, 2026**
+
+### Selection State Architecture
+- `selectedPlaceId` state lives in `main-app.tsx` as the single source of truth
+- No duplicated selection state across components
+- Selection controls: active list row, active map marker, map center, and preview visibility
+
+### List ↔ Map Synchronization
+- **List → Map**: Clicking a place in the list sets selectedPlaceId, pans map to location, zooms to street level, and shows preview card
+- **Map → List**: Clicking a map marker sets selectedPlaceId, highlights corresponding list row, scrolls list to bring row into view, and shows preview card
+- Uses React refs (placeRowRefs) to scroll list items into view when marker is clicked
+
+### New Components Added
+- `src/components/place-row.tsx`: Wrapper component for list items with cva variants for selection highlighting (ring-2 ring-primary when selected)
+- `src/components/place-preview.tsx`: Lightweight shadcn Card overlay on map showing place name, address, status, and quick actions
+- `src/components/ui/scroll-area.tsx`: shadcn ScrollArea for independent list scrolling
+
+### Marker States
+Three distinct visual states for map markers:
+1. **WANT**: Red (#ef4444), 24px, heart icon
+2. **BEEN**: Green (#22c55e), 24px, checkmark icon  
+3. **SELECTED**: Blue (#3b82f6), 32px, larger with 3px white border, z-index 1000
+
+### Layout
+- Full viewport height layout (h-screen) with overflow-hidden
+- Left panel: Tabs at top, ScrollArea for place list below
+- Right panel: Full-height map with relative positioning for preview overlay
+- Header remains sticky at top
 
 ## User Preferences
 
