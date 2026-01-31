@@ -107,7 +107,10 @@ export async function handleCallback(url: URL): Promise<{ success: boolean; erro
       return { success: false, error: "Invalid session state" };
     }
 
-    const tokens = await client.authorizationCodeGrant(config, url, {
+    const externalCallbackUrl = new URL(callbackUrl);
+    externalCallbackUrl.search = url.search;
+
+    const tokens = await client.authorizationCodeGrant(config, externalCallbackUrl, {
       pkceCodeVerifier: codeVerifier,
       expectedState,
       idTokenExpected: true,
