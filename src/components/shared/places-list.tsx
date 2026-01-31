@@ -35,6 +35,7 @@ interface PlaceCardProps {
   isSelected: boolean;
   onSelect: () => void;
   showStatus?: boolean;
+  actionButton?: React.ReactNode;
 }
 
 function formatPlaceType(type: string | null): string {
@@ -45,7 +46,7 @@ function formatPlaceType(type: string | null): string {
 }
 
 export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
-  ({ savedPlace, isSelected, onSelect, showStatus = true }, ref) => {
+  ({ savedPlace, isSelected, onSelect, showStatus = true, actionButton }, ref) => {
     const photoRef = savedPlace.place.photoRefs?.[0];
     const photoUrl = photoRef 
       ? `/api/places/photo?photoRef=${encodeURIComponent(photoRef)}&maxWidth=100`
@@ -66,7 +67,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
         <div
           ref={ref}
           className={cn(
-            "flex items-center gap-3 p-1 rounded-lg cursor-pointer transition-colors hover-elevate",
+            "group flex items-center gap-3 p-1 rounded-lg cursor-pointer transition-colors hover-elevate",
             isSelected && "bg-accent"
           )}
           data-testid={`place-card-${savedPlace.id}`}
@@ -112,6 +113,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
               {address}
             </p>
           </div>
+          {actionButton}
         </div>
       </Link>
     );
@@ -129,6 +131,7 @@ interface PlacesListProps {
   showStatus?: boolean;
   emptyMessage?: string;
   emptySubMessage?: string;
+  renderAction?: (savedPlace: SavedPlace) => React.ReactNode;
 }
 
 export function PlacesList({
@@ -140,6 +143,7 @@ export function PlacesList({
   showStatus = true,
   emptyMessage = "No places yet",
   emptySubMessage = "Search for a place on the map to add it",
+  renderAction,
 }: PlacesListProps) {
   if (isLoading) {
     return (
@@ -178,6 +182,7 @@ export function PlacesList({
           isSelected={savedPlace.id === selectedPlaceId}
           onSelect={() => onPlaceSelect(savedPlace.id)}
           showStatus={showStatus}
+          actionButton={renderAction?.(savedPlace)}
         />
       ))}
     </div>
