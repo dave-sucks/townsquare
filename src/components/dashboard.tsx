@@ -13,6 +13,7 @@ import { PlaceDetailsSheet } from "@/components/place-details-sheet";
 import { AddToListDialog } from "@/components/add-to-list-dialog";
 import { ReviewDialog } from "@/components/review-dialog";
 import { PlacesPanel } from "@/components/places-panel";
+import { BottomSheet } from "@/components/bottom-sheet";
 import { AppShell } from "@/components/layout";
 
 interface UserData {
@@ -338,33 +339,26 @@ export function Dashboard({ user }: { user: UserData }) {
           </div>
         </div>
 
-        <div 
-          className="absolute left-0 right-0 bottom-0 z-10 md:hidden bg-background rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] h-[45vh] flex flex-col"
-          data-testid="mobile-places-panel"
-        >
-          <div className="flex flex-col items-center pt-2 pb-1 shrink-0">
-            <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
-          </div>
-          <div className="flex-1 overflow-hidden">
-            <PlacesPanel
-              places={filteredPlaces}
-              lists={lists}
-              isLoading={isLoadingPlaces}
-              selectedPlaceId={selectedPlaceId}
-              selectedTab={selectedTab}
-              selectedListId={selectedListId}
-              listFilteredPlaces={listFilteredPlaces}
-              onTabChange={setSelectedTab}
-              onListChange={setSelectedListId}
-              onPlaceSelect={handleListItemClick}
-              onToggleStatus={handleToggleStatus}
-              onDelete={handleDelete}
-              isUpdating={updateStatusMutation.isPending}
-              isDeleting={deletePlaceMutation.isPending}
-              placeRowRefs={placeRowRefs}
-            />
-          </div>
-        </div>
+        {/* Mobile bottom sheet with drag gestures */}
+        <BottomSheet defaultSnapPoint="mid">
+          <PlacesPanel
+            places={filteredPlaces}
+            lists={lists}
+            isLoading={isLoadingPlaces}
+            selectedPlaceId={selectedPlaceId}
+            selectedTab={selectedTab}
+            selectedListId={selectedListId}
+            listFilteredPlaces={listFilteredPlaces}
+            onTabChange={setSelectedTab}
+            onListChange={setSelectedListId}
+            onPlaceSelect={handleListItemClick}
+            onToggleStatus={handleToggleStatus}
+            onDelete={handleDelete}
+            isUpdating={updateStatusMutation.isPending}
+            isDeleting={deletePlaceMutation.isPending}
+            placeRowRefs={placeRowRefs}
+          />
+        </BottomSheet>
       </div>
 
       <PlaceDetailsSheet

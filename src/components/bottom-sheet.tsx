@@ -6,12 +6,11 @@ import {
   useEffect,
   useCallback,
   type ReactNode,
-  type TouchEvent,
-  type MouseEvent,
+  type TouchEvent as ReactTouchEvent,
+  type MouseEvent as ReactMouseEvent,
 } from "react";
-import { motion, useMotionValue, useTransform, animate, type PanInfo } from "framer-motion";
+import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { useElementScrollTop } from "@/hooks/use-element-scroll-top";
 
 // Snap points as percentages of viewport height (from bottom)
 const SNAP_POINTS = {
@@ -20,8 +19,8 @@ const SNAP_POINTS = {
   EXPANDED: 0.9, // 90% of viewport
 };
 
-// Velocity threshold for flicking to next snap point
-const VELOCITY_THRESHOLD = 500;
+// Velocity threshold for flicking to next snap point (pixels per second)
+const VELOCITY_THRESHOLD = 300;
 
 // Distance threshold for snap decision when velocity is low
 const DISTANCE_THRESHOLD = 50;
@@ -54,15 +53,18 @@ export function BottomSheet({
   const [snapPoint, setSnapPoint] = useState<SnapPoint>(defaultSnapPoint);
   const [isDragging, setIsDragging] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(0);
-  
+
   const contentRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
   const dragStartY = useRef(0);
   const dragStartSheetY = useRef(0);
-  const isDraggingSheet = useRef(false);
-  const isScrolling = useRef(false);
+  const lastClientY = useRef(0);
+  const lastTime = useRef(0);
+  const velocityY = useRef(0);
 
-  const { isAtTop, handleScroll, getScrollTop } = useElementScrollTop(contentRef);
+  // Track drag state
+  const isDraggingSheet = useRef(false);
+  const canStartDrag = useRef(false);
 
   // Calculate snap point heights in pixels
   const getSnapHeight = useCallback(
@@ -81,7 +83,7 @@ export function BottomSheet({
 
   // Motion value for sheet height (y position from bottom)
   const sheetHeight = useMotionValue(0);
-  
+
   // Transform for backdrop opacity (only show when approaching expanded)
   const backdropOpacity = useTransform(sheetHeight, (height) => {
     const expandedHeight = getSnapHeight("expanded");
@@ -97,7 +99,6 @@ export function BottomSheet({
   // Update viewport height on mount and resize
   useEffect(() => {
     const updateViewportHeight = () => {
-      // Use visualViewport for accurate height on mobile
       const vh = window.visualViewport?.height ?? window.innerHeight;
       setViewportHeight(vh);
     };
@@ -126,19 +127,19 @@ export function BottomSheet({
       const mid = getSnapHeight("mid");
       const expanded = getSnapHeight("expanded");
 
-      // High velocity flick up
+      // High velocity flick up (negative velocity means moving up/expanding)
       if (velocity < -VELOCITY_THRESHOLD) {
         if (currentHeight < mid) return "mid";
         return "expanded";
       }
 
-      // High velocity flick down
+      // High velocity flick down (positive velocity means moving down/collapsing)
       if (velocity > VELOCITY_THRESHOLD) {
         if (currentHeight > mid) return "mid";
         return "collapsed";
       }
 
-      // Low velocity: snap to nearest
+      // Low velocity: snap to nearest, but apply distance threshold
       const distances = [
         { point: "collapsed" as SnapPoint, dist: Math.abs(currentHeight - collapsed) },
         { point: "mid" as SnapPoint, dist: Math.abs(currentHeight - mid) },
@@ -146,6 +147,12 @@ export function BottomSheet({
       ];
 
       distances.sort((a, b) => a.dist - b.dist);
+
+      // If closest distance is very small, snap to it
+      if (distances[0].dist < DISTANCE_THRESHOLD) {
+        return distances[0].point;
+      }
+
       return distances[0].point;
     },
     [getSnapHeight]
@@ -167,162 +174,158 @@ export function BottomSheet({
     [getSnapHeight, sheetHeight, onSnapPointChange]
   );
 
-  // Handle touch/mouse start on grabber
-  const handleGrabberPointerDown = useCallback(
+  // Check if content is scrolled to top
+  const isContentAtTop = useCallback(() => {
+    return (contentRef.current?.scrollTop ?? 0) <= 1;
+  }, []);
+
+  // Handle pointer start on grabber (always initiates drag)
+  const handleGrabberStart = useCallback(
     (clientY: number) => {
       isDraggingSheet.current = true;
-      isScrolling.current = false;
+      canStartDrag.current = true;
       dragStartY.current = clientY;
       dragStartSheetY.current = sheetHeight.get();
+      lastClientY.current = clientY;
+      lastTime.current = Date.now();
+      velocityY.current = 0;
       setIsDragging(true);
     },
     [sheetHeight]
   );
 
-  // Handle touch/mouse start on content area
-  const handleContentPointerDown = useCallback(
+  // Handle pointer start on content area
+  const handleContentStart = useCallback(
     (clientY: number) => {
       dragStartY.current = clientY;
       dragStartSheetY.current = sheetHeight.get();
+      lastClientY.current = clientY;
+      lastTime.current = Date.now();
+      velocityY.current = 0;
       isDraggingSheet.current = false;
-      isScrolling.current = false;
+      // Can start drag if at top
+      canStartDrag.current = isContentAtTop();
     },
-    [sheetHeight]
+    [sheetHeight, isContentAtTop]
   );
 
-  // Handle pointer move (both grabber and content)
+  // Handle pointer move
   const handlePointerMove = useCallback(
     (clientY: number) => {
-      const deltaY = dragStartY.current - clientY;
-      const scrollTop = getScrollTop();
-
-      // If we're scrolling content and not at top, continue scrolling
-      if (isScrolling.current && scrollTop > 1) {
-        return;
+      // Calculate velocity
+      const currentTime = Date.now();
+      const dt = currentTime - lastTime.current;
+      if (dt > 0) {
+        // Positive velocity = moving down (finger moving down screen)
+        velocityY.current = ((clientY - lastClientY.current) / dt) * 1000;
       }
+      lastClientY.current = clientY;
+      lastTime.current = currentTime;
 
-      // If content is at top and dragging down, start sheet drag
-      if (!isDraggingSheet.current && scrollTop <= 1 && deltaY < 0) {
-        isDraggingSheet.current = true;
-        dragStartY.current = clientY;
-        dragStartSheetY.current = sheetHeight.get();
-        setIsDragging(true);
-      }
+      // Delta from start: negative = finger moved up, positive = finger moved down
+      const deltaFromStart = clientY - dragStartY.current;
 
-      // If dragging sheet
+      // If already dragging sheet, continue dragging
       if (isDraggingSheet.current) {
+        // Calculate new height (dragging up = increasing height)
         const newHeight = Math.max(
           SNAP_POINTS.COLLAPSED,
-          Math.min(viewportHeight * SNAP_POINTS.EXPANDED, dragStartSheetY.current + deltaY)
+          Math.min(viewportHeight * SNAP_POINTS.EXPANDED, dragStartSheetY.current - deltaFromStart)
         );
         sheetHeight.set(newHeight);
-      } else if (Math.abs(deltaY) > 5) {
-        // Started scrolling content
-        isScrolling.current = true;
+        return true; // Indicate we handled the event
       }
+
+      // Check if we should start dragging the sheet
+      // Conditions: content at top, finger moving down, and we're allowed to start drag
+      if (canStartDrag.current && isContentAtTop() && deltaFromStart > 10) {
+        isDraggingSheet.current = true;
+        dragStartY.current = clientY; // Reset start position
+        dragStartSheetY.current = sheetHeight.get();
+        setIsDragging(true);
+        return true;
+      }
+
+      return false;
     },
-    [getScrollTop, sheetHeight, viewportHeight]
+    [viewportHeight, sheetHeight, isContentAtTop]
   );
 
   // Handle pointer end
-  const handlePointerEnd = useCallback(
-    (velocityY: number) => {
-      if (isDraggingSheet.current) {
-        const currentHeight = sheetHeight.get();
-        const nearest = findNearestSnapPoint(currentHeight, velocityY);
-        snapTo(nearest);
-      }
-      isDraggingSheet.current = false;
-      isScrolling.current = false;
-      setIsDragging(false);
-    },
-    [findNearestSnapPoint, sheetHeight, snapTo]
-  );
+  const handlePointerEnd = useCallback(() => {
+    if (isDraggingSheet.current) {
+      const currentHeight = sheetHeight.get();
+      // velocityY is positive when moving down, which should collapse
+      const nearest = findNearestSnapPoint(currentHeight, velocityY.current);
+      snapTo(nearest);
+    }
+    isDraggingSheet.current = false;
+    canStartDrag.current = false;
+    setIsDragging(false);
+  }, [findNearestSnapPoint, sheetHeight, snapTo]);
 
   // Touch event handlers for grabber
   const onGrabberTouchStart = useCallback(
-    (e: TouchEvent) => {
+    (e: ReactTouchEvent) => {
       e.stopPropagation();
-      handleGrabberPointerDown(e.touches[0].clientY);
+      handleGrabberStart(e.touches[0].clientY);
     },
-    [handleGrabberPointerDown]
+    [handleGrabberStart]
   );
 
   const onGrabberMouseDown = useCallback(
-    (e: MouseEvent) => {
+    (e: ReactMouseEvent) => {
       e.stopPropagation();
-      handleGrabberPointerDown(e.clientY);
+      e.preventDefault();
+      handleGrabberStart(e.clientY);
     },
-    [handleGrabberPointerDown]
+    [handleGrabberStart]
   );
 
   // Touch event handlers for content
   const onContentTouchStart = useCallback(
-    (e: TouchEvent) => {
-      handleContentPointerDown(e.touches[0].clientY);
+    (e: ReactTouchEvent) => {
+      handleContentStart(e.touches[0].clientY);
     },
-    [handleContentPointerDown]
+    [handleContentStart]
   );
 
   // Global move/end handlers
   useEffect(() => {
-    if (!isDragging && !isScrolling.current) return;
-
-    let lastClientY = 0;
-    let lastTime = Date.now();
-    let velocityY = 0;
-
     const handleTouchMove = (e: globalThis.TouchEvent) => {
-      const currentY = e.touches[0].clientY;
-      const currentTime = Date.now();
-      const dt = currentTime - lastTime;
-
-      if (dt > 0) {
-        velocityY = ((lastClientY - currentY) / dt) * 1000; // pixels per second
-      }
-
-      lastClientY = currentY;
-      lastTime = currentTime;
-
-      handlePointerMove(currentY);
-
-      // Prevent default only when dragging sheet to stop map pan
-      if (isDraggingSheet.current) {
+      const handled = handlePointerMove(e.touches[0].clientY);
+      // Prevent default only when dragging sheet to stop map pan and page scroll
+      if (handled || isDraggingSheet.current) {
         e.preventDefault();
       }
     };
 
     const handleTouchEnd = () => {
-      handlePointerEnd(-velocityY); // Invert because we track height, not position
+      handlePointerEnd();
     };
 
     const handleMouseMove = (e: globalThis.MouseEvent) => {
-      const currentY = e.clientY;
-      const currentTime = Date.now();
-      const dt = currentTime - lastTime;
-
-      if (dt > 0) {
-        velocityY = ((lastClientY - currentY) / dt) * 1000;
+      if (isDragging) {
+        handlePointerMove(e.clientY);
       }
-
-      lastClientY = currentY;
-      lastTime = currentTime;
-
-      handlePointerMove(currentY);
     };
 
     const handleMouseUp = () => {
-      handlePointerEnd(-velocityY);
+      if (isDragging) {
+        handlePointerEnd();
+      }
     };
 
     window.addEventListener("touchmove", handleTouchMove, { passive: false });
     window.addEventListener("touchend", handleTouchEnd);
+    window.addEventListener("touchcancel", handleTouchEnd);
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
 
     return () => {
       window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("touchend", handleTouchEnd);
+      window.removeEventListener("touchcancel", handleTouchEnd);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
@@ -335,11 +338,16 @@ export function BottomSheet({
     }
   }, [snapPoint, snapTo]);
 
+  // Determine if backdrop should receive pointer events
+  const showBackdrop = snapPoint === "expanded";
+
   return (
     <>
-      {/* Semi-transparent backdrop - only when approaching expanded */}
+      {/* Semi-transparent backdrop - interactive when expanded */}
       <motion.div
-        className="fixed inset-0 bg-black z-[49] md:hidden pointer-events-none"
+        className={`fixed inset-0 bg-black z-[49] md:hidden ${
+          showBackdrop ? "pointer-events-auto" : "pointer-events-none"
+        }`}
         style={{ opacity: backdropOpacity }}
         onClick={handleBackdropClick}
         data-testid="bottom-sheet-backdrop"
@@ -348,16 +356,17 @@ export function BottomSheet({
       {/* Bottom sheet container */}
       <motion.div
         ref={sheetRef}
-        className="fixed left-0 right-0 bottom-0 z-50 md:hidden bg-background rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] flex flex-col touch-none"
+        className="fixed left-0 right-0 bottom-0 z-50 md:hidden bg-background rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] flex flex-col"
         style={{
           height: sheetHeight,
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
+        onPointerDown={(e) => e.stopPropagation()}
         data-testid="mobile-bottom-sheet"
       >
         {/* Grabber area - always draggable */}
         <div
-          className="flex flex-col items-center pt-2 pb-1 shrink-0 cursor-grab active:cursor-grabbing select-none"
+          className="flex flex-col items-center pt-2 pb-1 shrink-0 cursor-grab active:cursor-grabbing select-none touch-none"
           onTouchStart={onGrabberTouchStart}
           onMouseDown={onGrabberMouseDown}
           data-testid="bottom-sheet-grabber"
@@ -366,22 +375,16 @@ export function BottomSheet({
         </div>
 
         {/* Optional header */}
-        {header && (
-          <div className="shrink-0 px-4 pb-2 border-b">
-            {header}
-          </div>
-        )}
+        {header && <div className="shrink-0 px-4 pb-2 border-b">{header}</div>}
 
         {/* Scrollable content area */}
         <div
           ref={contentRef}
-          className={`flex-1 overflow-y-auto overscroll-contain ${
-            snapPoint === "expanded" ? "" : "overflow-hidden"
-          }`}
-          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto overscroll-contain"
           onTouchStart={onContentTouchStart}
           style={{
-            touchAction: snapPoint === "expanded" ? "pan-y" : "none",
+            // Allow normal scrolling in content, touchAction handled by event listeners
+            touchAction: "pan-y",
           }}
           data-testid="bottom-sheet-content"
         >
