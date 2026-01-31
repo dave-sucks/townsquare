@@ -91,20 +91,12 @@ const statusOptions = [
 
 function ProfileHeader({
   user,
-  isOwnProfile,
-  isFollowing,
   followerCount,
   followingCount,
-  onFollow,
-  isFollowLoading,
 }: {
   user: UserData;
-  isOwnProfile: boolean;
-  isFollowing: boolean;
   followerCount: number;
   followingCount: number;
-  onFollow: () => void;
-  isFollowLoading: boolean;
 }) {
   const displayName = user.firstName 
     ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ""}`
@@ -113,39 +105,17 @@ function ProfileHeader({
   const handle = user.username || user.id;
 
   return (
-    <div className="flex items-center gap-3 p-3">
+    <div className="flex items-center gap-3 p-3 border-b">
       <Avatar className="h-14 w-14 border-2 border-border shrink-0">
         <AvatarImage src={user.profileImageUrl || undefined} alt={displayName} />
         <AvatarFallback className="text-lg font-medium">{displayName.charAt(0).toUpperCase()}</AvatarFallback>
       </Avatar>
       
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h2 className="text-sm font-semibold truncate" data-testid="text-profile-name">{displayName}</h2>
-            <p className="text-xs text-muted-foreground" data-testid="text-profile-username">@{handle}</p>
-          </div>
-          
-          {!isOwnProfile && (
-            <Button
-              variant={isFollowing ? "outline" : "default"}
-              size="sm"
-              onClick={onFollow}
-              disabled={isFollowLoading}
-              data-testid="button-follow"
-            >
-              {isFollowLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : isFollowing ? (
-                <><UserMinus className="mr-1.5 h-4 w-4" />Following</>
-              ) : (
-                <><UserPlus className="mr-1.5 h-4 w-4" />Follow</>
-              )}
-            </Button>
-          )}
-        </div>
+        <h2 className="text-sm font-semibold truncate" data-testid="text-profile-name">{displayName}</h2>
+        <p className="text-xs text-muted-foreground" data-testid="text-profile-username">@{handle}</p>
         
-        <div className="flex items-center gap-4 mt-2 text-xs">
+        <div className="flex items-center gap-4 mt-1 text-xs">
           <button className="hover:underline" data-testid="text-following">
             <span className="font-semibold">{followingCount}</span>
             <span className="text-muted-foreground ml-1">following</span>
@@ -297,7 +267,7 @@ export function UserSidebar({
       <div className="h-full flex flex-col bg-background">
         <div className="flex items-center gap-2 p-3 border-b">
           <SidebarTrigger data-testid="button-sidebar-toggle" />
-          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24 flex-1" />
         </div>
         <div className="flex items-center gap-3 p-3 border-b">
           <Skeleton className="h-14 w-14 rounded-full shrink-0" />
@@ -318,20 +288,31 @@ export function UserSidebar({
     <div className="h-full flex flex-col bg-background" data-testid="user-sidebar">
       <div className="flex items-center gap-2 p-3 border-b">
         <SidebarTrigger data-testid="button-sidebar-toggle" />
-        <h1 className="font-semibold text-sm flex-1 truncate">{displayName}</h1>
+        <span className="font-semibold text-sm flex-1 truncate">{displayName}</span>
+        {!isOwnProfile && (
+          <Button
+            variant={localIsFollowing ? "outline" : "default"}
+            size="sm"
+            onClick={handleFollow}
+            disabled={followMutation.isPending}
+            data-testid="button-follow"
+          >
+            {followMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : localIsFollowing ? (
+              <><UserMinus className="mr-1.5 h-4 w-4" />Following</>
+            ) : (
+              <><UserPlus className="mr-1.5 h-4 w-4" />Follow</>
+            )}
+          </Button>
+        )}
       </div>
 
-      <div className="border-b">
-        <ProfileHeader
-          user={user}
-          isOwnProfile={isOwnProfile}
-          isFollowing={localIsFollowing}
-          followerCount={localFollowerCount}
-          followingCount={followingCount}
-          onFollow={handleFollow}
-          isFollowLoading={followMutation.isPending}
-        />
-      </div>
+      <ProfileHeader
+        user={user}
+        followerCount={localFollowerCount}
+        followingCount={followingCount}
+      />
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "places" | "feed")} className="flex-1 flex flex-col min-h-0">
         <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0">

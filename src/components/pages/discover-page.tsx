@@ -234,6 +234,7 @@ export function DiscoverPage({ user }: { user: UserData }) {
       places={filteredPlaces}
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={handlePlaceSelect}
+      showSearch={true}
       sheetComponent={sheet}
     >
       {sidebar}

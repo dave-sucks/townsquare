@@ -2,12 +2,10 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Lock, Globe, Trash2 } from "lucide-react";
-import { PlacesList } from "@/components/shared/places-list";
+import { Lock, Trash2, MapPin } from "lucide-react";
 import type { SidebarInjectedProps } from "@/components/map/map-layout";
 import { cn } from "@/lib/utils";
 
@@ -60,47 +58,6 @@ interface ListSidebarProps extends Partial<SidebarInjectedProps> {
   isRemovingPlace?: boolean;
 }
 
-function ListInfo({ list }: { list: ListData }) {
-  const ownerName = list.user.firstName 
-    ? `${list.user.firstName}${list.user.lastName ? ` ${list.user.lastName}` : ""}`
-    : list.user.username || "User";
-
-  return (
-    <div className="p-3 border-b space-y-2">
-      <div className="flex items-start gap-2">
-        <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-semibold truncate" data-testid="text-list-name">
-            {list.name}
-          </h2>
-          {list.description && (
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-              {list.description}
-            </p>
-          )}
-        </div>
-        {list.visibility === "PRIVATE" ? (
-          <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
-        ) : (
-          <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
-        )}
-      </div>
-      
-      <div className="flex items-center gap-2">
-        <Link href={`/u/${list.user.username || list.user.id}`} className="flex items-center gap-2 hover:underline">
-          <Avatar className="h-5 w-5">
-            <AvatarImage src={list.user.profileImageUrl || undefined} alt={ownerName} />
-            <AvatarFallback className="text-xs">{ownerName.charAt(0).toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <span className="text-xs text-muted-foreground">{ownerName}</span>
-        </Link>
-        <Badge variant="secondary" className="ml-auto text-xs">
-          {list.listPlaces.length} {list.listPlaces.length === 1 ? "place" : "places"}
-        </Badge>
-      </div>
-    </div>
-  );
-}
-
 export function ListSidebar({
   list,
   isLoading = false,
@@ -120,20 +77,19 @@ export function ListSidebar({
     place: lp.place,
   })) || [];
 
+  const ownerHandle = list?.user.username || list?.user.id || "";
+
   if (isLoading || !list) {
     return (
       <div className="h-full flex flex-col bg-background">
         <div className="flex items-center gap-2 p-3 border-b">
           <SidebarTrigger data-testid="button-sidebar-toggle" />
-          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-16 flex-1" />
+          <Skeleton className="h-5 w-12" />
         </div>
-        <div className="p-3 border-b space-y-3">
-          <Skeleton className="h-5 w-48" />
-          <Skeleton className="h-3 w-64" />
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-5 w-5 rounded-full" />
-            <Skeleton className="h-3 w-24" />
-          </div>
+        <div className="p-3 border-b space-y-2">
+          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-3 w-32" />
         </div>
         <div className="p-2 space-y-2">
           <Skeleton className="h-16 w-full" />
@@ -144,19 +100,40 @@ export function ListSidebar({
     );
   }
 
+  const placeCount = list.listPlaces.length;
+
   return (
     <div className="h-full flex flex-col bg-background" data-testid="list-sidebar">
       <div className="flex items-center gap-2 p-3 border-b">
         <SidebarTrigger data-testid="button-sidebar-toggle" />
-        <h1 className="font-semibold text-sm flex-1 truncate">{list.name}</h1>
+        <span className="text-xs text-muted-foreground flex-1">{placeCount} {placeCount === 1 ? "place" : "places"}</span>
+        {list.visibility === "PRIVATE" && (
+          <Lock className="h-4 w-4 text-muted-foreground" />
+        )}
       </div>
 
-      <ListInfo list={list} />
+      <div className="p-3 border-b">
+        <h2 className="text-sm font-semibold truncate" data-testid="text-list-name">
+          {list.name}
+        </h2>
+        <Link 
+          href={`/u/${ownerHandle}`} 
+          className="text-xs text-muted-foreground hover:underline"
+          data-testid="link-list-owner"
+        >
+          by @{ownerHandle}
+        </Link>
+        {list.description && (
+          <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+            {list.description}
+          </p>
+        )}
+      </div>
 
       <div className="flex-1 overflow-y-auto">
         {savedPlaces.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-            <Globe className="mb-4 h-10 w-10 text-muted-foreground" />
+            <MapPin className="mb-4 h-10 w-10 text-muted-foreground" />
             <p className="text-sm font-medium">No places in this list</p>
             <p className="text-xs text-muted-foreground mt-1">
               {isOwner ? "Add places from your saved places" : "This list is empty"}
@@ -190,7 +167,7 @@ export function ListSidebar({
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                        <Globe className="h-5 w-5" />
+                        <MapPin className="h-5 w-5" />
                       </div>
                     )}
                   </div>
@@ -213,7 +190,7 @@ export function ListSidebar({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 invisible group-hover:visible shrink-0"
+                      className="invisible group-hover:visible shrink-0"
                       onClick={(e) => {
                         e.stopPropagation();
                         onRemovePlace(savedPlace.placeId);

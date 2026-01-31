@@ -58,6 +58,7 @@ interface MapLayoutProps {
   selectedPlaceId: string | null;
   onPlaceSelect: (savedPlaceId: string) => void;
   showMapSettings?: boolean;
+  showSearch?: boolean;
   sheetComponent?: ReactNode;
 }
 
@@ -68,6 +69,7 @@ export function MapLayout({
   selectedPlaceId,
   onPlaceSelect,
   showMapSettings = true,
+  showSearch = false,
   sheetComponent,
 }: MapLayoutProps) {
   const placeRowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -120,6 +122,7 @@ export function MapLayout({
           selectedPlaceId={selectedPlaceId}
           onMarkerClick={handleMarkerClick}
           showSettings={showMapSettings}
+          showSearch={showSearch}
         />
 
         <div className="absolute top-0 left-0 bottom-0 z-10 w-[25rem] p-3 hidden md:block">
