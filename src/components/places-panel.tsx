@@ -7,8 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { MapPin, ChevronUp, ChevronDown, Minus, X, GripHorizontal } from "lucide-react";
+import { MapPin, ChevronUp, ChevronDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PlaceRow } from "@/components/place-row";
 
@@ -192,51 +191,48 @@ export function PlacesPanel({
     </div>
   );
 
-  const DesktopPanelContent = (
-    <>
-      {FilterControls}
-      <ScrollArea className="flex-1">
-        <div className="p-3 space-y-2">
-          {PlacesList}
-        </div>
-      </ScrollArea>
-    </>
-  );
-
-
   if (isDesktop) {
-    return (
-      <div
-        className={cn(
-          "absolute top-4 left-4 z-20 flex flex-col bg-background/95 backdrop-blur-xl border rounded-lg shadow-lg transition-all duration-300 overflow-hidden",
-          isCollapsed ? "w-12 h-12" : "w-80 max-h-[calc(100vh-140px)]"
-        )}
-        data-testid="places-panel-desktop"
-      >
-        {isCollapsed ? (
+    if (isCollapsed) {
+      return (
+        <div
+          className="absolute top-4 left-4 z-20 w-12 h-12 bg-background border rounded-lg shadow-lg"
+          data-testid="places-panel-desktop"
+        >
           <button
             onClick={() => setIsCollapsed(false)}
-            className="flex items-center justify-center w-full h-full hover-elevate"
+            className="flex items-center justify-center w-full h-full hover-elevate rounded-lg"
             data-testid="button-expand-panel"
           >
             <MapPin className="h-5 w-5" />
           </button>
-        ) : (
-          <>
-            <div className="flex items-center justify-between gap-2 p-2 border-b">
-              <span className="text-sm font-medium pl-2">Places</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsCollapsed(true)}
-                data-testid="button-collapse-panel"
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-            </div>
-            {DesktopPanelContent}
-          </>
-        )}
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className="absolute top-4 left-4 z-20 w-80 max-h-[calc(100vh-140px)] bg-background border rounded-lg shadow-lg overflow-hidden flex flex-col"
+        data-testid="places-panel-desktop"
+      >
+        <div className="flex-shrink-0 flex items-center justify-between gap-2 p-2 border-b">
+          <span className="text-sm font-medium pl-2">Places</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsCollapsed(true)}
+            data-testid="button-collapse-panel"
+          >
+            <Minus className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex-shrink-0">
+          {FilterControls}
+        </div>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="p-3 space-y-2">
+            {PlacesList}
+          </div>
+        </div>
       </div>
     );
   }
