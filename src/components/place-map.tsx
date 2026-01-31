@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Place {
@@ -25,7 +25,8 @@ interface PlaceMapProps {
 declare global {
   interface Window {
     google: typeof google;
-    initMap: () => void;
+    __googleMapsLoading?: boolean;
+    __googleMapsCallbacks?: (() => void)[];
   }
 }
 
@@ -36,39 +37,7 @@ export function PlaceMap({ places }: PlaceMapProps) {
   const [error, setError] = useState<string | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
 
-  useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    
-    if (!apiKey) {
-      setError("Google Maps API key not configured");
-      setIsLoading(false);
-      return;
-    }
-
-    if (window.google?.maps) {
-      initializeMap();
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=marker&v=weekly`;
-    script.async = true;
-    script.defer = true;
-    script.onload = initializeMap;
-    script.onerror = () => {
-      setError("Failed to load Google Maps");
-      setIsLoading(false);
-    };
-    document.head.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-    };
-  }, []);
-
-  function initializeMap() {
+  const initMapCallback = useCallback(() => {
     if (!mapRef.current || !window.google) return;
 
     const mapInstance = new google.maps.Map(mapRef.current, {
@@ -84,7 +53,46 @@ export function PlaceMap({ places }: PlaceMapProps) {
 
     setMap(mapInstance);
     setIsLoading(false);
-  }
+  }, []);
+
+  useEffect(() => {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    
+    if (!apiKey) {
+      setError("Google Maps API key not configured");
+      setIsLoading(false);
+      return;
+    }
+
+    if (window.google?.maps) {
+      initMapCallback();
+      return;
+    }
+
+    if (window.__googleMapsLoading) {
+      window.__googleMapsCallbacks = window.__googleMapsCallbacks || [];
+      window.__googleMapsCallbacks.push(initMapCallback);
+      return;
+    }
+
+    window.__googleMapsLoading = true;
+    window.__googleMapsCallbacks = [initMapCallback];
+
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=marker&v=weekly`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      window.__googleMapsCallbacks?.forEach(cb => cb());
+      window.__googleMapsCallbacks = [];
+    };
+    script.onerror = () => {
+      setError("Failed to load Google Maps");
+      setIsLoading(false);
+      window.__googleMapsLoading = false;
+    };
+    document.head.appendChild(script);
+  }, [initMapCallback]);
 
   useEffect(() => {
     if (!map || !window.google) return;
