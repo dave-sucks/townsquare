@@ -124,72 +124,96 @@ export function PlacesPanel({
     dragStartY.current = null;
   };
 
-  const PanelContent = (
+  const PlacesList = (
     <>
-      <div className="flex flex-col gap-2 p-3 border-b bg-background/80 backdrop-blur-sm">
-        <Select value={selectedListId} onValueChange={onListChange}>
-          <SelectTrigger className="w-full" data-testid="select-list-filter">
-            <SelectValue placeholder="All Places" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Places</SelectItem>
-            {lists.map((list) => (
-              <SelectItem key={list.id} value={list.id}>
-                {list.name} ({list._count.listPlaces})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Tabs value={selectedTab} onValueChange={onTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="all" data-testid="tab-all">
-              All ({listFilteredPlaces.length})
-            </TabsTrigger>
-            <TabsTrigger value="want" data-testid="tab-want">
-              Want ({listFilteredPlaces.filter((p) => p.status === "WANT").length})
-            </TabsTrigger>
-            <TabsTrigger value="been" data-testid="tab-been">
-              Been ({listFilteredPlaces.filter((p) => p.status === "BEEN").length})
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-      <ScrollArea className="flex-1 touch-pan-y">
-        <div className="p-3 space-y-2 touch-pan-y">
-          {isLoading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
-            </div>
-          ) : places.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <MapPin className="mb-4 h-12 w-12 text-muted-foreground" />
-                <p className="text-lg font-medium">No places yet</p>
-                <p className="text-sm text-muted-foreground">Add your first place to get started</p>
-              </CardContent>
-            </Card>
-          ) : (
-            places.map((savedPlace) => (
-              <PlaceRow
-                key={savedPlace.id}
-                ref={(el) => {
-                  if (el) placeRowRefs.current.set(savedPlace.id, el);
-                  else placeRowRefs.current.delete(savedPlace.id);
-                }}
-                savedPlace={savedPlace}
-                isSelected={savedPlace.id === selectedPlaceId}
-                onSelect={() => onPlaceSelect(savedPlace.id)}
-                onToggleStatus={() => onToggleStatus(savedPlace.id)}
-                onDelete={() => onDelete(savedPlace.id)}
-                isUpdating={isUpdating}
-                isDeleting={isDeleting}
-              />
-            ))
-          )}
+      {isLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+      ) : places.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <MapPin className="mb-4 h-12 w-12 text-muted-foreground" />
+            <p className="text-lg font-medium">No places yet</p>
+            <p className="text-sm text-muted-foreground">Add your first place to get started</p>
+          </CardContent>
+        </Card>
+      ) : (
+        places.map((savedPlace) => (
+          <PlaceRow
+            key={savedPlace.id}
+            ref={(el) => {
+              if (el) placeRowRefs.current.set(savedPlace.id, el);
+              else placeRowRefs.current.delete(savedPlace.id);
+            }}
+            savedPlace={savedPlace}
+            isSelected={savedPlace.id === selectedPlaceId}
+            onSelect={() => onPlaceSelect(savedPlace.id)}
+            onToggleStatus={() => onToggleStatus(savedPlace.id)}
+            onDelete={() => onDelete(savedPlace.id)}
+            isUpdating={isUpdating}
+            isDeleting={isDeleting}
+          />
+        ))
+      )}
+    </>
+  );
+
+  const FilterControls = (
+    <div className="flex flex-col gap-2 p-3 border-b bg-background/80 backdrop-blur-sm">
+      <Select value={selectedListId} onValueChange={onListChange}>
+        <SelectTrigger className="w-full" data-testid="select-list-filter">
+          <SelectValue placeholder="All Places" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Places</SelectItem>
+          {lists.map((list) => (
+            <SelectItem key={list.id} value={list.id}>
+              {list.name} ({list._count.listPlaces})
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Tabs value={selectedTab} onValueChange={onTabChange} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="all" data-testid="tab-all">
+            All ({listFilteredPlaces.length})
+          </TabsTrigger>
+          <TabsTrigger value="want" data-testid="tab-want">
+            Want ({listFilteredPlaces.filter((p) => p.status === "WANT").length})
+          </TabsTrigger>
+          <TabsTrigger value="been" data-testid="tab-been">
+            Been ({listFilteredPlaces.filter((p) => p.status === "BEEN").length})
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+    </div>
+  );
+
+  const DesktopPanelContent = (
+    <>
+      {FilterControls}
+      <ScrollArea className="flex-1">
+        <div className="p-3 space-y-2">
+          {PlacesList}
         </div>
       </ScrollArea>
+    </>
+  );
+
+  const MobilePanelContent = (
+    <>
+      {FilterControls}
+      <div 
+        className="flex-1 overflow-y-auto overscroll-contain"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
+        <div className="p-3 space-y-2">
+          {PlacesList}
+        </div>
+      </div>
     </>
   );
 
@@ -223,7 +247,7 @@ export function PlacesPanel({
                 <Minus className="h-4 w-4" />
               </Button>
             </div>
-            {PanelContent}
+            {DesktopPanelContent}
           </>
         )}
       </div>
@@ -237,6 +261,10 @@ export function PlacesPanel({
       ? "h-[45vh]"
       : "h-[85vh]";
 
+  const stopPropagation = (e: React.TouchEvent | React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <div
       ref={sheetRef}
@@ -244,10 +272,15 @@ export function PlacesPanel({
         "fixed bottom-0 left-0 right-0 z-20 bg-background/95 backdrop-blur-xl border-t rounded-t-2xl shadow-lg transition-all duration-300 flex flex-col",
         sheetHeight
       )}
+      style={{ touchAction: "pan-y" }}
+      onTouchStart={stopPropagation}
+      onTouchMove={stopPropagation}
+      onTouchEnd={stopPropagation}
       data-testid="places-panel-mobile"
     >
       <div
         className="flex items-center justify-center py-2 cursor-grab active:cursor-grabbing"
+        style={{ touchAction: "none" }}
         onTouchStart={handleDragStart}
         onTouchMove={handleDragMove}
         onTouchEnd={handleDragEnd}
@@ -285,7 +318,13 @@ export function PlacesPanel({
           </Button>
         </div>
       </div>
-      {bottomSheetState !== "collapsed" && <div className="flex-1 flex flex-col min-h-0 overflow-hidden">{PanelContent}</div>}
+      {bottomSheetState !== "collapsed" && (
+        <div 
+          className="flex-1 flex flex-col min-h-0"
+        >
+          {MobilePanelContent}
+        </div>
+      )}
     </div>
   );
 }
