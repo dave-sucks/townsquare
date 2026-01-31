@@ -45,6 +45,11 @@ Core features:
 ### Navigation Updates
 - "Activity Feed" link added to user dropdown menu
 - Links to /home accessible from the map view
+- Post-login redirect now goes to /home (Activity Feed) instead of map view
+
+### Auth Improvements
+- Auth callback handles email conflicts gracefully by checking for existing users with same email
+- Updated to support test environment scenarios with unique user ID generation
 
 ---
 
