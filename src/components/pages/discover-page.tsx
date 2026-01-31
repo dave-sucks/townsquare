@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { MapLayout } from "@/components/map/map-layout";
 import { DiscoverSidebar } from "@/components/sidebars/discover-sidebar";
@@ -49,6 +49,11 @@ interface ReviewData {
   note: string | null;
 }
 
+interface ListWithPlaces {
+  id: string;
+  listPlaces: Array<{ placeId: string }>;
+}
+
 export function DiscoverPage({ user }: { user: UserData }) {
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -58,7 +63,8 @@ export function DiscoverPage({ user }: { user: UserData }) {
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [reviewPlaceId, setReviewPlaceId] = useState<string | null>(null);
   const [reviewPlaceName, setReviewPlaceName] = useState("");
-  const [filteredPlaces, setFilteredPlaces] = useState<SavedPlace[]>([]);
+  const [statusFilter, setStatusFilter] = useState<"all" | "want" | "been">("all");
+  const [listFilter, setListFilter] = useState<string>("all");
 
   const { data: savedPlacesData, isLoading } = useQuery<{ savedPlaces: SavedPlace[] }>({
     queryKey: ["saved-places"],
@@ -72,8 +78,29 @@ export function DiscoverPage({ user }: { user: UserData }) {
     queryFn: () => apiRequest(`/api/reviews?userId=${user.id}`),
   });
 
+  const { data: selectedListData } = useQuery<{ list: ListWithPlaces }>({
+    queryKey: ["lists", listFilter],
+    queryFn: () => apiRequest(`/api/lists/${listFilter}`),
+    enabled: listFilter !== "all",
+  });
+
   const myReviews = reviewsData || [];
   const reviewsByPlaceId = new Map(myReviews.map(r => [r.placeId, r]));
+
+  const selectedListPlaceIds = useMemo(() => {
+    return selectedListData?.list?.listPlaces?.map(lp => lp.placeId) || [];
+  }, [selectedListData]);
+
+  const filteredPlaces = useMemo(() => {
+    return savedPlaces.filter((sp) => {
+      if (listFilter !== "all" && !selectedListPlaceIds.includes(sp.placeId)) {
+        return false;
+      }
+      if (statusFilter === "want") return sp.status === "WANT";
+      if (statusFilter === "been") return sp.status === "BEEN";
+      return true;
+    });
+  }, [savedPlaces, statusFilter, listFilter, selectedListPlaceIds]);
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: "WANT" | "BEEN" }) => {
@@ -102,10 +129,6 @@ export function DiscoverPage({ user }: { user: UserData }) {
     onError: (error: Error) => toast.error(error.message || "Failed to remove place"),
   });
 
-  useEffect(() => {
-    setFilteredPlaces(savedPlaces);
-  }, [savedPlaces]);
-
   const selectedPlace = selectedPlaceId ? filteredPlaces.find(sp => sp.id === selectedPlaceId) : null;
 
   const handlePlaceSelect = useCallback((savedPlaceId: string) => {
@@ -113,13 +136,25 @@ export function DiscoverPage({ user }: { user: UserData }) {
     setSheetOpen(true);
   }, []);
 
-  const handleFilterChange = useCallback((places: SavedPlace[]) => {
-    setFilteredPlaces(places);
-    if (selectedPlaceId && !places.find(p => p.id === selectedPlaceId)) {
-      setSelectedPlaceId(null);
-      setSheetOpen(false);
+  const handleStatusFilterChange = useCallback((value: "all" | "want" | "been") => {
+    setStatusFilter(value);
+    if (selectedPlaceId) {
+      const willBeFiltered = savedPlaces.find(sp => sp.id === selectedPlaceId);
+      if (willBeFiltered) {
+        if (value === "want" && willBeFiltered.status !== "WANT") {
+          setSelectedPlaceId(null);
+          setSheetOpen(false);
+        } else if (value === "been" && willBeFiltered.status !== "BEEN") {
+          setSelectedPlaceId(null);
+          setSheetOpen(false);
+        }
+      }
     }
-  }, [selectedPlaceId]);
+  }, [selectedPlaceId, savedPlaces]);
+
+  const handleListFilterChange = useCallback((listId: string) => {
+    setListFilter(listId);
+  }, []);
 
   const handleAddToList = useCallback((placeId: string, placeName: string) => {
     setAddToListPlaceId(placeId);
@@ -135,9 +170,12 @@ export function DiscoverPage({ user }: { user: UserData }) {
 
   const sidebar = (
     <DiscoverSidebar
-      places={savedPlaces}
+      places={filteredPlaces}
       isLoading={isLoading}
-      onFilterChange={handleFilterChange}
+      statusFilter={statusFilter}
+      listFilter={listFilter}
+      onStatusFilterChange={handleStatusFilterChange}
+      onListFilterChange={handleListFilterChange}
     />
   );
 

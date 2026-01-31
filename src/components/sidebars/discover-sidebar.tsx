@@ -57,22 +57,20 @@ interface ListData {
   _count: { listPlaces: number };
 }
 
-interface ListWithPlaces {
-  id: string;
-  listPlaces: Array<{ placeId: string }>;
-}
-
 interface DiscoverSidebarProps extends Partial<SidebarInjectedProps> {
   places: SavedPlace[];
   isLoading: boolean;
-  onFilterChange?: (filteredPlaces: SavedPlace[]) => void;
+  statusFilter: "all" | "want" | "been";
+  listFilter: string;
+  onStatusFilterChange: (value: "all" | "want" | "been") => void;
+  onListFilterChange: (listId: string) => void;
 }
 
 const statusOptions = [
   { value: "all", label: "All" },
   { value: "want", label: "Want" },
   { value: "been", label: "Been" },
-];
+] as const;
 
 export function DiscoverSidebar({
   places,
@@ -80,13 +78,14 @@ export function DiscoverSidebar({
   selectedPlaceId,
   onPlaceSelect,
   placeRowRefs,
-  onFilterChange,
+  statusFilter,
+  listFilter,
+  onStatusFilterChange,
+  onListFilterChange,
 }: DiscoverSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<PlacePrediction[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedTab, setSelectedTab] = useState("all");
-  const [selectedListId, setSelectedListId] = useState<string>("all");
 
   const { data: listsData } = useQuery<{ lists: ListData[] }>({
     queryKey: ["lists"],
@@ -94,14 +93,6 @@ export function DiscoverSidebar({
   });
 
   const lists = listsData?.lists || [];
-
-  const { data: selectedListData } = useQuery<{ list: ListWithPlaces }>({
-    queryKey: ["lists", selectedListId],
-    queryFn: () => apiRequest(`/api/lists/${selectedListId}`),
-    enabled: selectedListId !== "all",
-  });
-
-  const selectedListPlaceIds = selectedListData?.list?.listPlaces?.map(lp => lp.placeId) || [];
 
   const searchPlaces = useCallback(async (query: string) => {
     if (!query.trim()) {
@@ -144,26 +135,10 @@ export function DiscoverSidebar({
     onError: (error: Error) => toast.error(error.message || "Failed to save place"),
   });
 
-  const listFilteredPlaces = places.filter((sp) => {
-    if (selectedListId !== "all") return selectedListPlaceIds.includes(sp.placeId);
-    return true;
-  });
-
-  const filteredPlaces = listFilteredPlaces.filter((sp) => {
-    if (selectedTab === "all") return true;
-    if (selectedTab === "want") return sp.status === "WANT";
-    if (selectedTab === "been") return sp.status === "BEEN";
-    return true;
-  });
-
-  useEffect(() => {
-    onFilterChange?.(filteredPlaces);
-  }, [filteredPlaces.length, selectedTab, selectedListId, onFilterChange]);
-
-  const selectedStatusLabel = statusOptions.find((o) => o.value === selectedTab)?.label || "All";
-  const selectedListLabel = selectedListId === "all" 
+  const selectedStatusLabel = statusOptions.find((o) => o.value === statusFilter)?.label || "All";
+  const selectedListLabel = listFilter === "all" 
     ? "All Lists" 
-    : lists.find((l) => l.id === selectedListId)?.name || "All Lists";
+    : lists.find((l) => l.id === listFilter)?.name || "All Lists";
 
   return (
     <div className="h-full flex flex-col bg-background" data-testid="discover-sidebar">
@@ -248,11 +223,11 @@ export function DiscoverSidebar({
                 {statusOptions.map((option) => (
                   <DropdownMenuItem
                     key={option.value}
-                    onSelect={() => setSelectedTab(option.value)}
-                    data-active={selectedTab === option.value}
+                    onSelect={() => onStatusFilterChange(option.value)}
+                    data-active={statusFilter === option.value}
                   >
                     {option.label}
-                    <Check className={`ml-auto h-4 w-4 ${selectedTab === option.value ? "opacity-100" : "opacity-0"}`} />
+                    <Check className={`ml-auto h-4 w-4 ${statusFilter === option.value ? "opacity-100" : "opacity-0"}`} />
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -266,20 +241,20 @@ export function DiscoverSidebar({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 <DropdownMenuItem
-                  onSelect={() => setSelectedListId("all")}
-                  data-active={selectedListId === "all"}
+                  onSelect={() => onListFilterChange("all")}
+                  data-active={listFilter === "all"}
                 >
                   All Lists
-                  <Check className={`ml-auto h-4 w-4 ${selectedListId === "all" ? "opacity-100" : "opacity-0"}`} />
+                  <Check className={`ml-auto h-4 w-4 ${listFilter === "all" ? "opacity-100" : "opacity-0"}`} />
                 </DropdownMenuItem>
                 {lists.map((list) => (
                   <DropdownMenuItem
                     key={list.id}
-                    onSelect={() => setSelectedListId(list.id)}
-                    data-active={selectedListId === list.id}
+                    onSelect={() => onListFilterChange(list.id)}
+                    data-active={listFilter === list.id}
                   >
                     {list.name}
-                    <Check className={`ml-auto h-4 w-4 ${selectedListId === list.id ? "opacity-100" : "opacity-0"}`} />
+                    <Check className={`ml-auto h-4 w-4 ${listFilter === list.id ? "opacity-100" : "opacity-0"}`} />
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -290,7 +265,7 @@ export function DiscoverSidebar({
 
       <div className="flex-1 overflow-y-auto">
         <PlacesList
-          places={filteredPlaces}
+          places={places}
           isLoading={isLoading}
           selectedPlaceId={selectedPlaceId || null}
           onPlaceSelect={onPlaceSelect || (() => {})}
