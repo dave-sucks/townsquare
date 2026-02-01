@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,12 +13,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { UserPlus, UserMinus, Loader2, ChevronDown, Check, Star } from "lucide-react";
+import { UserPlus, UserMinus, Loader2, ChevronDown, Check, Activity } from "lucide-react";
 import { apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { PlacesList } from "@/components/shared/places-list";
+import { FeedPost } from "@/components/feed-post";
 import type { SidebarInjectedProps } from "@/components/map/map-layout";
-import { cn } from "@/lib/utils";
 
 interface Place {
   id: string;
@@ -42,15 +41,6 @@ interface SavedPlace {
   place: Place;
 }
 
-interface ReviewData {
-  id: string;
-  rating: number;
-  note: string | null;
-  visitedAt: string | null;
-  createdAt: string;
-  place: Place;
-}
-
 interface ListData {
   id: string;
   name: string;
@@ -68,6 +58,36 @@ interface UserData {
   profileImageUrl: string | null;
 }
 
+interface ActivityData {
+  id: string;
+  actorId: string;
+  type: "PLACE_SAVED_WANT" | "PLACE_MARKED_BEEN" | "PLACE_ADDED_TO_LIST" | "LIST_CREATED" | "REVIEW_CREATED";
+  placeId: string | null;
+  listId: string | null;
+  metadata: { placeName?: string; listName?: string; rating?: number; note?: string } | null;
+  createdAt: string;
+  actor: {
+    id: string;
+    username: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    profileImageUrl: string | null;
+  };
+  place: {
+    id: string;
+    googlePlaceId: string;
+    name: string;
+    formattedAddress: string;
+    photoRefs?: string[] | null;
+  } | null;
+  list: {
+    id: string;
+    name: string;
+    visibility: string;
+    userId: string;
+  } | null;
+}
+
 interface UserSidebarProps extends Partial<SidebarInjectedProps> {
   user: UserData;
   isOwnProfile: boolean;
@@ -76,11 +96,8 @@ interface UserSidebarProps extends Partial<SidebarInjectedProps> {
   followingCount: number;
   places: SavedPlace[];
   lists: ListData[];
-  reviews: ReviewData[];
+  activities: ActivityData[];
   isLoading?: boolean;
-  onReviewSelect?: (reviewId: string) => void;
-  selectedReviewId?: string | null;
-  reviewRowRefs?: React.MutableRefObject<Map<string, HTMLDivElement>>;
 }
 
 const statusOptions = [
@@ -130,70 +147,6 @@ function ProfileHeader({
   );
 }
 
-function ReviewCard({
-  review,
-  isSelected,
-  onSelect,
-  ref,
-}: {
-  review: ReviewData;
-  isSelected: boolean;
-  onSelect: () => void;
-  ref?: React.Ref<HTMLDivElement>;
-}) {
-  const photoRef = review.place.photoRefs?.[0];
-  const photoUrl = photoRef 
-    ? `/api/places/photo?photoRef=${encodeURIComponent(photoRef)}&maxWidth=100`
-    : null;
-
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "flex items-start gap-3 p-2 rounded-lg cursor-pointer transition-colors hover-elevate",
-        isSelected && "bg-accent"
-      )}
-      onClick={onSelect}
-      data-testid={`review-card-${review.id}`}
-      data-selected={isSelected}
-    >
-      <div className="relative w-14 h-14 rounded-md overflow-hidden bg-muted flex-shrink-0">
-        {photoUrl ? (
-          <img
-            src={photoUrl}
-            alt={review.place.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            <Star className="h-5 w-5" />
-          </div>
-        )}
-      </div>
-
-      <div className="flex-1 min-w-0 overflow-hidden">
-        <h3 className="font-medium text-sm truncate">{review.place.name}</h3>
-        <div className="flex items-center gap-1 mt-0.5">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <Star
-              key={star}
-              className={cn(
-                "h-3 w-3",
-                star <= review.rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground"
-              )}
-            />
-          ))}
-        </div>
-        {review.note && (
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-            {review.note}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export function UserSidebar({
   user,
   isOwnProfile,
@@ -202,14 +155,11 @@ export function UserSidebar({
   followingCount,
   places,
   lists,
-  reviews,
+  activities,
   isLoading = false,
   selectedPlaceId,
   onPlaceSelect,
   placeRowRefs,
-  onReviewSelect,
-  selectedReviewId,
-  reviewRowRefs,
 }: UserSidebarProps) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"places" | "feed">("places");
@@ -399,29 +349,18 @@ export function UserSidebar({
         </TabsContent>
 
         <TabsContent value="feed" className="flex-1 overflow-y-auto mt-0">
-          {reviews.length === 0 ? (
+          {activities.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-              <Star className="mb-4 h-10 w-10 text-muted-foreground" />
-              <p className="text-sm font-medium">No reviews yet</p>
+              <Activity className="mb-4 h-10 w-10 text-muted-foreground" />
+              <p className="text-sm font-medium">No activity yet</p>
               <p className="text-xs text-muted-foreground mt-1">
-                {isOwnProfile ? "Write your first review" : "This user hasn't written any reviews yet"}
+                {isOwnProfile ? "Your activity will appear here" : "This user doesn't have any activity yet"}
               </p>
             </div>
           ) : (
-            <div className="flex flex-col gap-1 p-2">
-              {reviews.map((review) => (
-                <ReviewCard
-                  key={review.id}
-                  review={review}
-                  isSelected={review.id === selectedReviewId}
-                  onSelect={() => onReviewSelect?.(review.id)}
-                  ref={(el) => {
-                    if (reviewRowRefs) {
-                      if (el) reviewRowRefs.current.set(review.id, el);
-                      else reviewRowRefs.current.delete(review.id);
-                    }
-                  }}
-                />
+            <div className="divide-y">
+              {activities.map((activity) => (
+                <FeedPost key={activity.id} activity={activity} />
               ))}
             </div>
           )}

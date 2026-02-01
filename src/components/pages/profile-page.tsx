@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MapLayout } from "@/components/map/map-layout";
 import { UserSidebar } from "@/components/sidebars/user-sidebar";
@@ -39,21 +39,42 @@ interface SavedPlace {
   place: Place;
 }
 
-interface ReviewData {
-  id: string;
-  rating: number;
-  note: string | null;
-  visitedAt: string | null;
-  createdAt: string;
-  place: Place;
-}
-
 interface ListData {
   id: string;
   name: string;
   visibility: "PRIVATE" | "PUBLIC";
   listPlaces: Array<{ placeId: string }>;
   _count: { listPlaces: number };
+}
+
+interface ActivityData {
+  id: string;
+  actorId: string;
+  type: "PLACE_SAVED_WANT" | "PLACE_MARKED_BEEN" | "PLACE_ADDED_TO_LIST" | "LIST_CREATED" | "REVIEW_CREATED";
+  placeId: string | null;
+  listId: string | null;
+  metadata: { placeName?: string; listName?: string; rating?: number; note?: string } | null;
+  createdAt: string;
+  actor: {
+    id: string;
+    username: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    profileImageUrl: string | null;
+  };
+  place: {
+    id: string;
+    googlePlaceId: string;
+    name: string;
+    formattedAddress: string;
+    photoRefs?: string[] | null;
+  } | null;
+  list: {
+    id: string;
+    name: string;
+    visibility: string;
+    userId: string;
+  } | null;
 }
 
 interface ProfileData {
@@ -66,7 +87,7 @@ interface ProfileData {
   beenPlaces: SavedPlace[];
   allSavedPlaces: SavedPlace[];
   lists: ListData[];
-  reviews: ReviewData[];
+  activities: ActivityData[];
 }
 
 interface ProfilePageProps {
@@ -77,9 +98,7 @@ interface ProfilePageProps {
 
 export function ProfilePage({ username, currentUser, isAuthenticated }: ProfilePageProps) {
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
-  const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const reviewRowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const { data, isLoading, error } = useQuery<ProfileData>({
     queryKey: ["user-profile", username],
@@ -92,21 +111,8 @@ export function ProfilePage({ username, currentUser, isAuthenticated }: ProfileP
 
   const handlePlaceSelect = useCallback((savedPlaceId: string) => {
     setSelectedPlaceId(savedPlaceId);
-    setSelectedReviewId(null);
     setSheetOpen(true);
   }, []);
-
-  const handleReviewSelect = useCallback((reviewId: string) => {
-    setSelectedReviewId(reviewId);
-    const review = data?.reviews.find(r => r.id === reviewId);
-    if (review) {
-      const place = allPlaces.find(p => p.place.id === review.place.id);
-      if (place) {
-        setSelectedPlaceId(place.id);
-        setSheetOpen(true);
-      }
-    }
-  }, [data?.reviews, allPlaces]);
 
   if (!isAuthenticated) {
     return (
@@ -153,10 +159,7 @@ export function ProfilePage({ username, currentUser, isAuthenticated }: ProfileP
       followingCount={data.followingCount}
       places={allPlaces}
       lists={data.lists}
-      reviews={data.reviews}
-      selectedReviewId={selectedReviewId}
-      onReviewSelect={handleReviewSelect}
-      reviewRowRefs={reviewRowRefs}
+      activities={data.activities}
     />
   );
 

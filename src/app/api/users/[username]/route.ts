@@ -105,6 +105,49 @@ export async function GET(
       orderBy: { createdAt: "desc" },
     });
 
+    // Get user's activities for the feed tab
+    const activities = await prisma.activity.findMany({
+      where: { actorId: user.id },
+      include: {
+        actor: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            profileImageUrl: true,
+          },
+        },
+        place: {
+          select: {
+            id: true,
+            googlePlaceId: true,
+            name: true,
+            formattedAddress: true,
+            photoRefs: true,
+          },
+        },
+        list: {
+          select: {
+            id: true,
+            name: true,
+            visibility: true,
+            userId: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+
+    // Filter out private list activities if not own profile
+    const filteredActivities = activities.filter((activity) => {
+      if (activity.list && activity.list.visibility === "PRIVATE" && activity.list.userId !== currentUser.id) {
+        return false;
+      }
+      return true;
+    });
+
     // Get all saved places with full place data for map display
     const allSavedPlaces = await prisma.savedPlace.findMany({
       where: { userId: user.id },
@@ -155,6 +198,7 @@ export async function GET(
       allSavedPlaces,
       lists: listsWithPlaces,
       reviews,
+      activities: filteredActivities,
     });
   } catch (error: any) {
     console.error("Get user profile error:", error);
