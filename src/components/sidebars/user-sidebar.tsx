@@ -265,17 +265,15 @@ export function UserSidebar({
       />
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "places" | "feed")} className="flex-1 flex flex-col min-h-0">
-        <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0">
+        <TabsList className="w-full justify-start border-b">
           <TabsTrigger 
             value="places" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
             data-testid="tab-places"
           >
             Places
           </TabsTrigger>
           <TabsTrigger 
             value="feed" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
             data-testid="tab-feed"
           >
             Feed
