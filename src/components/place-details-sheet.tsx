@@ -253,7 +253,7 @@ export function PlaceDetailsSheet({
             )}
 
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList variant="line" className="w-full justify-start flex-wrap">
+              <TabsList className="w-full justify-start flex-wrap">
                 <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
                 <TabsTrigger value="friends" data-testid="tab-friends">Friends</TabsTrigger>
                 <TabsTrigger value="location" data-testid="tab-location">Location</TabsTrigger>

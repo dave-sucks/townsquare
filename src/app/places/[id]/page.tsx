@@ -359,7 +359,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
             )}
 
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList variant="line" className="w-full justify-start flex-wrap">
+              <TabsList className="w-full justify-start flex-wrap">
                 <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
                 <TabsTrigger value="lists" data-testid="tab-lists">Lists</TabsTrigger>
                 <TabsTrigger value="reviews" data-testid="tab-reviews">Reviews</TabsTrigger>
