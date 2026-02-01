@@ -189,7 +189,8 @@ export async function GET(
       photos,
     });
   } catch (error: any) {
-    console.error("Get place error:", error);
-    return NextResponse.json({ error: "Failed to get place" }, { status: 500 });
+    console.error("Get place error:", error?.message || error);
+    console.error("Stack:", error?.stack);
+    return NextResponse.json({ error: "Failed to get place", details: error?.message }, { status: 500 });
   }
 }
