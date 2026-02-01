@@ -224,6 +224,13 @@ export async function POST(request: NextRequest) {
 
       // CRITICAL: Create SavedPlace BEFORE Review - enforces business rule
       // Use transaction to ensure atomic creation of all related records
+      
+      // Check if importing user already has this place saved (before transaction)
+      const existingImporterSave = await prisma.savedPlace.findFirst({
+        where: { userId: user.id, placeId: place.id },
+      });
+      const importerSavedPlaceIsNew = !existingImporterSave;
+      
       const result = await prisma.$transaction(async (tx) => {
         // Step 1: Create/update SavedPlace for the Instagram user (BEEN status)
         const savedPlaceForInstagramUser = await tx.savedPlace.upsert({
@@ -313,10 +320,10 @@ export async function POST(request: NextRequest) {
           photos.push(photo);
         }
 
-        return { review, photos, savedPlaceForImporter };
+        return { review, photos };
       });
 
-      const { review, photos, savedPlaceForImporter } = result;
+      const { review, photos } = result;
 
       // Update import record
       await prisma.instagramImport.update({
@@ -329,8 +336,8 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Create activity for the importing user if this was a new save
-      if (savedPlaceForImporter) {
+      // Create activity for the importing user only if this was a NEW save
+      if (importerSavedPlaceIsNew) {
         await createActivity({
           actorId: user.id,
           type: "PLACE_SAVED_WANT",
