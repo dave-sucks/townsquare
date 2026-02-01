@@ -38,7 +38,6 @@ interface SavedPlace {
 interface PlaceCardProps {
   savedPlace: SavedPlace;
   isSelected: boolean;
-  onSelect: () => void;
   showStatus?: boolean;
   onSave?: (status: "WANT" | "BEEN") => void;
   isSaving?: boolean;
@@ -53,7 +52,7 @@ function formatPlaceType(type: string | null): string {
 }
 
 export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
-  ({ savedPlace, isSelected, onSelect, showStatus = true, onSave, isSaving, actionButton }, ref) => {
+  ({ savedPlace, isSelected, showStatus = true, onSave, isSaving, actionButton }, ref) => {
     const [popoverOpen, setPopoverOpen] = useState(false);
     
     const photoRef = savedPlace.place.photoRefs?.[0];
@@ -73,8 +72,8 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
       <div
         ref={ref}
         className={cn(
-          "group flex items-center gap-3 p-1 rounded-md cursor-pointer transition-colors hover-elevate",
-          isSelected && "bg-accent"
+          "group flex items-center gap-3 p-1 rounded-md transition-colors",
+          isSelected ? "bg-accent" : "hover:bg-accent"
         )}
         data-testid={`place-card-${savedPlace.id}`}
         data-selected={isSelected}
@@ -82,10 +81,6 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
         <Link
           href={`/places/${savedPlace.place.googlePlaceId}`}
           data-testid={`place-row-${savedPlace.id}`}
-          onClick={(e) => {
-            e.preventDefault();
-            onSelect();
-          }}
           className="flex items-center gap-3 flex-1 min-w-0"
         >
           <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0">
@@ -128,9 +123,10 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
               <Button
                 size="icon"
                 variant="ghost"
-                className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                className="invisible group-hover:visible flex-shrink-0"
                 data-testid={`save-place-trigger-${savedPlace.id}`}
                 disabled={isSaving}
+                onClick={(e) => e.stopPropagation()}
               >
                 <Bookmark className="h-4 w-4" />
               </Button>
@@ -175,7 +171,7 @@ interface PlacesListProps {
   places: SavedPlace[];
   isLoading?: boolean;
   selectedPlaceId: string | null;
-  onPlaceSelect: (savedPlaceId: string) => void;
+  onPlaceSelect?: (savedPlaceId: string) => void;
   placeRowRefs?: React.MutableRefObject<Map<string, HTMLDivElement>>;
   showStatus?: boolean;
   emptyMessage?: string;
@@ -231,7 +227,6 @@ export function PlacesList({
           }}
           savedPlace={savedPlace}
           isSelected={savedPlace.id === selectedPlaceId}
-          onSelect={() => onPlaceSelect(savedPlace.id)}
           showStatus={showStatus}
           onSave={onSavePlace ? (status) => onSavePlace(savedPlace, status) : undefined}
           isSaving={savingPlaceId === savedPlace.id}
