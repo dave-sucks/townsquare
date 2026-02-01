@@ -91,7 +91,18 @@ export function normalizeInstagramUrl(url: string): string {
 
 export async function fetchOEmbed(url: string): Promise<OEmbedResponse> {
   const normalizedUrl = normalizeInstagramUrl(url);
-  const oembedUrl = `https://api.instagram.com/oembed?url=${encodeURIComponent(normalizedUrl)}`;
+  
+  const appId = process.env.FACEBOOK_APP_ID;
+  const clientToken = process.env.FACEBOOK_CLIENT_TOKEN;
+  
+  if (!appId || !clientToken) {
+    throw new Error('MISSING_FACEBOOK_CREDENTIALS');
+  }
+  
+  const accessToken = `${appId}|${clientToken}`;
+  const oembedUrl = `https://graph.facebook.com/v21.0/instagram_oembed?url=${encodeURIComponent(normalizedUrl)}&access_token=${accessToken}`;
+  
+  console.log('Fetching Instagram oEmbed from Graph API...');
   
   const response = await fetch(oembedUrl, {
     headers: {
@@ -100,6 +111,8 @@ export async function fetchOEmbed(url: string): Promise<OEmbedResponse> {
   });
   
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Instagram oEmbed error:', response.status, errorText);
     if (response.status === 404) {
       throw new Error('POST_NOT_FOUND');
     }
@@ -294,9 +307,12 @@ export async function importInstagramPost(url: string): Promise<InstagramPostDat
   }
   
   let oembedData: OEmbedResponse | null = null;
+  let oembedError: Error | null = null;
   try {
     oembedData = await fetchOEmbed(url);
+    console.log('oEmbed data fetched successfully:', oembedData?.author_name);
   } catch (error) {
+    oembedError = error as Error;
     console.warn('oEmbed fetch failed:', error);
   }
   
@@ -308,6 +324,9 @@ export async function importInstagramPost(url: string): Promise<InstagramPostDat
   }
   
   if (!oembedData && !scrapedData.caption && !scrapedData.username) {
+    if (oembedError?.message === 'MISSING_FACEBOOK_CREDENTIALS') {
+      throw new Error('MISSING_FACEBOOK_CREDENTIALS');
+    }
     throw new Error('INSTAGRAM_API_ERROR');
   }
   
@@ -335,7 +354,7 @@ export async function importInstagramPost(url: string): Promise<InstagramPostDat
     mediaType: isCarousel ? 'carousel' : 'image',
     mediaUrls: mediaUrls.length > 0 ? mediaUrls : ['https://via.placeholder.com/640'],
     timestamp: scrapedData.timestamp,
-    location,
+    location: location ?? undefined,
   };
 }
 

@@ -216,11 +216,23 @@ export function InstagramImportDialog({
 
           {previewQuery.isError && (
             <Card className="border-destructive bg-destructive/10 p-4">
-              <div className="flex items-center gap-2 text-destructive">
-                <AlertCircle className="h-4 w-4" />
-                <span className="text-sm font-medium">
-                  {previewQuery.error?.message || "Failed to load preview"}
-                </span>
+              <div className="flex items-start gap-2 text-destructive">
+                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                <div className="space-y-2">
+                  <span className="text-sm font-medium">
+                    {previewQuery.error?.message || "Failed to load preview"}
+                  </span>
+                  {previewQuery.error?.message?.includes("Facebook App credentials") && (
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>To import Instagram posts, you need to set up the Facebook/Meta API:</p>
+                      <ol className="list-decimal list-inside space-y-0.5">
+                        <li>Create an app at developers.facebook.com</li>
+                        <li>Add the &quot;oEmbed&quot; product to your app</li>
+                        <li>Add FACEBOOK_APP_ID and FACEBOOK_CLIENT_TOKEN to your environment</li>
+                      </ol>
+                    </div>
+                  )}
+                </div>
               </div>
             </Card>
           )}

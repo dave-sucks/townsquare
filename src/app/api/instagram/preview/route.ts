@@ -112,6 +112,7 @@ export async function GET(request: NextRequest) {
       INVALID_URL: "Not a valid Instagram URL",
       POST_NOT_FOUND: "Instagram post not found or is private",
       INSTAGRAM_API_ERROR: "Failed to fetch data from Instagram",
+      MISSING_FACEBOOK_CREDENTIALS: "Instagram API not configured. Please add Facebook App credentials.",
     };
 
     if (errorMessages[errorCode]) {
