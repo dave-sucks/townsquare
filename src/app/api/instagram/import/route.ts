@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     const postData = await importInstagramPost(url);
+    console.log("Instagram post data:", JSON.stringify(postData, null, 2));
 
     let importRecord = await prisma.instagramImport.create({
       data: {
@@ -124,6 +125,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // First try to find existing place by name
       let place = await prisma.place.findFirst({
         where: {
           name: {
@@ -135,20 +137,85 @@ export async function POST(request: NextRequest) {
 
       let placeCreated = false;
       if (!place) {
-        const formattedAddress = [city, state].filter(Boolean).join(", ") || "Unknown Location";
+        // Search Google Places API for the real place
+        const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+        if (!apiKey) {
+          await prisma.instagramImport.update({
+            where: { id: importRecord.id },
+            data: { status: "failed", errorMessage: "Google Maps API key not configured" },
+          });
+          return NextResponse.json(
+            { success: false, error: { code: "CONFIG_ERROR", message: "Google Maps API not configured" } },
+            { status: 500 }
+          );
+        }
+
+        // Build search query with location context
+        const searchQuery = [locationName, city, state].filter(Boolean).join(", ");
+        console.log("Searching Google Places for:", searchQuery);
         
-        place = await prisma.place.create({
-          data: {
-            googlePlaceId: `instagram_import_${shortcode}_${Date.now()}`,
-            name: locationName,
-            formattedAddress,
-            lat: 0,
-            lng: 0,
-            primaryType: "restaurant",
-            types: JSON.stringify(["restaurant"]),
-          },
+        // Use Google Places Text Search to find the place
+        const searchResponse = await fetch(
+          `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${apiKey}`
+        );
+        const searchData = await searchResponse.json();
+        console.log("Google Places search response status:", searchData.status);
+
+        if (searchData.status !== "OK" || !searchData.results?.length) {
+          await prisma.instagramImport.update({
+            where: { id: importRecord.id },
+            data: { status: "failed", errorMessage: `Could not find "${locationName}" on Google Maps` },
+          });
+          return NextResponse.json(
+            { success: false, error: { code: "PLACE_NOT_FOUND", message: `Could not find "${locationName}" on Google Maps. Try a different post or check the location name.` } },
+            { status: 400 }
+          );
+        }
+
+        const googlePlace = searchData.results[0];
+        
+        // Get detailed place info
+        const detailsResponse = await fetch(
+          `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(googlePlace.place_id)}&fields=place_id,name,formatted_address,geometry,types,price_level,photos&key=${apiKey}`
+        );
+        const detailsData = await detailsResponse.json();
+        
+        if (detailsData.status !== "OK") {
+          await prisma.instagramImport.update({
+            where: { id: importRecord.id },
+            data: { status: "failed", errorMessage: "Failed to get place details from Google" },
+          });
+          return NextResponse.json(
+            { success: false, error: { code: "PLACE_DETAILS_ERROR", message: "Failed to get place details from Google Maps" } },
+            { status: 500 }
+          );
+        }
+
+        const placeDetails = detailsData.result;
+        
+        // Check again if this place already exists by googlePlaceId
+        place = await prisma.place.findUnique({
+          where: { googlePlaceId: placeDetails.place_id },
         });
-        placeCreated = true;
+
+        if (!place) {
+          const photoRefs = placeDetails.photos?.slice(0, 5).map((p: any) => p.photo_reference) || [];
+          
+          place = await prisma.place.create({
+            data: {
+              googlePlaceId: placeDetails.place_id,
+              name: placeDetails.name,
+              formattedAddress: placeDetails.formatted_address,
+              lat: placeDetails.geometry.location.lat,
+              lng: placeDetails.geometry.location.lng,
+              primaryType: placeDetails.types?.[0] || "restaurant",
+              types: JSON.stringify(placeDetails.types || ["restaurant"]),
+              priceLevel: placeDetails.price_level || null,
+              photoRefs: photoRefs.length > 0 ? JSON.stringify(photoRefs) : undefined,
+            },
+          });
+          placeCreated = true;
+        }
       }
 
       const note = overrides?.note
@@ -216,6 +283,25 @@ export async function POST(request: NextRequest) {
           reviewId: review.id,
         },
       });
+
+      // Save the place to the Instagram user's account as "BEEN" (they reviewed it)
+      const existingInstagramUserSavedPlace = await prisma.savedPlace.findFirst({
+        where: {
+          userId: instagramUser.id,
+          placeId: place.id,
+        },
+      });
+
+      if (!existingInstagramUserSavedPlace) {
+        await prisma.savedPlace.create({
+          data: {
+            userId: instagramUser.id,
+            placeId: place.id,
+            status: "BEEN",
+            visitedAt: postData.timestamp ? new Date(postData.timestamp) : new Date(),
+          },
+        });
+      }
 
       // Save the place to the importing user's account as "WANT to go"
       const existingSavedPlace = await prisma.savedPlace.findFirst({
