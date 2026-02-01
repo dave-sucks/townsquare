@@ -20,8 +20,6 @@ import {
   Star, 
   Edit, 
   Plus,
-  X,
-  ArrowLeft,
   Utensils,
   Clock,
   Phone,
@@ -35,7 +33,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { AddToListDialog } from "@/components/add-to-list-dialog";
 import { ReviewDialog } from "@/components/review-dialog";
 import { PlacePhotoGrid } from "@/components/place-photo-grid";
-import { AppShell } from "@/components/layout";
+import { AppShell, PageHeader } from "@/components/layout";
 
 interface Place {
   id: string;
@@ -274,91 +272,68 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
 
   return (
     <AppShell user={user}>
-      <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between gap-2 p-3 border-b flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              variant="ghost"
-              size="icon"
-              asChild
-              data-testid="button-back"
-            >
-              <Link href="/">
-                <X className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              asChild
-              data-testid="button-collapse"
-            >
-              <Link href="/">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => saveOrUpdatePlaceMutation.mutate(savedPlace?.status === "WANT" ? "BEEN" : "WANT")}
-              disabled={saveOrUpdatePlaceMutation.isPending}
-              data-testid="button-save"
-            >
-              {savedPlace?.status === "WANT" ? (
-                <><Heart className="h-4 w-4 mr-1 fill-current" />Saved</>
-              ) : savedPlace?.status === "BEEN" ? (
-                <><CheckCircle className="h-4 w-4 mr-1" />Been</>
-              ) : (
-                <><Heart className="h-4 w-4 mr-1" />Save</>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setAddToListDialogOpen(true)}
-              data-testid="button-add-to-trip"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Add to trip
-            </Button>
-          </div>
-        </div>
+      <PageHeader 
+        title={place.name}
+        backHref="/"
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => saveOrUpdatePlaceMutation.mutate(savedPlace?.status === "WANT" ? "BEEN" : "WANT")}
+          disabled={saveOrUpdatePlaceMutation.isPending}
+          data-testid="button-save"
+        >
+          {savedPlace?.status === "WANT" ? (
+            <><Heart className="h-4 w-4 mr-1 fill-current" />Saved</>
+          ) : savedPlace?.status === "BEEN" ? (
+            <><CheckCircle className="h-4 w-4 mr-1" />Been</>
+          ) : (
+            <><Heart className="h-4 w-4 mr-1" />Save</>
+          )}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setAddToListDialogOpen(true)}
+          data-testid="button-add-to-trip"
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          Add to trip
+        </Button>
+      </PageHeader>
 
-        <div className="flex-1 overflow-auto">
-          <div className="max-w-3xl mx-auto p-4 space-y-6">
-            <div>
-              <h1 className="text-2xl font-bold" data-testid="text-place-name">{place.name}</h1>
-              <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground flex-wrap">
-                {myReview && (
-                  <>
-                    <div className="flex items-center gap-1 flex-wrap">
-                      <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
-                      <span className="font-medium text-foreground">{myReview.rating}/10</span>
-                    </div>
-                    <span>·</span>
-                    <span>{reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}</span>
-                    <span>·</span>
-                  </>
-                )}
-                <span data-testid="text-place-address">{place.formattedAddress}</span>
-              </div>
-              <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground flex-wrap">
-                {placeType && (
+      <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full">
+        <div className="space-y-6">
+          <div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+              {myReview && (
+                <>
                   <div className="flex items-center gap-1 flex-wrap">
-                    <Utensils className="h-3 w-3" />
-                    <span>{placeType}</span>
+                    <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
+                    <span className="font-medium text-foreground">{myReview.rating}/10</span>
                   </div>
-                )}
-                {priceLevel && (
-                  <>
-                    <span>·</span>
-                    <span>{priceLevel}</span>
-                  </>
-                )}
-              </div>
+                  <span>·</span>
+                  <span>{reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}</span>
+                  <span>·</span>
+                </>
+              )}
+              <span data-testid="text-place-address">{place.formattedAddress}</span>
             </div>
+            <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground flex-wrap">
+              {placeType && (
+                <div className="flex items-center gap-1 flex-wrap">
+                  <Utensils className="h-3 w-3" />
+                  <span>{placeType}</span>
+                </div>
+              )}
+              {priceLevel && (
+                <>
+                  <span>·</span>
+                  <span>{priceLevel}</span>
+                </>
+              )}
+            </div>
+          </div>
 
             <PlacePhotoGrid photos={photos} maxDisplay={5} />
 
@@ -724,7 +699,6 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                 </Button>
               </TabsContent>
             </Tabs>
-          </div>
         </div>
       </div>
 
