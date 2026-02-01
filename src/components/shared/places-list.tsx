@@ -117,48 +117,46 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
           </div>
         </Link>
         
-        {onSave && (
-          <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-            <PopoverTrigger asChild>
+        <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="invisible group-hover:visible flex-shrink-0"
+              data-testid={`save-place-trigger-${savedPlace.id}`}
+              disabled={isSaving}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Bookmark className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-2" align="end">
+            <div className="flex flex-col gap-1">
               <Button
-                size="icon"
                 variant="ghost"
-                className="invisible group-hover:visible flex-shrink-0"
-                data-testid={`save-place-trigger-${savedPlace.id}`}
+                size="sm"
+                className="justify-start gap-2"
+                onClick={() => handleSave("WANT")}
+                data-testid={`save-as-want-${savedPlace.id}`}
                 disabled={isSaving}
-                onClick={(e) => e.stopPropagation()}
               >
-                <Bookmark className="h-4 w-4" />
+                <Heart className="h-4 w-4 text-rose-500" />
+                Add as Want
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-2" align="end">
-              <div className="flex flex-col gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="justify-start gap-2"
-                  onClick={() => handleSave("WANT")}
-                  data-testid={`save-as-want-${savedPlace.id}`}
-                  disabled={isSaving}
-                >
-                  <Heart className="h-4 w-4 text-rose-500" />
-                  Add as Want
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="justify-start gap-2"
-                  onClick={() => handleSave("BEEN")}
-                  data-testid={`save-as-been-${savedPlace.id}`}
-                  disabled={isSaving}
-                >
-                  <CheckCircle className="h-4 w-4 text-emerald-500" />
-                  Add as Been
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
-        )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="justify-start gap-2"
+                onClick={() => handleSave("BEEN")}
+                data-testid={`save-as-been-${savedPlace.id}`}
+                disabled={isSaving}
+              >
+                <CheckCircle className="h-4 w-4 text-emerald-500" />
+                Add as Been
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
         {actionButton}
       </div>
     );
