@@ -53,7 +53,7 @@ interface ActivityData {
   type: "PLACE_SAVED_WANT" | "PLACE_MARKED_BEEN" | "PLACE_ADDED_TO_LIST" | "LIST_CREATED" | "REVIEW_CREATED";
   placeId: string | null;
   listId: string | null;
-  metadata: { placeName?: string; listName?: string; rating?: number; note?: string } | null;
+  metadata: { placeName?: string; listName?: string; rating?: number; note?: string; review_preview?: string } | null;
   createdAt: string;
   actor: {
     id: string;

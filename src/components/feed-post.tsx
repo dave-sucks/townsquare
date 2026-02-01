@@ -34,7 +34,7 @@ interface Activity {
   type: "PLACE_SAVED_WANT" | "PLACE_MARKED_BEEN" | "PLACE_ADDED_TO_LIST" | "LIST_CREATED" | "REVIEW_CREATED";
   placeId: string | null;
   listId: string | null;
-  metadata: { placeName?: string; listName?: string; rating?: number; note?: string } | null;
+  metadata: { placeName?: string; listName?: string; rating?: number; note?: string; review_preview?: string } | null;
   createdAt: string;
   actor: ActivityActor;
   place: ActivityPlace | null;
@@ -129,11 +129,6 @@ export function FeedPost({ activity }: FeedPostProps) {
               <span className="text-xs text-muted-foreground">{formatTimeAgo(activity.createdAt)}</span>
             </div>
 
-            {/* Review note if exists */}
-            {activity.type === "REVIEW_CREATED" && activity.metadata?.note && (
-              <p className="text-sm mt-2 text-foreground">{activity.metadata.note}</p>
-            )}
-
             {/* Rating if review */}
             {activity.type === "REVIEW_CREATED" && activity.metadata?.rating && (
               <div className="flex items-center gap-1 mt-1">
@@ -147,6 +142,13 @@ export function FeedPost({ activity }: FeedPostProps) {
                 ))}
                 <span className="text-xs text-muted-foreground ml-1" data-testid={`feed-rating-${activity.id}`}>{activity.metadata.rating}/10</span>
               </div>
+            )}
+
+            {/* Review text - the main content */}
+            {activity.type === "REVIEW_CREATED" && (activity.metadata?.note || activity.metadata?.review_preview) && (
+              <p className="text-sm mt-2 leading-relaxed" data-testid={`feed-note-${activity.id}`}>
+                {activity.metadata.note || activity.metadata.review_preview}
+              </p>
             )}
           </div>
         </div>
