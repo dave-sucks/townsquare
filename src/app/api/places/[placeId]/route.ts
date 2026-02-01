@@ -126,12 +126,10 @@ export async function GET(
       take: 10,
     });
 
-    const myReview = await prisma.review.findUnique({
+    const myReview = await prisma.review.findFirst({
       where: {
-        userId_placeId: {
-          userId: user.id,
-          placeId: place.id,
-        },
+        userId: user.id,
+        placeId: place.id,
       },
       include: {
         user: {
@@ -147,6 +145,7 @@ export async function GET(
           orderBy: { createdAt: "desc" },
         },
       },
+      orderBy: { createdAt: "desc" },
     });
 
     const reviews = await prisma.review.findMany({
