@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Users, LayoutGrid, List as ListIcon } from "lucide-react";
 import { apiRequest } from "@/lib/query-client";
 import { useAuth } from "@/hooks/use-auth";
-import { AppShell, PageHeader, ContentContainer } from "@/components/layout";
+import { AppShell, PageHeader } from "@/components/layout";
 import { PersonCard } from "@/components/person-card";
 
 interface UserData {
@@ -88,7 +88,7 @@ export default function PeoplePage() {
     return (
       <AppShell user={user}>
         <PageHeader title="People" />
-        <ContentContainer maxWidth="3xl">
+        <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full">
           <div className="flex flex-col items-center justify-center py-16">
             <Users className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="font-medium">Please sign in</p>
@@ -96,7 +96,7 @@ export default function PeoplePage() {
               <Link href="/">Go to Home</Link>
             </Button>
           </div>
-        </ContentContainer>
+        </div>
       </AppShell>
     );
   }
@@ -104,7 +104,7 @@ export default function PeoplePage() {
   return (
     <AppShell user={user}>
       <PageHeader title="People" />
-      <ContentContainer maxWidth="3xl">
+      <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full">
         {/* Search and View Toggle */}
         <div className="flex items-center gap-2 mb-4">
           <div className="relative flex-1">
@@ -210,7 +210,7 @@ export default function PeoplePage() {
             ))}
           </div>
         )}
-      </ContentContainer>
+      </div>
     </AppShell>
   );
 }

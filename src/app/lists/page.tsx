@@ -12,7 +12,7 @@ import { Plus, List as ListIcon, Search } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
-import { AppShell, PageHeader, ContentContainer } from "@/components/layout";
+import { AppShell, PageHeader } from "@/components/layout";
 import { ListCard } from "@/components/list-card";
 
 interface ListPlace {
@@ -103,7 +103,7 @@ export default function ListsPage() {
     return (
       <AppShell user={user}>
         <PageHeader title="Lists" />
-        <ContentContainer maxWidth="3xl">
+        <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full">
           <div className="flex flex-col items-center justify-center py-16">
             <ListIcon className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="font-medium">Sign in to view your lists</p>
@@ -111,7 +111,7 @@ export default function ListsPage() {
               <a href="/api/login">Sign In</a>
             </Button>
           </div>
-        </ContentContainer>
+        </div>
       </AppShell>
     );
   }
@@ -148,7 +148,7 @@ export default function ListsPage() {
         </Dialog>
       </PageHeader>
 
-      <ContentContainer maxWidth="3xl">
+      <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full">
         {/* Search */}
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -234,7 +234,7 @@ export default function ListsPage() {
             )}
           </div>
         )}
-      </ContentContainer>
+      </div>
     </AppShell>
   );
 }

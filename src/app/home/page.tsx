@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Users, MapPin } from "lucide-react";
 import { apiRequest } from "@/lib/query-client";
-import { AppShell, PageHeader, ContentContainer } from "@/components/layout";
+import { AppShell, PageHeader } from "@/components/layout";
 import { FeedPost } from "@/components/feed-post";
 
 interface ActivityActor {
@@ -89,7 +89,7 @@ export default function HomePage() {
   return (
     <AppShell user={user}>
       <PageHeader title="Feed" />
-      <ContentContainer maxWidth="3xl">
+      <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full">
         {authLoading || (isLoading && !allActivities.length) ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
@@ -144,7 +144,7 @@ export default function HomePage() {
             </Button>
           </div>
         )}
-      </ContentContainer>
+      </div>
     </AppShell>
   );
 }
