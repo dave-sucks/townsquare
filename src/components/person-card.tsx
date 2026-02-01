@@ -16,6 +16,7 @@ interface PersonCardProps {
   listsCount: number;
   onFollow: (e: React.MouseEvent) => void;
   isLoading?: boolean;
+  variant?: "grid" | "list";
 }
 
 export function PersonCard({
@@ -29,6 +30,7 @@ export function PersonCard({
   listsCount,
   onFollow,
   isLoading = false,
+  variant = "list",
 }: PersonCardProps) {
   const displayName = firstName
     ? `${firstName}${lastName ? ` ${lastName}` : ""}`
@@ -40,6 +42,63 @@ export function PersonCard({
   const initials = firstName && lastName
     ? `${firstName[0]}${lastName[0]}`
     : displayName.charAt(0).toUpperCase();
+
+  const handleFollowClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onFollow(e);
+  };
+
+  if (variant === "grid") {
+    return (
+      <Link 
+        href={userLink} 
+        className="block rounded-lg border bg-card overflow-hidden hover-elevate"
+        data-testid={`person-card-${id}`}
+      >
+        <div className="p-4 flex flex-col items-center text-center">
+          <Avatar className="h-16 w-16 mb-3">
+            <AvatarImage src={profileImageUrl || undefined} alt={displayName} />
+            <AvatarFallback className="text-xl">{initials}</AvatarFallback>
+          </Avatar>
+          <p className="text-sm font-medium truncate w-full">{displayName}</p>
+          <p className="text-xs text-muted-foreground truncate w-full">@{handle}</p>
+          <div className="flex items-center justify-center gap-3 mt-2 text-xs text-muted-foreground">
+            <span className="flex items-center gap-0.5">
+              <MapPin className="h-3 w-3" />
+              {savedPlacesCount}
+            </span>
+            <span className="flex items-center gap-0.5">
+              <ListIcon className="h-3 w-3" />
+              {listsCount}
+            </span>
+          </div>
+          <Button
+            variant={isFollowing ? "outline" : "default"}
+            size="sm"
+            className="w-full mt-3"
+            onClick={handleFollowClick}
+            disabled={isLoading}
+            data-testid={`button-follow-${id}`}
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : isFollowing ? (
+              <>
+                <UserMinus className="mr-1 h-3.5 w-3.5" />
+                Unfollow
+              </>
+            ) : (
+              <>
+                <UserPlus className="mr-1 h-3.5 w-3.5" />
+                Follow
+              </>
+            )}
+          </Button>
+        </div>
+      </Link>
+    );
+  }
 
   return (
     <Link 
@@ -70,11 +129,7 @@ export function PersonCard({
       <Button
         variant={isFollowing ? "outline" : "default"}
         size="sm"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onFollow(e);
-        }}
+        onClick={handleFollowClick}
         disabled={isLoading}
         data-testid={`button-follow-${id}`}
       >
