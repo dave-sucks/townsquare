@@ -425,6 +425,10 @@ export async function POST(request: NextRequest) {
     }
   } catch (error: any) {
     console.error("Error importing Instagram post:", error);
+    console.error("Error stack:", error.stack);
+    console.error("Error name:", error.name);
+    console.error("Error message:", error.message);
+    console.error("Error code:", error.code);
 
     if (error.name === "ZodError") {
       return NextResponse.json(
