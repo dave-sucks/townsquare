@@ -2,6 +2,53 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+async function fetchAndCachePlaceFromGoogle(googlePlaceId: string) {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    throw new Error("Google Maps API key not configured");
+  }
+
+  const response = await fetch(
+    `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(googlePlaceId)}&fields=place_id,name,formatted_address,geometry,types,price_level,photos&key=${apiKey}`
+  );
+
+  const data = await response.json();
+  
+  if (data.status !== "OK" || !data.result) {
+    return null;
+  }
+
+  const result = data.result;
+  
+  // Create or update the place in the database
+  const place = await prisma.place.upsert({
+    where: { googlePlaceId: result.place_id },
+    create: {
+      googlePlaceId: result.place_id,
+      name: result.name,
+      formattedAddress: result.formatted_address,
+      lat: result.geometry.location.lat,
+      lng: result.geometry.location.lng,
+      types: result.types || [],
+      primaryType: result.types?.[0] || null,
+      priceLevel: result.price_level !== undefined ? `PRICE_LEVEL_${['FREE', 'INEXPENSIVE', 'MODERATE', 'EXPENSIVE', 'VERY_EXPENSIVE'][result.price_level] || 'MODERATE'}` : null,
+      photoRefs: result.photos?.slice(0, 5).map((p: any) => p.photo_reference) || [],
+    },
+    update: {
+      name: result.name,
+      formattedAddress: result.formatted_address,
+      lat: result.geometry.location.lat,
+      lng: result.geometry.location.lng,
+      types: result.types || [],
+      primaryType: result.types?.[0] || null,
+      priceLevel: result.price_level !== undefined ? `PRICE_LEVEL_${['FREE', 'INEXPENSIVE', 'MODERATE', 'EXPENSIVE', 'VERY_EXPENSIVE'][result.price_level] || 'MODERATE'}` : null,
+      photoRefs: result.photos?.slice(0, 5).map((p: any) => p.photo_reference) || [],
+    },
+  });
+
+  return place;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ placeId: string }> }
@@ -14,9 +61,15 @@ export async function GET(
   const { placeId } = await params;
 
   try {
-    const place = await prisma.place.findUnique({
+    // First try to find the place in our database
+    let place = await prisma.place.findUnique({
       where: { googlePlaceId: placeId },
     });
+
+    // If not found locally, fetch from Google Places API and cache it
+    if (!place) {
+      place = await fetchAndCachePlaceFromGoogle(placeId);
+    }
 
     if (!place) {
       return NextResponse.json({ error: "Place not found" }, { status: 404 });
