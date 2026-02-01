@@ -217,6 +217,37 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      // Save the place to the importing user's account as "WANT to go"
+      const existingSavedPlace = await prisma.savedPlace.findFirst({
+        where: {
+          userId: user.id,
+          placeId: place.id,
+        },
+      });
+
+      let savedPlaceCreated = false;
+      if (!existingSavedPlace) {
+        await prisma.savedPlace.create({
+          data: {
+            userId: user.id,
+            placeId: place.id,
+            status: "WANT",
+          },
+        });
+        savedPlaceCreated = true;
+
+        // Create activity for the importing user saving the place
+        await createActivity({
+          actorId: user.id,
+          type: "PLACE_SAVED_WANT",
+          placeId: place.id,
+          metadata: {
+            placeName: place.name,
+            source: "instagram_import",
+          },
+        });
+      }
+
       await createActivity({
         actorId: instagramUser.id,
         type: "REVIEW_CREATED",
