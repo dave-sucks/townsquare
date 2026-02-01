@@ -67,6 +67,31 @@ export async function POST(request: NextRequest) {
     const postData = await importInstagramPost(url);
     console.log("Instagram post data:", JSON.stringify(postData, null, 2));
 
+    // Check for existing import record (from a failed previous attempt)
+    // and delete it if it's not completed
+    const existingImport = await prisma.instagramImport.findFirst({
+      where: { instagramPostId: postData.instagramPostId },
+    });
+    
+    if (existingImport) {
+      if (existingImport.status === "completed") {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "ALREADY_IMPORTED",
+              message: "This Instagram post has already been imported",
+            },
+          },
+          { status: 409 }
+        );
+      }
+      // Delete the incomplete import record to retry
+      await prisma.instagramImport.delete({
+        where: { id: existingImport.id },
+      });
+    }
+
     let importRecord = await prisma.instagramImport.create({
       data: {
         instagramPostId: postData.instagramPostId,
