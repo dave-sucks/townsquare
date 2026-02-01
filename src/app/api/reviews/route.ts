@@ -92,16 +92,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Place not found" }, { status: 404 });
     }
 
-    const existingReview = await prisma.review.findUnique({
+    // RULE: A user must have saved a place before they can review it
+    const savedPlace = await prisma.savedPlace.findFirst({
       where: {
-        userId_placeId: {
-          userId: user.id,
-          placeId: validated.placeId,
-        },
+        userId: user.id,
+        placeId: validated.placeId,
+      },
+    });
+    if (!savedPlace) {
+      return NextResponse.json({ error: "You must save this place before reviewing it" }, { status: 400 });
+    }
+
+    // For manual reviews (not Instagram), we allow only one review per user per place
+    const existingReview = await prisma.review.findFirst({
+      where: {
+        userId: user.id,
+        placeId: validated.placeId,
+        source: "manual",
       },
     });
     if (existingReview) {
-      return NextResponse.json({ error: "Review already exists" }, { status: 409 });
+      return NextResponse.json({ error: "You already have a review for this place" }, { status: 409 });
     }
 
     const review = await prisma.review.create({
