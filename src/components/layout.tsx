@@ -264,6 +264,7 @@ const contentContainerVariants = cva("flex-1 overflow-auto", {
       default: "",
       sm: "max-w-xl mx-auto",
       md: "max-w-2xl mx-auto",
+      "3xl": "max-w-3xl mx-auto",
       lg: "max-w-4xl mx-auto",
     },
   },

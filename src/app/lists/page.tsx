@@ -103,7 +103,7 @@ export default function ListsPage() {
     return (
       <AppShell user={user}>
         <PageHeader title="Lists" />
-        <ContentContainer>
+        <ContentContainer maxWidth="3xl">
           <div className="flex flex-col items-center justify-center py-16">
             <ListIcon className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="font-medium">Sign in to view your lists</p>
@@ -148,7 +148,7 @@ export default function ListsPage() {
         </Dialog>
       </PageHeader>
 
-      <ContentContainer>
+      <ContentContainer maxWidth="3xl">
         {/* Search */}
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

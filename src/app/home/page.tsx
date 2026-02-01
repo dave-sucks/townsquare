@@ -89,7 +89,7 @@ export default function HomePage() {
   return (
     <AppShell user={user}>
       <PageHeader title="Feed" />
-      <ContentContainer>
+      <ContentContainer maxWidth="3xl">
         {authLoading || (isLoading && !allActivities.length) ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
