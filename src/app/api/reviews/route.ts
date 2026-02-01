@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
       actorId: user.id,
       type: "REVIEW_CREATED",
       placeId: validated.placeId,
-      metadata: { rating: validated.rating, placeName: place.name },
+      metadata: { rating: validated.rating, placeName: place.name, note: validated.note || null },
     });
 
     return NextResponse.json(review);

@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
             googlePlaceId: true,
             name: true,
             formattedAddress: true,
+            photoRefs: true,
           },
         },
         list: {
@@ -61,9 +62,49 @@ export async function GET(request: NextRequest) {
     const items = hasMore ? activities.slice(0, limit) : activities;
     const nextCursor = hasMore ? items[items.length - 1].id : null;
 
+    // Fetch reviews for REVIEW_CREATED activities to get the actual note
+    const reviewActivityIds = items
+      .filter((a) => a.type === "REVIEW_CREATED" && a.placeId)
+      .map((a) => ({ actorId: a.actorId, placeId: a.placeId! }));
+
+    const reviews = reviewActivityIds.length > 0
+      ? await prisma.review.findMany({
+          where: {
+            OR: reviewActivityIds.map((r) => ({
+              userId: r.actorId,
+              placeId: r.placeId,
+            })),
+          },
+          select: {
+            userId: true,
+            placeId: true,
+            rating: true,
+            note: true,
+          },
+        })
+      : [];
+
+    const reviewMap = new Map(
+      reviews.map((r) => [`${r.userId}-${r.placeId}`, r])
+    );
+
     const filteredItems = items.map((activity) => {
       if (activity.list && activity.list.visibility === "PRIVATE" && activity.list.userId !== user.id) {
         return { ...activity, list: null };
+      }
+      // Enrich REVIEW_CREATED activities with the actual review note
+      if (activity.type === "REVIEW_CREATED" && activity.placeId) {
+        const review = reviewMap.get(`${activity.actorId}-${activity.placeId}`);
+        if (review) {
+          return {
+            ...activity,
+            metadata: {
+              ...((activity.metadata as any) || {}),
+              rating: review.rating,
+              note: review.note,
+            },
+          };
+        }
       }
       return activity;
     });

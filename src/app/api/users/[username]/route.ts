@@ -140,13 +140,57 @@ export async function GET(
       take: 50,
     });
 
-    // Filter out private list activities if not own profile
-    const filteredActivities = activities.filter((activity) => {
-      if (activity.list && activity.list.visibility === "PRIVATE" && activity.list.userId !== currentUser.id) {
-        return false;
-      }
-      return true;
-    });
+    // Fetch reviews for REVIEW_CREATED activities to get the actual note
+    const reviewActivityIds = activities
+      .filter((a) => a.type === "REVIEW_CREATED" && a.placeId)
+      .map((a) => ({ actorId: a.actorId, placeId: a.placeId! }));
+
+    const activityReviews = reviewActivityIds.length > 0
+      ? await prisma.review.findMany({
+          where: {
+            OR: reviewActivityIds.map((r) => ({
+              userId: r.actorId,
+              placeId: r.placeId,
+            })),
+          },
+          select: {
+            userId: true,
+            placeId: true,
+            rating: true,
+            note: true,
+          },
+        })
+      : [];
+
+    const reviewMap = new Map(
+      activityReviews.map((r) => [`${r.userId}-${r.placeId}`, r])
+    );
+
+    // Filter out private list activities and enrich review activities
+    const filteredActivities = activities
+      .filter((activity) => {
+        if (activity.list && activity.list.visibility === "PRIVATE" && activity.list.userId !== currentUser.id) {
+          return false;
+        }
+        return true;
+      })
+      .map((activity) => {
+        // Enrich REVIEW_CREATED activities with the actual review note
+        if (activity.type === "REVIEW_CREATED" && activity.placeId) {
+          const review = reviewMap.get(`${activity.actorId}-${activity.placeId}`);
+          if (review) {
+            return {
+              ...activity,
+              metadata: {
+                ...((activity.metadata as any) || {}),
+                rating: review.rating,
+                note: review.note,
+              },
+            };
+          }
+        }
+        return activity;
+      });
 
     // Get all saved places with full place data for map display
     const allSavedPlaces = await prisma.savedPlace.findMany({
