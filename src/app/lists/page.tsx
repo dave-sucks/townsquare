@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -47,60 +46,6 @@ interface ListData {
   };
 }
 
-function ListsGrid({ lists }: { lists: ListData[] }) {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {lists.map((list) => (
-        <ListCard
-          key={list.id}
-          id={list.id}
-          name={list.name}
-          description={list.description}
-          visibility={list.visibility}
-          placeCount={list._count.listPlaces}
-          places={list.listPlaces?.map((lp) => ({
-            id: lp.place.id,
-            name: lp.place.name,
-            formattedAddress: lp.place.formattedAddress,
-            photoRefs: lp.place.photoRefs as string[] | null,
-          }))}
-          user={list.user}
-        />
-      ))}
-    </div>
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {[1, 2, 3, 4, 5, 6].map((i) => (
-        <Card key={i} className="overflow-hidden">
-          <Skeleton className="aspect-[4/3] w-full" />
-          <div className="p-3 space-y-2">
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-3 w-1/2" />
-          </div>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="flex flex-col items-center justify-center py-16">
-      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-        <ListIcon className="h-8 w-8 text-muted-foreground" />
-      </div>
-      <p className="font-medium">No lists yet</p>
-      <p className="text-sm text-muted-foreground mt-1">
-        Create your first list to organize places
-      </p>
-    </div>
-  );
-}
-
 export default function ListsPage() {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -110,9 +55,7 @@ export default function ListsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-    }, 300);
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
@@ -122,27 +65,19 @@ export default function ListsPage() {
     enabled: isAuthenticated,
   });
 
-  const allLists = listsData?.lists || [];
+  const myLists = listsData?.lists || [];
   const discoverLists = listsData?.discoverLists || [];
 
-  const filteredLists = debouncedSearch
-    ? allLists.filter((list) =>
-        list.name.toLowerCase().includes(debouncedSearch.toLowerCase())
-      )
-    : allLists;
-
+  const filteredMyLists = debouncedSearch
+    ? myLists.filter((l) => l.name.toLowerCase().includes(debouncedSearch.toLowerCase()))
+    : myLists;
   const filteredDiscoverLists = debouncedSearch
-    ? discoverLists.filter((list) =>
-        list.name.toLowerCase().includes(debouncedSearch.toLowerCase())
-      )
+    ? discoverLists.filter((l) => l.name.toLowerCase().includes(debouncedSearch.toLowerCase()))
     : discoverLists;
 
   const createListMutation = useMutation({
     mutationFn: async (data: { name: string; description?: string }) => {
-      return apiRequest("/api/lists", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return apiRequest("/api/lists", { method: "POST", body: JSON.stringify(data) });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["lists"] });
@@ -161,10 +96,7 @@ export default function ListsPage() {
       toast.error("Name is required");
       return;
     }
-    createListMutation.mutate({
-      name: name.trim(),
-      description: description.trim() || undefined,
-    });
+    createListMutation.mutate({ name: name.trim(), description: description.trim() || undefined });
   };
 
   if (!isAuthenticated && !authLoading) {
@@ -173,9 +105,7 @@ export default function ListsPage() {
         <PageHeader title="Lists" />
         <ContentContainer>
           <div className="flex flex-col items-center justify-center py-16">
-            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <ListIcon className="h-8 w-8 text-muted-foreground" />
-            </div>
+            <ListIcon className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="font-medium">Sign in to view your lists</p>
             <Button asChild className="mt-4">
               <a href="/api/login">Sign In</a>
@@ -192,7 +122,7 @@ export default function ListsPage() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button size="sm" data-testid="button-create-list">
-              <Plus className="mr-1.5 h-4 w-4" />
+              <Plus className="mr-1 h-4 w-4" />
               New List
             </Button>
           </DialogTrigger>
@@ -204,79 +134,102 @@ export default function ListsPage() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  placeholder="e.g., Best Coffee Shops"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  data-testid="input-list-name"
-                />
+                <Input id="name" placeholder="e.g., Best Coffee Shops" value={name} onChange={(e) => setName(e.target.value)} data-testid="input-list-name" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Description (optional)</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Add a description for your list"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  data-testid="input-list-description"
-                />
+                <Textarea id="description" placeholder="Add a description" value={description} onChange={(e) => setDescription(e.target.value)} data-testid="input-list-description" />
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={handleCreateList} disabled={createListMutation.isPending} data-testid="button-submit-create-list">
-                Create List
-              </Button>
+              <Button onClick={handleCreateList} disabled={createListMutation.isPending} data-testid="button-submit-create-list">Create List</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </PageHeader>
 
-      <ContentContainer maxWidth="lg">
-        {/* Search Bar */}
-        <div className="mb-6">
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search lists..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-              data-testid="input-search-lists"
-            />
-          </div>
+      <ContentContainer>
+        {/* Search */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search lists..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+            data-testid="input-search-lists"
+          />
         </div>
 
         {authLoading || isLoading ? (
-          <LoadingSkeleton />
-        ) : filteredLists.length === 0 && filteredDiscoverLists.length === 0 ? (
-          debouncedSearch ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <p className="font-medium">No lists found</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Try a different search term
-              </p>
-            </div>
-          ) : (
-            <EmptyState />
-          )
+          <div className="grid grid-cols-2 gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="rounded-lg border overflow-hidden">
+                <Skeleton className="aspect-[3/2] w-full" />
+                <div className="p-3">
+                  <Skeleton className="h-4 w-3/4 mb-1" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredMyLists.length === 0 && filteredDiscoverLists.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <ListIcon className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="font-medium">{debouncedSearch ? "No lists found" : "No lists yet"}</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {debouncedSearch ? "Try a different search" : "Create your first list"}
+            </p>
+          </div>
         ) : (
-          <div className="space-y-8">
-            {filteredLists.length > 0 && (
+          <div className="space-y-6">
+            {filteredMyLists.length > 0 && (
               <section>
-                <h2 className="text-sm font-medium text-muted-foreground mb-4" data-testid="text-my-lists-header">
-                  My Lists
-                </h2>
-                <ListsGrid lists={filteredLists} />
+                <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">My Lists</h2>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                  {filteredMyLists.map((list) => (
+                    <ListCard
+                      key={list.id}
+                      id={list.id}
+                      name={list.name}
+                      description={list.description}
+                      visibility={list.visibility}
+                      placeCount={list._count.listPlaces}
+                      places={list.listPlaces?.map((lp) => ({
+                        id: lp.place.id,
+                        name: lp.place.name,
+                        formattedAddress: lp.place.formattedAddress,
+                        photoRefs: lp.place.photoRefs as string[] | null,
+                      }))}
+                      user={list.user}
+                    />
+                  ))}
+                </div>
               </section>
             )}
 
             {filteredDiscoverLists.length > 0 && (
               <section>
-                <h2 className="text-sm font-medium text-muted-foreground mb-4" data-testid="text-discover-lists-header">
-                  Discover
-                </h2>
-                <ListsGrid lists={filteredDiscoverLists} />
+                <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Discover</h2>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                  {filteredDiscoverLists.map((list) => (
+                    <ListCard
+                      key={list.id}
+                      id={list.id}
+                      name={list.name}
+                      description={list.description}
+                      visibility={list.visibility}
+                      placeCount={list._count.listPlaces}
+                      places={list.listPlaces?.map((lp) => ({
+                        id: lp.place.id,
+                        name: lp.place.name,
+                        formattedAddress: lp.place.formattedAddress,
+                        photoRefs: lp.place.photoRefs as string[] | null,
+                      }))}
+                      user={list.user}
+                    />
+                  ))}
+                </div>
               </section>
             )}
           </div>

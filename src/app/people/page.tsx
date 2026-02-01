@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Users } from "lucide-react";
@@ -26,40 +25,6 @@ interface UserData {
   };
 }
 
-function LoadingSkeleton() {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {[1, 2, 3, 4, 5, 6].map((i) => (
-        <Card key={i} className="overflow-hidden">
-          <Skeleton className="aspect-square w-full" />
-          <div className="p-3 space-y-2">
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-3 w-1/2" />
-            <Skeleton className="h-3 w-1/3 mt-2" />
-            <Skeleton className="h-8 w-full mt-3" />
-          </div>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
-function EmptyState({ hasSearch }: { hasSearch: boolean }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-16">
-      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-        <Users className="h-8 w-8 text-muted-foreground" />
-      </div>
-      <p className="font-medium">
-        {hasSearch ? "No users found" : "No other users yet"}
-      </p>
-      <p className="text-sm text-muted-foreground mt-1">
-        {hasSearch ? "Try a different search term" : "Be the first to invite friends!"}
-      </p>
-    </div>
-  );
-}
-
 export default function PeoplePage() {
   const { isAuthenticated, user } = useAuth();
   const queryClient = useQueryClient();
@@ -68,9 +33,7 @@ export default function PeoplePage() {
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-    }, 300);
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
@@ -88,11 +51,8 @@ export default function PeoplePage() {
         body: JSON.stringify({ followingId: userId }),
       });
     },
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      setLoadingUserId(null);
-    },
-    onError: () => {
       setLoadingUserId(null);
     },
   });
@@ -105,11 +65,8 @@ export default function PeoplePage() {
         body: JSON.stringify({ followingId: userId }),
       });
     },
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      setLoadingUserId(null);
-    },
-    onError: () => {
       setLoadingUserId(null);
     },
   });
@@ -128,11 +85,9 @@ export default function PeoplePage() {
     return (
       <AppShell user={user}>
         <PageHeader title="People" />
-        <ContentContainer maxWidth="lg">
+        <ContentContainer>
           <div className="flex flex-col items-center justify-center py-16">
-            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <Users className="h-8 w-8 text-muted-foreground" />
-            </div>
+            <Users className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="font-medium">Please sign in</p>
             <Button asChild className="mt-4">
               <Link href="/">Go to Home</Link>
@@ -146,41 +101,55 @@ export default function PeoplePage() {
   return (
     <AppShell user={user}>
       <PageHeader title="People" />
-
-      <ContentContainer maxWidth="lg">
-        {/* Search Bar */}
-        <div className="mb-6">
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search by username..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-              data-testid="input-search-users"
-            />
-          </div>
+      <ContentContainer>
+        {/* Search */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+            data-testid="input-search-users"
+          />
         </div>
 
         {isLoading ? (
-          <LoadingSkeleton />
+          <div className="space-y-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center gap-3 p-3 rounded-lg border">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="flex-1">
+                  <Skeleton className="h-4 w-32 mb-1" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-8 w-16" />
+              </div>
+            ))}
+          </div>
         ) : users.length === 0 ? (
-          <EmptyState hasSearch={!!debouncedSearch} />
+          <div className="flex flex-col items-center justify-center py-16">
+            <Users className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="font-medium">{debouncedSearch ? "No users found" : "No users yet"}</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {debouncedSearch ? "Try a different search" : "Invite friends to get started"}
+            </p>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {users.map((userData) => (
+          <div className="space-y-2">
+            {users.map((u) => (
               <PersonCard
-                key={userData.id}
-                id={userData.id}
-                username={userData.username}
-                firstName={userData.firstName}
-                lastName={userData.lastName}
-                profileImageUrl={userData.profileImageUrl}
-                isFollowing={userData.isFollowing}
-                savedPlacesCount={userData._count.savedPlaces}
-                listsCount={userData._count.lists}
-                onFollow={() => handleFollow(userData.id, userData.isFollowing)}
-                isLoading={loadingUserId === userData.id}
+                key={u.id}
+                id={u.id}
+                username={u.username}
+                firstName={u.firstName}
+                lastName={u.lastName}
+                profileImageUrl={u.profileImageUrl}
+                isFollowing={u.isFollowing}
+                savedPlacesCount={u._count.savedPlaces}
+                listsCount={u._count.lists}
+                onFollow={() => handleFollow(u.id, u.isFollowing)}
+                isLoading={loadingUserId === u.id}
               />
             ))}
           </div>
