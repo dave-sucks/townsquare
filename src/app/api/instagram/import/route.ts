@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
               lng: placeDetails.geometry.location.lng,
               primaryType: placeDetails.types?.[0] || "restaurant",
               types: JSON.stringify(placeDetails.types || ["restaurant"]),
-              priceLevel: placeDetails.price_level || null,
+              priceLevel: placeDetails.price_level != null ? String(placeDetails.price_level) : null,
               photoRefs: photoRefs.length > 0 ? JSON.stringify(photoRefs) : undefined,
             },
           });
