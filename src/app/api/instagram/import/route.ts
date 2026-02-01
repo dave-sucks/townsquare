@@ -222,58 +222,103 @@ export async function POST(request: NextRequest) {
         ? `${postData.caption || ""}\n\n${overrides.note}`.trim()
         : postData.caption || "";
 
-      const review = await prisma.review.create({
-        data: {
-          userId: instagramUser.id,
-          placeId: place.id,
-          rating: null,
-          note,
-          visitedAt: postData.timestamp ? new Date(postData.timestamp) : new Date(),
-          instagramPostId: postData.instagramPostId,
-          instagramUrl: postData.instagramUrl,
-          instagramEmbedHtml: postData.instagramEmbedHtml,
-          instagramShortcode: postData.instagramShortcode,
-          source: "instagram",
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              username: true,
-              firstName: true,
-              lastName: true,
-              profileImageUrl: true,
-              instagramHandle: true,
+      // CRITICAL: Create SavedPlace BEFORE Review - enforces business rule
+      // Use transaction to ensure atomic creation of all related records
+      const result = await prisma.$transaction(async (tx) => {
+        // Step 1: Create/update SavedPlace for the Instagram user (BEEN status)
+        const savedPlaceForInstagramUser = await tx.savedPlace.upsert({
+          where: {
+            userId_placeId: {
+              userId: instagramUser.id,
+              placeId: place.id,
             },
           },
-          place: {
-            select: {
-              id: true,
-              googlePlaceId: true,
-              name: true,
-              formattedAddress: true,
+          update: {
+            visitedAt: postData.timestamp ? new Date(postData.timestamp) : new Date(),
+          },
+          create: {
+            userId: instagramUser.id,
+            placeId: place.id,
+            status: "BEEN",
+            visitedAt: postData.timestamp ? new Date(postData.timestamp) : new Date(),
+          },
+        });
+
+        // Step 2: Create/update SavedPlace for the importing user (WANT status)
+        const savedPlaceForImporter = await tx.savedPlace.upsert({
+          where: {
+            userId_placeId: {
+              userId: user.id,
+              placeId: place.id,
             },
           },
-        },
-      });
+          update: {},
+          create: {
+            userId: user.id,
+            placeId: place.id,
+            status: "WANT",
+          },
+        });
 
-      const isCarousel = postData.mediaUrls.length > 1;
-      const photos = [];
-
-      for (let i = 0; i < postData.mediaUrls.length; i++) {
-        const photo = await prisma.photo.create({
+        // Step 3: Now create the Review (SavedPlace exists, rule satisfied)
+        const review = await tx.review.create({
           data: {
             userId: instagramUser.id,
             placeId: place.id,
-            reviewId: review.id,
-            url: postData.mediaUrls[i],
-            carouselPosition: i,
-            isCarousel,
+            rating: null,
+            note,
+            visitedAt: postData.timestamp ? new Date(postData.timestamp) : new Date(),
+            instagramPostId: postData.instagramPostId,
+            instagramUrl: postData.instagramUrl,
+            instagramEmbedHtml: postData.instagramEmbedHtml,
+            instagramShortcode: postData.instagramShortcode,
+            source: "instagram",
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                firstName: true,
+                lastName: true,
+                profileImageUrl: true,
+                instagramHandle: true,
+              },
+            },
+            place: {
+              select: {
+                id: true,
+                googlePlaceId: true,
+                name: true,
+                formattedAddress: true,
+              },
+            },
           },
         });
-        photos.push(photo);
-      }
 
+        // Step 4: Create photos for the review
+        const isCarousel = postData.mediaUrls.length > 1;
+        const photos = [];
+        for (let i = 0; i < postData.mediaUrls.length; i++) {
+          const photo = await tx.photo.create({
+            data: {
+              userId: instagramUser.id,
+              placeId: place.id,
+              reviewId: review.id,
+              url: postData.mediaUrls[i],
+              carouselPosition: i,
+              isCarousel,
+            },
+          });
+          photos.push(photo);
+        }
+
+        return { review, photos, savedPlaceForImporter };
+      });
+
+      const { review, photos, savedPlaceForImporter } = result;
+
+      // Update import record
       await prisma.instagramImport.update({
         where: { id: importRecord.id },
         data: {
@@ -284,45 +329,8 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Save the place to the Instagram user's account as "BEEN" (they reviewed it)
-      const existingInstagramUserSavedPlace = await prisma.savedPlace.findFirst({
-        where: {
-          userId: instagramUser.id,
-          placeId: place.id,
-        },
-      });
-
-      if (!existingInstagramUserSavedPlace) {
-        await prisma.savedPlace.create({
-          data: {
-            userId: instagramUser.id,
-            placeId: place.id,
-            status: "BEEN",
-            visitedAt: postData.timestamp ? new Date(postData.timestamp) : new Date(),
-          },
-        });
-      }
-
-      // Save the place to the importing user's account as "WANT to go"
-      const existingSavedPlace = await prisma.savedPlace.findFirst({
-        where: {
-          userId: user.id,
-          placeId: place.id,
-        },
-      });
-
-      let savedPlaceCreated = false;
-      if (!existingSavedPlace) {
-        await prisma.savedPlace.create({
-          data: {
-            userId: user.id,
-            placeId: place.id,
-            status: "WANT",
-          },
-        });
-        savedPlaceCreated = true;
-
-        // Create activity for the importing user saving the place
+      // Create activity for the importing user if this was a new save
+      if (savedPlaceForImporter) {
         await createActivity({
           actorId: user.id,
           type: "PLACE_SAVED_WANT",
@@ -334,6 +342,7 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      // Create activity for the Instagram user's review
       await createActivity({
         actorId: instagramUser.id,
         type: "REVIEW_CREATED",
