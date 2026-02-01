@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,9 +11,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check, Instagram } from "lucide-react";
 import { apiRequest } from "@/lib/query-client";
 import { PlacesList } from "@/components/shared/places-list";
+import { InstagramImportDialog } from "@/components/instagram-import-dialog";
 import type { SidebarInjectedProps } from "@/components/map/map-layout";
 
 interface Place {
@@ -70,6 +72,8 @@ export function DiscoverSidebar({
   onStatusFilterChange,
   onListFilterChange,
 }: DiscoverSidebarProps) {
+  const [instagramImportOpen, setInstagramImportOpen] = useState(false);
+  
   const { data: listsData } = useQuery<{ lists: ListData[] }>({
     queryKey: ["lists"],
     queryFn: () => apiRequest("/api/lists"),
@@ -87,7 +91,21 @@ export function DiscoverSidebar({
       <div className="flex items-center gap-2 p-3 border-b">
         <SidebarTrigger data-testid="button-sidebar-toggle" />
         <h1 className="font-semibold text-sm flex-1">Places</h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setInstagramImportOpen(true)}
+          title="Import from Instagram"
+          data-testid="button-instagram-import"
+        >
+          <Instagram className="h-4 w-4" />
+        </Button>
       </div>
+      
+      <InstagramImportDialog
+        open={instagramImportOpen}
+        onOpenChange={setInstagramImportOpen}
+      />
 
       <div className="flex gap-2 p-3 border-b">
         <DropdownMenu>

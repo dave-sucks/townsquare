@@ -8,26 +8,31 @@ datasource db {
 }
 
 model User {
-  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
-  email           String?      @unique(map: "users_email_unique")
-  username        String?      @unique(map: "users_username_unique")
-  passwordHash    String?      @map("password_hash")
-  firstName       String?      @map("first_name")
-  lastName        String?      @map("last_name")
-  profileImageUrl String?      @map("profile_image_url")
-  bio             String?
-  location        String?
-  instagramHandle String?      @map("instagram_handle")
-  website         String?
-  isVerified      Boolean      @default(false) @map("is_verified")
-  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
-  savedPlaces     SavedPlace[]
-  lists           List[]
-  followers       Follow[]     @relation("following")
-  following       Follow[]     @relation("follower")
-  activities      Activity[]
-  reviews         Review[]
-  photos          Photo[]
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  email               String?           @unique(map: "users_email_unique")
+  username            String?           @unique(map: "users_username_unique")
+  passwordHash        String?           @map("password_hash")
+  firstName           String?           @map("first_name")
+  lastName            String?           @map("last_name")
+  profileImageUrl     String?           @map("profile_image_url")
+  bio                 String?
+  location            String?
+  instagramHandle     String?           @unique @map("instagram_handle")
+  instagramId         String?           @unique @map("instagram_id")
+  instagramPostCount  Int               @default(0) @map("instagram_post_count")
+  lastInstagramSync   DateTime?         @map("last_instagram_sync") @db.Timestamp(6)
+  isInstagramImport   Boolean           @default(false) @map("is_instagram_import")
+  website             String?
+  isVerified          Boolean           @default(false) @map("is_verified")
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamp(6)
+  savedPlaces         SavedPlace[]
+  lists               List[]
+  followers           Follow[]          @relation("following")
+  following           Follow[]          @relation("follower")
+  activities          Activity[]
+  reviews             Review[]
+  photos              Photo[]
+  instagramImports    InstagramImport[]
 
   @@map("users")
 }
@@ -156,38 +161,81 @@ model Activity {
   @@map("activities")
 }
 
-model Review {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
-  userId    String    @map("user_id") @db.VarChar(36)
-  placeId   String    @map("place_id") @db.VarChar(36)
-  rating    Int
-  note      String?
-  visitedAt DateTime? @map("visited_at") @db.Timestamp(6)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  place     Place     @relation(fields: [placeId], references: [id], onDelete: Cascade)
-  photos    Photo[]
+enum review_source {
+  manual
+  instagram
+  tiktok
+}
 
-  @@unique([userId, placeId])
+model Review {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  userId             String        @map("user_id") @db.VarChar(36)
+  placeId            String        @map("place_id") @db.VarChar(36)
+  rating             Int?
+  note               String?
+  visitedAt          DateTime?     @map("visited_at") @db.Timestamp(6)
+  instagramPostId    String?       @unique @map("instagram_post_id")
+  instagramUrl       String?       @map("instagram_url")
+  instagramEmbedHtml String?       @map("instagram_embed_html")
+  instagramShortcode String?       @map("instagram_shortcode")
+  source             review_source @default(manual)
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt          DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place              Place         @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  photos             Photo[]
+
   @@index([placeId])
+  @@index([instagramPostId])
+  @@index([source])
   @@map("reviews")
 }
 
 model Photo {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
-  userId    String   @map("user_id") @db.VarChar(36)
-  placeId   String   @map("place_id") @db.VarChar(36)
-  reviewId  String?  @map("review_id") @db.VarChar(36)
-  url       String
-  width     Int?
-  height    Int?
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  place     Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
-  review    Review?  @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  userId           String   @map("user_id") @db.VarChar(36)
+  placeId          String   @map("place_id") @db.VarChar(36)
+  reviewId         String?  @map("review_id") @db.VarChar(36)
+  url              String
+  width            Int?
+  height           Int?
+  carouselPosition Int      @default(0) @map("carousel_position")
+  isCarousel       Boolean  @default(false) @map("is_carousel")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place            Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  review           Review?  @relation(fields: [reviewId], references: [id], onDelete: SetNull)
 
   @@index([placeId, createdAt(sort: Desc)])
-  @@index([reviewId, createdAt(sort: Desc)])
+  @@index([reviewId, carouselPosition])
   @@map("photos")
+}
+
+enum import_status {
+  pending
+  processing
+  completed
+  failed
+}
+
+model InstagramImport {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  instagramPostId    String        @map("instagram_post_id")
+  instagramUrl       String        @map("instagram_url")
+  instagramShortcode String        @map("instagram_shortcode")
+  userId             String?       @map("user_id") @db.VarChar(36)
+  placeId            String?       @map("place_id") @db.VarChar(36)
+  reviewId           String?       @map("review_id") @db.VarChar(36)
+  status             import_status @default(pending)
+  errorMessage       String?       @map("error_message")
+  importedBy         String        @map("imported_by") @db.VarChar(36)
+  rawData            Json?         @map("raw_data")
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt          DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  importedByUser     User          @relation(fields: [importedBy], references: [id], onDelete: Cascade)
+
+  @@unique([instagramPostId])
+  @@index([status])
+  @@index([importedBy])
+  @@map("instagram_imports")
 }
