@@ -1,14 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Lock, Trash2, Instagram } from "lucide-react";
+import { Lock, Trash2 } from "lucide-react";
 import type { SidebarInjectedProps } from "@/components/map/map-layout";
 import { PlacesList } from "@/components/shared/places-list";
-import { InstagramImportDialog } from "@/components/instagram-import-dialog";
 
 interface Place {
   id: string;
@@ -70,8 +68,6 @@ export function ListSidebar({
   onRemovePlace,
   isRemovingPlace = false,
 }: ListSidebarProps) {
-  const [instagramImportOpen, setInstagramImportOpen] = useState(false);
-  
   const savedPlaces = list?.listPlaces.map(lp => ({
     id: lp.id,
     placeId: lp.placeId,
@@ -112,23 +108,7 @@ export function ListSidebar({
         {list.visibility === "PRIVATE" && (
           <Lock className="h-4 w-4 text-muted-foreground" />
         )}
-        {isOwner && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setInstagramImportOpen(true)}
-            title="Import from Instagram"
-            data-testid="button-instagram-import"
-          >
-            <Instagram className="h-4 w-4" />
-          </Button>
-        )}
       </div>
-      
-      <InstagramImportDialog
-        open={instagramImportOpen}
-        onOpenChange={setInstagramImportOpen}
-      />
 
       <div className="p-3 border-b">
         <h2 className="text-sm font-semibold truncate" data-testid="text-list-name">{list.name}</h2>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,7 +14,8 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ChevronDown, Check, SlidersHorizontal } from "lucide-react";
 import { apiRequest } from "@/lib/query-client";
 import { PlacesList } from "@/components/shared/places-list";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { MapSettingsPopover } from "@/components/map-settings-popover";
+import { useMapSettings } from "@/hooks/use-map-settings";
 import type { SidebarInjectedProps } from "@/components/map/map-layout";
 
 interface Place {
@@ -71,6 +73,9 @@ export function DiscoverSidebar({
   onStatusFilterChange,
   onListFilterChange,
 }: DiscoverSidebarProps) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const mapSettings = useMapSettings();
+  
   const { data: listsData } = useQuery<{ lists: ListData[] }>({
     queryKey: ["lists"],
     queryFn: () => apiRequest("/api/lists"),
@@ -88,7 +93,35 @@ export function DiscoverSidebar({
       <div className="flex items-center gap-2 p-3 border-b">
         <SidebarTrigger data-testid="button-sidebar-toggle" />
         <h1 className="font-semibold text-sm flex-1">Places</h1>
-        <ThemeToggle />
+        <div className="relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSettingsOpen(!settingsOpen)}
+            data-testid="button-map-settings-trigger"
+            data-mobile-filters-trigger
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+          </Button>
+          {settingsOpen && (
+            <div className="absolute top-full right-0 mt-2 z-50">
+              <MapSettingsPopover
+                currentStyle={mapSettings.style}
+                onStyleChange={mapSettings.setStyle}
+                showTraffic={mapSettings.showTraffic}
+                onTrafficChange={mapSettings.setShowTraffic}
+                showTransit={mapSettings.showTransit}
+                onTransitChange={mapSettings.setShowTransit}
+                radius={mapSettings.radius}
+                onRadiusChange={mapSettings.setRadius}
+                labelDensity={mapSettings.labelDensity}
+                onLabelDensityChange={mapSettings.setLabelDensity}
+                isOpen={settingsOpen}
+                onOpenChange={setSettingsOpen}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex gap-2 p-3 border-b">

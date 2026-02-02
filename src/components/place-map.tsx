@@ -241,9 +241,57 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
       }
     };
 
+    const handleExternalLabelDensityChange = (event: Event) => {
+      const customEvent = event as CustomEvent<LabelDensity>;
+      if (customEvent.detail && map) {
+        setLabelDensity(customEvent.detail);
+        saveLabelDensity(customEvent.detail);
+        applyMapStyle(map, currentStyle, customEvent.detail);
+      }
+    };
+
+    const handleExternalRadiusChange = (event: Event) => {
+      const customEvent = event as CustomEvent<number>;
+      if (customEvent.detail !== undefined && map) {
+        setRadius(customEvent.detail);
+        const zoom = RADIUS_TO_ZOOM[customEvent.detail] || 12;
+        map.setZoom(zoom);
+      }
+    };
+
+    const handleExternalTrafficChange = (event: Event) => {
+      const customEvent = event as CustomEvent<boolean>;
+      if (customEvent.detail !== undefined) {
+        setShowTraffic(customEvent.detail);
+        if (trafficLayerRef.current) {
+          trafficLayerRef.current.setMap(customEvent.detail ? map : null);
+        }
+      }
+    };
+
+    const handleExternalTransitChange = (event: Event) => {
+      const customEvent = event as CustomEvent<boolean>;
+      if (customEvent.detail !== undefined) {
+        setShowTransit(customEvent.detail);
+        if (transitLayerRef.current) {
+          transitLayerRef.current.setMap(customEvent.detail ? map : null);
+        }
+      }
+    };
+
     window.addEventListener("map-style-change", handleExternalStyleChange);
-    return () => window.removeEventListener("map-style-change", handleExternalStyleChange);
-  }, [map, labelDensity]);
+    window.addEventListener("map-label-density-change", handleExternalLabelDensityChange);
+    window.addEventListener("map-radius-change", handleExternalRadiusChange);
+    window.addEventListener("map-traffic-change", handleExternalTrafficChange);
+    window.addEventListener("map-transit-change", handleExternalTransitChange);
+    return () => {
+      window.removeEventListener("map-style-change", handleExternalStyleChange);
+      window.removeEventListener("map-label-density-change", handleExternalLabelDensityChange);
+      window.removeEventListener("map-radius-change", handleExternalRadiusChange);
+      window.removeEventListener("map-traffic-change", handleExternalTrafficChange);
+      window.removeEventListener("map-transit-change", handleExternalTransitChange);
+    };
+  }, [map, labelDensity, currentStyle]);
 
   const handleLabelDensityChange = useCallback((density: LabelDensity) => {
     if (!map) return;
