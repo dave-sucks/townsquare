@@ -4,12 +4,18 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Bookmark, Check, Plus, Loader2 } from "lucide-react";
+import { Bookmark, Check, Plus, Loader2, ThumbsDown, Meh, ThumbsUp, List } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -56,9 +62,9 @@ interface SaveToListDropdownProps {
 }
 
 const RATING_OPTIONS = [
-  { value: 1, label: "Bad", color: "bg-red-500" },
-  { value: 2, label: "Okay", color: "bg-yellow-500" },
-  { value: 3, label: "Great", color: "bg-green-500" },
+  { value: 1, label: "Bad", icon: ThumbsDown, color: "text-red-500" },
+  { value: 2, label: "Okay", icon: Meh, color: "text-yellow-500" },
+  { value: 3, label: "Great", icon: ThumbsUp, color: "text-green-500" },
 ];
 
 export function SaveToListDropdown({
@@ -231,9 +237,15 @@ export function SaveToListDropdown({
 
   const isPending = savePlaceMutation.isPending || updateSavedPlaceMutation.isPending;
 
+  const getRatingLabel = () => {
+    if (!hasBeen || !currentRating) return null;
+    const option = RATING_OPTIONS.find(o => o.value === currentRating);
+    return option?.label;
+  };
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
         <Button
           variant={variant}
           size={size}
@@ -259,138 +271,124 @@ export function SaveToListDropdown({
             <span className="ml-1">{isSaved ? "Saved" : "Save"}</span>
           )}
         </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-64 p-3">
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm font-medium mb-2">Been there?</p>
-            <div className="flex items-center justify-center gap-3">
-              {RATING_OPTIONS.map((option) => {
-                const isSelected = hasBeen && currentRating === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    onClick={() => handleRatingSelect(option.value)}
-                    disabled={!isSaved && savePlaceMutation.isPending}
-                    className={cn(
-                      "w-10 h-10 rounded-full transition-opacity flex items-center justify-center",
-                      option.color,
-                      isSelected 
-                        ? "ring-2 ring-offset-2 ring-offset-background opacity-100" 
-                        : "opacity-50 hover:opacity-80",
-                      "disabled:opacity-30"
-                    )}
-                    title={option.label}
-                    data-testid={`rating-button-${option.value}`}
-                  >
-                    {isSelected && <Check className="h-5 w-5 text-white" />}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex justify-between text-xs text-muted-foreground mt-1 px-1">
-              <span>Bad</span>
-              <span>Okay</span>
-              <span>Great</span>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>Been there?</DropdownMenuLabel>
+        {RATING_OPTIONS.map((option) => {
+          const isSelected = hasBeen && currentRating === option.value;
+          const Icon = option.icon;
+          return (
+            <DropdownMenuItem
+              key={option.value}
+              onClick={(e) => {
+                e.preventDefault();
+                handleRatingSelect(option.value);
+              }}
+              disabled={savePlaceMutation.isPending}
+              data-testid={`rating-button-${option.value}`}
+            >
+              <Icon className={cn("h-4 w-4 mr-2", option.color)} />
+              <span className="flex-1">{option.label}</span>
+              {isSelected && <Check className="h-4 w-4 ml-auto" />}
+            </DropdownMenuItem>
+          );
+        })}
+
+        <DropdownMenuSeparator />
+        
+        <DropdownMenuLabel>Lists</DropdownMenuLabel>
+        
+        {listsLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground py-2 px-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading...
+          </div>
+        ) : lists.length === 0 ? (
+          <div className="text-sm text-muted-foreground py-2 px-2">No lists yet</div>
+        ) : (
+          lists.map((list) => {
+            const isInList = listsContainingPlace.includes(list.id);
+            return (
+              <DropdownMenuItem
+                key={list.id}
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (isSaved) {
+                    handleListToggle(list.id);
+                  }
+                }}
+                disabled={!isSaved || addToListMutation.isPending || removeFromListMutation.isPending}
+                data-testid={`list-checkbox-${list.id}`}
+              >
+                <List className="h-4 w-4 mr-2" />
+                <span className="flex-1 truncate">{list.name}</span>
+                {isInList && <Check className="h-4 w-4 ml-auto" />}
+              </DropdownMenuItem>
+            );
+          })
+        )}
+
+        <DropdownMenuSeparator />
+
+        {showCreateInput ? (
+          <div className="p-2 space-y-2">
+            <Input
+              placeholder="List name"
+              value={newListName}
+              onChange={(e) => setNewListName(e.target.value)}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleCreateList();
+                }
+                if (e.key === "Escape") {
+                  setShowCreateInput(false);
+                  setNewListName("");
+                }
+              }}
+              autoFocus
+              data-testid="input-new-list-name"
+            />
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="flex-1"
+                onClick={() => {
+                  setShowCreateInput(false);
+                  setNewListName("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                className="flex-1"
+                onClick={handleCreateList}
+                disabled={createListMutation.isPending || !newListName.trim()}
+                data-testid="button-create-list"
+              >
+                Create
+              </Button>
             </div>
           </div>
-
-          <div className="border-t pt-3">
-            <p className="text-sm font-medium mb-2">Add to list</p>
-            
-            {listsLoading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading...
-              </div>
-            ) : lists.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-2">No lists yet</p>
-            ) : (
-              <div className="space-y-1 max-h-40 overflow-y-auto">
-                {lists.map((list) => {
-                  const isInList = listsContainingPlace.includes(list.id);
-                  return (
-                    <button
-                      key={list.id}
-                      className={cn(
-                        "w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm",
-                        "hover-elevate transition-colors text-left",
-                        isInList && "bg-accent"
-                      )}
-                      onClick={() => handleListToggle(list.id)}
-                      disabled={!isSaved || addToListMutation.isPending || removeFromListMutation.isPending}
-                      data-testid={`list-checkbox-${list.id}`}
-                    >
-                      <span className="truncate">{list.name}</span>
-                      {isInList && <Check className="h-4 w-4 text-primary shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            <div className="mt-2 pt-2 border-t">
-              {showCreateInput ? (
-                <div className="space-y-2">
-                  <Input
-                    placeholder="List name"
-                    value={newListName}
-                    onChange={(e) => setNewListName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleCreateList();
-                      }
-                      if (e.key === "Escape") {
-                        setShowCreateInput(false);
-                        setNewListName("");
-                      }
-                    }}
-                    autoFocus
-                    data-testid="input-new-list-name"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="flex-1"
-                      onClick={() => {
-                        setShowCreateInput(false);
-                        setNewListName("");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="flex-1"
-                      onClick={handleCreateList}
-                      disabled={createListMutation.isPending || !newListName.trim()}
-                      data-testid="button-create-list"
-                    >
-                      Create
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  className={cn(
-                    "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm",
-                    "hover-elevate transition-colors",
-                    !isSaved && "opacity-50 cursor-not-allowed"
-                  )}
-                  onClick={() => setShowCreateInput(true)}
-                  disabled={!isSaved}
-                  data-testid="button-add-new-list"
-                >
-                  <Plus className="h-4 w-4" />
-                  Create new list
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </PopoverContent>
-    </Popover>
+        ) : (
+          <DropdownMenuItem
+            onClick={(e) => {
+              e.preventDefault();
+              if (isSaved) {
+                setShowCreateInput(true);
+              }
+            }}
+            disabled={!isSaved}
+            data-testid="button-add-new-list"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create new list
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
