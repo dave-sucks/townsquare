@@ -342,6 +342,7 @@ export function UserSidebar({
               onPlaceSelect={onPlaceSelect || (() => {})}
               placeRowRefs={placeRowRefs}
               showStatus={true}
+              showSaveDropdown={true}
               emptyMessage="No places saved"
               emptySubMessage={isOwnProfile ? "Start saving places to see them here" : "This user hasn't saved any places yet"}
             />
