@@ -137,11 +137,8 @@ interface DiscoverSidebarProps extends Partial<SidebarInjectedProps> {
   viewingPlaceId: string | null;
   onViewPlace: (savedPlaceId: string | null) => void;
   reviewsByPlaceId?: Map<string, Review>;
-  onToggleStatus?: (savedPlace: SavedPlace) => void;
   onDeletePlace?: (savedPlaceId: string) => void;
-  onAddToList?: (placeId: string, placeName: string) => void;
   onAddReview?: (placeId: string, placeName: string) => void;
-  isUpdating?: boolean;
   isDeleting?: boolean;
 }
 
@@ -164,11 +161,8 @@ export function DiscoverSidebar({
   viewingPlaceId,
   onViewPlace,
   reviewsByPlaceId,
-  onToggleStatus,
   onDeletePlace,
-  onAddToList,
   onAddReview,
-  isUpdating,
   isDeleting,
 }: DiscoverSidebarProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -217,11 +211,8 @@ export function DiscoverSidebar({
         savedPlace={viewingPlace}
         myReview={viewingReview}
         onBack={() => onViewPlace(null)}
-        onToggleStatus={() => onToggleStatus?.(viewingPlace)}
         onDelete={() => onDeletePlace?.(viewingPlace.id)}
-        onAddToList={() => onAddToList?.(viewingPlace.placeId, viewingPlace.place.name)}
         onAddReview={() => onAddReview?.(viewingPlace.placeId, viewingPlace.place.name)}
-        isUpdating={isUpdating}
         isDeleting={isDeleting}
       />
     );

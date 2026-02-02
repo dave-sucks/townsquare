@@ -5,7 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Heart, CheckCircle, X } from "lucide-react";
+import { Search, Heart, X } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 
@@ -115,24 +115,15 @@ export function FloatingSearch() {
                 >
                   <p className="font-medium text-sm">{result.structured_formatting.main_text}</p>
                   <p className="text-xs text-muted-foreground truncate">{result.structured_formatting.secondary_text}</p>
-                  <div className="mt-1.5 flex gap-1.5">
+                  <div className="mt-1.5">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => savePlaceMutation.mutate({ placeId: result.place_id, status: "WANT" })}
                       disabled={savePlaceMutation.isPending}
-                      data-testid={`button-save-want-${result.place_id}`}
+                      data-testid={`button-save-${result.place_id}`}
                     >
-                      <Heart className="mr-1 h-3 w-3" />Want
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => savePlaceMutation.mutate({ placeId: result.place_id, status: "BEEN" })}
-                      disabled={savePlaceMutation.isPending}
-                      data-testid={`button-save-been-${result.place_id}`}
-                    >
-                      <CheckCircle className="mr-1 h-3 w-3" />Been
+                      <Heart className="mr-1 h-3 w-3" />Save
                     </Button>
                   </div>
                 </div>

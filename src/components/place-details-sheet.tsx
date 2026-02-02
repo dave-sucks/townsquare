@@ -18,16 +18,13 @@ import {
   CheckCircle, 
   Trash2, 
   ExternalLink, 
-  List, 
   Star, 
-  Plus,
   X,
   ArrowRightFromLine,
-  MapPin,
-  DollarSign,
   Utensils
 } from "lucide-react";
 import { PlacePhotoGrid } from "./place-photo-grid";
+import { SaveToListDropdown } from "./shared/save-to-list-dropdown";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 interface Place {
@@ -83,13 +80,11 @@ interface PlaceDetailsSheetProps {
   myReview?: Review | null;
   photos?: Photo[];
   friendsWhoSaved?: FriendSaved[];
+  listsContainingPlace?: string[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onToggleStatus: () => void;
   onDelete: () => void;
-  onAddToList: () => void;
   onAddReview?: () => void;
-  isUpdating?: boolean;
   isDeleting?: boolean;
 }
 
@@ -119,13 +114,11 @@ export function PlaceDetailsSheet({
   myReview,
   photos = [],
   friendsWhoSaved = [],
+  listsContainingPlace = [],
   open,
   onOpenChange,
-  onToggleStatus,
   onDelete,
-  onAddToList,
   onAddReview,
-  isUpdating,
   isDeleting,
 }: PlaceDetailsSheetProps) {
   if (!savedPlace) return null;
@@ -167,30 +160,15 @@ export function PlaceDetailsSheet({
               </Link>
             </Button>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onToggleStatus}
-              disabled={isUpdating}
-              data-testid="sheet-button-save"
-            >
-              {savedPlace.status === "WANT" ? (
-                <><Heart className="h-4 w-4 mr-1 fill-current" />Saved</>
-              ) : (
-                <><CheckCircle className="h-4 w-4 mr-1" />Been</>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onAddToList}
-              data-testid="sheet-button-add-to-list"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Add to trip
-            </Button>
-          </div>
+          <SaveToListDropdown
+            place={place}
+            savedPlace={{
+              id: savedPlace.id,
+              placeId: savedPlace.placeId,
+              status: savedPlace.status,
+            }}
+            listsContainingPlace={listsContainingPlace}
+          />
         </div>
 
         <ScrollArea className="flex-1">
@@ -213,12 +191,10 @@ export function PlaceDetailsSheet({
               </div>
               <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground flex-wrap">
                 {placeType && (
-                  <>
-                    <div className="flex items-center gap-1 flex-wrap">
-                      <Utensils className="h-3 w-3" />
-                      <span>{placeType}</span>
-                    </div>
-                  </>
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <Utensils className="h-3 w-3" />
+                    <span>{placeType}</span>
+                  </div>
                 )}
                 {priceLevel && (
                   <>
@@ -256,7 +232,6 @@ export function PlaceDetailsSheet({
               <TabsList className="w-full justify-start flex-wrap">
                 <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
                 <TabsTrigger value="friends" data-testid="tab-friends">Friends</TabsTrigger>
-                <TabsTrigger value="location" data-testid="tab-location">Location</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="pt-4 space-y-4">
@@ -282,15 +257,6 @@ export function PlaceDetailsSheet({
                 <Separator />
 
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={onToggleStatus}
-                    disabled={isUpdating}
-                    data-testid="sheet-button-toggle-status"
-                  >
-                    {savedPlace.status === "WANT" ? "Mark as Been" : "Mark as Want"}
-                  </Button>
                   {!myReview && onAddReview && (
                     <Button
                       size="sm"
@@ -377,22 +343,6 @@ export function PlaceDetailsSheet({
                     )}
                   </div>
                 )}
-              </TabsContent>
-
-              <TabsContent value="location" className="pt-4 space-y-4">
-                <div className="flex items-start gap-3 flex-wrap">
-                  <MapPin className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">Address</p>
-                    <p className="text-sm text-muted-foreground">{place.formattedAddress}</p>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" asChild data-testid="button-get-directions">
-                  <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="mr-1 h-4 w-4" />
-                    Get Directions
-                  </a>
-                </Button>
               </TabsContent>
             </Tabs>
           </div>

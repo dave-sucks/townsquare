@@ -13,7 +13,6 @@ import {
   CheckCircle, 
   MapPin, 
   ExternalLink, 
-  List, 
   Lock, 
   Globe, 
   Trash2, 
@@ -21,19 +20,15 @@ import {
   Edit, 
   Plus,
   Utensils,
-  Clock,
-  Phone,
-  Mail,
-  Link as LinkIcon
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
-import { AddToListDialog } from "@/components/add-to-list-dialog";
 import { ReviewDialog } from "@/components/review-dialog";
 import { PlacePhotoGrid } from "@/components/place-photo-grid";
 import { AppShell, PageHeader } from "@/components/layout";
+import { SaveToListDropdown } from "@/components/shared/save-to-list-dropdown";
 
 interface Place {
   id: string;
@@ -138,7 +133,6 @@ function formatPriceLevel(priceLevel: string | null): string {
 export default function PlaceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: placeId } = use(params);
   const { user, isAuthenticated } = useAuth();
-  const [addToListDialogOpen, setAddToListDialogOpen] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
   const { data, isLoading, refetch } = useQuery<PlaceDetailData>({
@@ -172,41 +166,6 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to delete review");
-    },
-  });
-
-  const saveOrUpdatePlaceMutation = useMutation({
-    mutationFn: async (status: "WANT" | "BEEN") => {
-      if (savedPlace) {
-        return apiRequest(`/api/saved-places/${savedPlace.id}`, {
-          method: "PATCH",
-          body: JSON.stringify({ status }),
-        });
-      } else if (place) {
-        return apiRequest("/api/saved-places", {
-          method: "POST",
-          body: JSON.stringify({
-            googlePlaceId: place.googlePlaceId,
-            name: place.name,
-            formattedAddress: place.formattedAddress,
-            lat: place.lat,
-            lng: place.lng,
-            primaryType: place.primaryType,
-            types: place.types,
-            priceLevel: place.priceLevel,
-            photoRefs: place.photoRefs,
-            status,
-          }),
-        });
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["place-detail", placeId] });
-      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
-      toast.success(savedPlace ? "Status updated!" : "Place saved!");
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to update place");
     },
   });
 
@@ -276,30 +235,16 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
         title={place.name}
         backHref="/"
       >
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => saveOrUpdatePlaceMutation.mutate(savedPlace?.status === "WANT" ? "BEEN" : "WANT")}
-          disabled={saveOrUpdatePlaceMutation.isPending}
-          data-testid="button-save"
-        >
-          {savedPlace?.status === "WANT" ? (
-            <><Heart className="h-4 w-4 mr-1 fill-current" />Saved</>
-          ) : savedPlace?.status === "BEEN" ? (
-            <><CheckCircle className="h-4 w-4 mr-1" />Been</>
-          ) : (
-            <><Heart className="h-4 w-4 mr-1" />Save</>
-          )}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setAddToListDialogOpen(true)}
-          data-testid="button-add-to-trip"
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          Add to trip
-        </Button>
+        <SaveToListDropdown
+          place={place}
+          savedPlace={savedPlace ? {
+            id: savedPlace.id,
+            placeId: savedPlace.placeId,
+            status: savedPlace.status,
+          } : null}
+          listsContainingPlace={listsContainingPlace.map(l => l.id)}
+          onSaveSuccess={() => refetch()}
+        />
       </PageHeader>
 
       <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full">
@@ -383,39 +328,10 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                   {!savedPlace && (
                     <Badge variant="outline" data-testid="badge-place-status">Not saved</Badge>
                   )}
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant={savedPlace?.status === "WANT" ? "default" : "outline"}
-                    onClick={() => saveOrUpdatePlaceMutation.mutate("WANT")}
-                    disabled={saveOrUpdatePlaceMutation.isPending}
-                    data-testid="button-mark-want"
-                  >
-                    <Heart className="mr-2 h-4 w-4" />
-                    {savedPlace?.status === "WANT" ? "Saved as Want" : "Mark as Want"}
-                  </Button>
-                  <Button
-                    variant={savedPlace?.status === "BEEN" ? "default" : "outline"}
-                    onClick={() => saveOrUpdatePlaceMutation.mutate("BEEN")}
-                    disabled={saveOrUpdatePlaceMutation.isPending}
-                    data-testid="button-mark-been"
-                  >
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    {savedPlace?.status === "BEEN" ? "Saved as Been" : "Mark as Been"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setAddToListDialogOpen(true)}
-                    data-testid="button-add-to-list"
-                  >
-                    <List className="mr-2 h-4 w-4" />
-                    Add to List
-                  </Button>
-                  <Button variant="outline" asChild data-testid="button-open-google-maps">
+                  <Button variant="ghost" size="sm" asChild data-testid="button-open-google-maps">
                     <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      Open in Google Maps
+                      <ExternalLink className="mr-1 h-4 w-4" />
+                      Google Maps
                     </a>
                   </Button>
                 </div>
@@ -596,14 +512,6 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                     ))}
                   </div>
                 )}
-                <Button
-                  variant="outline"
-                  onClick={() => setAddToListDialogOpen(true)}
-                  data-testid="button-add-to-another-list"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add to another list
-                </Button>
               </TabsContent>
 
               <TabsContent value="reviews" className="pt-4 space-y-4">
@@ -701,13 +609,6 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
             </Tabs>
         </div>
       </div>
-
-      <AddToListDialog
-        open={addToListDialogOpen}
-        onOpenChange={setAddToListDialogOpen}
-        placeId={place.googlePlaceId}
-        placeName={place.name}
-      />
 
       <ReviewDialog
         open={reviewDialogOpen}

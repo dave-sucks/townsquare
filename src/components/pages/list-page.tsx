@@ -169,14 +169,11 @@ export function ListPage({ listId, currentUser, isAuthenticated }: ListPageProps
       }}
       open={sheetOpen}
       onOpenChange={setSheetOpen}
-      onToggleStatus={() => {}}
       onDelete={() => {
         if (isOwner) {
           handleRemovePlace(selectedListPlace.placeId);
         }
       }}
-      onAddToList={() => {}}
-      isUpdating={false}
       isDeleting={removePlaceMutation.isPending}
     />
   ) : null;

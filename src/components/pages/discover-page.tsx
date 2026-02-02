@@ -4,7 +4,6 @@ import { useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { MapLayout } from "@/components/map/map-layout";
 import { DiscoverSidebar } from "@/components/sidebars/discover-sidebar";
-import { AddToListDialog } from "@/components/add-to-list-dialog";
 import { ReviewDialog } from "@/components/review-dialog";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
@@ -56,9 +55,6 @@ interface ListWithPlaces {
 export function DiscoverPage({ user }: { user: UserData }) {
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [viewingPlaceId, setViewingPlaceId] = useState<string | null>(null);
-  const [addToListDialogOpen, setAddToListDialogOpen] = useState(false);
-  const [addToListPlaceId, setAddToListPlaceId] = useState<string | null>(null);
-  const [addToListPlaceName, setAddToListPlaceName] = useState("");
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [reviewPlaceId, setReviewPlaceId] = useState<string | null>(null);
   const [reviewPlaceName, setReviewPlaceName] = useState("");
@@ -101,20 +97,6 @@ export function DiscoverPage({ user }: { user: UserData }) {
     });
   }, [savedPlaces, statusFilter, listFilter, selectedListPlaceIds]);
 
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: "WANT" | "BEEN" }) => {
-      return apiRequest(`/api/saved-places/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status }),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
-      toast.success("Status updated!");
-    },
-    onError: (error: Error) => toast.error(error.message || "Failed to update status"),
-  });
-
   const deletePlaceMutation = useMutation({
     mutationFn: (id: string) => apiRequest(`/api/saved-places/${id}`, { method: "DELETE" }),
     onSuccess: (_, deletedId) => {
@@ -140,13 +122,6 @@ export function DiscoverPage({ user }: { user: UserData }) {
     }
   }, []);
 
-  const handleToggleStatus = useCallback((savedPlace: SavedPlace) => {
-    updateStatusMutation.mutate({
-      id: savedPlace.id,
-      status: savedPlace.status === "WANT" ? "BEEN" : "WANT",
-    });
-  }, [updateStatusMutation]);
-
   const handleDeletePlace = useCallback((savedPlaceId: string) => {
     deletePlaceMutation.mutate(savedPlaceId);
   }, [deletePlaceMutation]);
@@ -171,12 +146,6 @@ export function DiscoverPage({ user }: { user: UserData }) {
     setListFilter(listId);
   }, []);
 
-  const handleAddToList = useCallback((placeId: string, placeName: string) => {
-    setAddToListPlaceId(placeId);
-    setAddToListPlaceName(placeName);
-    setAddToListDialogOpen(true);
-  }, []);
-
   const handleAddReview = useCallback((placeId: string, placeName: string) => {
     setReviewPlaceId(placeId);
     setReviewPlaceName(placeName);
@@ -194,37 +163,21 @@ export function DiscoverPage({ user }: { user: UserData }) {
       viewingPlaceId={viewingPlaceId}
       onViewPlace={handleViewPlace}
       reviewsByPlaceId={reviewsByPlaceId}
-      onToggleStatus={handleToggleStatus}
       onDeletePlace={handleDeletePlace}
-      onAddToList={handleAddToList}
       onAddReview={handleAddReview}
-      isUpdating={updateStatusMutation.isPending}
       isDeleting={deletePlaceMutation.isPending}
     />
   );
 
-  const dialogs = (
-    <>
-      {addToListPlaceId && (
-        <AddToListDialog
-          open={addToListDialogOpen}
-          onOpenChange={setAddToListDialogOpen}
-          placeId={addToListPlaceId}
-          placeName={addToListPlaceName}
-        />
-      )}
-
-      {reviewPlaceId && (
-        <ReviewDialog
-          open={reviewDialogOpen}
-          onOpenChange={setReviewDialogOpen}
-          placeId={reviewPlaceId}
-          placeName={reviewPlaceName}
-          onSuccess={() => queryClient.invalidateQueries({ queryKey: ["my-reviews", user.id] })}
-        />
-      )}
-    </>
-  );
+  const dialogs = reviewPlaceId ? (
+    <ReviewDialog
+      open={reviewDialogOpen}
+      onOpenChange={setReviewDialogOpen}
+      placeId={reviewPlaceId}
+      placeName={reviewPlaceName}
+      onSuccess={() => queryClient.invalidateQueries({ queryKey: ["my-reviews", user.id] })}
+    />
+  ) : null;
 
   return (
     <MapLayout

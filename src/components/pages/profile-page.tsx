@@ -172,10 +172,7 @@ export function ProfilePage({ username, currentUser, isAuthenticated }: ProfileP
       }}
       open={sheetOpen}
       onOpenChange={setSheetOpen}
-      onToggleStatus={() => {}}
       onDelete={() => {}}
-      onAddToList={() => {}}
-      isUpdating={false}
       isDeleting={false}
     />
   ) : null;

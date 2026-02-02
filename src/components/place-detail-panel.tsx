@@ -14,13 +14,12 @@ import {
   Trash2, 
   ExternalLink, 
   Star, 
-  Plus,
   ArrowLeft,
   ArrowRightFromLine,
-  MapPin,
   Utensils
 } from "lucide-react";
 import { PlacePhotoGrid } from "./place-photo-grid";
+import { SaveToListDropdown } from "./shared/save-to-list-dropdown";
 
 interface Place {
   id: string;
@@ -75,13 +74,11 @@ interface PlaceDetailPanelProps {
   myReview?: Review | null;
   photos?: Photo[];
   friendsWhoSaved?: FriendSaved[];
+  listsContainingPlace?: string[];
   isLoading?: boolean;
   onBack: () => void;
-  onToggleStatus: () => void;
   onDelete: () => void;
-  onAddToList: () => void;
   onAddReview?: () => void;
-  isUpdating?: boolean;
   isDeleting?: boolean;
 }
 
@@ -111,13 +108,11 @@ export function PlaceDetailPanel({
   myReview,
   photos = [],
   friendsWhoSaved = [],
+  listsContainingPlace = [],
   isLoading = false,
   onBack,
-  onToggleStatus,
   onDelete,
-  onAddToList,
   onAddReview,
-  isUpdating,
   isDeleting,
 }: PlaceDetailPanelProps) {
   if (isLoading) {
@@ -170,28 +165,15 @@ export function PlaceDetailPanel({
           </Button>
         </div>
         <div className="flex items-center gap-2 flex-wrap ml-auto">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onToggleStatus}
-            disabled={isUpdating}
-            data-testid="panel-button-save"
-          >
-            {savedPlace.status === "WANT" ? (
-              <><Heart className="h-4 w-4 mr-1 fill-current" />Saved</>
-            ) : (
-              <><CheckCircle className="h-4 w-4 mr-1" />Been</>
-            )}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onAddToList}
-            data-testid="panel-button-add-to-list"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add to trip
-          </Button>
+          <SaveToListDropdown
+            place={place}
+            savedPlace={{
+              id: savedPlace.id,
+              placeId: savedPlace.placeId,
+              status: savedPlace.status,
+            }}
+            listsContainingPlace={listsContainingPlace}
+          />
         </div>
       </div>
 
@@ -215,12 +197,10 @@ export function PlaceDetailPanel({
             </div>
             <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground flex-wrap">
               {placeType && (
-                <>
-                  <div className="flex items-center gap-1 flex-wrap">
-                    <Utensils className="h-3 w-3" />
-                    <span>{placeType}</span>
-                  </div>
-                </>
+                <div className="flex items-center gap-1 flex-wrap">
+                  <Utensils className="h-3 w-3" />
+                  <span>{placeType}</span>
+                </div>
               )}
               {priceLevel && (
                 <>
@@ -258,7 +238,6 @@ export function PlaceDetailPanel({
             <TabsList className="w-full justify-start flex-wrap">
               <TabsTrigger value="overview" data-testid="panel-tab-overview">Overview</TabsTrigger>
               <TabsTrigger value="friends" data-testid="panel-tab-friends">Friends</TabsTrigger>
-              <TabsTrigger value="location" data-testid="panel-tab-location">Location</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="pt-4 space-y-4">
@@ -284,15 +263,6 @@ export function PlaceDetailPanel({
               <Separator />
 
               <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={onToggleStatus}
-                  disabled={isUpdating}
-                  data-testid="panel-button-toggle-status"
-                >
-                  {savedPlace.status === "WANT" ? "Mark as Been" : "Mark as Want"}
-                </Button>
                 {!myReview && onAddReview && (
                   <Button
                     size="sm"
@@ -379,22 +349,6 @@ export function PlaceDetailPanel({
                   )}
                 </div>
               )}
-            </TabsContent>
-
-            <TabsContent value="location" className="pt-4 space-y-4">
-              <div className="flex items-start gap-3 flex-wrap">
-                <MapPin className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium">Address</p>
-                  <p className="text-sm text-muted-foreground">{place.formattedAddress}</p>
-                </div>
-              </div>
-              <Button variant="outline" size="sm" asChild data-testid="panel-button-get-directions">
-                <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="mr-1 h-4 w-4" />
-                  Get Directions
-                </a>
-              </Button>
             </TabsContent>
           </Tabs>
         </div>

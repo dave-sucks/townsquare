@@ -1,15 +1,10 @@
 "use client";
 
-import { forwardRef, useState } from "react";
+import { forwardRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Heart, CheckCircle, MapPin, Bookmark } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Heart, CheckCircle, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SaveToListDropdown } from "./save-to-list-dropdown";
 
 interface Place {
   id: string;
@@ -38,8 +33,8 @@ interface PlaceCardProps {
   savedPlace: SavedPlace;
   isSelected: boolean;
   showStatus?: boolean;
-  onSave?: (status: "WANT" | "BEEN") => void;
-  isSaving?: boolean;
+  showSaveDropdown?: boolean;
+  listsContainingPlace?: string[];
   actionButton?: React.ReactNode;
   onClick?: () => void;
 }
@@ -52,9 +47,7 @@ function formatPlaceType(type: string | null): string {
 }
 
 export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
-  ({ savedPlace, isSelected, showStatus = true, onSave, isSaving, actionButton, onClick }, ref) => {
-    const [popoverOpen, setPopoverOpen] = useState(false);
-    
+  ({ savedPlace, isSelected, showStatus = true, showSaveDropdown = false, listsContainingPlace = [], actionButton, onClick }, ref) => {
     const photoRef = savedPlace.place.photoRefs?.[0];
     const photoUrl = photoRef 
       ? `/api/places/photo?photoRef=${encodeURIComponent(photoRef)}&maxWidth=100`
@@ -62,11 +55,6 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
     
     const placeType = formatPlaceType(savedPlace.place.primaryType);
     const address = savedPlace.place.formattedAddress.split(",")[0];
-
-    const handleSave = (status: "WANT" | "BEEN") => {
-      onSave?.(status);
-      setPopoverOpen(false);
-    };
 
     return (
       <div
@@ -125,46 +113,22 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
           </div>
         </div>
         
-        <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              size="icon"
+        {showSaveDropdown && (
+          <div className="invisible group-hover:visible flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+            <SaveToListDropdown
+              place={savedPlace.place}
+              savedPlace={{
+                id: savedPlace.id,
+                placeId: savedPlace.placeId,
+                status: savedPlace.status,
+              }}
+              listsContainingPlace={listsContainingPlace}
+              showLabel={false}
               variant="ghost"
-              className="invisible group-hover:visible flex-shrink-0"
-              data-testid={`save-place-trigger-${savedPlace.id}`}
-              disabled={isSaving}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Bookmark className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-2" align="end">
-            <div className="flex flex-col gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="justify-start gap-2"
-                onClick={() => handleSave("WANT")}
-                data-testid={`save-as-want-${savedPlace.id}`}
-                disabled={isSaving}
-              >
-                <Heart className="h-4 w-4 text-rose-500" />
-                Add as Want
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="justify-start gap-2"
-                onClick={() => handleSave("BEEN")}
-                data-testid={`save-as-been-${savedPlace.id}`}
-                disabled={isSaving}
-              >
-                <CheckCircle className="h-4 w-4 text-emerald-500" />
-                Add as Been
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
+              size="icon"
+            />
+          </div>
+        )}
         {actionButton}
       </div>
     );
@@ -182,8 +146,7 @@ interface PlacesListProps {
   showStatus?: boolean;
   emptyMessage?: string;
   emptySubMessage?: string;
-  onSavePlace?: (place: SavedPlace, status: "WANT" | "BEEN") => void;
-  savingPlaceId?: string | null;
+  showSaveDropdown?: boolean;
   renderAction?: (savedPlace: SavedPlace) => React.ReactNode;
 }
 
@@ -196,8 +159,7 @@ export function PlacesList({
   showStatus = true,
   emptyMessage = "No places yet",
   emptySubMessage = "Search for a place on the map to add it",
-  onSavePlace,
-  savingPlaceId,
+  showSaveDropdown = false,
   renderAction,
 }: PlacesListProps) {
   if (isLoading) {
@@ -234,8 +196,7 @@ export function PlacesList({
           savedPlace={savedPlace}
           isSelected={savedPlace.id === selectedPlaceId}
           showStatus={showStatus}
-          onSave={onSavePlace ? (status) => onSavePlace(savedPlace, status) : undefined}
-          isSaving={savingPlaceId === savedPlace.id}
+          showSaveDropdown={showSaveDropdown}
           actionButton={renderAction?.(savedPlace)}
           onClick={onPlaceSelect ? () => onPlaceSelect(savedPlace.id) : undefined}
         />

@@ -63,3 +63,15 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 - `GOOGLE_MAPS_API_KEY`: API key for Google Places and Maps services.
 - `REPL_ID`: Replit deployment identifier (auto-provided).
 - `REPLIT_DEV_DOMAIN`: Development domain (auto-provided).
+
+## Recent Changes
+
+### Unified SaveToListDropdown Component (February 2026)
+- Created `SaveToListDropdown` component (`src/components/shared/save-to-list-dropdown.tsx`) that provides a unified save experience:
+  - Single button click auto-saves places with WANT status
+  - Dropdown shows Saved status toggle, Want to Go option, user's custom lists, and create new list option
+  - Replaces all separate Want/Been/Add-to-list buttons across the application
+- Updated `PlaceDetailsSheet`, `PlaceDetailPanel`, and `/places/[id]` page to use SaveToListDropdown
+- Simplified `FloatingSearch` to use a single "Save" button (consistent with WANT status default)
+- Updated `PlaceCard`/`PlacesList` to optionally show SaveToListDropdown instead of legacy popover
+- Cleaned up unused code from `DiscoverPage`, `DiscoverSidebar`, and removed `AddToListDialog` usage
