@@ -82,7 +82,9 @@ export function ListPage({ listId, currentUser, isAuthenticated }: ListPageProps
     mutationFn: (placeId: string) =>
       apiRequest(`/api/lists/${listId}/places/${placeId}`, { method: "DELETE" }),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       queryClient.invalidateQueries({ queryKey: ["lists", listId] });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
       toast.success("Place removed from list");
     },
     onError: (error: Error) => toast.error(error.message || "Failed to remove place"),

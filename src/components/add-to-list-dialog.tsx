@@ -66,7 +66,9 @@ export function AddToListDialog({ open, onOpenChange, placeId, placeName }: AddT
       });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
+      queryClient.invalidateQueries({ queryKey: ["place-detail"] });
       onOpenChange(false);
       setSelectedListId(null);
       toast.success("Added to list!");

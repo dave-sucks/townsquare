@@ -156,6 +156,7 @@ export function SaveToListDropdown({
       });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
       queryClient.invalidateQueries({ queryKey: ["place-detail"] });
       toast.success("Added to list!");
@@ -175,6 +176,7 @@ export function SaveToListDropdown({
       });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
       queryClient.invalidateQueries({ queryKey: ["place-detail"] });
       toast.success("Removed from list");

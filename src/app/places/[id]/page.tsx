@@ -179,6 +179,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
       });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       queryClient.invalidateQueries({ queryKey: ["place-detail", placeId] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
       toast.success("Removed from list!");
