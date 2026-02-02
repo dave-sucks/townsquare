@@ -359,23 +359,39 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
       )}
       <div ref={mapRef} className="h-full w-full" data-testid="map-container" />
       {showSearch && !isLoading && (
-        <FloatingSearch />
+        <FloatingSearch 
+          showSettings={showSettings}
+          settingsProps={{
+            currentStyle,
+            onStyleChange: handleStyleChange,
+            showTraffic,
+            onTrafficChange: handleTrafficChange,
+            showTransit,
+            onTransitChange: handleTransitChange,
+            radius,
+            onRadiusChange: handleRadiusChange,
+            labelDensity,
+            onLabelDensityChange: handleLabelDensityChange,
+          }}
+        />
       )}
       {showSettings && !isLoading && (
-        <MapSettingsPopover
-          currentStyle={currentStyle}
-          onStyleChange={handleStyleChange}
-          showTraffic={showTraffic}
-          onTrafficChange={handleTrafficChange}
-          showTransit={showTransit}
-          onTransitChange={handleTransitChange}
-          radius={radius}
-          onRadiusChange={handleRadiusChange}
-          labelDensity={labelDensity}
-          onLabelDensityChange={handleLabelDensityChange}
-          isOpen={isSettingsOpen}
-          onOpenChange={onSettingsOpenChange}
-        />
+        <div className="md:block hidden">
+          <MapSettingsPopover
+            currentStyle={currentStyle}
+            onStyleChange={handleStyleChange}
+            showTraffic={showTraffic}
+            onTrafficChange={handleTrafficChange}
+            showTransit={showTransit}
+            onTransitChange={handleTransitChange}
+            radius={radius}
+            onRadiusChange={handleRadiusChange}
+            labelDensity={labelDensity}
+            onLabelDensityChange={handleLabelDensityChange}
+            isOpen={isSettingsOpen}
+            onOpenChange={onSettingsOpenChange}
+          />
+        </div>
       )}
     </div>
   );

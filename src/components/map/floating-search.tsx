@@ -5,9 +5,10 @@ import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Heart, CheckCircle, X } from "lucide-react";
+import { Search, Heart, CheckCircle, X, Settings } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PlacePrediction {
   place_id: string;
@@ -18,11 +19,19 @@ interface PlacePrediction {
   };
 }
 
-export function FloatingSearch() {
+export function FloatingSearch({ 
+  showSettings = false,
+  settingsProps = {} 
+}: { 
+  showSettings?: boolean;
+  settingsProps?: any;
+}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<PlacePrediction[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const isMobile = useIsMobile();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const searchPlaces = useCallback(async (query: string) => {
     if (!query.trim()) {
@@ -74,27 +83,56 @@ export function FloatingSearch() {
   const showResults = isFocused && (isSearching || searchResults.length > 0 || (searchQuery && searchResults.length === 0));
 
   return (
-    <div className="absolute top-3 right-3 z-20 w-80">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search for a place..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setTimeout(() => setIsFocused(false), 200)}
-          className="pl-10 pr-8 bg-background shadow-lg border"
-          data-testid="input-search-place"
-        />
-        {searchQuery && (
-          <button
-            onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            data-testid="button-clear-search"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
+    <div className={cn(
+      "absolute z-20 transition-all duration-200",
+      isMobile 
+        ? "top-0 left-0 right-0 p-3 bg-background/80 backdrop-blur-md border-b shadow-sm" 
+        : "top-3 right-3 w-80"
+    )}>
+      <div className="relative flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search for a place..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+            className={cn(
+              "pl-10 pr-10 bg-background shadow-lg border h-10",
+              isMobile && "shadow-none border-muted"
+            )}
+            data-testid="input-search-place"
+          />
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            {searchQuery && (
+              <button
+                onClick={handleClear}
+                className="p-1 text-muted-foreground hover:text-foreground"
+                data-testid="button-clear-search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+            {isMobile && showSettings && (
+              <MapSettingsPopover
+                {...settingsProps}
+                isOpen={isSettingsOpen}
+                onOpenChange={setIsSettingsOpen}
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    data-testid="button-mobile-settings"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                }
+              />
+            )}
+          </div>
+        </div>
       </div>
 
       {showResults && (
