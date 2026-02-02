@@ -10,12 +10,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuLabel,
+  DropdownMenuGroup,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Bookmark, Check, Plus, Loader2, ThumbsDown, Meh, ThumbsUp, List } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Bookmark, Check, Plus, Loader2, ThumbsDown, Meh, ThumbsUp, List, Info } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -62,9 +64,9 @@ interface SaveToListDropdownProps {
 }
 
 const RATING_OPTIONS = [
-  { value: 1, label: "Bad", icon: ThumbsDown, color: "text-red-500" },
-  { value: 2, label: "Okay", icon: Meh, color: "text-yellow-500" },
-  { value: 3, label: "Great", icon: ThumbsUp, color: "text-green-500" },
+  { value: 1, label: "Bad", icon: ThumbsDown, color: "text-red-500", dotColor: "bg-red-500" },
+  { value: 2, label: "Okay", icon: Meh, color: "text-yellow-500", dotColor: "bg-yellow-500" },
+  { value: 3, label: "Great", icon: ThumbsUp, color: "text-green-500", dotColor: "bg-green-500" },
 ];
 
 export function SaveToListDropdown({
@@ -273,60 +275,84 @@ export function SaveToListDropdown({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Been there?</DropdownMenuLabel>
-        {RATING_OPTIONS.map((option) => {
-          const isSelected = hasBeen && currentRating === option.value;
-          const Icon = option.icon;
-          return (
-            <DropdownMenuItem
-              key={option.value}
-              onClick={(e) => {
-                e.preventDefault();
-                handleRatingSelect(option.value);
-              }}
-              disabled={savePlaceMutation.isPending}
-              data-testid={`rating-button-${option.value}`}
-            >
-              <Icon className={cn("h-4 w-4 mr-2", option.color)} />
-              <span className="flex-1">{option.label}</span>
-              {isSelected && <Check className="h-4 w-4 ml-auto" />}
-            </DropdownMenuItem>
-          );
-        })}
+        <DropdownMenuGroup className="p-1.5">
+          <div className="flex items-center gap-1 mb-2">
+            <DropdownMenuLabel className="p-0 text-xs font-medium text-muted-foreground">Been there?</DropdownMenuLabel>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[200px]">
+                We collect a simple rating for places you've been to help drive recommendations
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <div className="flex gap-1">
+            {RATING_OPTIONS.map((option) => {
+              const isSelected = hasBeen && currentRating === option.value;
+              const Icon = option.icon;
+              return (
+                <Button
+                  key={option.value}
+                  variant={isSelected ? "outline" : "ghost"}
+                  size="sm"
+                  className={cn(
+                    "flex-1 gap-1",
+                    !isSelected && "opacity-60 hover:opacity-100"
+                  )}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleRatingSelect(option.value);
+                  }}
+                  disabled={savePlaceMutation.isPending}
+                  data-testid={`rating-button-${option.value}`}
+                >
+                  <span className={cn("inline-block w-2 h-2 rounded-full", option.dotColor)} />
+                  <span className="text-xs">{option.label}</span>
+                </Button>
+              );
+            })}
+          </div>
+        </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
         
-        <DropdownMenuLabel>Lists</DropdownMenuLabel>
-        
-        {listsLoading ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground py-2 px-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Loading...
-          </div>
-        ) : lists.length === 0 ? (
-          <div className="text-sm text-muted-foreground py-2 px-2">No lists yet</div>
-        ) : (
-          lists.map((list) => {
-            const isInList = listsContainingPlace.includes(list.id);
-            return (
-              <DropdownMenuItem
-                key={list.id}
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (isSaved) {
-                    handleListToggle(list.id);
-                  }
-                }}
-                disabled={!isSaved || addToListMutation.isPending || removeFromListMutation.isPending}
-                data-testid={`list-checkbox-${list.id}`}
-              >
-                <List className="h-4 w-4 mr-2" />
-                <span className="flex-1 truncate">{list.name}</span>
-                {isInList && <Check className="h-4 w-4 ml-auto" />}
-              </DropdownMenuItem>
-            );
-          })
-        )}
+        <DropdownMenuGroup className="p-1.5">
+          <DropdownMenuLabel className="p-0 pb-1.5 text-xs font-medium text-muted-foreground">Lists</DropdownMenuLabel>
+          
+          {listsLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading...
+            </div>
+          ) : lists.length === 0 ? (
+            <div className="text-sm text-muted-foreground py-2">No lists yet</div>
+          ) : (
+            <div className="space-y-0.5">
+              {lists.map((list) => {
+                const isInList = listsContainingPlace.includes(list.id);
+                return (
+                  <DropdownMenuItem
+                    key={list.id}
+                    className="rounded-md"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (isSaved) {
+                        handleListToggle(list.id);
+                      }
+                    }}
+                    disabled={!isSaved || addToListMutation.isPending || removeFromListMutation.isPending}
+                    data-testid={`list-checkbox-${list.id}`}
+                  >
+                    <List className="h-4 w-4 mr-2" />
+                    <span className="flex-1 truncate">{list.name}</span>
+                    {isInList && <Check className="h-4 w-4 ml-auto" />}
+                  </DropdownMenuItem>
+                );
+              })}
+            </div>
+          )}
+        </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
 

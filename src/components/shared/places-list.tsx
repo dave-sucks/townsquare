@@ -104,37 +104,39 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
           </div>
 
           <div className="flex-1 min-w-0 overflow-hidden">
-            <h3 className="font-medium text-sm truncate">
-              {savedPlace.place.name}
-            </h3>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5 flex-wrap">
-              {placeType && <span className="truncate">{placeType}</span>}
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium text-sm truncate flex-1">
+                {savedPlace.place.name}
+              </h3>
               {showStatus && savedPlace.hasBeen && (
-                <>
-                  {placeType && <span className="mx-0.5">·</span>}
+                <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
                   <span 
                     className={cn(
-                      "inline-block w-2.5 h-2.5 rounded-full",
+                      "inline-block w-2 h-2 rounded-full",
                       savedPlace.rating ? RATING_COLORS[savedPlace.rating] : "bg-green-500"
                     )} 
                   />
                   <span>Been</span>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5 flex-wrap">
+              {placeType && <span className="truncate">{placeType}</span>}
+              {showStatus && !savedPlace.hasBeen && savedPlace.lists && savedPlace.lists.length > 0 && (
+                <>
+                  {placeType && <span className="mx-0.5">·</span>}
+                  {savedPlace.lists.map((list, idx) => (
+                    <Badge key={list.id} variant="outline" className="text-xs px-1.5 py-0 h-5">
+                      {list.name}
+                    </Badge>
+                  ))}
                 </>
               )}
-              {showStatus && !savedPlace.hasBeen && (
+              {showStatus && !savedPlace.hasBeen && (!savedPlace.lists || savedPlace.lists.length === 0) && (
                 <>
                   {placeType && <span className="mx-0.5">·</span>}
                   <Bookmark className="h-3 w-3" />
-                  {savedPlace.lists && savedPlace.lists.length > 0 ? (
-                    <>
-                      <span className="truncate">{savedPlace.lists[0].name}</span>
-                      {savedPlace.lists.length > 1 && (
-                        <span className="text-muted-foreground">+{savedPlace.lists.length - 1}</span>
-                      )}
-                    </>
-                  ) : (
-                    <span>Saved</span>
-                  )}
+                  <span>Saved</span>
                 </>
               )}
             </div>
