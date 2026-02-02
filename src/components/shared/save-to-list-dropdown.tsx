@@ -275,9 +275,9 @@ export function SaveToListDropdown({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuGroup className="p-1.5">
-          <div className="flex items-center gap-1 mb-2">
-            <DropdownMenuLabel className="p-0 text-xs font-medium text-muted-foreground">Been there?</DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="flex items-center gap-1">
+            Been there?
             <Tooltip>
               <TooltipTrigger asChild>
                 <Info className="h-3 w-3 text-muted-foreground cursor-help" />
@@ -286,11 +286,10 @@ export function SaveToListDropdown({
                 We collect a simple rating for places you've been to help drive recommendations
               </TooltipContent>
             </Tooltip>
-          </div>
-          <div className="flex gap-1">
+          </DropdownMenuLabel>
+          <div className="flex gap-1 px-1.5 py-1">
             {RATING_OPTIONS.map((option) => {
               const isSelected = hasBeen && currentRating === option.value;
-              const Icon = option.icon;
               return (
                 <Button
                   key={option.value}
@@ -317,47 +316,44 @@ export function SaveToListDropdown({
 
         <DropdownMenuSeparator />
         
-        <DropdownMenuGroup className="p-1.5">
-          <DropdownMenuLabel className="p-0 pb-1.5 text-xs font-medium text-muted-foreground">Lists</DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Lists</DropdownMenuLabel>
           
           {listsLoading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground px-1.5 py-1">
               <Loader2 className="h-4 w-4 animate-spin" />
               Loading...
             </div>
           ) : lists.length === 0 ? (
-            <div className="text-sm text-muted-foreground py-2">No lists yet</div>
+            <div className="text-sm text-muted-foreground px-1.5 py-1">No lists yet</div>
           ) : (
-            <div className="space-y-0.5">
-              {lists.map((list) => {
-                const isInList = listsContainingPlace.includes(list.id);
-                return (
-                  <DropdownMenuItem
-                    key={list.id}
-                    className="rounded-md"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (isSaved) {
-                        handleListToggle(list.id);
-                      }
-                    }}
-                    disabled={!isSaved || addToListMutation.isPending || removeFromListMutation.isPending}
-                    data-testid={`list-checkbox-${list.id}`}
-                  >
-                    <List className="h-4 w-4 mr-2" />
-                    <span className="flex-1 truncate">{list.name}</span>
-                    {isInList && <Check className="h-4 w-4 ml-auto" />}
-                  </DropdownMenuItem>
-                );
-              })}
-            </div>
+            lists.map((list) => {
+              const isInList = listsContainingPlace.includes(list.id);
+              return (
+                <DropdownMenuItem
+                  key={list.id}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (isSaved) {
+                      handleListToggle(list.id);
+                    }
+                  }}
+                  disabled={!isSaved || addToListMutation.isPending || removeFromListMutation.isPending}
+                  data-testid={`list-checkbox-${list.id}`}
+                >
+                  <List className="h-4 w-4" />
+                  <span className="flex-1 truncate">{list.name}</span>
+                  {isInList && <Check className="h-4 w-4 ml-auto" />}
+                </DropdownMenuItem>
+              );
+            })
           )}
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
 
         {showCreateInput ? (
-          <div className="p-2 space-y-2">
+          <div className="px-1.5 py-1 space-y-2">
             <Input
               placeholder="List name"
               value={newListName}
@@ -410,7 +406,7 @@ export function SaveToListDropdown({
             disabled={!isSaved}
             data-testid="button-add-new-list"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4" />
             Create new list
           </DropdownMenuItem>
         )}
