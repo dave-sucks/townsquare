@@ -260,11 +260,11 @@ export function ChatPage({ user }: { user: UserData }) {
               </div>
             ) : (
               conversations.map((conv) => (
-                <button
+                <div
                   key={conv.id}
                   onClick={() => selectConversation(conv.id)}
                   className={cn(
-                    "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors group flex items-center justify-between",
+                    "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors group flex items-center justify-between cursor-pointer",
                     activeConversationId === conv.id
                       ? "bg-primary/10 text-primary"
                       : "hover:bg-muted text-foreground"
@@ -274,8 +274,8 @@ export function ChatPage({ user }: { user: UserData }) {
                   <span className="truncate flex-1">{conv.title}</span>
                   <Button
                     variant="ghost"
-                    size="icon-xs"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    size="icon"
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => {
                       e.stopPropagation();
                       deleteConversationMutation.mutate(conv.id);
@@ -284,14 +284,14 @@ export function ChatPage({ user }: { user: UserData }) {
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
-                </button>
+                </div>
               ))
             )}
           </div>
         </ScrollArea>
       </div>
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {!activeConversationId ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center max-w-md px-4">
@@ -338,7 +338,7 @@ export function ChatPage({ user }: { user: UserData }) {
               </div>
             </div>
 
-            <ScrollArea className="flex-1 px-4" ref={scrollRef}>
+            <ScrollArea className="flex-1 min-h-0 px-4" ref={scrollRef}>
               <div className="max-w-3xl mx-auto py-6 space-y-6">
                 {messagesLoading ? (
                   <div className="flex items-center justify-center py-8">
