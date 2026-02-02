@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { X, Car, TrainFront } from "lucide-react";
+import { X, Car, TrainFront, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   MAP_STYLES,
@@ -27,6 +27,8 @@ interface MapSettingsPopoverProps {
   onLabelDensityChange: (density: LabelDensity) => void;
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
+  inline?: boolean;
+  triggerClassName?: string;
 }
 
 const RADIUS_STEPS = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 7, 10];
@@ -148,6 +150,8 @@ export function MapSettingsPopover({
   onLabelDensityChange,
   isOpen: controlledIsOpen,
   onOpenChange,
+  inline = false,
+  triggerClassName,
 }: MapSettingsPopoverProps) {
   const [internalIsExpanded, setInternalIsExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -196,9 +200,15 @@ export function MapSettingsPopover({
   const sliderValue = (currentRadiusIndex / (RADIUS_STEPS.length - 1)) * 100;
 
   return (
-    <div ref={containerRef} className="absolute bottom-4 right-4 z-10">
+    <div ref={containerRef} className={cn(
+      "z-10",
+      inline ? "relative" : "absolute bottom-4 right-4"
+    )}>
       {isExpanded && (
-        <div className="absolute bottom-[calc(100%+8px)] right-0 w-[300px] bg-background/95 backdrop-blur-xl border rounded-lg shadow-lg animate-in slide-in-from-bottom-2 duration-200">
+        <div className={cn(
+          "w-[300px] bg-background/95 backdrop-blur-xl border rounded-lg shadow-lg animate-in slide-in-from-bottom-2 duration-200",
+          inline ? "absolute top-[calc(100%+8px)] right-0" : "absolute bottom-[calc(100%+8px)] right-0"
+        )}>
           <div className="flex items-center justify-between p-3 border-b">
             <h3 className="font-medium text-sm">Map details</h3>
             <Button
@@ -302,13 +312,21 @@ export function MapSettingsPopover({
         </div>
       )}
 
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white shadow-lg hover-elevate"
+        className={triggerClassName}
         data-testid="button-map-settings"
       >
-        <MapStyleThumbnail styleId={currentStyle} isSelected={false} />
-      </button>
+        {inline ? (
+          <SlidersHorizontal className="h-4 w-4" />
+        ) : (
+          <div className="w-full h-full rounded-md overflow-hidden">
+            <MapStyleThumbnail styleId={currentStyle} isSelected={false} />
+          </div>
+        )}
+      </Button>
     </div>
   );
 }

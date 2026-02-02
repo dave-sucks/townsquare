@@ -327,6 +327,7 @@ export function DiscoverSidebar({
             onRadiusChange={mapSettings.setRadius}
             labelDensity={mapSettings.labelDensity}
             onLabelDensityChange={mapSettings.setLabelDensity}
+            inline
           />
         )}
       </div>

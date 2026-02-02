@@ -409,22 +409,6 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
       {showSearch && !isLoading && (
         <FloatingSearch />
       )}
-      {showSettings && !isLoading && (
-        <MapSettingsPopover
-          currentStyle={currentStyle}
-          onStyleChange={handleStyleChange}
-          showTraffic={showTraffic}
-          onTrafficChange={handleTrafficChange}
-          showTransit={showTransit}
-          onTransitChange={handleTransitChange}
-          radius={radius}
-          onRadiusChange={handleRadiusChange}
-          labelDensity={labelDensity}
-          onLabelDensityChange={handleLabelDensityChange}
-          isOpen={isSettingsOpen}
-          onOpenChange={onSettingsOpenChange}
-        />
-      )}
     </div>
   );
 });
