@@ -23,7 +23,8 @@ interface SavedPlace {
   id: string;
   userId?: string;
   placeId: string;
-  status: "WANT" | "BEEN";
+  hasBeen: boolean;
+  rating: number | null;
   visitedAt?: string | null;
   createdAt?: string;
   place: Place;
@@ -98,12 +99,12 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
               {showStatus && (
                 <>
                   {placeType && <span className="mx-0.5">·</span>}
-                  {savedPlace.status === "WANT" ? (
+                  {!savedPlace.hasBeen ? (
                     <Heart className="h-3 w-3 fill-current text-rose-500" />
                   ) : (
                     <CheckCircle className="h-3 w-3 text-emerald-500" />
                   )}
-                  <span>{savedPlace.status === "WANT" ? "Want" : "Been"}</span>
+                  <span>{!savedPlace.hasBeen ? "Want" : "Been"}</span>
                 </>
               )}
             </div>
@@ -120,7 +121,8 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
               savedPlace={{
                 id: savedPlace.id,
                 placeId: savedPlace.placeId,
-                status: savedPlace.status,
+                hasBeen: savedPlace.hasBeen,
+                rating: savedPlace.rating,
               }}
               listsContainingPlace={listsContainingPlace}
               showLabel={false}

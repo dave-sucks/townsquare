@@ -47,13 +47,13 @@ export function FloatingSearch() {
   }, [searchQuery, searchPlaces]);
 
   const savePlaceMutation = useMutation({
-    mutationFn: async ({ placeId, status }: { placeId: string; status: "WANT" | "BEEN" }) => {
+    mutationFn: async ({ placeId, hasBeen }: { placeId: string; hasBeen: boolean }) => {
       const detailsResponse = await fetch(`/api/places/details?place_id=${placeId}`);
       const detailsData = await detailsResponse.json();
       if (!detailsData.place) throw new Error("Failed to get place details");
       return apiRequest("/api/saved-places", {
         method: "POST",
-        body: JSON.stringify({ ...detailsData.place, status }),
+        body: JSON.stringify({ ...detailsData.place, hasBeen }),
       });
     },
     onSuccess: () => {
@@ -119,7 +119,7 @@ export function FloatingSearch() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => savePlaceMutation.mutate({ placeId: result.place_id, status: "WANT" })}
+                      onClick={() => savePlaceMutation.mutate({ placeId: result.place_id, hasBeen: false })}
                       disabled={savePlaceMutation.isPending}
                       data-testid={`button-save-${result.place_id}`}
                     >

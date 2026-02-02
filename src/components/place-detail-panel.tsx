@@ -38,7 +38,8 @@ interface SavedPlace {
   id: string;
   userId: string;
   placeId: string;
-  status: "WANT" | "BEEN";
+  hasBeen: boolean;
+  rating: number | null;
   visitedAt: string | null;
   createdAt: string;
   place: Place;
@@ -59,7 +60,8 @@ interface Photo {
 
 interface FriendSaved {
   id: string;
-  status: "WANT" | "BEEN";
+  hasBeen: boolean;
+  rating: number | null;
   user: {
     id: string;
     username: string | null;
@@ -138,8 +140,8 @@ export function PlaceDetailPanel({
   const placeType = formatPlaceType(place.primaryType);
   const priceLevel = formatPriceLevel(place.priceLevel);
   
-  const friendsWant = friendsWhoSaved.filter(f => f.status === "WANT");
-  const friendsBeen = friendsWhoSaved.filter(f => f.status === "BEEN");
+  const friendsWant = friendsWhoSaved.filter(f => !f.hasBeen);
+  const friendsBeen = friendsWhoSaved.filter(f => f.hasBeen);
 
   return (
     <div className="h-full flex flex-col bg-background" data-testid="place-detail-panel">
@@ -170,7 +172,8 @@ export function PlaceDetailPanel({
             savedPlace={{
               id: savedPlace.id,
               placeId: savedPlace.placeId,
-              status: savedPlace.status,
+              hasBeen: savedPlace.hasBeen,
+              rating: savedPlace.rating,
             }}
             listsContainingPlace={listsContainingPlace}
           />
@@ -243,13 +246,13 @@ export function PlaceDetailPanel({
             <TabsContent value="overview" className="pt-4 space-y-4">
               <div className="space-y-3">
                 <Badge 
-                  variant={savedPlace.status === "WANT" ? "secondary" : "default"}
+                  variant={savedPlace.hasBeen ? "default" : "secondary"}
                   data-testid="panel-badge-status"
                 >
-                  {savedPlace.status === "WANT" ? (
-                    <><Heart className="mr-1 h-3 w-3" />Want to visit</>
+                  {savedPlace.hasBeen ? (
+                    <><CheckCircle className="mr-1 h-3 w-3" />Been there{savedPlace.rating && ` (${savedPlace.rating === 3 ? 'Great' : savedPlace.rating === 2 ? 'Okay' : 'Bad'})`}</>
                   ) : (
-                    <><CheckCircle className="mr-1 h-3 w-3" />Been there</>
+                    <><Heart className="mr-1 h-3 w-3" />Saved</>
                   )}
                 </Badge>
                 

@@ -16,10 +16,10 @@ export async function PATCH(
 
   try {
     const body = await request.json();
-    const { status } = body;
+    const { hasBeen, rating } = body;
 
-    if (status !== "WANT" && status !== "BEEN") {
-      return NextResponse.json({ error: "Invalid status. Must be WANT or BEEN" }, { status: 400 });
+    if (rating !== undefined && (rating < 1 || rating > 3)) {
+      return NextResponse.json({ error: "Rating must be between 1 and 3" }, { status: 400 });
     }
 
     const savedPlace = await prisma.savedPlace.findFirst({
@@ -33,18 +33,21 @@ export async function PATCH(
     const updated = await prisma.savedPlace.update({
       where: { id },
       data: {
-        status,
-        visitedAt: status === "BEEN" ? new Date() : null,
+        hasBeen: hasBeen ?? savedPlace.hasBeen,
+        rating: hasBeen && rating ? rating : (hasBeen === false ? null : savedPlace.rating),
+        visitedAt: hasBeen ? (savedPlace.visitedAt || new Date()) : (hasBeen === false ? null : savedPlace.visitedAt),
       },
       include: { place: true },
     });
 
-    await createActivity({
-      actorId: user.id,
-      type: status === "WANT" ? "PLACE_SAVED_WANT" : "PLACE_MARKED_BEEN",
-      placeId: savedPlace.placeId,
-      metadata: { placeName: updated.place.name },
-    });
+    if (hasBeen && !savedPlace.hasBeen) {
+      await createActivity({
+        actorId: user.id,
+        type: "PLACE_MARKED_BEEN",
+        placeId: savedPlace.placeId,
+        metadata: { placeName: updated.place.name, rating },
+      });
+    }
 
     return NextResponse.json({ savedPlace: updated });
   } catch (error: any) {

@@ -47,7 +47,8 @@ interface SavedPlace {
   id: string;
   userId: string;
   placeId: string;
-  status: "WANT" | "BEEN";
+  hasBeen: boolean;
+  rating: number | null;
   visitedAt: string | null;
   createdAt: string;
 }
@@ -63,7 +64,8 @@ interface ListData {
 
 interface FriendSavedPlace {
   id: string;
-  status: "WANT" | "BEEN";
+  hasBeen: boolean;
+  rating: number | null;
   user: {
     id: string;
     username: string | null;
@@ -152,8 +154,8 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
   const placeType = formatPlaceType(place?.primaryType || null);
   const priceLevel = formatPriceLevel(place?.priceLevel || null);
 
-  const friendsBeen = friendsWhoSaved.filter(f => f.status === "BEEN");
-  const friendsWant = friendsWhoSaved.filter(f => f.status === "WANT");
+  const friendsBeen = friendsWhoSaved.filter(f => f.hasBeen);
+  const friendsWant = friendsWhoSaved.filter(f => !f.hasBeen);
 
   const deleteReviewMutation = useMutation({
     mutationFn: async (reviewId: string) => {
@@ -240,7 +242,8 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
           savedPlace={savedPlace ? {
             id: savedPlace.id,
             placeId: savedPlace.placeId,
-            status: savedPlace.status,
+            hasBeen: savedPlace.hasBeen,
+            rating: savedPlace.rating,
           } : null}
           listsContainingPlace={listsContainingPlace.map(l => l.id)}
           onSaveSuccess={() => refetch()}
@@ -315,10 +318,10 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                 <div className="flex items-center gap-2 flex-wrap">
                   {savedPlace && (
                     <Badge 
-                      variant={savedPlace.status === "WANT" ? "secondary" : "default"}
+                      variant={!savedPlace.hasBeen ? "secondary" : "default"}
                       data-testid="badge-place-status"
                     >
-                      {savedPlace.status === "WANT" ? (
+                      {!savedPlace.hasBeen ? (
                         <><Heart className="mr-1 h-3 w-3" />Want to visit</>
                       ) : (
                         <><CheckCircle className="mr-1 h-3 w-3" />Been there</>

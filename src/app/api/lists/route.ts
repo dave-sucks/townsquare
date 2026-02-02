@@ -3,6 +3,25 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createActivity } from "@/lib/activity";
 
+async function ensureSystemLists(userId: string) {
+  const wantToGoList = await prisma.list.findFirst({
+    where: { userId, systemSlug: "want-to-go" },
+  });
+
+  if (!wantToGoList) {
+    await prisma.list.create({
+      data: {
+        userId,
+        name: "Want to Go",
+        description: "Places you want to visit",
+        visibility: "PRIVATE",
+        isSystem: true,
+        systemSlug: "want-to-go",
+      },
+    });
+  }
+}
+
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) {
@@ -10,7 +29,8 @@ export async function GET() {
   }
 
   try {
-    // Get user's own lists
+    await ensureSystemLists(user.id);
+
     const myLists = await prisma.list.findMany({
       where: { userId: user.id },
       include: {
@@ -41,14 +61,17 @@ export async function GET() {
           select: { listPlaces: true },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [
+        { isSystem: "desc" },
+        { createdAt: "desc" },
+      ],
     });
 
-    // Get public lists from other users
     const discoverLists = await prisma.list.findMany({
       where: {
         userId: { not: user.id },
         visibility: "PUBLIC",
+        isSystem: false,
       },
       include: {
         user: {
@@ -112,6 +135,7 @@ export async function POST(request: NextRequest) {
         name: name.trim(),
         description: description?.trim() || null,
         visibility: visibility || "PRIVATE",
+        isSystem: false,
       },
       include: {
         _count: {

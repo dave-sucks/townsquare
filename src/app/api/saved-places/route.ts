@@ -31,14 +31,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { googlePlaceId, name, formattedAddress, lat, lng, primaryType, types, priceLevel, photoRefs, status } = body;
+    const { googlePlaceId, name, formattedAddress, lat, lng, primaryType, types, priceLevel, photoRefs, hasBeen, rating  } = body;
 
-    if (!googlePlaceId || !name || !formattedAddress || lat === undefined || lng === undefined || !status) {
+    if (!googlePlaceId || !name || !formattedAddress || lat === undefined || lng === undefined) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    if (status !== "WANT" && status !== "BEEN") {
-      return NextResponse.json({ error: "Invalid status. Must be WANT or BEEN" }, { status: 400 });
+    if (rating !== undefined && (rating < 1 || rating > 3)) {
+      return NextResponse.json({ error: "Rating must be between 1 and 3" }, { status: 400 });
     }
 
     let place = await prisma.place.findUnique({
@@ -69,23 +69,25 @@ export async function POST(request: NextRequest) {
         },
       },
       update: {
-        status,
-        visitedAt: status === "BEEN" ? new Date() : null,
+        hasBeen: hasBeen ?? false,
+        rating: hasBeen && rating ? rating : null,
+        visitedAt: hasBeen ? new Date() : null,
       },
       create: {
         userId: user.id,
         placeId: place.id,
-        status,
-        visitedAt: status === "BEEN" ? new Date() : null,
+        hasBeen: hasBeen ?? false,
+        rating: hasBeen && rating ? rating : null,
+        visitedAt: hasBeen ? new Date() : null,
       },
       include: { place: true },
     });
 
     await createActivity({
       actorId: user.id,
-      type: status === "WANT" ? "PLACE_SAVED_WANT" : "PLACE_MARKED_BEEN",
+      type: hasBeen ? "PLACE_MARKED_BEEN" : "PLACE_SAVED",
       placeId: place.id,
-      metadata: { placeName: place.name },
+      metadata: { placeName: place.name, rating: hasBeen ? rating : undefined },
     });
 
     return NextResponse.json({ savedPlace });

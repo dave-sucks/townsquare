@@ -34,7 +34,8 @@ interface SavedPlace {
   id: string;
   userId: string;
   placeId: string;
-  status: "WANT" | "BEEN";
+  hasBeen: boolean;
+  rating: number | null;
   visitedAt: string | null;
   createdAt: string;
   place: Place;
@@ -99,8 +100,8 @@ export function DiscoverPage({ user }: { user: UserData }) {
       if (listFilter !== "all" && !selectedListPlaceIds.includes(sp.placeId)) {
         return false;
       }
-      if (statusFilter === "want") return sp.status === "WANT";
-      if (statusFilter === "been") return sp.status === "BEEN";
+      if (statusFilter === "want") return !sp.hasBeen;
+      if (statusFilter === "been") return sp.hasBeen;
       return true;
     });
   }, [savedPlaces, statusFilter, listFilter, selectedListPlaceIds]);
@@ -146,11 +147,11 @@ export function DiscoverPage({ user }: { user: UserData }) {
     if (selectedPlaceId) {
       const willBeFiltered = savedPlaces.find(sp => sp.id === selectedPlaceId);
       if (willBeFiltered) {
-        if (value === "want" && willBeFiltered.status !== "WANT") {
+        if (value === "want" && willBeFiltered.hasBeen) {
           setSelectedPlaceId(null);
           setViewingPlaceId(null);
           setCurrentView("list");
-        } else if (value === "been" && willBeFiltered.status !== "BEEN") {
+        } else if (value === "been" && !willBeFiltered.hasBeen) {
           setSelectedPlaceId(null);
           setViewingPlaceId(null);
           setCurrentView("list");

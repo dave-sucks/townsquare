@@ -71,7 +71,8 @@ export function ListSidebar({
   const savedPlaces = list?.listPlaces.map(lp => ({
     id: lp.id,
     placeId: lp.placeId,
-    status: "WANT" as const,
+    hasBeen: false,
+    rating: null,
     createdAt: lp.addedAt,
     place: lp.place,
   })) || [];

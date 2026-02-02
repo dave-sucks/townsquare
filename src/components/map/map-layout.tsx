@@ -30,7 +30,8 @@ interface SavedPlace {
   id: string;
   userId?: string;
   placeId: string;
-  status: "WANT" | "BEEN";
+  hasBeen: boolean;
+  rating: number | null;
   visitedAt?: string | null;
   createdAt?: string;
   place: Place;

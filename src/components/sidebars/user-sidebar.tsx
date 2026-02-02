@@ -36,7 +36,8 @@ interface Place {
 interface SavedPlace {
   id: string;
   placeId: string;
-  status: "WANT" | "BEEN";
+  hasBeen: boolean;
+  rating: number | null;
   createdAt: string;
   place: Place;
 }
@@ -196,8 +197,8 @@ export function UserSidebar({
     if (selectedListId !== "all" && !selectedListPlaceIds.includes(sp.placeId)) {
       return false;
     }
-    if (selectedStatusFilter === "want") return sp.status === "WANT";
-    if (selectedStatusFilter === "been") return sp.status === "BEEN";
+    if (selectedStatusFilter === "want") return !sp.hasBeen;
+    if (selectedStatusFilter === "been") return sp.hasBeen;
     return true;
   });
 

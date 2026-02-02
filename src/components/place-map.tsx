@@ -27,7 +27,8 @@ interface Place {
 
 interface SavedPlace {
   id: string;
-  status: "WANT" | "BEEN";
+  hasBeen: boolean;
+  rating: number | null;
   place: Place;
 }
 
@@ -89,8 +90,8 @@ function saveMapView(center: { lat: number; lng: number }, zoom: number) {
   }
 }
 
-function createMarkerIcon(status: "WANT" | "BEEN", isSelected: boolean): google.maps.Symbol {
-  const color = isSelected ? MARKER_COLORS.selected : (status === "WANT" ? MARKER_COLORS.want : MARKER_COLORS.been);
+function createMarkerIcon(hasBeen: boolean, isSelected: boolean): google.maps.Symbol {
+  const color = isSelected ? MARKER_COLORS.selected : (hasBeen ? MARKER_COLORS.been : MARKER_COLORS.want);
   const scale = isSelected ? 10 : 8;
   
   return {
@@ -335,7 +336,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
     const bounds = new google.maps.LatLngBounds();
 
     places.forEach((savedPlace) => {
-      const { place, status, id } = savedPlace;
+      const { place, hasBeen, id } = savedPlace;
       const position = { lat: place.lat, lng: place.lng };
       const isSelected = id === selectedPlaceId;
 
@@ -343,7 +344,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
         map,
         position,
         title: place.name,
-        icon: createMarkerIcon(status, isSelected),
+        icon: createMarkerIcon(hasBeen, isSelected),
         zIndex: isSelected ? 1000 : 1,
       });
 
@@ -384,7 +385,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
       const savedPlace = places.find(p => p.id === id);
       if (savedPlace) {
         const isSelected = id === selectedPlaceId;
-        marker.setIcon(createMarkerIcon(savedPlace.status, isSelected));
+        marker.setIcon(createMarkerIcon(savedPlace.hasBeen, isSelected));
         marker.setZIndex(isSelected ? 1000 : 1);
       }
     });
