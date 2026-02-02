@@ -8,31 +8,31 @@ datasource db {
 }
 
 model User {
-  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
-  email               String?           @unique(map: "users_email_unique")
-  username            String?           @unique(map: "users_username_unique")
-  passwordHash        String?           @map("password_hash")
-  firstName           String?           @map("first_name")
-  lastName            String?           @map("last_name")
-  profileImageUrl     String?           @map("profile_image_url")
-  bio                 String?
-  location            String?
-  instagramHandle     String?           @unique @map("instagram_handle")
-  instagramId         String?           @unique @map("instagram_id")
-  instagramPostCount  Int               @default(0) @map("instagram_post_count")
-  lastInstagramSync   DateTime?         @map("last_instagram_sync") @db.Timestamp(6)
-  isInstagramImport   Boolean           @default(false) @map("is_instagram_import")
-  website             String?
-  isVerified          Boolean           @default(false) @map("is_verified")
-  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamp(6)
-  savedPlaces         SavedPlace[]
-  lists               List[]
-  followers           Follow[]          @relation("following")
-  following           Follow[]          @relation("follower")
-  activities          Activity[]
-  reviews             Review[]
-  photos              Photo[]
-  instagramImports    InstagramImport[]
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  email              String?           @unique(map: "users_email_unique")
+  username           String?           @unique(map: "users_username_unique")
+  passwordHash       String?           @map("password_hash")
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamp(6)
+  firstName          String?           @map("first_name")
+  lastName           String?           @map("last_name")
+  profileImageUrl    String?           @map("profile_image_url")
+  bio                String?
+  instagramHandle    String?           @unique @map("instagram_handle")
+  isVerified         Boolean           @default(false) @map("is_verified")
+  location           String?
+  website            String?
+  instagramId        String?           @unique @map("instagram_id")
+  instagramPostCount Int               @default(0) @map("instagram_post_count")
+  isInstagramImport  Boolean           @default(false) @map("is_instagram_import")
+  lastInstagramSync  DateTime?         @map("last_instagram_sync") @db.Timestamp(6)
+  activities         Activity[]
+  following          Follow[]          @relation("follower")
+  followers          Follow[]          @relation("following")
+  instagramImports   InstagramImport[]
+  lists              List[]
+  photos             Photo[]
+  reviews            Review[]
+  savedPlaces        SavedPlace[]
 
   @@map("users")
 }
@@ -59,37 +59,28 @@ model Place {
   photoRefs        Json?        @map("photo_refs")
   createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt        DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  savedPlaces      SavedPlace[]
-  listPlaces       ListPlace[]
   activities       Activity[]
-  reviews          Review[]
+  listPlaces       ListPlace[]
   photos           Photo[]
+  reviews          Review[]
+  savedPlaces      SavedPlace[]
 
   @@map("places")
 }
 
 model SavedPlace {
-  id        String             @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
-  userId    String             @map("user_id") @db.VarChar(36)
-  placeId   String             @map("place_id") @db.VarChar(36)
-  status    saved_place_status
-  visitedAt DateTime?          @map("visited_at") @db.Timestamp(6)
-  createdAt DateTime           @default(now()) @map("created_at") @db.Timestamp(6)
-  place     Place              @relation(fields: [placeId], references: [id], onDelete: Cascade)
-  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  userId    String    @map("user_id") @db.VarChar(36)
+  placeId   String    @map("place_id") @db.VarChar(36)
+  visitedAt DateTime? @map("visited_at") @db.Timestamp(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  hasBeen   Boolean?  @default(false) @map("has_been")
+  rating    Int?
+  place     Place     @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, placeId])
   @@map("saved_places")
-}
-
-enum saved_place_status {
-  WANT
-  BEEN
-}
-
-enum list_visibility {
-  PRIVATE
-  PUBLIC
 }
 
 model List {
@@ -100,9 +91,11 @@ model List {
   visibility  list_visibility @default(PRIVATE)
   createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt   DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  listPlaces  ListPlace[]
+  isSystem    Boolean?        @default(false) @map("is_system")
+  systemSlug  String?         @map("system_slug") @db.VarChar(255)
   activities  Activity[]
+  listPlaces  ListPlace[]
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("lists")
 }
@@ -135,14 +128,6 @@ model Follow {
   @@map("follows")
 }
 
-enum activity_type {
-  PLACE_SAVED_WANT
-  PLACE_MARKED_BEEN
-  PLACE_ADDED_TO_LIST
-  LIST_CREATED
-  REVIEW_CREATED
-}
-
 model Activity {
   id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
   actorId   String        @map("actor_id") @db.VarChar(36)
@@ -153,18 +138,12 @@ model Activity {
   dedupeKey String        @unique @map("dedupe_key")
   createdAt DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
   actor     User          @relation(fields: [actorId], references: [id], onDelete: Cascade)
-  place     Place?        @relation(fields: [placeId], references: [id], onDelete: SetNull)
-  list      List?         @relation(fields: [listId], references: [id], onDelete: SetNull)
+  list      List?         @relation(fields: [listId], references: [id])
+  place     Place?        @relation(fields: [placeId], references: [id])
 
   @@index([actorId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
   @@map("activities")
-}
-
-enum review_source {
-  manual
-  instagram
-  tiktok
 }
 
 model Review {
@@ -174,16 +153,16 @@ model Review {
   rating             Int?
   note               String?
   visitedAt          DateTime?     @map("visited_at") @db.Timestamp(6)
-  instagramPostId    String?       @unique @map("instagram_post_id")
-  instagramUrl       String?       @map("instagram_url")
-  instagramEmbedHtml String?       @map("instagram_embed_html")
-  instagramShortcode String?       @map("instagram_shortcode")
-  source             review_source @default(manual)
   createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt          DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  place              Place         @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  instagramEmbedHtml String?       @map("instagram_embed_html")
+  instagramPostId    String?       @unique @map("instagram_post_id")
+  instagramShortcode String?       @map("instagram_shortcode")
+  instagramUrl       String?       @map("instagram_url")
+  source             review_source @default(manual)
   photos             Photo[]
+  place              Place         @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([placeId])
   @@index([instagramPostId])
@@ -199,28 +178,21 @@ model Photo {
   url              String
   width            Int?
   height           Int?
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamp(6)
   carouselPosition Int      @default(0) @map("carousel_position")
   isCarousel       Boolean  @default(false) @map("is_carousel")
-  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamp(6)
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   place            Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
-  review           Review?  @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+  review           Review?  @relation(fields: [reviewId], references: [id])
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([placeId, createdAt(sort: Desc)])
   @@index([reviewId, carouselPosition])
   @@map("photos")
 }
 
-enum import_status {
-  pending
-  processing
-  completed
-  failed
-}
-
 model InstagramImport {
   id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
-  instagramPostId    String        @map("instagram_post_id")
+  instagramPostId    String        @unique @map("instagram_post_id")
   instagramUrl       String        @map("instagram_url")
   instagramShortcode String        @map("instagram_shortcode")
   userId             String?       @map("user_id") @db.VarChar(36)
@@ -234,8 +206,33 @@ model InstagramImport {
   updatedAt          DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
   importedByUser     User          @relation(fields: [importedBy], references: [id], onDelete: Cascade)
 
-  @@unique([instagramPostId])
   @@index([status])
   @@index([importedBy])
   @@map("instagram_imports")
+}
+
+enum list_visibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum activity_type {
+  PLACE_SAVED
+  PLACE_MARKED_BEEN
+  PLACE_ADDED_TO_LIST
+  LIST_CREATED
+  REVIEW_CREATED
+}
+
+enum review_source {
+  manual
+  instagram
+  tiktok
+}
+
+enum import_status {
+  pending
+  processing
+  completed
+  failed
 }
