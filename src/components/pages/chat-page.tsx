@@ -22,6 +22,21 @@ import {
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { toast } from "sonner";
+import { ChatPlaceCards } from "@/components/chat-place-card";
+
+interface PlaceResult {
+  googlePlaceId: string;
+  name: string;
+  formattedAddress: string;
+  lat: number;
+  lng: number;
+  types: string[];
+  primaryType: string | null;
+  priceLevel: string | null;
+  rating: number | null;
+  userRatingsTotal: number | null;
+  photoRef: string | null;
+}
 
 interface UserData {
   id: string;
@@ -37,6 +52,7 @@ interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   createdAt: string;
+  places?: PlaceResult[];
 }
 
 interface Conversation {
@@ -52,6 +68,7 @@ export function ChatPage({ user }: { user: UserData }) {
   const [inputValue, setInputValue] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
+  const [streamingPlaces, setStreamingPlaces] = useState<PlaceResult[]>([]);
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -83,7 +100,7 @@ export function ChatPage({ user }: { user: UserData }) {
 
   useEffect(() => {
     scrollToBottom();
-  }, [localMessages, streamingContent, scrollToBottom]);
+  }, [localMessages, streamingContent, streamingPlaces, scrollToBottom]);
 
   const createConversationMutation = useMutation({
     mutationFn: async (): Promise<{ conversation: Conversation }> => {
@@ -121,6 +138,7 @@ export function ChatPage({ user }: { user: UserData }) {
     setInputValue("");
     setIsStreaming(true);
     setStreamingContent("");
+    setStreamingPlaces([]);
 
     try {
       const response = await fetch(`/api/conversations/${activeConversationId}/messages`, {
@@ -136,6 +154,7 @@ export function ChatPage({ user }: { user: UserData }) {
 
       const decoder = new TextDecoder();
       let fullContent = "";
+      let receivedPlaces: PlaceResult[] = [];
 
       while (true) {
         const { done, value } = await reader.read();
@@ -151,8 +170,13 @@ export function ChatPage({ user }: { user: UserData }) {
             if (data.error) {
               toast.error("Failed to get response. Please try again.");
               setStreamingContent("");
+              setStreamingPlaces([]);
               setIsStreaming(false);
               return;
+            }
+            if (data.places) {
+              receivedPlaces = data.places;
+              setStreamingPlaces(receivedPlaces);
             }
             if (data.content) {
               fullContent += data.content;
@@ -164,9 +188,11 @@ export function ChatPage({ user }: { user: UserData }) {
                 role: "assistant",
                 content: fullContent,
                 createdAt: new Date().toISOString(),
+                places: receivedPlaces.length > 0 ? receivedPlaces : undefined,
               };
               setLocalMessages(prev => [...prev, assistantMessage]);
               setStreamingContent("");
+              setStreamingPlaces([]);
               queryClient.invalidateQueries({ queryKey: ["conversations"] });
             }
           } catch {
@@ -329,7 +355,7 @@ export function ChatPage({ user }: { user: UserData }) {
                     />
                   ))
                 )}
-                {isStreaming && streamingContent && (
+                {isStreaming && (streamingContent || streamingPlaces.length > 0) && (
                   <MessageBubble
                     message={{
                       id: "streaming",
@@ -339,9 +365,10 @@ export function ChatPage({ user }: { user: UserData }) {
                     }}
                     user={user}
                     isStreaming
+                    streamingPlaces={streamingPlaces}
                   />
                 )}
-                {isStreaming && !streamingContent && (
+                {isStreaming && !streamingContent && streamingPlaces.length === 0 && (
                   <div className="flex gap-3">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="bg-primary/10 text-primary">
@@ -350,7 +377,7 @@ export function ChatPage({ user }: { user: UserData }) {
                     </Avatar>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="text-sm">Thinking...</span>
+                      <span className="text-sm">Searching for places...</span>
                     </div>
                   </div>
                 )}
@@ -399,13 +426,16 @@ export function ChatPage({ user }: { user: UserData }) {
 function MessageBubble({ 
   message, 
   user,
-  isStreaming = false 
+  isStreaming = false,
+  streamingPlaces = [],
 }: { 
   message: ChatMessage; 
   user: UserData;
   isStreaming?: boolean;
+  streamingPlaces?: PlaceResult[];
 }) {
   const isUser = message.role === "user";
+  const places = isStreaming ? streamingPlaces : message.places;
 
   return (
     <div className={cn("flex gap-3", isUser && "flex-row-reverse")}>
@@ -423,18 +453,23 @@ function MessageBubble({
           </AvatarFallback>
         )}
       </Avatar>
-      <div className={cn(
-        "max-w-[80%] rounded-2xl px-4 py-2.5",
-        isUser 
-          ? "bg-primary text-primary-foreground rounded-br-md" 
-          : "bg-muted rounded-bl-md"
-      )}>
-        <div className="text-sm whitespace-pre-wrap">
-          {message.content}
-          {isStreaming && (
-            <span className="inline-block w-1.5 h-4 bg-current ml-0.5 animate-pulse" />
-          )}
+      <div className="max-w-[80%] flex flex-col gap-2">
+        <div className={cn(
+          "rounded-2xl px-4 py-2.5",
+          isUser 
+            ? "bg-primary text-primary-foreground rounded-br-md" 
+            : "bg-muted rounded-bl-md"
+        )}>
+          <div className="text-sm whitespace-pre-wrap">
+            {message.content}
+            {isStreaming && (
+              <span className="inline-block w-1.5 h-4 bg-current ml-0.5 animate-pulse" />
+            )}
+          </div>
         </div>
+        {places && places.length > 0 && (
+          <ChatPlaceCards places={places} />
+        )}
       </div>
     </div>
   );
