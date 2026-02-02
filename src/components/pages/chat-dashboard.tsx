@@ -523,37 +523,30 @@ function MessageBubble({
   const isUser = message.role === "user";
 
   return (
-    <div className={cn("flex gap-2", isUser && "flex-row-reverse")}>
-      <Avatar className="h-6 w-6 shrink-0">
-        {isUser ? (
-          <>
-            <AvatarImage src={user.profileImageUrl || undefined} />
-            <AvatarFallback className="bg-secondary text-[10px]">
-              <User className="h-3 w-3" />
+    <div className={cn("flex flex-col gap-1", isUser ? "items-end" : "items-start")}>
+      {!isUser && (
+        <div className="flex items-center gap-2 mb-1">
+          <Avatar className="h-6 w-6 shrink-0">
+            <AvatarFallback className="bg-primary/10 text-primary text-[10px]">
+              <Bot className="h-3 w-3" />
             </AvatarFallback>
-          </>
-        ) : (
-          <AvatarFallback className="bg-primary/10 text-primary text-[10px]">
-            <Bot className="h-3 w-3" />
-          </AvatarFallback>
-        )}
-      </Avatar>
-      <div className="flex-1 min-w-0">
+          </Avatar>
+        </div>
+      )}
+      <div className={cn("flex flex-col", isUser ? "items-end" : "items-start", "max-w-[90%]")}>
         <div className={cn(
-          "inline-block rounded-xl px-3 py-2 text-sm max-w-full",
+          "inline-block px-3 py-2 text-sm whitespace-pre-wrap break-words",
           isUser 
-            ? "bg-primary text-primary-foreground" 
-            : "bg-muted"
+            ? "bg-primary text-primary-foreground rounded-2xl rounded-br-none" 
+            : "bg-muted rounded-2xl rounded-bl-none"
         )}>
-          <div className="whitespace-pre-wrap break-words">
-            {message.content}
-            {isStreaming && (
-              <span className="inline-block w-1 h-3.5 bg-current ml-0.5 animate-pulse" />
-            )}
-          </div>
+          {message.content}
+          {isStreaming && (
+            <span className="inline-block w-1 h-3.5 bg-current ml-0.5 animate-pulse" />
+          )}
         </div>
         {message.places && message.places.length > 0 && (
-          <div className="mt-2 space-y-2">
+          <div className="mt-2 space-y-2 w-full">
             {message.places.map((place) => (
               <ChatPlaceCardInline
                 key={place.googlePlaceId}
