@@ -8,13 +8,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, List as ListIcon, Search, Instagram } from "lucide-react";
+import { Plus, List as ListIcon, Search } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { AppShell, PageHeader } from "@/components/layout";
 import { ListCard } from "@/components/list-card";
-import { InstagramImportDialog } from "@/components/instagram-import-dialog";
 
 interface ListPlace {
   id: string;
@@ -50,7 +49,6 @@ interface ListData {
 export default function ListsPage() {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [instagramImportOpen, setInstagramImportOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -121,19 +119,6 @@ export default function ListsPage() {
   return (
     <AppShell user={user}>
       <PageHeader title="Lists">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setInstagramImportOpen(true)}
-          title="Import from Instagram"
-          data-testid="button-instagram-import"
-        >
-          <Instagram className="h-4 w-4" />
-        </Button>
-        <InstagramImportDialog
-          open={instagramImportOpen}
-          onOpenChange={setInstagramImportOpen}
-        />
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button size="sm" data-testid="button-create-list">
