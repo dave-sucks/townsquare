@@ -211,7 +211,7 @@ export function MapSettingsPopover({
       {isExpanded && (
         <div className={cn(
           "absolute z-50 w-[300px] bg-background/95 backdrop-blur-xl border rounded-lg shadow-lg animate-in slide-in-from-bottom-2 duration-200",
-          trigger ? "top-[calc(100%+8px)] right-0" : "bottom-[calc(100%+8px)] right-0"
+          typeof trigger !== 'undefined' ? "top-[calc(100%+8px)] right-0" : "bottom-[calc(100%+8px)] right-0"
         )}>
           <div className="flex items-center justify-between p-3 border-b">
             <h3 className="font-medium text-sm">Map details</h3>
@@ -316,7 +316,7 @@ export function MapSettingsPopover({
         </div>
       )}
 
-      {trigger ? (
+      {typeof trigger !== 'undefined' ? (
         <div onClick={() => setIsExpanded(!isExpanded)}>
           {trigger}
         </div>
