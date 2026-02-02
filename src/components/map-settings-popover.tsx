@@ -223,7 +223,7 @@ export function MapSettingsPopover({
 
           <div className="p-3 space-y-4">
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground uppercase tracking-wide">Map Style</Label>
+              <Label className="text-xs text-muted-foreground uppercase tracking-wide">Map Stsssssyle</Label>
               <div className="grid grid-cols-4 gap-2">
                 {MAP_STYLES.map((style) => (
                   <button
