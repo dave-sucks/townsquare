@@ -612,12 +612,23 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
       photoRefs: place.photoRef ? [place.photoRef] : null,
     };
 
+    const isSaved = !!savedPlace;
+    const hasBeen = savedPlace?.hasBeen ?? false;
+    const rating = savedPlace?.rating;
+    const lists = savedPlace?.lists || [];
+
+    const RATING_COLORS: Record<number, string> = {
+      1: "bg-red-500",
+      2: "bg-yellow-500",
+      3: "bg-green-500",
+    };
+
     return (
       <Card
         ref={ref}
         onClick={onClick}
         className={cn(
-          "overflow-hidden cursor-pointer transition-all",
+          "group overflow-hidden cursor-pointer transition-all",
           isSelected && "ring-2 ring-primary"
         )}
       >
@@ -646,12 +657,40 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-0.5 truncate flex items-center gap-0.5">
-                  <MapPin className="h-2.5 w-2.5 shrink-0" />
-                  {place.formattedAddress.split(",")[0]}
-                </p>
+                {isSaved && (
+                  <div className="flex items-center gap-1 mt-0.5 text-[10px]">
+                    <Bookmark className="h-2.5 w-2.5 fill-current flex-shrink-0" />
+                    {hasBeen ? (
+                      <>
+                        <span 
+                          className={cn(
+                            "inline-block w-1.5 h-1.5 rounded-full flex-shrink-0",
+                            rating ? RATING_COLORS[rating] : "bg-green-500"
+                          )} 
+                        />
+                        <span className="text-foreground">Been</span>
+                      </>
+                    ) : lists.length > 0 ? (
+                      <span className="text-muted-foreground">
+                        {lists.map(l => l.name).join(" · ")}
+                      </span>
+                    ) : null}
+                  </div>
+                )}
+                {!isSaved && (
+                  <p className="text-[10px] text-muted-foreground mt-0.5 truncate flex items-center gap-0.5">
+                    <MapPin className="h-2.5 w-2.5 shrink-0" />
+                    {place.formattedAddress.split(",")[0]}
+                  </p>
+                )}
               </div>
-              <div onClick={(e) => e.stopPropagation()}>
+              <div 
+                onClick={(e) => e.stopPropagation()}
+                className={cn(
+                  "flex-shrink-0",
+                  !isSaved && "invisible group-hover:visible"
+                )}
+              >
                 <SaveToListDropdown
                   place={placeForDropdown}
                   savedPlace={savedPlace ? {
@@ -662,7 +701,7 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
                   } : undefined}
                   listsContainingPlace={savedPlace?.lists?.map(l => l.id) || []}
                   showLabel={false}
-                  variant="outline"
+                  variant={isSaved ? "ghost" : "outline"}
                   size="icon"
                 />
               </div>

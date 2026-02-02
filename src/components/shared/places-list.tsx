@@ -2,7 +2,7 @@
 
 import { forwardRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin } from "lucide-react";
+import { MapPin, Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SaveToListDropdown } from "./save-to-list-dropdown";
 
@@ -112,7 +112,8 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
             </h3>
             
             {showStatus && (
-              <div className="flex items-center gap-1 text-xs mt-0.5">
+              <div className="flex items-center gap-1.5 text-xs mt-0.5">
+                <Bookmark className="h-3 w-3 fill-current flex-shrink-0" />
                 {savedPlace.hasBeen ? (
                   <>
                     <span 
@@ -122,20 +123,12 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
                       )} 
                     />
                     <span className="text-foreground">Been</span>
-                    {savedPlace.lists && savedPlace.lists.length > 0 && (
-                      <span className="text-muted-foreground">
-                        · {savedPlace.lists.map(l => l.name).join(" · ")}
-                      </span>
-                    )}
                   </>
-                ) : (
+                ) : savedPlace.lists && savedPlace.lists.length > 0 ? (
                   <span className="text-muted-foreground">
-                    {savedPlace.lists && savedPlace.lists.length > 0 
-                      ? savedPlace.lists.map(l => l.name).join(" · ")
-                      : "Saved"
-                    }
+                    {savedPlace.lists.map(l => l.name).join(" · ")}
                   </span>
-                )}
+                ) : null}
               </div>
             )}
             
