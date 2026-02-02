@@ -51,6 +51,8 @@ model Place {
   googlePlaceId    String       @unique(map: "places_google_place_id_unique") @map("google_place_id")
   name             String
   formattedAddress String       @map("formatted_address")
+  neighborhood     String?
+  locality         String?
   lat              Float        @db.Real
   lng              Float        @db.Real
   primaryType      String?      @map("primary_type")
