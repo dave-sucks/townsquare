@@ -12,6 +12,8 @@ interface Place {
   googlePlaceId: string;
   name: string;
   formattedAddress: string;
+  neighborhood: string | null;
+  locality: string | null;
   lat: number;
   lng: number;
   primaryType: string | null;
@@ -68,7 +70,9 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
       : null;
     
     const placeType = formatPlaceType(savedPlace.place.primaryType);
-    const address = savedPlace.place.formattedAddress.split(",")[0];
+    const locationDisplay = savedPlace.place.neighborhood 
+      || savedPlace.place.locality 
+      || savedPlace.place.formattedAddress.split(",")[0];
 
     return (
       <div
@@ -141,7 +145,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
               )}
             </div>
             <p className="text-xs text-muted-foreground truncate mt-0.5">
-              {address}
+              {locationDisplay}
             </p>
           </div>
         </div>
