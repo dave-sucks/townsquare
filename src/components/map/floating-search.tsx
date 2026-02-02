@@ -9,6 +9,7 @@ import { Search, Heart, CheckCircle, X, Settings } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 interface PlacePrediction {
   place_id: string;
