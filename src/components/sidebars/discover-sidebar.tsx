@@ -15,7 +15,6 @@ import { ChevronDown, Check, SlidersHorizontal, X, Car, TrainFront } from "lucid
 import { apiRequest } from "@/lib/query-client";
 import { PlacesList } from "@/components/shared/places-list";
 import { PlaceDetailPanel } from "@/components/place-detail-panel";
-import { MapSettingsPopover } from "@/components/map-settings-popover";
 import { useMapSettings } from "@/hooks/use-map-settings";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -306,30 +305,14 @@ export function DiscoverSidebar({
       <div className="flex items-center gap-2 p-3 border-b">
         <SidebarTrigger data-testid="button-sidebar-toggle" />
         <h1 className="font-semibold text-sm flex-1">Places</h1>
-        {isMobile ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSettingsOpen(!settingsOpen)}
-            data-testid="button-map-settings-trigger"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-          </Button>
-        ) : (
-          <MapSettingsPopover
-            currentStyle={mapSettings.style}
-            onStyleChange={mapSettings.setStyle}
-            showTraffic={mapSettings.showTraffic}
-            onTrafficChange={mapSettings.setShowTraffic}
-            showTransit={mapSettings.showTransit}
-            onTransitChange={mapSettings.setShowTransit}
-            radius={mapSettings.radius}
-            onRadiusChange={mapSettings.setRadius}
-            labelDensity={mapSettings.labelDensity}
-            onLabelDensityChange={mapSettings.setLabelDensity}
-            inline
-          />
-        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setSettingsOpen(!settingsOpen)}
+          data-testid="button-map-settings-trigger"
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+        </Button>
       </div>
 
       <div className="flex gap-2 p-3 border-b">
