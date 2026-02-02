@@ -105,3 +105,18 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 - PlaceCard displays neighborhood instead of full address (fallback: locality → first address part)
 - Backfill script at `scripts/backfill-neighborhoods.ts` updates existing places
 - Note: Instagram-imported places without valid Google Place IDs cannot be backfilled
+
+### AI Chat with Place Search (February 2026)
+- **Chat Interface**: New `/chat` page with conversation-based AI assistant for place discovery
+- **OpenAI Function Calling**: Uses gpt-5-mini with `search_places` tool for natural language place queries
+- **Place Cards in Chat**: Assistant messages can include structured place cards with photos, ratings, save buttons
+- **Database Models**:
+  - `Conversation` model: stores user chat sessions with title
+  - `ChatMessage` model: stores messages with role, content, and `places` JSON field for embedded place data
+- **Streaming with SSE**: Real-time streaming response with proper buffering for partial JSON handling
+- **System Prompt Context**: AI has access to user's saved places (up to 50) and lists (up to 20) for personalized recommendations
+- **Save from Chat**: Users can save places directly from chat cards to their saved places
+- **Key Components**:
+  - `ChatPage` (`src/components/pages/chat-page.tsx`): Main chat interface with conversation management
+  - `ChatPlaceCard` (`src/components/chat-place-card.tsx`): Inline place cards with save functionality
+  - Messages API (`src/app/api/conversations/[id]/messages/route.ts`): SSE endpoint with OpenAI function calling
