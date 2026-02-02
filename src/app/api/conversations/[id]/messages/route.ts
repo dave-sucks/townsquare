@@ -10,29 +10,37 @@ async function buildSystemPrompt(userId: string): Promise<string> {
       include: {
         place: true,
       },
-      take: 100,
+      take: 50,
+      orderBy: { createdAt: "desc" },
     }),
     prisma.list.findMany({
       where: { userId },
       include: {
         listPlaces: {
           include: { place: true },
+          take: 5,
+        },
+        _count: {
+          select: { listPlaces: true },
         },
       },
-      take: 50,
+      take: 20,
     }),
   ]);
 
   const placesContext = savedPlaces.map(sp => {
     const ratingText = sp.hasBeen 
-      ? sp.rating === 1 ? "rated bad" : sp.rating === 2 ? "rated okay" : "rated great"
-      : "want to go";
-    return `- ${sp.place.name} (${sp.place.neighborhood || sp.place.locality || sp.place.formattedAddress}) - ${sp.place.primaryType || "place"}, ${ratingText}`;
+      ? sp.rating === 1 ? "bad" : sp.rating === 2 ? "okay" : "great"
+      : "want";
+    const location = sp.place.neighborhood || sp.place.locality || "";
+    return `- ${sp.place.name}${location ? ` (${location})` : ""}: ${sp.place.primaryType || "place"}, ${ratingText}`;
   }).join("\n");
 
   const listsContext = lists.map(list => {
-    const places = list.listPlaces.map(lp => lp.place.name).join(", ");
-    return `- ${list.name}: ${places || "empty"}`;
+    const placeCount = list._count.listPlaces;
+    const samplePlaces = list.listPlaces.slice(0, 3).map(lp => lp.place.name).join(", ");
+    const extra = placeCount > 3 ? ` +${placeCount - 3} more` : "";
+    return `- ${list.name} (${placeCount}): ${samplePlaces || "empty"}${extra}`;
   }).join("\n");
 
   return `You are a helpful assistant for a place-saving and discovery app. You help users find places, manage their saved places, and discover new spots to visit.

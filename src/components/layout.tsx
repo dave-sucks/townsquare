@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MapPin, Users, List, LogOut, ChevronsUpDown, Activity } from "lucide-react";
+import { MapPin, Users, List, LogOut, ChevronsUpDown, Activity, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarThemeToggle } from "@/components/theme-toggle";
 
@@ -47,6 +47,7 @@ interface User {
 
 const NAV_ITEMS = [
   { href: "/", label: "Map", icon: MapPin },
+  { href: "/chat", label: "Chat", icon: MessageCircle },
   { href: "/home", label: "Activity", icon: Activity },
   { href: "/people", label: "People", icon: Users },
   { href: "/lists", label: "Lists", icon: List },

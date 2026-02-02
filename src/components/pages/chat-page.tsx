@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { toast } from "sonner";
 
 interface UserData {
   id: string;
@@ -147,6 +148,12 @@ export function ChatPage({ user }: { user: UserData }) {
           if (!line.startsWith("data: ")) continue;
           try {
             const data = JSON.parse(line.slice(6));
+            if (data.error) {
+              toast.error("Failed to get response. Please try again.");
+              setStreamingContent("");
+              setIsStreaming(false);
+              return;
+            }
             if (data.content) {
               fullContent += data.content;
               setStreamingContent(fullContent);
@@ -168,6 +175,7 @@ export function ChatPage({ user }: { user: UserData }) {
       }
     } catch (error) {
       console.error("Send message error:", error);
+      toast.error("Failed to send message. Please try again.");
     } finally {
       setIsStreaming(false);
     }
