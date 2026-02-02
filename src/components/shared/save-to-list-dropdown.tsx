@@ -56,9 +56,9 @@ interface SaveToListDropdownProps {
 }
 
 const RATING_OPTIONS = [
-  { value: 1, label: "Bad", color: "bg-red-500", hoverColor: "hover:bg-red-400", activeColor: "bg-red-600" },
-  { value: 2, label: "Okay", color: "bg-yellow-500", hoverColor: "hover:bg-yellow-400", activeColor: "bg-yellow-600" },
-  { value: 3, label: "Great", color: "bg-green-500", hoverColor: "hover:bg-green-400", activeColor: "bg-green-600" },
+  { value: 1, label: "Bad", color: "bg-red-500" },
+  { value: 2, label: "Okay", color: "bg-yellow-500" },
+  { value: 3, label: "Great", color: "bg-green-500" },
 ];
 
 export function SaveToListDropdown({
@@ -273,11 +273,12 @@ export function SaveToListDropdown({
                     onClick={() => handleRatingSelect(option.value)}
                     disabled={!isSaved && savePlaceMutation.isPending}
                     className={cn(
-                      "w-10 h-10 rounded-full transition-all flex items-center justify-center",
+                      "w-10 h-10 rounded-full transition-opacity flex items-center justify-center",
+                      option.color,
                       isSelected 
-                        ? cn(option.activeColor, "ring-2 ring-offset-2 ring-offset-background") 
-                        : cn(option.color, option.hoverColor, "opacity-60 hover:opacity-100"),
-                      "disabled:opacity-50"
+                        ? "ring-2 ring-offset-2 ring-offset-background opacity-100" 
+                        : "opacity-50 hover:opacity-80",
+                      "disabled:opacity-30"
                     )}
                     title={option.label}
                     data-testid={`rating-button-${option.value}`}
