@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=place_id,name,formatted_address,geometry,types,price_level,photos&key=${apiKey}`
+      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=place_id,name,formatted_address,address_components,geometry,types,price_level,photos&key=${apiKey}`
     );
 
     const data = await response.json();
@@ -30,11 +30,34 @@ export async function GET(request: NextRequest) {
     }
 
     const result = data.result;
+    
+    const addressComponents = result.address_components || [];
+    let neighborhood: string | null = null;
+    let locality: string | null = null;
+    
+    for (const component of addressComponents) {
+      const types = component.types || [];
+      if (types.includes("neighborhood") && !neighborhood) {
+        neighborhood = component.long_name;
+      }
+      if (types.includes("sublocality_level_1") && !neighborhood) {
+        neighborhood = component.long_name;
+      }
+      if (types.includes("sublocality") && !neighborhood) {
+        neighborhood = component.long_name;
+      }
+      if (types.includes("locality") && !locality) {
+        locality = component.long_name;
+      }
+    }
+    
     return NextResponse.json({
       place: {
         googlePlaceId: result.place_id,
         name: result.name,
         formattedAddress: result.formatted_address,
+        neighborhood,
+        locality,
         lat: result.geometry.location.lat,
         lng: result.geometry.location.lng,
         types: result.types || [],

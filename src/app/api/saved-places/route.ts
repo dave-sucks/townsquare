@@ -38,6 +38,8 @@ export async function GET() {
         googlePlaceId: sp.place.googlePlaceId,
         name: sp.place.name,
         formattedAddress: sp.place.formattedAddress,
+        neighborhood: sp.place.neighborhood,
+        locality: sp.place.locality,
         lat: sp.place.lat,
         lng: sp.place.lng,
         primaryType: sp.place.primaryType,
@@ -63,7 +65,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { googlePlaceId, name, formattedAddress, lat, lng, primaryType, types, priceLevel, photoRefs, hasBeen, rating  } = body;
+    const { googlePlaceId, name, formattedAddress, neighborhood, locality, lat, lng, primaryType, types, priceLevel, photoRefs, hasBeen, rating  } = body;
 
     if (!googlePlaceId || !name || !formattedAddress || lat === undefined || lng === undefined) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -83,12 +85,22 @@ export async function POST(request: NextRequest) {
           googlePlaceId,
           name,
           formattedAddress,
+          neighborhood: neighborhood || null,
+          locality: locality || null,
           lat,
           lng,
           primaryType: primaryType || null,
           types: types || null,
           priceLevel: priceLevel || null,
           photoRefs: photoRefs || null,
+        },
+      });
+    } else if (!place.neighborhood && (neighborhood || locality)) {
+      place = await prisma.place.update({
+        where: { id: place.id },
+        data: {
+          neighborhood: neighborhood || null,
+          locality: locality || null,
         },
       });
     }
