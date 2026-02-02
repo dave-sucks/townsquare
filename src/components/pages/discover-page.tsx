@@ -4,7 +4,6 @@ import { useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { MapLayout } from "@/components/map/map-layout";
 import { DiscoverSidebar } from "@/components/sidebars/discover-sidebar";
-import { PlaceDetailsSheet } from "@/components/place-details-sheet";
 import { AddToListDialog } from "@/components/add-to-list-dialog";
 import { ReviewDialog } from "@/components/review-dialog";
 import { queryClient, apiRequest } from "@/lib/query-client";
@@ -56,7 +55,7 @@ interface ListWithPlaces {
 
 export function DiscoverPage({ user }: { user: UserData }) {
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [viewingPlaceId, setViewingPlaceId] = useState<string | null>(null);
   const [addToListDialogOpen, setAddToListDialogOpen] = useState(false);
   const [addToListPlaceId, setAddToListPlaceId] = useState<string | null>(null);
   const [addToListPlaceName, setAddToListPlaceName] = useState("");
@@ -122,19 +121,35 @@ export function DiscoverPage({ user }: { user: UserData }) {
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       if (selectedPlaceId === deletedId) {
         setSelectedPlaceId(null);
-        setSheetOpen(false);
+        setViewingPlaceId(null);
       }
       toast.success("Place removed!");
     },
     onError: (error: Error) => toast.error(error.message || "Failed to remove place"),
   });
 
-  const selectedPlace = selectedPlaceId ? filteredPlaces.find(sp => sp.id === selectedPlaceId) : null;
-
   const handlePlaceSelect = useCallback((savedPlaceId: string) => {
     setSelectedPlaceId(savedPlaceId);
-    setSheetOpen(true);
+    setViewingPlaceId(savedPlaceId);
   }, []);
+
+  const handleViewPlace = useCallback((savedPlaceId: string | null) => {
+    setViewingPlaceId(savedPlaceId);
+    if (savedPlaceId) {
+      setSelectedPlaceId(savedPlaceId);
+    }
+  }, []);
+
+  const handleToggleStatus = useCallback((savedPlace: SavedPlace) => {
+    updateStatusMutation.mutate({
+      id: savedPlace.id,
+      status: savedPlace.status === "WANT" ? "BEEN" : "WANT",
+    });
+  }, [updateStatusMutation]);
+
+  const handleDeletePlace = useCallback((savedPlaceId: string) => {
+    deletePlaceMutation.mutate(savedPlaceId);
+  }, [deletePlaceMutation]);
 
   const handleStatusFilterChange = useCallback((value: "all" | "want" | "been") => {
     setStatusFilter(value);
@@ -143,10 +158,10 @@ export function DiscoverPage({ user }: { user: UserData }) {
       if (willBeFiltered) {
         if (value === "want" && willBeFiltered.status !== "WANT") {
           setSelectedPlaceId(null);
-          setSheetOpen(false);
+          setViewingPlaceId(null);
         } else if (value === "been" && willBeFiltered.status !== "BEEN") {
           setSelectedPlaceId(null);
-          setSheetOpen(false);
+          setViewingPlaceId(null);
         }
       }
     }
@@ -176,37 +191,20 @@ export function DiscoverPage({ user }: { user: UserData }) {
       listFilter={listFilter}
       onStatusFilterChange={handleStatusFilterChange}
       onListFilterChange={handleListFilterChange}
+      viewingPlaceId={viewingPlaceId}
+      onViewPlace={handleViewPlace}
+      reviewsByPlaceId={reviewsByPlaceId}
+      onToggleStatus={handleToggleStatus}
+      onDeletePlace={handleDeletePlace}
+      onAddToList={handleAddToList}
+      onAddReview={handleAddReview}
+      isUpdating={updateStatusMutation.isPending}
+      isDeleting={deletePlaceMutation.isPending}
     />
   );
 
-  const sheet = (
+  const dialogs = (
     <>
-      <PlaceDetailsSheet
-        savedPlace={selectedPlace || null}
-        myReview={selectedPlace ? reviewsByPlaceId.get(selectedPlace.placeId) : null}
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        onToggleStatus={() => {
-          if (selectedPlace) {
-            updateStatusMutation.mutate({
-              id: selectedPlace.id,
-              status: selectedPlace.status === "WANT" ? "BEEN" : "WANT",
-            });
-          }
-        }}
-        onDelete={() => {
-          if (selectedPlace) deletePlaceMutation.mutate(selectedPlace.id);
-        }}
-        onAddToList={() => {
-          if (selectedPlace) handleAddToList(selectedPlace.placeId, selectedPlace.place.name);
-        }}
-        onAddReview={() => {
-          if (selectedPlace) handleAddReview(selectedPlace.placeId, selectedPlace.place.name);
-        }}
-        isUpdating={updateStatusMutation.isPending}
-        isDeleting={deletePlaceMutation.isPending}
-      />
-
       {addToListPlaceId && (
         <AddToListDialog
           open={addToListDialogOpen}
@@ -235,7 +233,7 @@ export function DiscoverPage({ user }: { user: UserData }) {
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={handlePlaceSelect}
       showSearch={true}
-      sheetComponent={sheet}
+      sheetComponent={dialogs}
     >
       {sidebar}
     </MapLayout>

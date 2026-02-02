@@ -1,7 +1,6 @@
 "use client";
 
 import { forwardRef, useState } from "react";
-import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Heart, CheckCircle, MapPin, Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -42,6 +41,7 @@ interface PlaceCardProps {
   onSave?: (status: "WANT" | "BEEN") => void;
   isSaving?: boolean;
   actionButton?: React.ReactNode;
+  onClick?: () => void;
 }
 
 function formatPlaceType(type: string | null): string {
@@ -52,7 +52,7 @@ function formatPlaceType(type: string | null): string {
 }
 
 export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
-  ({ savedPlace, isSelected, showStatus = true, onSave, isSaving, actionButton }, ref) => {
+  ({ savedPlace, isSelected, showStatus = true, onSave, isSaving, actionButton, onClick }, ref) => {
     const [popoverOpen, setPopoverOpen] = useState(false);
     
     const photoRef = savedPlace.place.photoRefs?.[0];
@@ -71,15 +71,23 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
     return (
       <div
         ref={ref}
+        role="button"
+        tabIndex={0}
         className={cn(
-          "group flex items-center gap-3 p-1 rounded-md transition-colors",
+          "group flex items-center gap-3 p-1 rounded-md transition-colors cursor-pointer",
           isSelected ? "bg-accent" : "hover:bg-accent"
         )}
         data-testid={`place-card-${savedPlace.id}`}
         data-selected={isSelected}
+        onClick={onClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick?.();
+          }
+        }}
       >
-        <Link
-          href={`/places/${savedPlace.place.googlePlaceId}`}
+        <div
           data-testid={`place-row-${savedPlace.id}`}
           className="flex items-center gap-3 flex-1 min-w-0"
         >
@@ -115,7 +123,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
               {address}
             </p>
           </div>
-        </Link>
+        </div>
         
         <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
           <PopoverTrigger asChild>
@@ -229,6 +237,7 @@ export function PlacesList({
           onSave={onSavePlace ? (status) => onSavePlace(savedPlace, status) : undefined}
           isSaving={savingPlaceId === savedPlace.id}
           actionButton={renderAction?.(savedPlace)}
+          onClick={onPlaceSelect ? () => onPlaceSelect(savedPlace.id) : undefined}
         />
       ))}
     </div>

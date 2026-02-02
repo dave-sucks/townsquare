@@ -14,6 +14,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ChevronDown, Check, SlidersHorizontal, X, Car, TrainFront } from "lucide-react";
 import { apiRequest } from "@/lib/query-client";
 import { PlacesList } from "@/components/shared/places-list";
+import { PlaceDetailPanel } from "@/components/place-detail-panel";
 import { MapSettingsPopover } from "@/components/map-settings-popover";
 import { useMapSettings } from "@/hooks/use-map-settings";
 import { Switch } from "@/components/ui/switch";
@@ -120,6 +121,12 @@ interface ListData {
   _count: { listPlaces: number };
 }
 
+interface Review {
+  id: string;
+  rating: number;
+  note: string | null;
+}
+
 interface DiscoverSidebarProps extends Partial<SidebarInjectedProps> {
   places: SavedPlace[];
   isLoading: boolean;
@@ -127,6 +134,15 @@ interface DiscoverSidebarProps extends Partial<SidebarInjectedProps> {
   listFilter: string;
   onStatusFilterChange: (value: "all" | "want" | "been") => void;
   onListFilterChange: (listId: string) => void;
+  viewingPlaceId: string | null;
+  onViewPlace: (savedPlaceId: string | null) => void;
+  reviewsByPlaceId?: Map<string, Review>;
+  onToggleStatus?: (savedPlace: SavedPlace) => void;
+  onDeletePlace?: (savedPlaceId: string) => void;
+  onAddToList?: (placeId: string, placeName: string) => void;
+  onAddReview?: (placeId: string, placeName: string) => void;
+  isUpdating?: boolean;
+  isDeleting?: boolean;
 }
 
 const statusOptions = [
@@ -145,6 +161,15 @@ export function DiscoverSidebar({
   listFilter,
   onStatusFilterChange,
   onListFilterChange,
+  viewingPlaceId,
+  onViewPlace,
+  reviewsByPlaceId,
+  onToggleStatus,
+  onDeletePlace,
+  onAddToList,
+  onAddReview,
+  isUpdating,
+  isDeleting,
 }: DiscoverSidebarProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -177,6 +202,30 @@ export function DiscoverSidebar({
     const index = Math.round((value[0] / 100) * (RADIUS_STEPS.length - 1));
     mapSettings.setRadius(RADIUS_STEPS[index]);
   };
+
+  const viewingPlace = viewingPlaceId ? places.find((p) => p.id === viewingPlaceId) : null;
+  const viewingReview = viewingPlace ? reviewsByPlaceId?.get(viewingPlace.placeId) : null;
+
+  const handlePlaceClick = (savedPlaceId: string) => {
+    onViewPlace(savedPlaceId);
+    onPlaceSelect?.(savedPlaceId);
+  };
+
+  if (viewingPlace) {
+    return (
+      <PlaceDetailPanel
+        savedPlace={viewingPlace}
+        myReview={viewingReview}
+        onBack={() => onViewPlace(null)}
+        onToggleStatus={() => onToggleStatus?.(viewingPlace)}
+        onDelete={() => onDeletePlace?.(viewingPlace.id)}
+        onAddToList={() => onAddToList?.(viewingPlace.placeId, viewingPlace.place.name)}
+        onAddReview={() => onAddReview?.(viewingPlace.placeId, viewingPlace.place.name)}
+        isUpdating={isUpdating}
+        isDeleting={isDeleting}
+      />
+    );
+  }
 
   if (isMobile && settingsOpen) {
     return (
@@ -349,7 +398,7 @@ export function DiscoverSidebar({
           places={places}
           isLoading={isLoading}
           selectedPlaceId={selectedPlaceId || null}
-          onPlaceSelect={onPlaceSelect || (() => {})}
+          onPlaceSelect={handlePlaceClick}
           placeRowRefs={placeRowRefs}
           showStatus={true}
         />
