@@ -2,8 +2,7 @@
 
 import { forwardRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, Bookmark } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SaveToListDropdown } from "./save-to-list-dropdown";
 
@@ -108,45 +107,45 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
           </div>
 
           <div className="flex-1 min-w-0 overflow-hidden">
-            <div className="flex items-center gap-2">
-              <h3 className="font-medium text-sm truncate flex-1">
-                {savedPlace.place.name}
-              </h3>
-              {showStatus && savedPlace.hasBeen && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
-                  <span 
-                    className={cn(
-                      "inline-block w-2 h-2 rounded-full",
-                      savedPlace.rating ? RATING_COLORS[savedPlace.rating] : "bg-green-500"
-                    )} 
-                  />
-                  <span>Been</span>
-                </div>
-              )}
+            <h3 className="font-medium text-sm truncate">
+              {savedPlace.place.name}
+            </h3>
+            
+            {showStatus && (
+              <div className="flex items-center gap-1 text-xs mt-0.5">
+                {savedPlace.hasBeen ? (
+                  <>
+                    <span 
+                      className={cn(
+                        "inline-block w-2 h-2 rounded-full flex-shrink-0",
+                        savedPlace.rating ? RATING_COLORS[savedPlace.rating] : "bg-green-500"
+                      )} 
+                    />
+                    <span className="text-foreground">Been</span>
+                    {savedPlace.lists && savedPlace.lists.length > 0 && (
+                      <span className="text-muted-foreground">
+                        · {savedPlace.lists.map(l => l.name).join(" · ")}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">
+                    {savedPlace.lists && savedPlace.lists.length > 0 
+                      ? savedPlace.lists.map(l => l.name).join(" · ")
+                      : "Saved"
+                    }
+                  </span>
+                )}
+              </div>
+            )}
+            
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+              <MapPin className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">
+                {locationDisplay}
+                {placeType && <> — {placeType}</>}
+              </span>
             </div>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5 flex-wrap">
-              {placeType && <span className="truncate">{placeType}</span>}
-              {showStatus && !savedPlace.hasBeen && savedPlace.lists && savedPlace.lists.length > 0 && (
-                <>
-                  {placeType && <span className="mx-0.5">·</span>}
-                  {savedPlace.lists.map((list, idx) => (
-                    <Badge key={list.id} variant="outline" className="text-xs px-1.5 py-0 h-5">
-                      {list.name}
-                    </Badge>
-                  ))}
-                </>
-              )}
-              {showStatus && !savedPlace.hasBeen && (!savedPlace.lists || savedPlace.lists.length === 0) && (
-                <>
-                  {placeType && <span className="mx-0.5">·</span>}
-                  <Bookmark className="h-3 w-3" />
-                  <span>Saved</span>
-                </>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground truncate mt-0.5">
-              {locationDisplay}
-            </p>
           </div>
         </div>
         
