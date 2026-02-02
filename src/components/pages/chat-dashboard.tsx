@@ -445,29 +445,30 @@ export function ChatDashboard({ user }: { user: UserData }) {
             </div>
           </ScrollArea>
 
-          <div className="border-t p-3">
-            <div className="relative">
+          <div className="p-4 pt-0">
+            <div className="relative group">
+              <div className="absolute -inset-2 bg-gradient-to-b from-transparent to-background/20 rounded-2xl pointer-events-none" />
               <Textarea
                 ref={inputRef}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask about places..."
-                className="min-h-[44px] max-h-[120px] resize-none pr-10 text-sm"
+                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-sm bg-background/80 backdrop-blur-md border shadow-xl rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
                 disabled={isStreaming}
                 data-testid="input-chat-message"
               />
               <Button
                 size="sm"
-                className="absolute right-1.5 bottom-1.5"
+                className="absolute right-2 bottom-2 h-8 w-8 rounded-xl shadow-sm transition-transform active:scale-95"
                 onClick={sendMessage}
                 disabled={!inputValue.trim() || isStreaming}
                 data-testid="button-send-message"
               >
                 {isStreaming ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Send className="h-3.5 w-3.5" />
+                  <Send className="h-4 w-4" />
                 )}
               </Button>
             </div>
@@ -524,21 +525,12 @@ function MessageBubble({
 
   return (
     <div className={cn("flex flex-col gap-1", isUser ? "items-end" : "items-start")}>
-      {!isUser && (
-        <div className="flex items-center gap-2 mb-1">
-          <Avatar className="h-6 w-6 shrink-0">
-            <AvatarFallback className="bg-primary/10 text-primary text-[10px]">
-              <Bot className="h-3 w-3" />
-            </AvatarFallback>
-          </Avatar>
-        </div>
-      )}
       <div className={cn("flex flex-col", isUser ? "items-end" : "items-start", "max-w-[90%]")}>
         <div className={cn(
-          "inline-block px-3 py-2 text-sm whitespace-pre-wrap break-words",
+          "text-sm whitespace-pre-wrap break-words",
           isUser 
-            ? "bg-primary text-primary-foreground rounded-2xl rounded-br-none" 
-            : "bg-muted rounded-2xl rounded-bl-none"
+            ? "bg-primary text-primary-foreground px-3 py-2 rounded-lg rounded-br-none" 
+            : "text-foreground py-1"
         )}>
           {message.content}
           {isStreaming && (
