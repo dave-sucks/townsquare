@@ -32,7 +32,7 @@ interface ActivityList {
 interface Activity {
   id: string;
   actorId: string;
-  type: "PLACE_SAVED_WANT" | "PLACE_MARKED_BEEN" | "PLACE_ADDED_TO_LIST" | "LIST_CREATED" | "REVIEW_CREATED";
+  type: "PLACE_SAVED" | "PLACE_MARKED_BEEN" | "PLACE_ADDED_TO_LIST" | "LIST_CREATED" | "REVIEW_CREATED";
   placeId: string | null;
   listId: string | null;
   metadata: { placeName?: string; listName?: string; rating?: number; note?: string; review_preview?: string } | null;
@@ -41,6 +41,12 @@ interface Activity {
   place: ActivityPlace | null;
   list: ActivityList | null;
 }
+
+const RATING_COLORS: Record<number, string> = {
+  1: "bg-red-500",
+  2: "bg-yellow-500", 
+  3: "bg-green-500",
+};
 
 function formatTimeAgo(dateString: string) {
   const date = new Date(dateString);
@@ -88,7 +94,7 @@ export function FeedPost({ activity }: FeedPostProps) {
             </Avatar>
           </Link>
           <div className="flex-1 min-w-0">
-            {/* Name @ Place */}
+            {/* Name @ Place + Action */}
             <div className="flex items-center gap-1 flex-wrap">
               <Link href={actorLink} className="font-medium hover:underline" data-testid={`feed-author-${activity.id}`}>
                 {actorName}
@@ -108,6 +114,35 @@ export function FeedPost({ activity }: FeedPostProps) {
                     <span className="font-medium">{placeName}</span>
                   )}
                 </>
+              )}
+              {/* Action indicator */}
+              {activity.type === "PLACE_MARKED_BEEN" && (
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <span>·</span>
+                  <span 
+                    className={`inline-block w-2.5 h-2.5 rounded-full ${rating ? RATING_COLORS[rating] : "bg-green-500"}`} 
+                  />
+                  <span>Been</span>
+                </span>
+              )}
+              {activity.type === "PLACE_SAVED" && (
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <span>·</span>
+                  <Bookmark className="h-3 w-3" />
+                  <span>Saved</span>
+                </span>
+              )}
+              {activity.type === "PLACE_ADDED_TO_LIST" && activity.list && (
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <span>·</span>
+                  <span>added to</span>
+                  <Link 
+                    href={`/lists/${activity.list.id}`} 
+                    className="font-medium hover:underline text-foreground"
+                  >
+                    {activity.list.name}
+                  </Link>
+                </span>
               )}
               {activity.type === "LIST_CREATED" && activity.list && (
                 <>

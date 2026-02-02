@@ -67,7 +67,7 @@ export function DiscoverPage({ user }: { user: UserData }) {
   const [reviewPlaceName, setReviewPlaceName] = useState("");
   
   // Filter state
-  const [statusFilter, setStatusFilter] = useState<"all" | "want" | "been">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "not_visited" | "been">("all");
   const [listFilter, setListFilter] = useState<string>("all");
 
   const { data: savedPlacesData, isLoading } = useQuery<{ savedPlaces: SavedPlace[] }>({
@@ -100,7 +100,7 @@ export function DiscoverPage({ user }: { user: UserData }) {
       if (listFilter !== "all" && !selectedListPlaceIds.includes(sp.placeId)) {
         return false;
       }
-      if (statusFilter === "want") return !sp.hasBeen;
+      if (statusFilter === "not_visited") return !sp.hasBeen;
       if (statusFilter === "been") return sp.hasBeen;
       return true;
     });
@@ -142,12 +142,12 @@ export function DiscoverPage({ user }: { user: UserData }) {
     deletePlaceMutation.mutate(savedPlaceId);
   }, [deletePlaceMutation]);
 
-  const handleStatusFilterChange = useCallback((value: "all" | "want" | "been") => {
+  const handleStatusFilterChange = useCallback((value: "all" | "not_visited" | "been") => {
     setStatusFilter(value);
     if (selectedPlaceId) {
       const willBeFiltered = savedPlaces.find(sp => sp.id === selectedPlaceId);
       if (willBeFiltered) {
-        if (value === "want" && willBeFiltered.hasBeen) {
+        if (value === "not_visited" && willBeFiltered.hasBeen) {
           setSelectedPlaceId(null);
           setViewingPlaceId(null);
           setCurrentView("list");

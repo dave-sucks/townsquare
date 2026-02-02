@@ -62,7 +62,7 @@ interface UserData {
 interface ActivityData {
   id: string;
   actorId: string;
-  type: "PLACE_SAVED_WANT" | "PLACE_MARKED_BEEN" | "PLACE_ADDED_TO_LIST" | "LIST_CREATED" | "REVIEW_CREATED";
+  type: "PLACE_SAVED" | "PLACE_MARKED_BEEN" | "PLACE_ADDED_TO_LIST" | "LIST_CREATED" | "REVIEW_CREATED";
   placeId: string | null;
   listId: string | null;
   metadata: { placeName?: string; listName?: string; rating?: number; note?: string; review_preview?: string } | null;
@@ -103,7 +103,7 @@ interface UserSidebarProps extends Partial<SidebarInjectedProps> {
 
 const statusOptions = [
   { value: "all", label: "All" },
-  { value: "want", label: "Want" },
+  { value: "not_visited", label: "Not visited" },
   { value: "been", label: "Been" },
 ];
 
@@ -197,7 +197,7 @@ export function UserSidebar({
     if (selectedListId !== "all" && !selectedListPlaceIds.includes(sp.placeId)) {
       return false;
     }
-    if (selectedStatusFilter === "want") return !sp.hasBeen;
+    if (selectedStatusFilter === "not_visited") return !sp.hasBeen;
     if (selectedStatusFilter === "been") return sp.hasBeen;
     return true;
   });

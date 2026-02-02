@@ -12,11 +12,43 @@ export async function GET() {
   try {
     const savedPlaces = await prisma.savedPlace.findMany({
       where: { userId: user.id },
-      include: { place: true },
+      include: { 
+        place: {
+          include: {
+            listPlaces: {
+              include: {
+                list: {
+                  select: { id: true, name: true }
+                }
+              },
+              where: {
+                list: { userId: user.id }
+              }
+            }
+          }
+        }
+      },
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ savedPlaces });
+    const formattedPlaces = savedPlaces.map(sp => ({
+      ...sp,
+      place: {
+        id: sp.place.id,
+        googlePlaceId: sp.place.googlePlaceId,
+        name: sp.place.name,
+        formattedAddress: sp.place.formattedAddress,
+        lat: sp.place.lat,
+        lng: sp.place.lng,
+        primaryType: sp.place.primaryType,
+        types: sp.place.types,
+        priceLevel: sp.place.priceLevel,
+        photoRefs: sp.place.photoRefs,
+      },
+      lists: sp.place.listPlaces.map(lp => lp.list),
+    }));
+
+    return NextResponse.json({ savedPlaces: formattedPlaces });
   } catch (error: any) {
     console.error("Get saved places error:", error);
     return NextResponse.json({ error: "Failed to get saved places" }, { status: 500 });

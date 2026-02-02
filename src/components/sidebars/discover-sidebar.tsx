@@ -40,9 +40,9 @@ export type SidebarView = "list" | "settings" | "detail";
 interface DiscoverSidebarProps extends Partial<SidebarInjectedProps> {
   places: SavedPlace[];
   isLoading: boolean;
-  statusFilter: "all" | "want" | "been";
+  statusFilter: "all" | "not_visited" | "been";
   listFilter: string;
-  onStatusFilterChange: (value: "all" | "want" | "been") => void;
+  onStatusFilterChange: (value: "all" | "not_visited" | "been") => void;
   onListFilterChange: (listId: string) => void;
   
   // View state managed by parent

@@ -47,9 +47,9 @@ interface ListData {
 interface PlaceListPanelProps extends Partial<SidebarInjectedProps> {
   places: SavedPlace[];
   isLoading: boolean;
-  statusFilter: "all" | "want" | "been";
+  statusFilter: "all" | "not_visited" | "been";
   listFilter: string;
-  onStatusFilterChange: (value: "all" | "want" | "been") => void;
+  onStatusFilterChange: (value: "all" | "not_visited" | "been") => void;
   onListFilterChange: (listId: string) => void;
   onPlaceClick: (savedPlaceId: string) => void;
   onSettingsClick: () => void;
@@ -57,7 +57,7 @@ interface PlaceListPanelProps extends Partial<SidebarInjectedProps> {
 
 const statusOptions = [
   { value: "all", label: "All" },
-  { value: "want", label: "Want" },
+  { value: "not_visited", label: "Not visited" },
   { value: "been", label: "Been" },
 ] as const;
 

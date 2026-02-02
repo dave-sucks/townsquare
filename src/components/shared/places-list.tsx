@@ -2,7 +2,8 @@
 
 import { forwardRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Heart, CheckCircle, MapPin } from "lucide-react";
+import { MapPin, Bookmark } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { SaveToListDropdown } from "./save-to-list-dropdown";
 
@@ -19,6 +20,11 @@ interface Place {
   photoRefs: string[] | null;
 }
 
+interface ListInfo {
+  id: string;
+  name: string;
+}
+
 interface SavedPlace {
   id: string;
   userId?: string;
@@ -28,7 +34,14 @@ interface SavedPlace {
   visitedAt?: string | null;
   createdAt?: string;
   place: Place;
+  lists?: ListInfo[];
 }
+
+const RATING_COLORS: Record<number, string> = {
+  1: "bg-red-500",
+  2: "bg-yellow-500",
+  3: "bg-green-500",
+};
 
 interface PlaceCardProps {
   savedPlace: SavedPlace;
@@ -94,17 +107,34 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
             <h3 className="font-medium text-sm truncate">
               {savedPlace.place.name}
             </h3>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5 flex-wrap">
               {placeType && <span className="truncate">{placeType}</span>}
-              {showStatus && (
+              {showStatus && savedPlace.hasBeen && (
                 <>
                   {placeType && <span className="mx-0.5">·</span>}
-                  {!savedPlace.hasBeen ? (
-                    <Heart className="h-3 w-3 fill-current text-rose-500" />
+                  <span 
+                    className={cn(
+                      "inline-block w-2.5 h-2.5 rounded-full",
+                      savedPlace.rating ? RATING_COLORS[savedPlace.rating] : "bg-green-500"
+                    )} 
+                  />
+                  <span>Been</span>
+                </>
+              )}
+              {showStatus && !savedPlace.hasBeen && (
+                <>
+                  {placeType && <span className="mx-0.5">·</span>}
+                  <Bookmark className="h-3 w-3" />
+                  {savedPlace.lists && savedPlace.lists.length > 0 ? (
+                    <>
+                      <span className="truncate">{savedPlace.lists[0].name}</span>
+                      {savedPlace.lists.length > 1 && (
+                        <span className="text-muted-foreground">+{savedPlace.lists.length - 1}</span>
+                      )}
+                    </>
                   ) : (
-                    <CheckCircle className="h-3 w-3 text-emerald-500" />
+                    <span>Saved</span>
                   )}
-                  <span>{!savedPlace.hasBeen ? "Want" : "Been"}</span>
                 </>
               )}
             </div>

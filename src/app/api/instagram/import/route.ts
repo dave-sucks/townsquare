@@ -266,17 +266,19 @@ export async function POST(request: NextRequest) {
             },
           },
           update: {
+            hasBeen: true,
             visitedAt: postData.timestamp ? new Date(postData.timestamp) : new Date(),
           },
           create: {
             userId: instagramUser.id,
             placeId: place.id,
-            status: "BEEN",
+            hasBeen: true,
+            rating: 2, // Default to "Okay"
             visitedAt: postData.timestamp ? new Date(postData.timestamp) : new Date(),
           },
         });
 
-        // Step 2: Create/update SavedPlace for the importing user (WANT status)
+        // Step 2: Create/update SavedPlace for the importing user (saved but not visited)
         const savedPlaceForImporter = await tx.savedPlace.upsert({
           where: {
             userId_placeId: {
@@ -288,7 +290,7 @@ export async function POST(request: NextRequest) {
           create: {
             userId: user.id,
             placeId: place.id,
-            status: "WANT",
+            hasBeen: false,
           },
         });
 
@@ -365,7 +367,7 @@ export async function POST(request: NextRequest) {
       if (importerSavedPlaceIsNew) {
         await createActivity({
           actorId: user.id,
-          type: "PLACE_SAVED_WANT",
+          type: "PLACE_SAVED",
           placeId: place.id,
           metadata: {
             placeName: place.name,

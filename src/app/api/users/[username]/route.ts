@@ -56,7 +56,7 @@ export async function GET(
     const wantPlaces = await prisma.savedPlace.findMany({
       where: {
         userId: user.id,
-        status: "WANT",
+        hasBeen: false,
       },
       include: { place: true },
       orderBy: { createdAt: "desc" },
@@ -65,7 +65,7 @@ export async function GET(
     const beenPlaces = await prisma.savedPlace.findMany({
       where: {
         userId: user.id,
-        status: "BEEN",
+        hasBeen: true,
       },
       include: { place: true },
       orderBy: { createdAt: "desc" },

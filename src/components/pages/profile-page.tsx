@@ -51,7 +51,7 @@ interface ListData {
 interface ActivityData {
   id: string;
   actorId: string;
-  type: "PLACE_SAVED_WANT" | "PLACE_MARKED_BEEN" | "PLACE_ADDED_TO_LIST" | "LIST_CREATED" | "REVIEW_CREATED";
+  type: "PLACE_SAVED" | "PLACE_MARKED_BEEN" | "PLACE_ADDED_TO_LIST" | "LIST_CREATED" | "REVIEW_CREATED";
   placeId: string | null;
   listId: string | null;
   metadata: { placeName?: string; listName?: string; rating?: number; note?: string; review_preview?: string } | null;
