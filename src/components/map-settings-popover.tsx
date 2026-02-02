@@ -27,7 +27,6 @@ interface MapSettingsPopoverProps {
   onLabelDensityChange: (density: LabelDensity) => void;
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
-  trigger?: React.ReactNode;
 }
 
 const RADIUS_STEPS = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 7, 10];
@@ -196,23 +195,10 @@ export function MapSettingsPopover({
 
   const sliderValue = (currentRadiusIndex / (RADIUS_STEPS.length - 1)) * 100;
 
-  const defaultTrigger = (
-    <button
-      onClick={() => setIsExpanded(!isExpanded)}
-      className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white shadow-lg hover-elevate"
-      data-testid="button-map-settings"
-    >
-      <MapStyleThumbnail styleId={currentStyle} isSelected={false} />
-    </button>
-  );
-
   return (
-    <div ref={containerRef} className={cn(!trigger && "absolute bottom-4 right-4 z-10")}>
+    <div ref={containerRef} className="absolute bottom-4 right-4 z-10">
       {isExpanded && (
-        <div className={cn(
-          "absolute z-50 w-[300px] bg-background/95 backdrop-blur-xl border rounded-lg shadow-lg animate-in slide-in-from-bottom-2 duration-200",
-          typeof trigger !== 'undefined' ? "top-[calc(100%+8px)] right-0" : "bottom-[calc(100%+8px)] right-0"
-        )}>
+        <div className="absolute bottom-[calc(100%+8px)] right-0 w-[300px] bg-background/95 backdrop-blur-xl border rounded-lg shadow-lg animate-in slide-in-from-bottom-2 duration-200">
           <div className="flex items-center justify-between p-3 border-b">
             <h3 className="font-medium text-sm">Map details</h3>
             <Button
@@ -316,11 +302,13 @@ export function MapSettingsPopover({
         </div>
       )}
 
-      {typeof trigger !== 'undefined' ? (
-        <div onClick={() => setIsExpanded(!isExpanded)}>
-          {trigger}
-        </div>
-      ) : defaultTrigger}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white shadow-lg hover-elevate"
+        data-testid="button-map-settings"
+      >
+        <MapStyleThumbnail styleId={currentStyle} isSelected={false} />
+      </button>
     </div>
   );
 }
