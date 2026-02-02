@@ -217,7 +217,7 @@ export function DiscoverSidebar({
     );
   }
 
-  if (isMobile && settingsOpen) {
+  if (settingsOpen) {
     return (
       <div className="h-full flex flex-col bg-background" data-testid="discover-sidebar">
         <div className="flex items-center gap-2 p-3 border-b">
