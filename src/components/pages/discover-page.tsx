@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { MapLayout } from "@/components/map/map-layout";
-import { DiscoverSidebar } from "@/components/sidebars/discover-sidebar";
+import { DiscoverSidebar, type SidebarView } from "@/components/sidebars/discover-sidebar";
 import { ReviewDialog } from "@/components/review-dialog";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
@@ -53,11 +53,19 @@ interface ListWithPlaces {
 }
 
 export function DiscoverPage({ user }: { user: UserData }) {
+  // Map selection state
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  
+  // Sidebar view state (lifted up from sidebar)
+  const [currentView, setCurrentView] = useState<SidebarView>("list");
   const [viewingPlaceId, setViewingPlaceId] = useState<string | null>(null);
+  
+  // Review dialog state
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [reviewPlaceId, setReviewPlaceId] = useState<string | null>(null);
   const [reviewPlaceName, setReviewPlaceName] = useState("");
+  
+  // Filter state
   const [statusFilter, setStatusFilter] = useState<"all" | "want" | "been">("all");
   const [listFilter, setListFilter] = useState<string>("all");
 
@@ -103,23 +111,30 @@ export function DiscoverPage({ user }: { user: UserData }) {
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       if (selectedPlaceId === deletedId) {
         setSelectedPlaceId(null);
-        setViewingPlaceId(null);
       }
+      // Navigate back to list after deletion
+      setCurrentView("list");
+      setViewingPlaceId(null);
       toast.success("Place removed!");
     },
     onError: (error: Error) => toast.error(error.message || "Failed to remove place"),
   });
 
-  const handlePlaceSelect = useCallback((savedPlaceId: string) => {
-    setSelectedPlaceId(savedPlaceId);
-    setViewingPlaceId(savedPlaceId);
+  // Unified navigation handler for sidebar
+  const handleNavigate = useCallback((view: SidebarView, placeId?: string | null) => {
+    setCurrentView(view);
+    if (view === "detail" && placeId) {
+      setViewingPlaceId(placeId);
+      setSelectedPlaceId(placeId);
+    } else if (view === "list") {
+      setViewingPlaceId(null);
+    }
   }, []);
 
-  const handleViewPlace = useCallback((savedPlaceId: string | null) => {
+  const handlePlaceSelect = useCallback((savedPlaceId: string) => {
+    setSelectedPlaceId(savedPlaceId);
+    setCurrentView("detail");
     setViewingPlaceId(savedPlaceId);
-    if (savedPlaceId) {
-      setSelectedPlaceId(savedPlaceId);
-    }
   }, []);
 
   const handleDeletePlace = useCallback((savedPlaceId: string) => {
@@ -134,9 +149,11 @@ export function DiscoverPage({ user }: { user: UserData }) {
         if (value === "want" && willBeFiltered.status !== "WANT") {
           setSelectedPlaceId(null);
           setViewingPlaceId(null);
+          setCurrentView("list");
         } else if (value === "been" && willBeFiltered.status !== "BEEN") {
           setSelectedPlaceId(null);
           setViewingPlaceId(null);
+          setCurrentView("list");
         }
       }
     }
@@ -160,8 +177,9 @@ export function DiscoverPage({ user }: { user: UserData }) {
       listFilter={listFilter}
       onStatusFilterChange={handleStatusFilterChange}
       onListFilterChange={handleListFilterChange}
+      currentView={currentView}
       viewingPlaceId={viewingPlaceId}
-      onViewPlace={handleViewPlace}
+      onNavigate={handleNavigate}
       reviewsByPlaceId={reviewsByPlaceId}
       onDeletePlace={handleDeletePlace}
       onAddReview={handleAddReview}
