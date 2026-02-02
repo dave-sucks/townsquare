@@ -490,8 +490,8 @@ export function ChatDashboard({ user }: { user: UserData }) {
           showSearch={false}
         />
 
-        <div className="absolute top-0 left-0 bottom-0 z-10 w-[22rem] p-3 hidden md:block">
-          <div className="h-full bg-background rounded-lg border shadow-lg overflow-hidden">
+        <div className="absolute top-0 left-0 bottom-0 z-10 w-[22rem] p-3 hidden md:block pointer-events-none">
+          <div className="h-full bg-background/95 backdrop-blur-md rounded-2xl border shadow-2xl overflow-hidden pointer-events-auto">
             {sidebar}
           </div>
         </div>
