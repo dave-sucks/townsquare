@@ -29,6 +29,7 @@ import {
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { SaveToListDropdown } from "@/components/shared/save-to-list-dropdown";
 
 interface PlaceResult {
   googlePlaceId: string;
@@ -567,35 +568,27 @@ interface ChatPlaceCardInlineProps {
   onClick: () => void;
 }
 
+interface SavedPlaceData {
+  id: string;
+  placeId: string;
+  hasBeen: boolean;
+  rating: number | null;
+  lists?: { id: string; name: string }[];
+  place: {
+    id: string;
+    googlePlaceId: string;
+  };
+}
+
 const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>(
   function ChatPlaceCardInline({ place, isSelected, onClick }, ref) {
-    const [isSaved, setIsSaved] = useState(false);
-
-    const saveMutation = useMutation({
-      mutationFn: async () => {
-        const detailsResponse = await fetch(`/api/places/details?place_id=${place.googlePlaceId}`);
-        const detailsData = await detailsResponse.json();
-        if (!detailsData.place) throw new Error("Failed to get place details");
-        
-        return apiRequest("/api/saved-places", {
-          method: "POST",
-          body: JSON.stringify({ ...detailsData.place, hasBeen: false }),
-        });
-      },
-      onSuccess: () => {
-        setIsSaved(true);
-        queryClient.invalidateQueries({ queryKey: ["saved-places"] });
-        toast.success(`Saved ${place.name}!`);
-      },
-      onError: (error: Error) => {
-        if (error.message.includes("already saved")) {
-          setIsSaved(true);
-          toast.info("Already in your places!");
-        } else {
-          toast.error(error.message || "Failed to save place");
-        }
-      },
+    const { data: savedPlacesData } = useQuery<{ savedPlaces: SavedPlaceData[] }>({
+      queryKey: ["saved-places"],
     });
+
+    const savedPlace = savedPlacesData?.savedPlaces?.find(
+      sp => sp.place.googlePlaceId === place.googlePlaceId
+    );
 
     const formatType = (type: string | null) => {
       if (!type) return "";
@@ -605,6 +598,19 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
     const photoUrl = place.photoRef 
       ? `/api/places/photo?ref=${place.photoRef}&maxwidth=200`
       : null;
+
+    const placeForDropdown = {
+      id: savedPlace?.place.id,
+      googlePlaceId: place.googlePlaceId,
+      name: place.name,
+      formattedAddress: place.formattedAddress,
+      lat: place.lat,
+      lng: place.lng,
+      primaryType: place.primaryType,
+      types: place.types as string[] | null,
+      priceLevel: place.priceLevel,
+      photoRefs: place.photoRef ? [place.photoRef] : null,
+    };
 
     return (
       <Card
@@ -645,24 +651,21 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
                   {place.formattedAddress.split(",")[0]}
                 </p>
               </div>
-              <Button
-                size="icon"
-                variant={isSaved ? "default" : "outline"}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  saveMutation.mutate();
-                }}
-                disabled={saveMutation.isPending || isSaved}
-                data-testid={`button-save-place-${place.googlePlaceId}`}
-              >
-                {saveMutation.isPending ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : isSaved ? (
-                  <Check className="h-3 w-3" />
-                ) : (
-                  <Bookmark className="h-3 w-3" />
-                )}
-              </Button>
+              <div onClick={(e) => e.stopPropagation()}>
+                <SaveToListDropdown
+                  place={placeForDropdown}
+                  savedPlace={savedPlace ? {
+                    id: savedPlace.id,
+                    placeId: savedPlace.placeId,
+                    hasBeen: savedPlace.hasBeen,
+                    rating: savedPlace.rating,
+                  } : undefined}
+                  listsContainingPlace={savedPlace?.lists?.map(l => l.id) || []}
+                  showLabel={false}
+                  variant="outline"
+                  size="icon"
+                />
+              </div>
             </div>
           </div>
         </div>
