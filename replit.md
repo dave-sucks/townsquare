@@ -1,7 +1,7 @@
 # Beli Clone - Place Saving Application
 
 ## Overview
-This project is a web-first clone of the Beli app, designed to enable users to discover, save, and visualize places on an interactive map. Users can search for places using the Google Places API, categorize them with a "WANT to visit" or "BEEN there" status, and view all their saved locations on a Google Map with color-coded pins. The application aims to provide a seamless experience for managing personal place collections, fostering social interaction through following other users and sharing activities, and organizing places into custom lists. Key capabilities include user authentication, Google Places search with autocomplete, status-based saving, interactive map display, and a responsive UI that adapts to desktop and mobile. The long-term vision is to become a comprehensive platform for personal travel and exploration planning, enhancing user engagement through social features and personalized content.
+This project is a web-first clone of the Beli app, designed to enable users to discover, save, and visualize places on an interactive map. Users can search for places using the Google Places API, save them to custom lists, mark places as "been" with ratings (bad/okay/great), and view all saved locations on a Google Map with color-coded pins. The application aims to provide a seamless experience for managing personal place collections, fostering social interaction through following other users and sharing activities, and organizing places into custom lists. Key capabilities include user authentication, Google Places search with autocomplete, flexible save-with-rating system, list management, interactive map display, and a responsive UI that adapts to desktop and mobile. The long-term vision is to become a comprehensive platform for personal travel and exploration planning, enhancing user engagement through social features and personalized content.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -66,6 +66,25 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 
 ## Recent Changes
 
+### Place Saving Model Refactor (February 2026)
+- **Replaced status-based saving with hasBeen/rating model:**
+  - Old: `SavedPlace.status: "WANT" | "BEEN"` enum
+  - New: `SavedPlace.hasBeen: boolean` + `SavedPlace.rating: number | null` (1=bad, 2=okay, 3=great)
+- **Key behavioral changes:**
+  - Saving a place no longer requires a status - it just saves the place
+  - "Been there" is now separate from lists - users can mark places as visited with a 3-point rating
+  - Rating circles (red=bad, yellow=okay, green=great) shown in save popover
+  - Places can be on multiple lists regardless of whether they've been visited
+- **Database migration:**
+  - Added `hasBeen` boolean and `rating` integer to `SavedPlace` model
+  - Added `isSystem` boolean and `systemSlug` string to `List` model for system lists
+  - Migrated existing data: BEEN status → hasBeen=true + rating=2, WANT status → hasBeen=false
+  - Auto-creates "Want to Go" system list per user for backward compatibility
+- **Updated components:**
+  - `SaveToListDropdown` redesigned with rating picker and list checkboxes
+  - All place cards, detail panels, and map markers updated to use new model
+  - API routes updated to handle hasBeen/rating updates
+
 ### Sidebar Panel Architecture Refactor (February 2026)
 - Refactored sidebar to use clean panel-based architecture with state lifted to parent:
   - `DiscoverSidebar` is now a pure view switcher that renders panels based on `currentView` prop
@@ -76,13 +95,3 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
   - `MapSettingsPanel`: Close button, "Map Settings" title, all settings controls
   - `PlaceDetailPanel`: Back button, place info, save controls
 - `MapSettingsContent` is the single source of truth for settings UI
-
-### Unified SaveToListDropdown Component (February 2026)
-- Created `SaveToListDropdown` component (`src/components/shared/save-to-list-dropdown.tsx`) that provides a unified save experience:
-  - Single button click auto-saves places with WANT status
-  - Dropdown shows Saved status toggle, Want to Go option, user's custom lists, and create new list option
-  - Replaces all separate Want/Been/Add-to-list buttons across the application
-- Updated `PlaceDetailsSheet`, `PlaceDetailPanel`, and `/places/[id]` page to use SaveToListDropdown
-- Simplified `FloatingSearch` to use a single "Save" button (consistent with WANT status default)
-- Updated `PlaceCard`/`PlacesList` to optionally show SaveToListDropdown instead of legacy popover
-- Cleaned up unused code from `DiscoverPage`, `DiscoverSidebar`, and removed `AddToListDialog` usage
