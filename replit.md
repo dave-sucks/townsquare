@@ -84,6 +84,9 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
   - `SaveToListDropdown` redesigned with rating picker and list checkboxes
   - All place cards, detail panels, and map markers updated to use new model
   - API routes updated to handle hasBeen/rating updates
+  - Activity types changed from `PLACE_SAVED_WANT` to `PLACE_SAVED`
+  - Status filters renamed from "Want/Been" to "Not visited/Been" across all pages
+  - PlaceCard displays colored rating circles for visited places or "Saved"/list badges for saved places
 
 ### Sidebar Panel Architecture Refactor (February 2026)
 - Refactored sidebar to use clean panel-based architecture with state lifted to parent:
