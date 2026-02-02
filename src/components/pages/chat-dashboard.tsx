@@ -23,8 +23,10 @@ import {
   Loader2,
   Star,
   Bookmark,
-  Check
+  Check,
+  RotateCcw
 } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -313,21 +315,31 @@ export function ChatDashboard({ user }: { user: UserData }) {
 
   const sidebar = (
     <div className="flex flex-col h-full">
-      <div className="p-3 border-b flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <MessageCircle className="h-5 w-5 text-primary" />
-          <span className="font-medium">AI Chat</span>
-        </div>
-        <Button 
-          onClick={startNewChat} 
-          size="sm"
-          variant="outline"
-          className="gap-1"
+      <div className="flex items-center gap-2 p-3 border-b">
+        <SidebarTrigger data-testid="button-sidebar-toggle" />
+        <h1 className="font-semibold text-sm flex-1">AI Chat</h1>
+        {activeConversationId && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setActiveConversationId(null);
+              setLocalMessages([]);
+              setSelectedPlaceId(null);
+            }}
+            data-testid="button-all-chats"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={startNewChat}
           disabled={createConversationMutation.isPending}
           data-testid="button-new-chat"
         >
           <Plus className="h-4 w-4" />
-          New
         </Button>
       </div>
 
@@ -379,25 +391,6 @@ export function ChatDashboard({ user }: { user: UserData }) {
         </div>
       ) : (
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="px-3 py-2 border-b flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setActiveConversationId(null);
-                setLocalMessages([]);
-                setSelectedPlaceId(null);
-              }}
-              className="gap-1"
-            >
-              <MessageCircle className="h-4 w-4" />
-              All Chats
-            </Button>
-            <span className="text-sm text-muted-foreground truncate flex-1">
-              {activeConversationData?.conversation?.title || "Chat"}
-            </span>
-          </div>
-
           <ScrollArea className="flex-1 min-h-0" ref={scrollRef}>
             <div className="p-3 space-y-4">
               {messagesLoading ? (

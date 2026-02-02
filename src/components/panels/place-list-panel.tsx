@@ -25,6 +25,8 @@ interface Place {
   types: string[] | null;
   priceLevel: string | null;
   photoRefs: string[] | null;
+  neighborhood: string | null;
+  locality: string | null;
 }
 
 interface SavedPlace {
