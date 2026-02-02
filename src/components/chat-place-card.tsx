@@ -111,11 +111,10 @@ export function ChatPlaceCard({ place, onSaved }: ChatPlaceCardProps) {
               </p>
             </div>
             <Button
-              size="icon-sm"
+              size="icon"
               variant={isSaved ? "default" : "outline"}
               onClick={() => saveMutation.mutate()}
               disabled={saveMutation.isPending || isSaved}
-              className={cn(isSaved && "bg-green-600 hover:bg-green-600")}
               data-testid={`button-save-place-${place.googlePlaceId}`}
             >
               {saveMutation.isPending ? (

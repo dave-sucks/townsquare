@@ -236,9 +236,7 @@ export async function POST(
     const readable = new ReadableStream({
       async start(controller) {
         try {
-          if (places.length > 0) {
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ places })}\n\n`));
-          }
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ places })}\n\n`));
 
           for await (const chunk of stream) {
             const chunkContent = chunk.choices[0]?.delta?.content || "";
@@ -253,6 +251,7 @@ export async function POST(
               conversationId,
               role: "assistant",
               content: fullResponse,
+              places: places.length > 0 ? places : undefined,
             },
           });
 

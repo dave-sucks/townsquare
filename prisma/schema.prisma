@@ -258,6 +258,7 @@ model ChatMessage {
   conversationId String       @map("conversation_id") @db.VarChar(36)
   role           String
   content        String
+  places         Json?
   createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
