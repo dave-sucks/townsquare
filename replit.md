@@ -98,3 +98,10 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
   - `MapSettingsPanel`: Close button, "Map Settings" title, all settings controls
   - `PlaceDetailPanel`: Back button, place info, save controls
 - `MapSettingsContent` is the single source of truth for settings UI
+
+### Neighborhood/Locality Support (February 2026)
+- Added `neighborhood` and `locality` fields to Place model
+- Google Places API details route extracts address_components (neighborhood, sublocality, locality)
+- PlaceCard displays neighborhood instead of full address (fallback: locality → first address part)
+- Backfill script at `scripts/backfill-neighborhoods.ts` updates existing places
+- Note: Instagram-imported places without valid Google Place IDs cannot be backfilled
