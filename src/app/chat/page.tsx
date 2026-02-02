@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { LandingPage } from "@/components/landing-page";
-import { ChatPage } from "@/components/pages/chat-page";
+import { ChatDashboard } from "@/components/pages/chat-dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Chat() {
@@ -23,5 +23,5 @@ export default function Chat() {
     return <LandingPage />;
   }
 
-  return <ChatPage user={user} />;
+  return <ChatDashboard user={user} />;
 }
