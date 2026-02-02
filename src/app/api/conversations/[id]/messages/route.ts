@@ -2,6 +2,79 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { openai } from "@/lib/openai";
+import type { ChatCompletionMessageParam, ChatCompletionTool } from "openai/resources/chat/completions";
+
+interface PlaceResult {
+  googlePlaceId: string;
+  name: string;
+  formattedAddress: string;
+  lat: number;
+  lng: number;
+  types: string[];
+  primaryType: string | null;
+  priceLevel: string | null;
+  rating: number | null;
+  userRatingsTotal: number | null;
+  photoRef: string | null;
+}
+
+const tools: ChatCompletionTool[] = [
+  {
+    type: "function",
+    function: {
+      name: "search_places",
+      description: "Search for restaurants, cafes, bars, or other places. Use this when the user asks for recommendations or wants to find places to visit.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "The search query, e.g., 'best coffee shops', 'Italian restaurants', 'rooftop bars'",
+          },
+          location: {
+            type: "string",
+            description: "The location to search in, e.g., 'Chelsea NYC', 'Brooklyn', 'Manhattan'. If not specified, search broadly.",
+          },
+        },
+        required: ["query"],
+      },
+    },
+  },
+];
+
+async function searchPlaces(query: string, location?: string): Promise<PlaceResult[]> {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    throw new Error("Google Maps API key not configured");
+  }
+
+  const searchQuery = location ? `${query} in ${location}` : query;
+  
+  const response = await fetch(
+    `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${apiKey}`
+  );
+
+  const data = await response.json();
+  
+  if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
+    console.error("Google Places Text Search API error:", data);
+    return [];
+  }
+
+  return (data.results || []).slice(0, 5).map((result: any) => ({
+    googlePlaceId: result.place_id,
+    name: result.name,
+    formattedAddress: result.formatted_address,
+    lat: result.geometry?.location?.lat,
+    lng: result.geometry?.location?.lng,
+    types: result.types || [],
+    primaryType: result.types?.[0] || null,
+    priceLevel: result.price_level?.toString() || null,
+    rating: result.rating || null,
+    userRatingsTotal: result.user_ratings_total || null,
+    photoRef: result.photos?.[0]?.photo_reference || null,
+  }));
+}
 
 async function buildSystemPrompt(userId: string): Promise<string> {
   const [savedPlaces, lists] = await Promise.all([
@@ -51,11 +124,12 @@ ${placesContext || "No saved places yet."}
 The user has the following lists:
 ${listsContext || "No lists yet."}
 
-When users ask about places:
-- Reference their saved places when relevant
-- Suggest places based on their preferences and past ratings
-- Help them organize places into lists
-- Provide helpful information about neighborhoods and localities
+IMPORTANT: When users ask for place recommendations, you MUST use the search_places function to find real places. Always search when the user asks things like:
+- "best coffee shops in [area]"
+- "recommend restaurants near [location]"
+- "find bars in [neighborhood]"
+
+After searching, present the results naturally and offer to help them save any places they like.
 
 Be conversational, helpful, and concise. Focus on helping users discover and manage places they love.`;
 }
@@ -102,17 +176,56 @@ export async function POST(
 
     const systemPrompt = await buildSystemPrompt(user.id);
 
-    const chatMessages = [
-      { role: "system" as const, content: systemPrompt },
+    const chatMessages: ChatCompletionMessageParam[] = [
+      { role: "system", content: systemPrompt },
       ...existingMessages.map(m => ({
         role: m.role as "user" | "assistant",
         content: m.content,
       })),
     ];
 
-    const stream = await openai.chat.completions.create({
+    let places: PlaceResult[] = [];
+    let finalMessages = [...chatMessages];
+
+    const initialResponse = await openai.chat.completions.create({
       model: "gpt-5-mini",
       messages: chatMessages,
+      tools,
+      tool_choice: "auto",
+      max_completion_tokens: 2048,
+    });
+
+    const assistantMessage = initialResponse.choices[0].message;
+    
+    if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+      finalMessages.push(assistantMessage);
+      
+      for (const toolCall of assistantMessage.tool_calls) {
+        if (toolCall.function.name === "search_places") {
+          try {
+            const args = JSON.parse(toolCall.function.arguments);
+            places = await searchPlaces(args.query, args.location);
+            
+            finalMessages.push({
+              role: "tool",
+              tool_call_id: toolCall.id,
+              content: JSON.stringify({ places }),
+            });
+          } catch (error) {
+            console.error("Tool execution error:", error);
+            finalMessages.push({
+              role: "tool",
+              tool_call_id: toolCall.id,
+              content: JSON.stringify({ error: "Failed to search places" }),
+            });
+          }
+        }
+      }
+    }
+
+    const stream = await openai.chat.completions.create({
+      model: "gpt-5-mini",
+      messages: finalMessages,
       stream: true,
       max_completion_tokens: 2048,
     });
@@ -123,11 +236,15 @@ export async function POST(
     const readable = new ReadableStream({
       async start(controller) {
         try {
+          if (places.length > 0) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ places })}\n\n`));
+          }
+
           for await (const chunk of stream) {
-            const content = chunk.choices[0]?.delta?.content || "";
-            if (content) {
-              fullResponse += content;
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
+            const chunkContent = chunk.choices[0]?.delta?.content || "";
+            if (chunkContent) {
+              fullResponse += chunkContent;
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: chunkContent })}\n\n`));
             }
           }
 
