@@ -66,6 +66,17 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 
 ## Recent Changes
 
+### Sidebar Panel Architecture Refactor (February 2026)
+- Refactored sidebar to use clean panel-based architecture with state lifted to parent:
+  - `DiscoverSidebar` is now a pure view switcher that renders panels based on `currentView` prop
+  - View state (`currentView`, `viewingPlaceId`) is managed in `DiscoverPage` parent component
+  - Three self-contained panels: `PlaceListPanel`, `MapSettingsPanel`, `PlaceDetailPanel`
+- Each panel has its own header with appropriate controls:
+  - `PlaceListPanel`: SidebarTrigger, "Places" title, settings button, filter dropdowns
+  - `MapSettingsPanel`: Close button, "Map Settings" title, all settings controls
+  - `PlaceDetailPanel`: Back button, place info, save controls
+- `MapSettingsContent` is the single source of truth for settings UI
+
 ### Unified SaveToListDropdown Component (February 2026)
 - Created `SaveToListDropdown` component (`src/components/shared/save-to-list-dropdown.tsx`) that provides a unified save experience:
   - Single button click auto-saves places with WANT status
