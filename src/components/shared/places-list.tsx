@@ -159,7 +159,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
                 hasBeen: savedPlace.hasBeen,
                 rating: savedPlace.rating,
               }}
-              listsContainingPlace={listsContainingPlace}
+              listsContainingPlace={savedPlace.lists?.map(l => l.id) || listsContainingPlace}
               showLabel={false}
               variant="ghost"
               size="icon"

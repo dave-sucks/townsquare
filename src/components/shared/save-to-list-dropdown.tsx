@@ -276,18 +276,20 @@ export function SaveToListDropdown({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="flex items-center gap-1">
-            Been there?
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-[200px]">
-                We collect a simple rating for places you've been to help drive recommendations
-              </TooltipContent>
-            </Tooltip>
+          <DropdownMenuLabel>
+            <span className="flex items-center gap-1">
+              Been there?
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[200px]">
+                  We collect a simple rating for places you've been to help drive recommendations
+                </TooltipContent>
+              </Tooltip>
+            </span>
           </DropdownMenuLabel>
-          <div className="flex gap-1 px-1.5 py-1">
+          <div className="flex gap-1 px-1.5 pb-1">
             {RATING_OPTIONS.map((option) => {
               const isSelected = hasBeen && currentRating === option.value;
               return (
