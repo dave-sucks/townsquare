@@ -40,9 +40,9 @@ interface SavedPlace {
 }
 
 const RATING_NAMES: Record<number, string> = {
-  1: "Meh",
-  3: "Good",
-  5: "Amazing",
+  1: "ehh",
+  3: "liked",
+  5: "loved",
 };
 
 interface PlaceCardProps {

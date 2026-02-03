@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Bookmark, Check, Plus, Loader2, Info, Trash2 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
@@ -64,9 +65,9 @@ interface SaveToListDropdownProps {
 }
 
 const RATING_OPTIONS = [
-  { value: 1, emoji: "👎", label: "Meh" },
-  { value: 3, emoji: "👍", label: "Good" },
-  { value: 5, emoji: "🤩", label: "Amazing" },
+  { value: 1, emoji: "👎", label: "ehh" },
+  { value: 3, emoji: "👍", label: "liked" },
+  { value: 5, emoji: "🤩", label: "loved" },
 ];
 
 export function SaveToListDropdown({
@@ -327,26 +328,31 @@ export function SaveToListDropdown({
               </Tooltip>
             </span>
           </DropdownMenuLabel>
-          <div className="flex gap-1 px-2 pb-1">
-            {RATING_OPTIONS.map((option) => {
-              const isSelected = hasBeen && currentRating === option.value;
-              return (
-                <Button
+          <div className="px-2 pb-1">
+            <ToggleGroup
+              type="single"
+              value={hasBeen && currentRating ? String(currentRating) : ""}
+              onValueChange={(value) => {
+                if (value) {
+                  handleRatingSelect(Number(value));
+                }
+              }}
+              variant="outline"
+              className="w-full"
+            >
+              {RATING_OPTIONS.map((option) => (
+                <ToggleGroupItem
                   key={option.value}
-                  variant={isSelected ? "default" : "outline"}
-                  size="sm"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleRatingSelect(option.value);
-                  }}
+                  value={String(option.value)}
                   disabled={savePlaceMutation.isPending}
                   data-testid={`rating-button-${option.value}`}
-                  className="flex-1"
+                  className="flex-1 gap-1"
                 >
-                  <span className="text-base">{option.emoji}</span>
-                </Button>
-              );
-            })}
+                  <span className="text-sm">{option.emoji}</span>
+                  <span className="text-xs">{option.label}</span>
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           </div>
         </DropdownMenuGroup>
 
