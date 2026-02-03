@@ -83,15 +83,24 @@ export function applyMapStyle(map: google.maps.Map, styleKey: MapStyleKey, label
   const density = labelDensity || getStoredLabelDensity();
   const labelStyles = getLabelDensityStyles(density);
   
+  // Check if map has mapId - if so, custom styles won't work (they're controlled via cloud console)
+  // mapId is required for AdvancedMarkerElement (emoji markers)
+  const mapOptions = map.get("mapId");
+  const hasMapId = !!mapOptions;
+  
   if (config.mapTypeId) {
     map.setMapTypeId(config.mapTypeId);
-    // For satellite/terrain, we can still apply label density
-    map.setOptions({ styles: labelStyles });
+    // For satellite/terrain, we can still apply label density (but not with mapId)
+    if (!hasMapId) {
+      map.setOptions({ styles: labelStyles });
+    }
   } else {
     map.setMapTypeId("roadmap");
-    // Merge base style with label density styles
-    const combinedStyles = [...(config.styles || []), ...labelStyles];
-    map.setOptions({ styles: combinedStyles });
+    // Merge base style with label density styles (but not with mapId)
+    if (!hasMapId) {
+      const combinedStyles = [...(config.styles || []), ...labelStyles];
+      map.setOptions({ styles: combinedStyles });
+    }
   }
 }
 

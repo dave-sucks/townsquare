@@ -179,8 +179,9 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: false,
-      styles: RETRO_STYLE,
       mapId: "places-map",
+      // Note: Custom styles via 'styles' property are not compatible with mapId
+      // MapId is required for AdvancedMarkerElement (emoji markers)
     });
 
     mapInstance.addListener("idle", () => {

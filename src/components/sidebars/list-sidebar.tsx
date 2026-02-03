@@ -135,6 +135,7 @@ export function ListSidebar({
           placeRowRefs={placeRowRefs}
           showStatus={false}
           showSaveDropdown={true}
+          isOwnProfile={false}
           emptyMessage="No places in this list"
           emptySubMessage={isOwner ? "Add places from your saved places" : "This list is empty"}
           renderAction={isOwner && onRemovePlace ? (savedPlace) => (
