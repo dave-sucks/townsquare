@@ -135,13 +135,20 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 ### Custom Emoji Markers (February 2026)
 - **Feature**: Users can assign custom emojis to their saved places that display as map markers
 - **Database**: Added `emoji` field (nullable string) to `SavedPlace` model
-- **Emoji Picker**: Uses `emoji-picker-react` library with a Linear/Replit style ghost button trigger
+- **Emoji Picker**: Uses `emoji-picker-react` library with two variants:
+  - `inline`: Small ghost button next to text (original)
+  - `area`: 48px muted square that replaces the photo as primary visual
+- **Place Cards**: Emoji now replaces the photo as the primary visual element
+  - 48px muted background square with centered emoji
+  - Entire area is clickable to open the emoji picker
+  - If no emoji set, shows a muted MapPin icon as placeholder
 - **Map Integration**:
   - Uses Google Maps `AdvancedMarkerElement` for emoji markers (requires `mapId`)
   - Falls back to regular `Marker` with colored circles for non-emoji places
   - Map configured with `mapId: "places-map"` (note: custom styles via `styles` property are not compatible with mapId)
 - **UI Components**:
-  - `EmojiPickerPopover` (`src/components/shared/emoji-picker-popover.tsx`): Ghost button with emoji picker popover
+  - `EmojiPickerPopover` (`src/components/shared/emoji-picker-popover.tsx`): Supports both inline and area variants
   - Emoji picker only visible when viewing own profile (`isOwnProfile=true`)
   - Not shown on list detail pages (list_place IDs differ from saved_place IDs)
 - **API**: PATCH `/api/saved-places/[id]` accepts `emoji` field for updating saved place emoji
+- **Backfill**: Script at `scripts/backfill-emojis.ts` assigns emojis based on place type (restaurant→🍽️, bar→🍸, park→🌳, etc.)
