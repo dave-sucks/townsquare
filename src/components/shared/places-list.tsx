@@ -113,7 +113,6 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
             
             {showStatus && (
               <div className="flex items-center gap-1.5 text-xs mt-0.5">
-                <Bookmark className="h-3 w-3 fill-current flex-shrink-0" />
                 {savedPlace.hasBeen ? (
                   <>
                     <span 
@@ -143,7 +142,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
         </div>
         
         {showSaveDropdown && (
-          <div className="invisible group-hover:visible flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
             <SaveToListDropdown
               place={savedPlace.place}
               savedPlace={{

@@ -657,9 +657,8 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
                     </span>
                   )}
                 </div>
-                {isSaved && (
+                {isSaved ? (
                   <div className="flex items-center gap-1 mt-0.5 text-[10px]">
-                    <Bookmark className="h-2.5 w-2.5 fill-current flex-shrink-0" />
                     {hasBeen ? (
                       <>
                         <span 
@@ -676,8 +675,7 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
                       </span>
                     ) : null}
                   </div>
-                )}
-                {!isSaved && (
+                ) : (
                   <p className="text-[10px] text-muted-foreground mt-0.5 truncate flex items-center gap-0.5">
                     <MapPin className="h-2.5 w-2.5 shrink-0" />
                     {place.formattedAddress.split(",")[0]}
