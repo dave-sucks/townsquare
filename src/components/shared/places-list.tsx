@@ -2,6 +2,7 @@
 
 import { forwardRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { MapPin, Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SaveToListDropdown } from "./save-to-list-dropdown";
@@ -42,6 +43,12 @@ const RATING_COLORS: Record<number, string> = {
   1: "bg-red-500",
   2: "bg-yellow-500",
   3: "bg-green-500",
+};
+
+const RATING_NAMES: Record<number, string> = {
+  1: "Bad",
+  2: "Okay",
+  3: "Great",
 };
 
 interface PlaceCardProps {
@@ -97,14 +104,38 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
           data-testid={`place-row-${savedPlace.id}`}
           className="flex items-center gap-3 flex-1 min-w-0"
         >
-          <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0">
-            {photoUrl ? (
-              <img
-                src={photoUrl}
-                alt={savedPlace.place.name}
-                className="w-full h-full object-cover"
-              />
-            ) : null}
+          <div className="relative w-16 h-16 flex-shrink-0">
+            <div className="w-full h-full rounded-md overflow-hidden bg-muted">
+              {photoUrl ? (
+                <img
+                  src={photoUrl}
+                  alt={savedPlace.place.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : null}
+            </div>
+            {savedPlace.hasBeen && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span 
+                    className={cn(
+                      "absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-background shadow-sm",
+                      savedPlace.rating ? RATING_COLORS[savedPlace.rating] : "bg-green-500"
+                    )} 
+                  />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="flex items-center gap-1.5">
+                  <span>You've Been Here. Rating:</span>
+                  <span 
+                    className={cn(
+                      "inline-block w-2 h-2 rounded-full",
+                      savedPlace.rating ? RATING_COLORS[savedPlace.rating] : "bg-green-500"
+                    )} 
+                  />
+                  <span>{savedPlace.rating ? RATING_NAMES[savedPlace.rating] : "Great"}</span>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
 
           <div className="flex-1 min-w-0 overflow-hidden">
