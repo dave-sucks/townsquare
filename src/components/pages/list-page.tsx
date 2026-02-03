@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { MapLayout } from "@/components/map/map-layout";
 import { ListSidebar } from "@/components/sidebars/list-sidebar";
-import { PlaceDetailsSheet } from "@/components/place-details-sheet";
+import { PlaceDetailPanel } from "@/components/place-detail-panel";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,6 +24,8 @@ interface Place {
   googlePlaceId: string;
   name: string;
   formattedAddress: string;
+  neighborhood?: string | null;
+  locality?: string | null;
   lat: number;
   lng: number;
   primaryType: string | null;
@@ -59,6 +61,8 @@ interface ListData {
   listPlaces: ListPlace[];
 }
 
+type SidebarView = "list" | "detail";
+
 interface ListPageProps {
   listId: string;
   currentUser: UserData | null;
@@ -67,7 +71,8 @@ interface ListPageProps {
 
 export function ListPage({ listId, currentUser, isAuthenticated }: ListPageProps) {
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [currentView, setCurrentView] = useState<SidebarView>("list");
+  const [viewingPlaceId, setViewingPlaceId] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery<{ list: ListData }>({
     queryKey: ["lists", listId],
@@ -86,6 +91,8 @@ export function ListPage({ listId, currentUser, isAuthenticated }: ListPageProps
       queryClient.invalidateQueries({ queryKey: ["lists", listId] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
       toast.success("Place removed from list");
+      setCurrentView("list");
+      setViewingPlaceId(null);
     },
     onError: (error: Error) => toast.error(error.message || "Failed to remove place"),
   });
@@ -101,22 +108,24 @@ export function ListPage({ listId, currentUser, isAuthenticated }: ListPageProps
     place: lp.place,
   })) || [];
 
-  const selectedListPlace = selectedPlaceId 
-    ? list?.listPlaces.find(lp => lp.id === selectedPlaceId) 
+  const viewingPlace = viewingPlaceId 
+    ? savedPlaces.find(sp => sp.id === viewingPlaceId)
     : null;
 
   const handlePlaceSelect = useCallback((savedPlaceId: string) => {
     setSelectedPlaceId(savedPlaceId);
-    setSheetOpen(true);
+    setViewingPlaceId(savedPlaceId);
+    setCurrentView("detail");
+  }, []);
+
+  const handleBackToList = useCallback(() => {
+    setCurrentView("list");
+    setViewingPlaceId(null);
   }, []);
 
   const handleRemovePlace = useCallback((placeId: string) => {
     removePlaceMutation.mutate(placeId);
-    if (selectedPlaceId && list?.listPlaces.find(lp => lp.id === selectedPlaceId)?.placeId === placeId) {
-      setSelectedPlaceId(null);
-      setSheetOpen(false);
-    }
-  }, [removePlaceMutation, selectedPlaceId, list?.listPlaces]);
+  }, [removePlaceMutation]);
 
   if (!isAuthenticated) {
     return (
@@ -148,7 +157,19 @@ export function ListPage({ listId, currentUser, isAuthenticated }: ListPageProps
     );
   }
 
-  const sidebar = (
+  const sidebar = currentView === "detail" && viewingPlace ? (
+    <PlaceDetailPanel
+      savedPlace={viewingPlace}
+      onBack={handleBackToList}
+      onDelete={() => {
+        if (isOwner && viewingPlace) {
+          handleRemovePlace(viewingPlace.placeId);
+        }
+      }}
+      isDeleting={removePlaceMutation.isPending}
+      listsContainingPlace={[listId]}
+    />
+  ) : (
     <ListSidebar
       list={list || null}
       isLoading={isLoading}
@@ -156,31 +177,10 @@ export function ListPage({ listId, currentUser, isAuthenticated }: ListPageProps
       currentUserId={currentUser?.id}
       onRemovePlace={handleRemovePlace}
       isRemovingPlace={removePlaceMutation.isPending}
+      selectedPlaceId={selectedPlaceId}
+      onPlaceSelect={handlePlaceSelect}
     />
   );
-
-  const sheet = selectedListPlace ? (
-    <PlaceDetailsSheet
-      savedPlace={{
-        id: selectedListPlace.id,
-        userId: list?.userId || "",
-        placeId: selectedListPlace.placeId,
-        hasBeen: false,
-        rating: null,
-        visitedAt: null,
-        createdAt: selectedListPlace.addedAt,
-        place: selectedListPlace.place,
-      }}
-      open={sheetOpen}
-      onOpenChange={setSheetOpen}
-      onDelete={() => {
-        if (isOwner) {
-          handleRemovePlace(selectedListPlace.placeId);
-        }
-      }}
-      isDeleting={removePlaceMutation.isPending}
-    />
-  ) : null;
 
   return (
     <MapLayout
@@ -188,7 +188,6 @@ export function ListPage({ listId, currentUser, isAuthenticated }: ListPageProps
       places={savedPlaces}
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={handlePlaceSelect}
-      sheetComponent={sheet}
     >
       {sidebar}
     </MapLayout>

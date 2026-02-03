@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MapLayout } from "@/components/map/map-layout";
 import { UserSidebar } from "@/components/sidebars/user-sidebar";
-import { PlaceDetailsSheet } from "@/components/place-details-sheet";
+import { PlaceDetailPanel } from "@/components/place-detail-panel";
 import { apiRequest } from "@/lib/query-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppShell } from "@/components/layout";
@@ -23,6 +23,8 @@ interface Place {
   googlePlaceId: string;
   name: string;
   formattedAddress: string;
+  neighborhood?: string | null;
+  locality?: string | null;
   lat: number;
   lng: number;
   primaryType: string | null;
@@ -91,6 +93,8 @@ interface ProfileData {
   activities: ActivityData[];
 }
 
+type SidebarView = "profile" | "detail";
+
 interface ProfilePageProps {
   username: string;
   currentUser: UserData | null;
@@ -99,7 +103,8 @@ interface ProfilePageProps {
 
 export function ProfilePage({ username, currentUser, isAuthenticated }: ProfilePageProps) {
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [currentView, setCurrentView] = useState<SidebarView>("profile");
+  const [viewingPlaceId, setViewingPlaceId] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery<ProfileData>({
     queryKey: ["user-profile", username],
@@ -108,11 +113,17 @@ export function ProfilePage({ username, currentUser, isAuthenticated }: ProfileP
   });
 
   const allPlaces = data?.allSavedPlaces || [];
-  const selectedPlace = selectedPlaceId ? allPlaces.find(sp => sp.id === selectedPlaceId) : null;
+  const viewingPlace = viewingPlaceId ? allPlaces.find(sp => sp.id === viewingPlaceId) : null;
 
   const handlePlaceSelect = useCallback((savedPlaceId: string) => {
     setSelectedPlaceId(savedPlaceId);
-    setSheetOpen(true);
+    setViewingPlaceId(savedPlaceId);
+    setCurrentView("detail");
+  }, []);
+
+  const handleBackToProfile = useCallback(() => {
+    setCurrentView("profile");
+    setViewingPlaceId(null);
   }, []);
 
   if (!isAuthenticated) {
@@ -151,7 +162,18 @@ export function ProfilePage({ username, currentUser, isAuthenticated }: ProfileP
     visitedAt: null,
   }));
 
-  const sidebar = (
+  const sidebar = currentView === "detail" && viewingPlace ? (
+    <PlaceDetailPanel
+      savedPlace={{
+        ...viewingPlace,
+        userId: data.user.id,
+        visitedAt: null,
+      }}
+      onBack={handleBackToProfile}
+      onDelete={() => {}}
+      isDeleting={false}
+    />
+  ) : (
     <UserSidebar
       user={data.user}
       isOwnProfile={data.isOwnProfile}
@@ -161,22 +183,10 @@ export function ProfilePage({ username, currentUser, isAuthenticated }: ProfileP
       places={allPlaces}
       lists={data.lists}
       activities={data.activities}
+      selectedPlaceId={selectedPlaceId}
+      onPlaceSelect={handlePlaceSelect}
     />
   );
-
-  const sheet = selectedPlace ? (
-    <PlaceDetailsSheet
-      savedPlace={{
-        ...selectedPlace,
-        userId: data.user.id,
-        visitedAt: null,
-      }}
-      open={sheetOpen}
-      onOpenChange={setSheetOpen}
-      onDelete={() => {}}
-      isDeleting={false}
-    />
-  ) : null;
 
   return (
     <MapLayout
@@ -184,7 +194,6 @@ export function ProfilePage({ username, currentUser, isAuthenticated }: ProfileP
       places={placesForMap}
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={handlePlaceSelect}
-      sheetComponent={sheet}
     >
       {sidebar}
     </MapLayout>
