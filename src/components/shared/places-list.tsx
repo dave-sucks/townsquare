@@ -3,7 +3,7 @@
 import { forwardRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { MapPin, Bookmark, BadgeCheck } from "lucide-react";
+import { MapPin, Bookmark, BadgeCheck, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SaveToListDropdown } from "./save-to-list-dropdown";
 
@@ -113,22 +113,22 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
                 <TooltipTrigger asChild>
                   <span className="absolute top-0 right-0 translate-x-1/3 -translate-y-1/3">
                     {savedPlace.rating === 3 ? (
-                      <BadgeCheck className="w-3.5 h-3.5 text-background fill-sky-500 stroke-[1.5] drop-shadow-sm" />
+                      <BadgeCheck className="w-5 h-5 fill-sky-500 text-white stroke-[2.5] drop-shadow-sm" />
                     ) : savedPlace.rating === 1 ? (
-                      <span className="block w-3 h-3 rounded-full bg-red-500 border-2 border-background shadow-sm" />
+                      <Circle className="w-4 h-4 fill-red-500 text-white stroke-[3] drop-shadow-sm" />
                     ) : (
-                      <span className="block w-3 h-3 rounded-full bg-sky-500 border-2 border-background shadow-sm" />
+                      <Circle className="w-4 h-4 fill-sky-500 text-white stroke-[3] drop-shadow-sm" />
                     )}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="flex items-center gap-1.5">
                   <span>You've Been Here. Rating:</span>
                   {savedPlace.rating === 3 ? (
-                    <BadgeCheck className="w-3.5 h-3.5 text-background fill-sky-500 stroke-[1.5]" />
+                    <BadgeCheck className="w-5 h-5 fill-sky-500 text-white stroke-[2.5]" />
                   ) : savedPlace.rating === 1 ? (
-                    <span className="block w-3 h-3 rounded-full bg-red-500" />
+                    <Circle className="w-4 h-4 fill-red-500 text-white stroke-[3]" />
                   ) : (
-                    <span className="block w-3 h-3 rounded-full bg-sky-500" />
+                    <Circle className="w-4 h-4 fill-sky-500 text-white stroke-[3]" />
                   )}
                   <span>{savedPlace.rating ? RATING_NAMES[savedPlace.rating] : "Love"}</span>
                 </TooltipContent>
