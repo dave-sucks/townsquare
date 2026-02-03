@@ -3,7 +3,7 @@
 import { forwardRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { MapPin, Bookmark, BadgeCheck, Circle } from "lucide-react";
+import { MapPin, Bookmark, BadgeCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SaveToListDropdown } from "./save-to-list-dropdown";
 
@@ -40,9 +40,9 @@ interface SavedPlace {
 }
 
 const RATING_NAMES: Record<number, string> = {
-  1: "Don't like",
-  2: "Like",
-  3: "Love",
+  1: "Meh",
+  3: "Good",
+  5: "Amazing",
 };
 
 interface PlaceCardProps {
@@ -108,37 +108,26 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
                 />
               ) : null}
             </div>
-            {savedPlace.hasBeen && (
+            {savedPlace.rating === 5 && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="absolute top-0 right-0 translate-x-1/3 -translate-y-1/3">
-                    {savedPlace.rating === 3 ? (
-                      <BadgeCheck className="w-[17px] h-[17px] fill-sky-500 text-white stroke-[2.5] drop-shadow-sm" />
-                    ) : savedPlace.rating === 1 ? (
-                      <Circle className="w-[13px] h-[13px] fill-red-500 text-white stroke-[3] drop-shadow-sm" />
-                    ) : (
-                      <Circle className="w-[13px] h-[13px] fill-sky-500 text-white stroke-[3] drop-shadow-sm" />
-                    )}
+                  <span className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 text-base drop-shadow-sm">
+                    🤩
                   </span>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="flex items-center gap-1.5">
-                  <span>You've Been Here. Rating:</span>
-                  {savedPlace.rating === 3 ? (
-                    <BadgeCheck className="w-[17px] h-[17px] fill-sky-500 text-white stroke-[2.5]" />
-                  ) : savedPlace.rating === 1 ? (
-                    <Circle className="w-[13px] h-[13px] fill-red-500 text-white stroke-[3]" />
-                  ) : (
-                    <Circle className="w-[13px] h-[13px] fill-sky-500 text-white stroke-[3]" />
-                  )}
-                  <span>{savedPlace.rating ? RATING_NAMES[savedPlace.rating] : "Love"}</span>
+                <TooltipContent side="top">
+                  Amazing!
                 </TooltipContent>
               </Tooltip>
             )}
           </div>
 
           <div className="flex-1 min-w-0 overflow-hidden">
-            <h3 className="font-medium text-sm truncate">
+            <h3 className="font-medium text-sm truncate flex items-center gap-1">
               {savedPlace.place.name}
+              {savedPlace.hasBeen && (
+                <BadgeCheck className="w-3.5 h-3.5 flex-shrink-0 text-muted-foreground" />
+              )}
             </h3>
             
             {showStatus && (savedPlace.hasBeen || (savedPlace.lists && savedPlace.lists.length > 0)) && (
