@@ -178,6 +178,43 @@ export async function GET(
       orderBy: { createdAt: "desc" },
     });
 
+    // Fetch activities related to this place (from user and people they follow)
+    const activities = await prisma.activity.findMany({
+      where: {
+        placeId: place.id,
+      },
+      include: {
+        actor: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            profileImageUrl: true,
+          },
+        },
+        place: {
+          select: {
+            id: true,
+            googlePlaceId: true,
+            name: true,
+            formattedAddress: true,
+            photoRefs: true,
+          },
+        },
+        list: {
+          select: {
+            id: true,
+            name: true,
+            visibility: true,
+            userId: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+
     return NextResponse.json({
       place,
       savedPlace,
@@ -186,6 +223,7 @@ export async function GET(
       myReview,
       reviews: sortedReviews,
       photos,
+      activities,
     });
   } catch (error: any) {
     console.error("Get place error:", error?.message || error);
