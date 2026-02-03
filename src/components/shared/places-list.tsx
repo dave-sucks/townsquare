@@ -149,10 +149,10 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
                   <span className="text-foreground">Been</span>
                 )}
                 {savedPlace.hasBeen && savedPlace.lists && savedPlace.lists.length > 0 && (
-                  <span className="text-muted-foreground">·</span>
+                  <span className="text-foreground">·</span>
                 )}
                 {savedPlace.lists && savedPlace.lists.length > 0 && (
-                  <span className="text-muted-foreground truncate">
+                  <span className="text-foreground truncate">
                     {savedPlace.lists.map(l => l.name).join(" · ")}
                   </span>
                 )}
