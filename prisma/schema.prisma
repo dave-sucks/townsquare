@@ -79,6 +79,7 @@ model SavedPlace {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
   hasBeen   Boolean?  @default(false) @map("has_been")
   rating    Int?
+  emoji     String?
   place     Place     @relation(fields: [placeId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
