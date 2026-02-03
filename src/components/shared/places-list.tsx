@@ -49,6 +49,7 @@ interface PlaceCardProps {
   isSelected: boolean;
   showStatus?: boolean;
   showSaveDropdown?: boolean;
+  hideDropdownUntilHover?: boolean;
   listsContainingPlace?: string[];
   actionButton?: React.ReactNode;
   onClick?: () => void;
@@ -62,7 +63,7 @@ function formatPlaceType(type: string | null): string {
 }
 
 export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
-  ({ savedPlace, isSelected, showStatus = true, showSaveDropdown = false, listsContainingPlace = [], actionButton, onClick }, ref) => {
+  ({ savedPlace, isSelected, showStatus = true, showSaveDropdown = false, hideDropdownUntilHover = false, listsContainingPlace = [], actionButton, onClick }, ref) => {
     const photoRef = savedPlace.place.photoRefs?.[0];
     const photoUrl = photoRef 
       ? `/api/places/photo?photoRef=${encodeURIComponent(photoRef)}&maxWidth=100`
@@ -142,7 +143,13 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
         </div>
         
         {showSaveDropdown && (
-          <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div 
+            className={cn(
+              "flex-shrink-0",
+              hideDropdownUntilHover && "opacity-0 group-hover:opacity-100 transition-opacity"
+            )} 
+            onClick={(e) => e.stopPropagation()}
+          >
             <SaveToListDropdown
               place={savedPlace.place}
               savedPlace={{
@@ -176,6 +183,7 @@ interface PlacesListProps {
   emptyMessage?: string;
   emptySubMessage?: string;
   showSaveDropdown?: boolean;
+  hideDropdownUntilHover?: boolean;
   renderAction?: (savedPlace: SavedPlace) => React.ReactNode;
 }
 
@@ -189,6 +197,7 @@ export function PlacesList({
   emptyMessage = "No places yet",
   emptySubMessage = "Search for a place on the map to add it",
   showSaveDropdown = false,
+  hideDropdownUntilHover = false,
   renderAction,
 }: PlacesListProps) {
   if (isLoading) {
@@ -226,6 +235,7 @@ export function PlacesList({
           isSelected={savedPlace.id === selectedPlaceId}
           showStatus={showStatus}
           showSaveDropdown={showSaveDropdown}
+          hideDropdownUntilHover={hideDropdownUntilHover}
           actionButton={renderAction?.(savedPlace)}
           onClick={onPlaceSelect ? () => onPlaceSelect(savedPlace.id) : undefined}
         />

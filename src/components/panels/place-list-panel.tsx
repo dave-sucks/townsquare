@@ -161,6 +161,7 @@ export function PlaceListPanel({
           placeRowRefs={placeRowRefs}
           showStatus={true}
           showSaveDropdown={true}
+          hideDropdownUntilHover={true}
         />
       </div>
     </div>
