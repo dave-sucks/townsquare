@@ -126,23 +126,22 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
             <h3 className="font-medium text-sm truncate flex items-center gap-1">
               {savedPlace.place.name}
               {savedPlace.hasBeen && (
-                <BadgeCheck className="w-3.5 h-3.5 flex-shrink-0 text-muted-foreground" />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <BadgeCheck className="w-3.5 h-3.5 flex-shrink-0 fill-foreground text-background" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    You've been here: {savedPlace.rating ? RATING_NAMES[savedPlace.rating] : "rated"}
+                  </TooltipContent>
+                </Tooltip>
               )}
             </h3>
             
-            {showStatus && (savedPlace.hasBeen || (savedPlace.lists && savedPlace.lists.length > 0)) && (
+            {showStatus && savedPlace.lists && savedPlace.lists.length > 0 && (
               <div className="flex items-center gap-1.5 text-xs mt-0.5">
-                {savedPlace.hasBeen && (
-                  <span className="text-foreground">Been</span>
-                )}
-                {savedPlace.hasBeen && savedPlace.lists && savedPlace.lists.length > 0 && (
-                  <span className="text-foreground">·</span>
-                )}
-                {savedPlace.lists && savedPlace.lists.length > 0 && (
-                  <span className="text-foreground truncate">
-                    {savedPlace.lists.map(l => l.name).join(" · ")}
-                  </span>
-                )}
+                <span className="text-foreground truncate">
+                  {savedPlace.lists.map(l => l.name).join(" · ")}
+                </span>
               </div>
             )}
             
