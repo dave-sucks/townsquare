@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { Bookmark, Check, Plus, Loader2, BadgeCheck, Circle, List, Info, ThumbsDown } from "lucide-react";
+import { Bookmark, Check, Plus, Loader2, Info, ThumbsDown } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -357,7 +357,6 @@ export function SaveToListDropdown({
                   disabled={!isSaved || addToListMutation.isPending || removeFromListMutation.isPending}
                   data-testid={`list-checkbox-${list.id}`}
                 >
-                  <List className="h-4 w-4" />
                   <span className="flex-1 truncate">{list.name}</span>
                   {isInList && <Check className="h-4 w-4 ml-auto" />}
                 </DropdownMenuItem>
@@ -434,11 +433,9 @@ export function SaveToListDropdown({
           }}
           disabled={savePlaceMutation.isPending}
           data-testid="rating-button-1"
-          className={cn(
-            "text-muted-foreground",
-            hasBeen && currentRating === 1 && "bg-accent text-foreground"
-          )}
+          className={cn(hasBeen && currentRating === 1 && "bg-accent")}
         >
+          <ThumbsDown className="h-4 w-4" />
           <span>I don't like this place</span>
           {hasBeen && currentRating === 1 && <Check className="h-4 w-4 ml-auto" />}
         </DropdownMenuItem>
