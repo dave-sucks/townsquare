@@ -65,6 +65,8 @@ export function BottomSheet({
   // Track drag state
   const isDraggingSheet = useRef(false);
   const canStartDrag = useRef(false);
+  // Track if we've determined this touch should be scrolling (not dragging)
+  const isScrolling = useRef(false);
 
   // Calculate snap point heights in pixels
   const getSnapHeight = useCallback(
@@ -184,6 +186,7 @@ export function BottomSheet({
     (clientY: number) => {
       isDraggingSheet.current = true;
       canStartDrag.current = true;
+      isScrolling.current = false;
       dragStartY.current = clientY;
       dragStartSheetY.current = sheetHeight.get();
       lastClientY.current = clientY;
@@ -203,7 +206,8 @@ export function BottomSheet({
       lastTime.current = Date.now();
       velocityY.current = 0;
       isDraggingSheet.current = false;
-      // Can start drag if at top
+      isScrolling.current = false;
+      // Can potentially start drag if at top - but we'll verify during move
       canStartDrag.current = isContentAtTop();
     },
     [sheetHeight, isContentAtTop]
@@ -236,9 +240,32 @@ export function BottomSheet({
         return true; // Indicate we handled the event
       }
 
+      // If we've already determined this is a scroll gesture, let it scroll
+      if (isScrolling.current) {
+        return false;
+      }
+
+      // Check current scroll position
+      const scrollTop = contentRef.current?.scrollTop ?? 0;
+      
+      // If content has scrolled away from top, this is definitely a scroll gesture
+      // Don't try to start sheet drag
+      if (scrollTop > 1) {
+        isScrolling.current = true;
+        return false;
+      }
+
+      // Finger moving UP (negative delta) = user wants to scroll down to see more content
+      // This should always be handled by native scroll
+      if (deltaFromStart < -5) {
+        isScrolling.current = true;
+        return false;
+      }
+
       // Check if we should start dragging the sheet
-      // Conditions: content at top, finger moving down, and we're allowed to start drag
-      if (canStartDrag.current && isContentAtTop() && deltaFromStart > 10) {
+      // Only when: at top, finger moving DOWN significantly, and we started at top
+      // Use a larger threshold (20px) to avoid accidental triggers
+      if (canStartDrag.current && scrollTop <= 1 && deltaFromStart > 20) {
         isDraggingSheet.current = true;
         dragStartY.current = clientY; // Reset start position
         dragStartSheetY.current = sheetHeight.get();
@@ -248,7 +275,7 @@ export function BottomSheet({
 
       return false;
     },
-    [viewportHeight, sheetHeight, isContentAtTop]
+    [viewportHeight, sheetHeight]
   );
 
   // Handle pointer end
@@ -261,6 +288,7 @@ export function BottomSheet({
     }
     isDraggingSheet.current = false;
     canStartDrag.current = false;
+    isScrolling.current = false;
     setIsDragging(false);
   }, [findNearestSnapPoint, sheetHeight, snapTo]);
 
