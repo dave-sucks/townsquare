@@ -128,7 +128,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
               {savedPlace.hasBeen && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <BadgeCheck className="w-3.5 h-3.5 flex-shrink-0 fill-foreground text-background" />
+                    <BadgeCheck className="w-4 h-4 flex-shrink-0 fill-foreground text-background" />
                   </TooltipTrigger>
                   <TooltipContent side="top">
                     You've been here: {savedPlace.rating ? RATING_NAMES[savedPlace.rating] : "rated"}
