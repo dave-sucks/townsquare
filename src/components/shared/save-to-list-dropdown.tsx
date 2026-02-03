@@ -310,26 +310,24 @@ export function SaveToListDropdown({
               </Tooltip>
             </span>
           </DropdownMenuLabel>
-          <div className="flex flex-col gap-0.5 px-1">
-            {POSITIVE_RATINGS.map((option) => {
-              const isSelected = hasBeen && currentRating === option.value;
-              return (
-                <DropdownMenuItem
-                  key={option.value}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleRatingSelect(option.value);
-                  }}
-                  disabled={savePlaceMutation.isPending}
-                  data-testid={`rating-button-${option.value}`}
-                  className={cn(isSelected && "bg-accent")}
-                >
-                  <span>{option.label}</span>
-                  {isSelected && <Check className="h-4 w-4 ml-auto" />}
-                </DropdownMenuItem>
-              );
-            })}
-          </div>
+          {POSITIVE_RATINGS.map((option) => {
+            const isSelected = hasBeen && currentRating === option.value;
+            return (
+              <DropdownMenuItem
+                key={option.value}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleRatingSelect(option.value);
+                }}
+                disabled={savePlaceMutation.isPending}
+                data-testid={`rating-button-${option.value}`}
+                className={cn(isSelected && "bg-accent")}
+              >
+                <span>{option.label}</span>
+                {isSelected && <Check className="h-4 w-4 ml-auto" />}
+              </DropdownMenuItem>
+            );
+          })}
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
@@ -366,68 +364,66 @@ export function SaveToListDropdown({
               );
             })
           )}
-        </DropdownMenuGroup>
 
-        <DropdownMenuSeparator />
-
-        {showCreateInput ? (
-          <div className="px-1.5 py-1 space-y-2">
-            <Input
-              placeholder="List name"
-              value={newListName}
-              onChange={(e) => setNewListName(e.target.value)}
-              onKeyDown={(e) => {
-                e.stopPropagation();
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleCreateList();
-                }
-                if (e.key === "Escape") {
-                  setShowCreateInput(false);
-                  setNewListName("");
+          {showCreateInput ? (
+            <div className="px-2 py-1.5 space-y-2">
+              <Input
+                placeholder="List name"
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleCreateList();
+                  }
+                  if (e.key === "Escape") {
+                    setShowCreateInput(false);
+                    setNewListName("");
+                  }
+                }}
+                autoFocus
+                data-testid="input-new-list-name"
+              />
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowCreateInput(false);
+                    setNewListName("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  className="flex-1"
+                  onClick={handleCreateList}
+                  disabled={createListMutation.isPending || !newListName.trim()}
+                  data-testid="button-create-list"
+                >
+                  Create
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.preventDefault();
+                if (isSaved) {
+                  setShowCreateInput(true);
                 }
               }}
-              autoFocus
-              data-testid="input-new-list-name"
-            />
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="flex-1"
-                onClick={() => {
-                  setShowCreateInput(false);
-                  setNewListName("");
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                className="flex-1"
-                onClick={handleCreateList}
-                disabled={createListMutation.isPending || !newListName.trim()}
-                data-testid="button-create-list"
-              >
-                Create
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <DropdownMenuItem
-            onClick={(e) => {
-              e.preventDefault();
-              if (isSaved) {
-                setShowCreateInput(true);
-              }
-            }}
-            disabled={!isSaved}
-            data-testid="button-add-new-list"
-          >
-            <Plus className="h-4 w-4" />
-            Create new list
-          </DropdownMenuItem>
-        )}
+              disabled={!isSaved}
+              data-testid="button-add-new-list"
+            >
+              <Plus className="h-4 w-4" />
+              Create new list
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
 
