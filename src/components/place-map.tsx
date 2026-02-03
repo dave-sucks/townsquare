@@ -29,6 +29,7 @@ interface SavedPlace {
   id: string;
   hasBeen: boolean;
   rating: number | null;
+  emoji?: string | null;
   place: Place;
 }
 
@@ -104,6 +105,21 @@ function createMarkerIcon(hasBeen: boolean, isSelected: boolean): google.maps.Sy
   };
 }
 
+function createEmojiMarkerElement(emoji: string, isSelected: boolean): HTMLElement {
+  const container = document.createElement("div");
+  container.className = "emoji-marker";
+  container.style.cssText = `
+    font-size: ${isSelected ? "32px" : "24px"};
+    cursor: pointer;
+    transition: transform 0.15s ease;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    transform-origin: center bottom;
+    ${isSelected ? "transform: scale(1.15);" : ""}
+  `;
+  container.textContent = emoji;
+  return container;
+}
+
 const RADIUS_TO_ZOOM: Record<number, number> = {
   0.25: 15.5,
   0.5: 14.5,
@@ -126,7 +142,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const markersRef = useRef<Map<string, google.maps.Marker>>(new Map());
+  const markersRef = useRef<Map<string, google.maps.Marker | google.maps.marker.AdvancedMarkerElement>>(new Map());
   
   const [currentStyle, setCurrentStyle] = useState<MapStyleKey>("retro");
   const [showTraffic, setShowTraffic] = useState(false);
@@ -164,6 +180,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
       streetViewControl: false,
       fullscreenControl: false,
       styles: RETRO_STYLE,
+      mapId: "places-map",
     });
 
     mapInstance.addListener("idle", () => {
@@ -210,7 +227,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
     window.__googleMapsCallbacks = [initMapCallback];
 
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&libraries=marker`;
     script.async = true;
     script.defer = true;
     script.onload = () => {
@@ -336,21 +353,36 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
     const bounds = new google.maps.LatLngBounds();
 
     places.forEach((savedPlace) => {
-      const { place, hasBeen, id } = savedPlace;
+      const { place, hasBeen, id, emoji } = savedPlace;
       const position = { lat: place.lat, lng: place.lng };
       const isSelected = id === selectedPlaceId;
 
-      const marker = new google.maps.Marker({
-        map,
-        position,
-        title: place.name,
-        icon: createMarkerIcon(hasBeen, isSelected),
-        zIndex: isSelected ? 1000 : 1,
-      });
+      let marker: google.maps.Marker | google.maps.marker.AdvancedMarkerElement;
 
-      marker.addListener("click", () => {
-        onMarkerClick(id);
-      });
+      if (emoji && google.maps.marker?.AdvancedMarkerElement) {
+        const content = createEmojiMarkerElement(emoji, isSelected);
+        marker = new google.maps.marker.AdvancedMarkerElement({
+          map,
+          position,
+          title: place.name,
+          content,
+          zIndex: isSelected ? 1000 : 1,
+        });
+        marker.addListener("click", () => {
+          onMarkerClick(id);
+        });
+      } else {
+        marker = new google.maps.Marker({
+          map,
+          position,
+          title: place.name,
+          icon: createMarkerIcon(hasBeen, isSelected),
+          zIndex: isSelected ? 1000 : 1,
+        });
+        marker.addListener("click", () => {
+          onMarkerClick(id);
+        });
+      }
 
       markersRef.current.set(id, marker);
       bounds.extend(position);
@@ -385,8 +417,16 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
       const savedPlace = places.find(p => p.id === id);
       if (savedPlace) {
         const isSelected = id === selectedPlaceId;
-        marker.setIcon(createMarkerIcon(savedPlace.hasBeen, isSelected));
-        marker.setZIndex(isSelected ? 1000 : 1);
+        
+        if (marker instanceof google.maps.Marker) {
+          marker.setIcon(createMarkerIcon(savedPlace.hasBeen, isSelected));
+          marker.setZIndex(isSelected ? 1000 : 1);
+        } else if (marker instanceof google.maps.marker.AdvancedMarkerElement) {
+          if (savedPlace.emoji) {
+            marker.content = createEmojiMarkerElement(savedPlace.emoji, isSelected);
+          }
+          marker.zIndex = isSelected ? 1000 : 1;
+        }
       }
     });
   }, [selectedPlaceId, places, map]);

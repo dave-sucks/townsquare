@@ -16,7 +16,7 @@ export async function PATCH(
 
   try {
     const body = await request.json();
-    const { hasBeen, rating } = body;
+    const { hasBeen, rating, emoji } = body;
 
     if (rating !== undefined && (rating < 1 || rating > 5)) {
       return NextResponse.json({ error: "Rating must be between 1 and 5" }, { status: 400 });
@@ -30,13 +30,19 @@ export async function PATCH(
       return NextResponse.json({ error: "Saved place not found" }, { status: 404 });
     }
 
+    const updateData: any = {
+      hasBeen: hasBeen ?? savedPlace.hasBeen,
+      rating: hasBeen && rating ? rating : (hasBeen === false ? null : savedPlace.rating),
+      visitedAt: hasBeen ? (savedPlace.visitedAt || new Date()) : (hasBeen === false ? null : savedPlace.visitedAt),
+    };
+
+    if (emoji !== undefined) {
+      updateData.emoji = emoji;
+    }
+
     const updated = await prisma.savedPlace.update({
       where: { id },
-      data: {
-        hasBeen: hasBeen ?? savedPlace.hasBeen,
-        rating: hasBeen && rating ? rating : (hasBeen === false ? null : savedPlace.rating),
-        visitedAt: hasBeen ? (savedPlace.visitedAt || new Date()) : (hasBeen === false ? null : savedPlace.visitedAt),
-      },
+      data: updateData,
       include: { place: true },
     });
 

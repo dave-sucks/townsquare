@@ -6,6 +6,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { MapPin, Bookmark, BadgeCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SaveToListDropdown } from "./save-to-list-dropdown";
+import { EmojiPickerPopover } from "./emoji-picker-popover";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/query-client";
 
 interface Place {
   id: string;
@@ -33,6 +36,7 @@ interface SavedPlace {
   placeId: string;
   hasBeen: boolean;
   rating: number | null;
+  emoji?: string | null;
   visitedAt?: string | null;
   createdAt?: string;
   place: Place;
@@ -74,6 +78,7 @@ function formatPlaceType(type: string | null): string {
 
 export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
   ({ savedPlace, isSelected, showStatus = true, showSaveDropdown = false, hideDropdownUntilHover = false, listsContainingPlace = [], actionButton, onClick, isOwnProfile = true, currentUserData }, ref) => {
+    const queryClient = useQueryClient();
     const photoRef = savedPlace.place.photoRefs?.[0];
     const photoUrl = photoRef 
       ? `/api/places/photo?photoRef=${encodeURIComponent(photoRef)}&maxWidth=100`
@@ -93,6 +98,25 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
       : currentUserData?.savedPlaceId 
         ? { id: currentUserData.savedPlaceId, placeId: savedPlace.placeId, hasBeen: currentUserData.hasBeen, rating: currentUserData.rating }
         : null;
+
+    const updateEmojiMutation = useMutation({
+      mutationFn: async (emoji: string | null) => {
+        return apiRequest(`/api/saved-places/${savedPlace.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ emoji }),
+        });
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["saved-places"] });
+        queryClient.invalidateQueries({ queryKey: ["place-detail"] });
+      },
+    });
+
+    const handleEmojiSelect = (emoji: string | null) => {
+      if (isOwnProfile) {
+        updateEmojiMutation.mutate(emoji);
+      }
+    };
 
     return (
       <div
@@ -143,6 +167,13 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
 
           <div className="flex-1 min-w-0 overflow-hidden">
             <h3 className="font-medium text-sm truncate flex items-center gap-1">
+              {isOwnProfile && (
+                <EmojiPickerPopover
+                  emoji={savedPlace.emoji || null}
+                  onEmojiSelect={handleEmojiSelect}
+                  disabled={updateEmojiMutation.isPending}
+                />
+              )}
               {savedPlace.place.name}
               {savedPlace.hasBeen && (
                 <Tooltip>
