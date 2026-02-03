@@ -119,7 +119,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
                 <TooltipTrigger asChild>
                   <span 
                     className={cn(
-                      "absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-background shadow-sm",
+                      "absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background shadow-sm",
                       savedPlace.rating ? RATING_COLORS[savedPlace.rating] : "bg-green-500"
                     )} 
                   />
@@ -146,15 +146,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
             {showStatus && (
               <div className="flex items-center gap-1.5 text-xs mt-0.5">
                 {savedPlace.hasBeen ? (
-                  <>
-                    <span 
-                      className={cn(
-                        "inline-block w-2 h-2 rounded-full flex-shrink-0",
-                        savedPlace.rating ? RATING_COLORS[savedPlace.rating] : "bg-green-500"
-                      )} 
-                    />
-                    <span className="text-foreground">Been</span>
-                  </>
+                  <span className="text-foreground">Been</span>
                 ) : savedPlace.lists && savedPlace.lists.length > 0 ? (
                   <span className="text-muted-foreground">
                     {savedPlace.lists.map(l => l.name).join(" · ")}
