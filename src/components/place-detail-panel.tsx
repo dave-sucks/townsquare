@@ -9,10 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  ExternalLink, 
   Star, 
   ArrowLeft,
-  ArrowRightFromLine,
+  Maximize,
   Utensils,
   MapPin,
   BadgeCheck,
@@ -210,7 +209,6 @@ export function PlaceDetailPanel({
   if (!savedPlace) return null;
 
   const place = savedPlace.place;
-  const googleMapsUrl = `https://www.google.com/maps/place/?q=place_id:${place.googlePlaceId}`;
   const placeType = formatPlaceType(place.primaryType);
   const priceLevel = formatPriceLevel(place.priceLevel);
   
@@ -219,16 +217,16 @@ export function PlaceDetailPanel({
 
   return (
     <div className="h-full flex flex-col bg-background" data-testid="place-detail-panel">
-      <div className="flex items-center gap-2 p-3 border-b flex-wrap">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onBack}
-            data-testid="button-back-to-list"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+      <div className="flex items-center gap-2 p-3 border-b">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onBack}
+          data-testid="button-back-to-list"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="flex items-center gap-2 ml-auto">
           <Button
             variant="ghost"
             size="icon"
@@ -236,11 +234,9 @@ export function PlaceDetailPanel({
             data-testid="button-open-full-page"
           >
             <Link href={`/places/${place.googlePlaceId}`}>
-              <ArrowRightFromLine className="h-4 w-4" />
+              <Maximize className="h-4 w-4" />
             </Link>
           </Button>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap ml-auto">
           <SaveToListDropdown
             place={place}
             savedPlace={{
@@ -371,32 +367,22 @@ export function PlaceDetailPanel({
                 </div>
               )}
 
-              <Separator />
-
-              <div className="flex flex-wrap gap-2">
-                {!myReview && onAddReview && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={onAddReview}
-                    data-testid="panel-button-add-review"
-                  >
-                    <Star className="mr-1 h-4 w-4" />
-                    Add Review
-                  </Button>
-                )}
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  asChild 
-                  data-testid="panel-button-open-maps"
-                >
-                  <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="mr-1 h-4 w-4" />
-                    Google Maps
-                  </a>
-                </Button>
-              </div>
+              {!myReview && onAddReview && (
+                <>
+                  <Separator />
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={onAddReview}
+                      data-testid="panel-button-add-review"
+                    >
+                      <Star className="mr-1 h-4 w-4" />
+                      Add Review
+                    </Button>
+                  </div>
+                </>
+              )}
             </TabsContent>
 
             <TabsContent value="feed" className="pt-4">

@@ -6,11 +6,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   MapPin, 
-  ExternalLink, 
   Star, 
   Plus,
   Utensils,
@@ -313,8 +311,6 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
     },
   });
 
-  const googleMapsUrl = place ? `https://www.google.com/maps/place/?q=place_id:${place.googlePlaceId}` : "";
-
   if (!isAuthenticated) {
     return (
       <AppShell user={user}>
@@ -528,23 +524,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
               )}
 
-              <Separator />
-
-              {/* Action buttons */}
-              <div className="flex flex-wrap gap-2">
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  asChild 
-                  data-testid="button-open-google-maps"
-                >
-                  <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="mr-1 h-4 w-4" />
-                    Google Maps
-                  </a>
-                </Button>
-              </div>
-            </TabsContent>
+              </TabsContent>
 
             <TabsContent value="feed" className="pt-4">
               {activities.length === 0 ? (
