@@ -13,7 +13,6 @@ import {
   RETRO_STYLE,
   DEFAULT_LABEL_DENSITY,
 } from "@/lib/map-styles";
-import { MapSettingsPopover } from "@/components/map-settings-popover";
 import { FloatingSearch } from "@/components/map/floating-search";
 
 interface Place {
@@ -105,19 +104,85 @@ function createMarkerIcon(hasBeen: boolean, isSelected: boolean): google.maps.Sy
   };
 }
 
-function createEmojiMarkerElement(emoji: string, isSelected: boolean): HTMLElement {
-  const container = document.createElement("div");
-  container.className = "emoji-marker";
-  container.style.cssText = `
-    font-size: ${isSelected ? "32px" : "24px"};
-    cursor: pointer;
-    transition: transform 0.15s ease;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-    transform-origin: center bottom;
-    ${isSelected ? "transform: scale(1.15);" : ""}
-  `;
-  container.textContent = emoji;
-  return container;
+interface EmojiOverlay extends google.maps.OverlayView {
+  setClickHandler: (handler: () => void) => void;
+  updateSelection: (isSelected: boolean) => void;
+}
+
+function createEmojiMarkerOverlay(
+  position: google.maps.LatLngLiteral,
+  emoji: string,
+  isSelected: boolean
+): EmojiOverlay {
+  const overlay = new google.maps.OverlayView() as EmojiOverlay & {
+    position: google.maps.LatLng;
+    emoji: string;
+    isSelected: boolean;
+    div: HTMLDivElement | null;
+    clickHandler: (() => void) | null;
+  };
+  
+  overlay.position = new google.maps.LatLng(position.lat, position.lng);
+  overlay.emoji = emoji;
+  overlay.isSelected = isSelected;
+  overlay.div = null;
+  overlay.clickHandler = null;
+
+  overlay.setClickHandler = function(handler: () => void) {
+    this.clickHandler = handler;
+  };
+
+  overlay.onAdd = function() {
+    this.div = document.createElement("div");
+    this.div.style.cssText = `
+      position: absolute;
+      font-size: ${this.isSelected ? "32px" : "24px"};
+      cursor: pointer;
+      transition: transform 0.15s ease;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+      transform: translate(-50%, -100%);
+      ${this.isSelected ? "z-index: 1000;" : "z-index: 1;"}
+    `;
+    this.div.textContent = this.emoji;
+    
+    if (this.clickHandler) {
+      const handler = this.clickHandler;
+      this.div.addEventListener("click", (e) => {
+        e.stopPropagation();
+        handler();
+      });
+    }
+
+    const panes = this.getPanes();
+    panes?.overlayMouseTarget.appendChild(this.div);
+  };
+
+  overlay.draw = function() {
+    if (!this.div) return;
+    const overlayProjection = this.getProjection();
+    const pos = overlayProjection.fromLatLngToDivPixel(this.position);
+    if (pos) {
+      this.div.style.left = pos.x + "px";
+      this.div.style.top = pos.y + "px";
+    }
+  };
+
+  overlay.onRemove = function() {
+    if (this.div) {
+      this.div.parentNode?.removeChild(this.div);
+      this.div = null;
+    }
+  };
+
+  overlay.updateSelection = function(selected: boolean) {
+    this.isSelected = selected;
+    if (this.div) {
+      this.div.style.fontSize = selected ? "32px" : "24px";
+      this.div.style.zIndex = selected ? "1000" : "1";
+    }
+  };
+
+  return overlay;
 }
 
 const RADIUS_TO_ZOOM: Record<number, number> = {
@@ -142,7 +207,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const markersRef = useRef<Map<string, google.maps.Marker | google.maps.marker.AdvancedMarkerElement>>(new Map());
+  const markersRef = useRef<Map<string, google.maps.Marker | EmojiOverlay>>(new Map());
   
   const [currentStyle, setCurrentStyle] = useState<MapStyleKey>("retro");
   const [showTraffic, setShowTraffic] = useState(false);
@@ -179,9 +244,6 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: false,
-      mapId: "places-map",
-      // Note: Custom styles via 'styles' property are not compatible with mapId
-      // MapId is required for AdvancedMarkerElement (emoji markers)
     });
 
     mapInstance.addListener("idle", () => {
@@ -358,20 +420,13 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
       const position = { lat: place.lat, lng: place.lng };
       const isSelected = id === selectedPlaceId;
 
-      let marker: google.maps.Marker | google.maps.marker.AdvancedMarkerElement;
+      let marker: google.maps.Marker | EmojiOverlay;
 
-      if (emoji && google.maps.marker?.AdvancedMarkerElement) {
-        const content = createEmojiMarkerElement(emoji, isSelected);
-        marker = new google.maps.marker.AdvancedMarkerElement({
-          map,
-          position,
-          title: place.name,
-          content,
-          zIndex: isSelected ? 1000 : 1,
-        });
-        marker.addListener("click", () => {
-          onMarkerClick(id);
-        });
+      if (emoji) {
+        const overlay = createEmojiMarkerOverlay(position, emoji, isSelected);
+        overlay.setClickHandler(() => onMarkerClick(id));
+        overlay.setMap(map);
+        marker = overlay;
       } else {
         marker = new google.maps.Marker({
           map,
@@ -422,11 +477,8 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
         if (marker instanceof google.maps.Marker) {
           marker.setIcon(createMarkerIcon(savedPlace.hasBeen, isSelected));
           marker.setZIndex(isSelected ? 1000 : 1);
-        } else if (marker instanceof google.maps.marker.AdvancedMarkerElement) {
-          if (savedPlace.emoji) {
-            marker.content = createEmojiMarkerElement(savedPlace.emoji, isSelected);
-          }
-          marker.zIndex = isSelected ? 1000 : 1;
+        } else if ('updateSelection' in marker) {
+          marker.updateSelection(isSelected);
         }
       }
     });

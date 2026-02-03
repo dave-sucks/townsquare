@@ -143,9 +143,9 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
   - Entire area is clickable to open the emoji picker
   - If no emoji set, shows a muted MapPin icon as placeholder
 - **Map Integration**:
-  - Uses Google Maps `AdvancedMarkerElement` for emoji markers (requires `mapId`)
+  - Uses custom `OverlayView`-based emoji markers (no mapId required, so custom styles work)
   - Falls back to regular `Marker` with colored circles for non-emoji places
-  - Map configured with `mapId: "places-map"` (note: custom styles via `styles` property are not compatible with mapId)
+  - Factory function `createEmojiMarkerOverlay` creates overlays after Google Maps API loads
 - **UI Components**:
   - `EmojiPickerPopover` (`src/components/shared/emoji-picker-popover.tsx`): Supports both inline and area variants
   - Emoji picker only visible when viewing own profile (`isOwnProfile=true`)
