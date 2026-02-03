@@ -324,11 +324,6 @@ export function SaveToListDropdown({
                   data-testid={`rating-button-${option.value}`}
                   className={cn(isSelected && "bg-accent")}
                 >
-                  {option.iconType === "badge" ? (
-                    <BadgeCheck className="h-4 w-4 text-background fill-sky-500" />
-                  ) : (
-                    <Circle className="h-4 w-4 fill-sky-500 text-sky-500" />
-                  )}
                   <span>{option.label}</span>
                   {isSelected && <Check className="h-4 w-4 ml-auto" />}
                 </DropdownMenuItem>
@@ -448,7 +443,6 @@ export function SaveToListDropdown({
             hasBeen && currentRating === 1 && "bg-accent text-foreground"
           )}
         >
-          <Circle className="h-4 w-4 fill-red-500 text-red-500" />
           <span>I don't like this place</span>
           {hasBeen && currentRating === 1 && <Check className="h-4 w-4 ml-auto" />}
         </DropdownMenuItem>

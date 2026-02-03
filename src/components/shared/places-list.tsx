@@ -115,9 +115,9 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
                     {savedPlace.rating === 3 ? (
                       <BadgeCheck className="w-4 h-4 text-background fill-sky-500 drop-shadow-sm" />
                     ) : savedPlace.rating === 1 ? (
-                      <Circle className="w-3 h-3 fill-red-500 text-red-500 drop-shadow-sm" />
+                      <span className="block w-3 h-3 rounded-full bg-red-500 border-2 border-background shadow-sm" />
                     ) : (
-                      <Circle className="w-3 h-3 fill-sky-500 text-sky-500 drop-shadow-sm" />
+                      <span className="block w-3 h-3 rounded-full bg-sky-500 border-2 border-background shadow-sm" />
                     )}
                   </span>
                 </TooltipTrigger>
