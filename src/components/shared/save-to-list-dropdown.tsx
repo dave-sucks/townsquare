@@ -335,6 +335,9 @@ export function SaveToListDropdown({
               onValueChange={(value) => {
                 if (value) {
                   handleRatingSelect(Number(value));
+                } else if (hasBeen) {
+                  // Clicked same item to deselect - clear the rating
+                  updateSavedPlaceMutation.mutate({ hasBeen: false, rating: undefined });
                 }
               }}
               variant="outline"
@@ -344,7 +347,7 @@ export function SaveToListDropdown({
                 <ToggleGroupItem
                   key={option.value}
                   value={String(option.value)}
-                  disabled={savePlaceMutation.isPending}
+                  disabled={savePlaceMutation.isPending || updateSavedPlaceMutation.isPending}
                   data-testid={`rating-button-${option.value}`}
                   className="flex-1 gap-1"
                 >
