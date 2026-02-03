@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { Bookmark, Check, Plus, Loader2, Info, ThumbsDown } from "lucide-react";
+import { Bookmark, Check, Plus, Loader2, Info, Trash2 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -63,9 +63,10 @@ interface SaveToListDropdownProps {
   className?: string;
 }
 
-const POSITIVE_RATINGS = [
-  { value: 2, label: "I like this place", iconType: "circle" as const },
-  { value: 3, label: "I love this place", iconType: "badge" as const },
+const RATING_OPTIONS = [
+  { value: 1, emoji: "👎", label: "Meh" },
+  { value: 3, emoji: "👍", label: "Good" },
+  { value: 5, emoji: "🤩", label: "Amazing" },
 ];
 
 export function SaveToListDropdown({
@@ -258,12 +259,28 @@ export function SaveToListDropdown({
 
   const isPending = savePlaceMutation.isPending || updateSavedPlaceMutation.isPending;
 
-  const getRatingLabel = () => {
-    if (!hasBeen || !currentRating) return null;
-    if (currentRating === 1) return "Don't like";
-    if (currentRating === 2) return "Like";
-    if (currentRating === 3) return "Love";
-    return null;
+  const unsavePlaceMutation = useMutation({
+    mutationFn: async () => {
+      if (!savedPlace) return;
+      return apiRequest(`/api/saved-places/${savedPlace.id}`, {
+        method: "DELETE",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
+      queryClient.invalidateQueries({ queryKey: ["place-detail"] });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
+      toast.success("Removed from saved places");
+      setOpen(false);
+      onSaveSuccess?.();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to remove");
+    },
+  });
+
+  const handleUnsave = () => {
+    unsavePlaceMutation.mutate();
   };
 
   return (
@@ -310,24 +327,27 @@ export function SaveToListDropdown({
               </Tooltip>
             </span>
           </DropdownMenuLabel>
-          {POSITIVE_RATINGS.map((option) => {
-            const isSelected = hasBeen && currentRating === option.value;
-            return (
-              <DropdownMenuItem
-                key={option.value}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleRatingSelect(option.value);
-                }}
-                disabled={savePlaceMutation.isPending}
-                data-testid={`rating-button-${option.value}`}
-                className={cn(isSelected && "bg-accent")}
-              >
-                <span>{option.label}</span>
-                {isSelected && <Check className="h-4 w-4 ml-auto" />}
-              </DropdownMenuItem>
-            );
-          })}
+          <div className="flex gap-1 px-2 pb-1">
+            {RATING_OPTIONS.map((option) => {
+              const isSelected = hasBeen && currentRating === option.value;
+              return (
+                <Button
+                  key={option.value}
+                  variant={isSelected ? "default" : "outline"}
+                  size="sm"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleRatingSelect(option.value);
+                  }}
+                  disabled={savePlaceMutation.isPending}
+                  data-testid={`rating-button-${option.value}`}
+                  className="flex-1"
+                >
+                  <span className="text-base">{option.emoji}</span>
+                </Button>
+              );
+            })}
+          </div>
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
@@ -429,15 +449,14 @@ export function SaveToListDropdown({
         <DropdownMenuItem
           onClick={(e) => {
             e.preventDefault();
-            handleRatingSelect(1);
+            handleUnsave();
           }}
-          disabled={savePlaceMutation.isPending}
-          data-testid="rating-button-1"
-          className={cn(hasBeen && currentRating === 1 && "bg-accent")}
+          disabled={unsavePlaceMutation.isPending || !isSaved}
+          data-testid="button-unsave"
+          className="text-destructive focus:text-destructive"
         >
-          <ThumbsDown className="h-4 w-4" />
-          <span>I don't like this place</span>
-          {hasBeen && currentRating === 1 && <Check className="h-4 w-4 ml-auto" />}
+          <Trash2 className="h-4 w-4" />
+          <span>Remove from saved</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
