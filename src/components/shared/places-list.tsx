@@ -3,7 +3,7 @@
 import { forwardRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { MapPin, Bookmark, Check } from "lucide-react";
+import { MapPin, Bookmark, BadgeCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SaveToListDropdown } from "./save-to-list-dropdown";
 
@@ -113,9 +113,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
                 <TooltipTrigger asChild>
                   <span className="absolute top-0 right-0 translate-x-1/3 -translate-y-1/3">
                     {savedPlace.rating === 3 ? (
-                      <span className="flex items-center justify-center w-4 h-4 rounded-full bg-sky-500 border-2 border-background shadow-sm">
-                        <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
-                      </span>
+                      <BadgeCheck className="w-4 h-4 text-background fill-sky-500 drop-shadow-sm" />
                     ) : savedPlace.rating === 1 ? (
                       <span className="block w-3 h-3 rounded-full bg-red-500 border-2 border-background shadow-sm" />
                     ) : (
@@ -126,9 +124,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
                 <TooltipContent side="top" className="flex items-center gap-1.5">
                   <span>You've Been Here. Rating:</span>
                   {savedPlace.rating === 3 ? (
-                    <span className="flex items-center justify-center w-4 h-4 rounded-full bg-sky-500">
-                      <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
-                    </span>
+                    <BadgeCheck className="w-4 h-4 text-background fill-sky-500" />
                   ) : savedPlace.rating === 1 ? (
                     <span className="block w-3 h-3 rounded-full bg-red-500" />
                   ) : (
