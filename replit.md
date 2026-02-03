@@ -131,3 +131,17 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
   - `ChatPage` (`src/components/pages/chat-page.tsx`): Main chat interface with conversation management
   - `ChatPlaceCard` (`src/components/chat-place-card.tsx`): Inline place cards with save functionality
   - Messages API (`src/app/api/conversations/[id]/messages/route.ts`): SSE endpoint with OpenAI function calling
+
+### Custom Emoji Markers (February 2026)
+- **Feature**: Users can assign custom emojis to their saved places that display as map markers
+- **Database**: Added `emoji` field (nullable string) to `SavedPlace` model
+- **Emoji Picker**: Uses `emoji-picker-react` library with a Linear/Replit style ghost button trigger
+- **Map Integration**:
+  - Uses Google Maps `AdvancedMarkerElement` for emoji markers (requires `mapId`)
+  - Falls back to regular `Marker` with colored circles for non-emoji places
+  - Map configured with `mapId: "places-map"` (note: custom styles via `styles` property are not compatible with mapId)
+- **UI Components**:
+  - `EmojiPickerPopover` (`src/components/shared/emoji-picker-popover.tsx`): Ghost button with emoji picker popover
+  - Emoji picker only visible when viewing own profile (`isOwnProfile=true`)
+  - Not shown on list detail pages (list_place IDs differ from saved_place IDs)
+- **API**: PATCH `/api/saved-places/[id]` accepts `emoji` field for updating saved place emoji
