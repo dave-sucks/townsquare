@@ -106,6 +106,17 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 - Backfill script at `scripts/backfill-neighborhoods.ts` updates existing places
 - Note: Instagram-imported places without valid Google Place IDs cannot be backfilled
 
+### Profile Page User Context Separation (February 2026)
+- **Problem solved**: When viewing another user's profile, the save/bookmark dropdown was showing that user's saved status and lists instead of the logged-in viewer's status
+- **Backend changes**:
+  - `/api/users/[username]` endpoint now returns `currentUserPlaceData` when viewing another user's profile
+  - For each place on the profile, includes the viewer's: `savedPlaceId`, `hasBeen`, `rating`, and `lists`
+- **Frontend changes**:
+  - `PlaceCard` component now separates display data (profile owner's hasBeen/rating) from interaction data (viewer's save status)
+  - `SaveToListDropdown` uses the viewer's saved place data, not the profile owner's
+  - Tooltip text changes from "You've been here" to "Been here" when viewing another user's profile
+- **Data flow**: `ProfilePage` → `UserSidebar` → `PlacesList` → `PlaceCard` all pass `currentUserPlaceData` through props
+
 ### AI Chat with Place Search (February 2026)
 - **Chat Interface**: New `/chat` page with conversation-based AI assistant for place discovery
 - **OpenAI Function Calling**: Uses gpt-5-mini with `search_places` tool for natural language place queries

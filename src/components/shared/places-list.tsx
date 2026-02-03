@@ -12,8 +12,8 @@ interface Place {
   googlePlaceId: string;
   name: string;
   formattedAddress: string;
-  neighborhood: string | null;
-  locality: string | null;
+  neighborhood?: string | null;
+  locality?: string | null;
   lat: number;
   lng: number;
   primaryType: string | null;
