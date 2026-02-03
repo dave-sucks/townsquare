@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -21,6 +22,7 @@ import {
 import { PlacePhotoGrid } from "./place-photo-grid";
 import { SaveToListDropdown } from "./shared/save-to-list-dropdown";
 import { FeedPost } from "./feed-post";
+import { apiRequest } from "@/lib/query-client";
 
 interface Place {
   id: string;
@@ -176,6 +178,16 @@ function ListRowCard({ list }: { list: ListInfo }) {
   );
 }
 
+interface PlaceDetailResponse {
+  place: Place;
+  savedPlace: { id: string; hasBeen: boolean; rating: number | null } | null;
+  listsContainingPlace: ListInfo[];
+  friendsWhoSaved: FriendSaved[];
+  myReview: Review | null;
+  photos: Photo[];
+  activities: Activity[];
+}
+
 export function PlaceDetailPanel({
   savedPlace,
   myReview,
@@ -183,14 +195,28 @@ export function PlaceDetailPanel({
   friendsWhoSaved = [],
   listsContainingPlace = [],
   listsData = [],
-  activities = [],
+  activities: passedActivities = [],
   isLoading = false,
   onBack,
   onDelete,
   onAddReview,
   isDeleting,
 }: PlaceDetailPanelProps) {
-  if (isLoading) {
+  // Fetch full place details including activities
+  const { data: placeDetails, isLoading: isLoadingDetails } = useQuery<PlaceDetailResponse>({
+    queryKey: ["place-detail", savedPlace?.place?.googlePlaceId],
+    queryFn: () => apiRequest(`/api/places/${savedPlace?.place?.googlePlaceId}`),
+    enabled: !!savedPlace?.place?.googlePlaceId,
+  });
+
+  // Use fetched activities or fall back to passed activities
+  const activities = placeDetails?.activities || passedActivities;
+  const fetchedPhotos = placeDetails?.photos || photos;
+  const fetchedFriends = placeDetails?.friendsWhoSaved || friendsWhoSaved;
+  const fetchedLists = placeDetails?.listsContainingPlace || listsData;
+  const fetchedListIds = fetchedLists.map(l => l.id);
+
+  if (isLoading || isLoadingDetails) {
     return (
       <div className="h-full flex flex-col bg-background" data-testid="place-detail-panel-loading">
         <div className="flex items-center gap-2 p-3 border-b">
@@ -213,7 +239,7 @@ export function PlaceDetailPanel({
   const priceLevel = formatPriceLevel(place.priceLevel);
   
   const locationDisplay = place.neighborhood || place.locality || "";
-  const listsForThisPlace = listsData.filter(l => listsContainingPlace.includes(l.id));
+  const listsForThisPlace = fetchedLists;
 
   return (
     <div className="h-full flex flex-col bg-background" data-testid="place-detail-panel">
@@ -245,7 +271,7 @@ export function PlaceDetailPanel({
               hasBeen: savedPlace.hasBeen,
               rating: savedPlace.rating,
             }}
-            listsContainingPlace={listsContainingPlace}
+            listsContainingPlace={fetchedListIds}
           />
         </div>
       </div>
@@ -298,12 +324,12 @@ export function PlaceDetailPanel({
             </div>
           </div>
 
-          <PlacePhotoGrid photos={photos} maxDisplay={5} />
+          <PlacePhotoGrid photos={fetchedPhotos} maxDisplay={5} />
 
-          {friendsWhoSaved.length > 0 && (
+          {fetchedFriends.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
               <div className="flex -space-x-2 flex-wrap">
-                {friendsWhoSaved.slice(0, 3).map((friend) => {
+                {fetchedFriends.slice(0, 3).map((friend) => {
                   const displayName = friend.user.firstName || friend.user.username || "User";
                   return (
                     <Avatar key={friend.id} className="h-6 w-6 border-2 border-background">
@@ -314,9 +340,9 @@ export function PlaceDetailPanel({
                 })}
               </div>
               <span className="text-sm text-muted-foreground">
-                {friendsWhoSaved.length === 1 
-                  ? `${friendsWhoSaved[0].user.firstName || friendsWhoSaved[0].user.username} saved this`
-                  : `${friendsWhoSaved.length} friends saved this`}
+                {fetchedFriends.length === 1 
+                  ? `${fetchedFriends[0].user.firstName || fetchedFriends[0].user.username} saved this`
+                  : `${fetchedFriends.length} friends saved this`}
               </span>
             </div>
           )}
