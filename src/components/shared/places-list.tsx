@@ -143,15 +143,19 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
               {savedPlace.place.name}
             </h3>
             
-            {showStatus && (
+            {showStatus && (savedPlace.hasBeen || (savedPlace.lists && savedPlace.lists.length > 0)) && (
               <div className="flex items-center gap-1.5 text-xs mt-0.5">
-                {savedPlace.hasBeen ? (
+                {savedPlace.hasBeen && (
                   <span className="text-foreground">Been</span>
-                ) : savedPlace.lists && savedPlace.lists.length > 0 ? (
-                  <span className="text-muted-foreground">
+                )}
+                {savedPlace.hasBeen && savedPlace.lists && savedPlace.lists.length > 0 && (
+                  <span className="text-muted-foreground">·</span>
+                )}
+                {savedPlace.lists && savedPlace.lists.length > 0 && (
+                  <span className="text-muted-foreground truncate">
                     {savedPlace.lists.map(l => l.name).join(" · ")}
                   </span>
-                ) : null}
+                )}
               </div>
             )}
             
