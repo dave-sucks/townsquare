@@ -119,7 +119,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
                 <TooltipTrigger asChild>
                   <span 
                     className={cn(
-                      "absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background shadow-sm",
+                      "absolute top-0 right-0 translate-x-1/3 -translate-y-1/3 w-3 h-3 rounded-full border-2 border-background shadow-sm",
                       savedPlace.rating ? RATING_COLORS[savedPlace.rating] : "bg-green-500"
                     )} 
                   />

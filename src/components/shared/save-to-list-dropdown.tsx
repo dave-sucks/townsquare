@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -82,6 +82,12 @@ export function SaveToListDropdown({
   const [open, setOpen] = useState(false);
   const [showCreateInput, setShowCreateInput] = useState(false);
   const [newListName, setNewListName] = useState("");
+  const [optimisticLists, setOptimisticLists] = useState<string[]>(listsContainingPlace);
+
+  // Sync optimistic state when server data changes
+  useEffect(() => {
+    setOptimisticLists(listsContainingPlace);
+  }, [listsContainingPlace]);
 
   const isSaved = !!savedPlace;
   const hasBeen = savedPlace?.hasBeen ?? false;
@@ -155,6 +161,10 @@ export function SaveToListDropdown({
         body: JSON.stringify({ placeId }),
       });
     },
+    onMutate: async (listId: string) => {
+      // Optimistic update - immediately add to list
+      setOptimisticLists(prev => [...prev, listId]);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
@@ -162,7 +172,9 @@ export function SaveToListDropdown({
       toast.success("Added to list!");
       onSaveSuccess?.();
     },
-    onError: (error: Error) => {
+    onError: (error: Error, listId: string) => {
+      // Rollback on error
+      setOptimisticLists(prev => prev.filter(id => id !== listId));
       toast.error(error.message || "Failed to add to list");
     },
   });
@@ -175,6 +187,10 @@ export function SaveToListDropdown({
         body: JSON.stringify({ placeId }),
       });
     },
+    onMutate: async (listId: string) => {
+      // Optimistic update - immediately remove from list
+      setOptimisticLists(prev => prev.filter(id => id !== listId));
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
@@ -182,7 +198,9 @@ export function SaveToListDropdown({
       toast.success("Removed from list");
       onSaveSuccess?.();
     },
-    onError: (error: Error) => {
+    onError: (error: Error, listId: string) => {
+      // Rollback on error
+      setOptimisticLists(prev => [...prev, listId]);
       toast.error(error.message || "Failed to remove from list");
     },
   });
@@ -223,7 +241,7 @@ export function SaveToListDropdown({
   };
 
   const handleListToggle = (listId: string) => {
-    const isInList = listsContainingPlace.includes(listId);
+    const isInList = optimisticLists.includes(listId);
     if (isInList) {
       removeFromListMutation.mutate(listId);
     } else {
@@ -332,7 +350,7 @@ export function SaveToListDropdown({
             <div className="text-sm text-muted-foreground px-1.5 py-1">No lists yet</div>
           ) : (
             lists.map((list) => {
-              const isInList = listsContainingPlace.includes(list.id);
+              const isInList = optimisticLists.includes(list.id);
               return (
                 <DropdownMenuItem
                   key={list.id}
