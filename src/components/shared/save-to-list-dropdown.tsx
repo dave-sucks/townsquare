@@ -459,7 +459,7 @@ export function SaveToListDropdown({
           }}
           disabled={unsavePlaceMutation.isPending || !isSaved}
           data-testid="button-unsave"
-          className="text-destructive focus:text-destructive"
+          className="hover:text-destructive focus:text-destructive"
         >
           <Trash2 className="h-4 w-4" />
           <span>Remove from saved</span>
