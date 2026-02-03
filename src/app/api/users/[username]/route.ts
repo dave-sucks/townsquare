@@ -214,6 +214,66 @@ export async function GET(
       orderBy: { createdAt: "desc" },
     });
 
+    // When viewing another user's profile, get the current user's save status for these places
+    let currentUserPlaceData: Record<string, {
+      savedPlaceId: string | null;
+      hasBeen: boolean;
+      rating: number | null;
+      lists: Array<{ id: string; name: string }>;
+    }> = {};
+
+    if (!isOwnProfile) {
+      // Get all place IDs from the profile
+      const placeIds = allSavedPlaces.map(sp => sp.placeId);
+      
+      // Get current user's saves for these places
+      const currentUserSaves = await prisma.savedPlace.findMany({
+        where: {
+          userId: currentUser.id,
+          placeId: { in: placeIds },
+        },
+        select: {
+          id: true,
+          placeId: true,
+          hasBeen: true,
+          rating: true,
+        },
+      });
+
+      // Get current user's lists that contain these places
+      const currentUserListPlaces = await prisma.listPlace.findMany({
+        where: {
+          placeId: { in: placeIds },
+          list: { userId: currentUser.id },
+        },
+        include: {
+          list: {
+            select: { id: true, name: true },
+          },
+        },
+      });
+
+      // Build a map of placeId -> listIds for current user
+      const placeListsMap: Record<string, Array<{ id: string; name: string }>> = {};
+      for (const lp of currentUserListPlaces) {
+        if (!placeListsMap[lp.placeId]) {
+          placeListsMap[lp.placeId] = [];
+        }
+        placeListsMap[lp.placeId].push({ id: lp.list.id, name: lp.list.name });
+      }
+
+      // Build the currentUserPlaceData map
+      for (const placeId of placeIds) {
+        const userSave = currentUserSaves.find(s => s.placeId === placeId);
+        currentUserPlaceData[placeId] = {
+          savedPlaceId: userSave?.id || null,
+          hasBeen: userSave?.hasBeen || false,
+          rating: userSave?.rating || null,
+          lists: placeListsMap[placeId] || [],
+        };
+      }
+    }
+
     // Get list places for list filtering (only visible lists)
     const listsWithPlaces = await prisma.list.findMany({
       where: {
@@ -243,6 +303,7 @@ export async function GET(
       lists: listsWithPlaces,
       reviews,
       activities: filteredActivities,
+      currentUserPlaceData: isOwnProfile ? null : currentUserPlaceData,
     });
   } catch (error: any) {
     console.error("Get user profile error:", error);

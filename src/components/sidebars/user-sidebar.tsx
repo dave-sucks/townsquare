@@ -89,6 +89,13 @@ interface ActivityData {
   } | null;
 }
 
+interface CurrentUserPlaceData {
+  savedPlaceId: string | null;
+  hasBeen: boolean;
+  rating: number | null;
+  lists: Array<{ id: string; name: string }>;
+}
+
 interface UserSidebarProps extends Partial<SidebarInjectedProps> {
   user: UserData;
   isOwnProfile: boolean;
@@ -99,6 +106,7 @@ interface UserSidebarProps extends Partial<SidebarInjectedProps> {
   lists: ListData[];
   activities: ActivityData[];
   isLoading?: boolean;
+  currentUserPlaceData?: Record<string, CurrentUserPlaceData> | null;
 }
 
 const statusOptions = [
@@ -161,6 +169,7 @@ export function UserSidebar({
   selectedPlaceId,
   onPlaceSelect,
   placeRowRefs,
+  currentUserPlaceData,
 }: UserSidebarProps) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"places" | "feed">("places");
@@ -346,6 +355,8 @@ export function UserSidebar({
               showSaveDropdown={true}
               emptyMessage="No places saved"
               emptySubMessage={isOwnProfile ? "Start saving places to see them here" : "This user hasn't saved any places yet"}
+              isOwnProfile={isOwnProfile}
+              currentUserPlaceData={currentUserPlaceData}
             />
           </div>
         </TabsContent>

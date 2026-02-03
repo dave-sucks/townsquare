@@ -80,6 +80,13 @@ interface ActivityData {
   } | null;
 }
 
+interface CurrentUserPlaceData {
+  savedPlaceId: string | null;
+  hasBeen: boolean;
+  rating: number | null;
+  lists: Array<{ id: string; name: string }>;
+}
+
 interface ProfileData {
   user: UserData;
   isOwnProfile: boolean;
@@ -91,6 +98,7 @@ interface ProfileData {
   allSavedPlaces: SavedPlace[];
   lists: ListData[];
   activities: ActivityData[];
+  currentUserPlaceData: Record<string, CurrentUserPlaceData> | null;
 }
 
 type SidebarView = "profile" | "detail";
@@ -185,6 +193,7 @@ export function ProfilePage({ username, currentUser, isAuthenticated }: ProfileP
       activities={data.activities}
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={handlePlaceSelect}
+      currentUserPlaceData={data.currentUserPlaceData}
     />
   );
 

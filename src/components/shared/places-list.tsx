@@ -39,6 +39,13 @@ interface SavedPlace {
   lists?: ListInfo[];
 }
 
+interface CurrentUserPlaceData {
+  savedPlaceId: string | null;
+  hasBeen: boolean;
+  rating: number | null;
+  lists: Array<{ id: string; name: string }>;
+}
+
 const RATING_NAMES: Record<number, string> = {
   1: "ehh",
   3: "liked",
@@ -54,6 +61,8 @@ interface PlaceCardProps {
   listsContainingPlace?: string[];
   actionButton?: React.ReactNode;
   onClick?: () => void;
+  isOwnProfile?: boolean;
+  currentUserData?: CurrentUserPlaceData | null;
 }
 
 function formatPlaceType(type: string | null): string {
@@ -64,7 +73,7 @@ function formatPlaceType(type: string | null): string {
 }
 
 export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
-  ({ savedPlace, isSelected, showStatus = true, showSaveDropdown = false, hideDropdownUntilHover = false, listsContainingPlace = [], actionButton, onClick }, ref) => {
+  ({ savedPlace, isSelected, showStatus = true, showSaveDropdown = false, hideDropdownUntilHover = false, listsContainingPlace = [], actionButton, onClick, isOwnProfile = true, currentUserData }, ref) => {
     const photoRef = savedPlace.place.photoRefs?.[0];
     const photoUrl = photoRef 
       ? `/api/places/photo?photoRef=${encodeURIComponent(photoRef)}&maxWidth=100`
@@ -74,6 +83,16 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
     const locationDisplay = savedPlace.place.neighborhood 
       || savedPlace.place.locality 
       || savedPlace.place.formattedAddress.split(",")[0];
+    
+    const currentUserLists = isOwnProfile 
+      ? (savedPlace.lists?.map(l => l.id) || listsContainingPlace)
+      : (currentUserData?.lists?.map(l => l.id) || []);
+    
+    const currentUserSavedPlace = isOwnProfile 
+      ? { id: savedPlace.id, placeId: savedPlace.placeId, hasBeen: savedPlace.hasBeen, rating: savedPlace.rating }
+      : currentUserData?.savedPlaceId 
+        ? { id: currentUserData.savedPlaceId, placeId: savedPlace.placeId, hasBeen: currentUserData.hasBeen, rating: currentUserData.rating }
+        : null;
 
     return (
       <div
@@ -131,7 +150,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
                     <BadgeCheck className="w-4 h-4 flex-shrink-0 fill-foreground text-background" />
                   </TooltipTrigger>
                   <TooltipContent side="top">
-                    You've been here: {savedPlace.rating ? RATING_NAMES[savedPlace.rating] : "rated"}
+                    {isOwnProfile ? "You've been here" : "Been here"}: {savedPlace.rating ? RATING_NAMES[savedPlace.rating] : "rated"}
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -165,13 +184,8 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
           >
             <SaveToListDropdown
               place={savedPlace.place}
-              savedPlace={{
-                id: savedPlace.id,
-                placeId: savedPlace.placeId,
-                hasBeen: savedPlace.hasBeen,
-                rating: savedPlace.rating,
-              }}
-              listsContainingPlace={savedPlace.lists?.map(l => l.id) || listsContainingPlace}
+              savedPlace={currentUserSavedPlace}
+              listsContainingPlace={currentUserLists}
               showLabel={false}
               variant="ghost"
               size="icon"
@@ -198,6 +212,8 @@ interface PlacesListProps {
   showSaveDropdown?: boolean;
   hideDropdownUntilHover?: boolean;
   renderAction?: (savedPlace: SavedPlace) => React.ReactNode;
+  isOwnProfile?: boolean;
+  currentUserPlaceData?: Record<string, CurrentUserPlaceData> | null;
 }
 
 export function PlacesList({
@@ -212,6 +228,8 @@ export function PlacesList({
   showSaveDropdown = false,
   hideDropdownUntilHover = false,
   renderAction,
+  isOwnProfile = true,
+  currentUserPlaceData,
 }: PlacesListProps) {
   if (isLoading) {
     return (
@@ -251,6 +269,8 @@ export function PlacesList({
           hideDropdownUntilHover={hideDropdownUntilHover}
           actionButton={renderAction?.(savedPlace)}
           onClick={onPlaceSelect ? () => onPlaceSelect(savedPlace.id) : undefined}
+          isOwnProfile={isOwnProfile}
+          currentUserData={currentUserPlaceData?.[savedPlace.placeId] || null}
         />
       ))}
     </div>
