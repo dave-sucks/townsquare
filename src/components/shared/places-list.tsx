@@ -113,7 +113,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
                 <TooltipTrigger asChild>
                   <span className="absolute top-0 right-0 translate-x-1/3 -translate-y-1/3">
                     {savedPlace.rating === 3 ? (
-                      <BadgeCheck className="w-4 h-4 text-background fill-sky-500 drop-shadow-sm" />
+                      <BadgeCheck className="w-3.5 h-3.5 text-background fill-sky-500 stroke-[1.5] drop-shadow-sm" />
                     ) : savedPlace.rating === 1 ? (
                       <span className="block w-3 h-3 rounded-full bg-red-500 border-2 border-background shadow-sm" />
                     ) : (
@@ -124,7 +124,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
                 <TooltipContent side="top" className="flex items-center gap-1.5">
                   <span>You've Been Here. Rating:</span>
                   {savedPlace.rating === 3 ? (
-                    <BadgeCheck className="w-4 h-4 text-background fill-sky-500" />
+                    <BadgeCheck className="w-3.5 h-3.5 text-background fill-sky-500 stroke-[1.5]" />
                   ) : savedPlace.rating === 1 ? (
                     <span className="block w-3 h-3 rounded-full bg-red-500" />
                   ) : (
