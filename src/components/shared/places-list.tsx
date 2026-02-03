@@ -3,7 +3,7 @@
 import { forwardRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { MapPin, Bookmark } from "lucide-react";
+import { MapPin, Bookmark, BadgeCheck, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SaveToListDropdown } from "./save-to-list-dropdown";
 
@@ -39,16 +39,10 @@ interface SavedPlace {
   lists?: ListInfo[];
 }
 
-const RATING_COLORS: Record<number, string> = {
-  1: "bg-red-500",
-  2: "bg-yellow-500",
-  3: "bg-green-500",
-};
-
 const RATING_NAMES: Record<number, string> = {
-  1: "Bad",
-  2: "Okay",
-  3: "Great",
+  1: "Don't like",
+  2: "Like",
+  3: "Love",
 };
 
 interface PlaceCardProps {
@@ -117,22 +111,26 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
             {savedPlace.hasBeen && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span 
-                    className={cn(
-                      "absolute top-0 right-0 translate-x-1/3 -translate-y-1/3 w-3 h-3 rounded-full border-2 border-background shadow-sm",
-                      savedPlace.rating ? RATING_COLORS[savedPlace.rating] : "bg-green-500"
-                    )} 
-                  />
+                  <span className="absolute top-0 right-0 translate-x-1/3 -translate-y-1/3">
+                    {savedPlace.rating === 3 ? (
+                      <BadgeCheck className="w-4 h-4 text-background fill-sky-500 drop-shadow-sm" />
+                    ) : savedPlace.rating === 1 ? (
+                      <Circle className="w-3 h-3 fill-red-500 text-red-500 drop-shadow-sm" />
+                    ) : (
+                      <Circle className="w-3 h-3 fill-sky-500 text-sky-500 drop-shadow-sm" />
+                    )}
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="flex items-center gap-1.5">
                   <span>You've Been Here. Rating:</span>
-                  <span 
-                    className={cn(
-                      "inline-block w-2 h-2 rounded-full",
-                      savedPlace.rating ? RATING_COLORS[savedPlace.rating] : "bg-green-500"
-                    )} 
-                  />
-                  <span>{savedPlace.rating ? RATING_NAMES[savedPlace.rating] : "Great"}</span>
+                  {savedPlace.rating === 3 ? (
+                    <BadgeCheck className="w-4 h-4 text-background fill-sky-500" />
+                  ) : savedPlace.rating === 1 ? (
+                    <Circle className="w-3 h-3 fill-red-500 text-red-500" />
+                  ) : (
+                    <Circle className="w-3 h-3 fill-sky-500 text-sky-500" />
+                  )}
+                  <span>{savedPlace.rating ? RATING_NAMES[savedPlace.rating] : "Love"}</span>
                 </TooltipContent>
               </Tooltip>
             )}

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { Bookmark, Check, Plus, Loader2, ThumbsDown, Meh, ThumbsUp, List, Info } from "lucide-react";
+import { Bookmark, Check, Plus, Loader2, BadgeCheck, Circle, List, Info, ThumbsDown } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -63,10 +63,9 @@ interface SaveToListDropdownProps {
   className?: string;
 }
 
-const RATING_OPTIONS = [
-  { value: 1, label: "Bad", icon: ThumbsDown, color: "text-red-500", dotColor: "bg-red-500" },
-  { value: 2, label: "Okay", icon: Meh, color: "text-yellow-500", dotColor: "bg-yellow-500" },
-  { value: 3, label: "Great", icon: ThumbsUp, color: "text-green-500", dotColor: "bg-green-500" },
+const POSITIVE_RATINGS = [
+  { value: 2, label: "I like this place", iconType: "circle" as const },
+  { value: 3, label: "I love this place", iconType: "badge" as const },
 ];
 
 export function SaveToListDropdown({
@@ -261,8 +260,10 @@ export function SaveToListDropdown({
 
   const getRatingLabel = () => {
     if (!hasBeen || !currentRating) return null;
-    const option = RATING_OPTIONS.find(o => o.value === currentRating);
-    return option?.label;
+    if (currentRating === 1) return "Don't like";
+    if (currentRating === 2) return "Like";
+    if (currentRating === 3) return "Love";
+    return null;
   };
 
   return (
@@ -298,39 +299,39 @@ export function SaveToListDropdown({
         <DropdownMenuGroup>
           <DropdownMenuLabel>
             <span className="flex items-center gap-1">
-              Been there?
+              Been here?
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-3 w-3 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[200px]">
-                  We collect a simple rating for places you've been to help drive recommendations
+                  Rate places you've been to help drive recommendations
                 </TooltipContent>
               </Tooltip>
             </span>
           </DropdownMenuLabel>
-          <div className="flex gap-1 px-1.5 pb-1">
-            {RATING_OPTIONS.map((option) => {
+          <div className="flex flex-col gap-0.5 px-1">
+            {POSITIVE_RATINGS.map((option) => {
               const isSelected = hasBeen && currentRating === option.value;
               return (
-                <Button
+                <DropdownMenuItem
                   key={option.value}
-                  variant={isSelected ? "outline" : "ghost"}
-                  size="sm"
-                  className={cn(
-                    "flex-1 gap-1",
-                    !isSelected && "opacity-60 hover:opacity-100"
-                  )}
                   onClick={(e) => {
                     e.preventDefault();
                     handleRatingSelect(option.value);
                   }}
                   disabled={savePlaceMutation.isPending}
                   data-testid={`rating-button-${option.value}`}
+                  className={cn(isSelected && "bg-accent")}
                 >
-                  <span className={cn("inline-block w-2 h-2 rounded-full", option.dotColor)} />
-                  <span className="text-xs">{option.label}</span>
-                </Button>
+                  {option.iconType === "badge" ? (
+                    <BadgeCheck className="h-4 w-4 text-background fill-sky-500" />
+                  ) : (
+                    <Circle className="h-4 w-4 fill-sky-500 text-sky-500" />
+                  )}
+                  <span>{option.label}</span>
+                  {isSelected && <Check className="h-4 w-4 ml-auto" />}
+                </DropdownMenuItem>
               );
             })}
           </div>
@@ -432,6 +433,25 @@ export function SaveToListDropdown({
             Create new list
           </DropdownMenuItem>
         )}
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          onClick={(e) => {
+            e.preventDefault();
+            handleRatingSelect(1);
+          }}
+          disabled={savePlaceMutation.isPending}
+          data-testid="rating-button-1"
+          className={cn(
+            "text-muted-foreground",
+            hasBeen && currentRating === 1 && "bg-accent text-foreground"
+          )}
+        >
+          <Circle className="h-4 w-4 fill-red-500 text-red-500" />
+          <span>I don't like this place</span>
+          {hasBeen && currentRating === 1 && <Check className="h-4 w-4 ml-auto" />}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
