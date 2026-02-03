@@ -113,22 +113,22 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
                 <TooltipTrigger asChild>
                   <span className="absolute top-0 right-0 translate-x-1/3 -translate-y-1/3">
                     {savedPlace.rating === 3 ? (
-                      <BadgeCheck className="w-5 h-5 fill-sky-500 text-white stroke-[2.5] drop-shadow-sm" />
+                      <BadgeCheck className="w-[17px] h-[17px] fill-sky-500 text-white stroke-[2.5] drop-shadow-sm" />
                     ) : savedPlace.rating === 1 ? (
-                      <Circle className="w-4 h-4 fill-red-500 text-white stroke-[3] drop-shadow-sm" />
+                      <Circle className="w-[13px] h-[13px] fill-red-500 text-white stroke-[3] drop-shadow-sm" />
                     ) : (
-                      <Circle className="w-4 h-4 fill-sky-500 text-white stroke-[3] drop-shadow-sm" />
+                      <Circle className="w-[13px] h-[13px] fill-sky-500 text-white stroke-[3] drop-shadow-sm" />
                     )}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="flex items-center gap-1.5">
                   <span>You've Been Here. Rating:</span>
                   {savedPlace.rating === 3 ? (
-                    <BadgeCheck className="w-5 h-5 fill-sky-500 text-white stroke-[2.5]" />
+                    <BadgeCheck className="w-[17px] h-[17px] fill-sky-500 text-white stroke-[2.5]" />
                   ) : savedPlace.rating === 1 ? (
-                    <Circle className="w-4 h-4 fill-red-500 text-white stroke-[3]" />
+                    <Circle className="w-[13px] h-[13px] fill-red-500 text-white stroke-[3]" />
                   ) : (
-                    <Circle className="w-4 h-4 fill-sky-500 text-white stroke-[3]" />
+                    <Circle className="w-[13px] h-[13px] fill-sky-500 text-white stroke-[3]" />
                   )}
                   <span>{savedPlace.rating ? RATING_NAMES[savedPlace.rating] : "Love"}</span>
                 </TooltipContent>
