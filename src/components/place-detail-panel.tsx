@@ -9,23 +9,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  Heart, 
-  CheckCircle, 
-  Trash2, 
   ExternalLink, 
   Star, 
   ArrowLeft,
   ArrowRightFromLine,
-  Utensils
+  Utensils,
+  MapPin,
+  BadgeCheck,
+  List as ListIcon,
+  ChevronRight,
 } from "lucide-react";
 import { PlacePhotoGrid } from "./place-photo-grid";
 import { SaveToListDropdown } from "./shared/save-to-list-dropdown";
+import { FeedPost } from "./feed-post";
 
 interface Place {
   id: string;
   googlePlaceId: string;
   name: string;
   formattedAddress: string;
+  neighborhood?: string | null;
+  locality?: string | null;
   lat: number;
   lng: number;
   primaryType: string | null;
@@ -71,12 +75,53 @@ interface FriendSaved {
   };
 }
 
+interface ListInfo {
+  id: string;
+  name: string;
+  visibility?: string;
+  _count?: {
+    listPlaces: number;
+  };
+}
+
+interface Activity {
+  id: string;
+  actorId: string;
+  type: "PLACE_SAVED" | "PLACE_MARKED_BEEN" | "PLACE_ADDED_TO_LIST" | "LIST_CREATED" | "REVIEW_CREATED";
+  placeId: string | null;
+  listId: string | null;
+  createdAt: string;
+  actor: {
+    id: string;
+    username: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    profileImageUrl: string | null;
+  };
+  place: {
+    id: string;
+    googlePlaceId: string;
+    name: string;
+    formattedAddress: string;
+    photoRefs?: string[] | null;
+  } | null;
+  list: {
+    id: string;
+    name: string;
+    visibility: string;
+    userId: string;
+  } | null;
+  metadata: { placeName?: string; listName?: string; rating?: number; note?: string; review_preview?: string } | null;
+}
+
 interface PlaceDetailPanelProps {
   savedPlace: SavedPlace | null;
   myReview?: Review | null;
   photos?: Photo[];
   friendsWhoSaved?: FriendSaved[];
   listsContainingPlace?: string[];
+  listsData?: ListInfo[];
+  activities?: Activity[];
   isLoading?: boolean;
   onBack: () => void;
   onDelete: () => void;
@@ -85,7 +130,7 @@ interface PlaceDetailPanelProps {
 }
 
 function formatPlaceType(type: string | null): string {
-  if (!type) return "Place";
+  if (!type) return "";
   return type
     .replace(/_/g, " ")
     .split(" ")
@@ -105,12 +150,41 @@ function formatPriceLevel(priceLevel: string | null): string {
   return levels[priceLevel] || "";
 }
 
+const RATING_LABELS: Record<number, string> = {
+  1: "ehh",
+  3: "liked",
+  5: "loved",
+};
+
+function ListRowCard({ list }: { list: ListInfo }) {
+  return (
+    <Link 
+      href={`/lists/${list.id}`}
+      className="flex items-center gap-3 p-3 rounded-lg border bg-card hover-elevate min-w-[200px]"
+      data-testid={`list-row-${list.id}`}
+    >
+      <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0">
+        <ListIcon className="h-5 w-5 text-muted-foreground" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{list.name}</p>
+        <p className="text-xs text-muted-foreground">
+          {list._count?.listPlaces || 0} places
+        </p>
+      </div>
+      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+    </Link>
+  );
+}
+
 export function PlaceDetailPanel({
   savedPlace,
   myReview,
   photos = [],
   friendsWhoSaved = [],
   listsContainingPlace = [],
+  listsData = [],
+  activities = [],
   isLoading = false,
   onBack,
   onDelete,
@@ -140,8 +214,8 @@ export function PlaceDetailPanel({
   const placeType = formatPlaceType(place.primaryType);
   const priceLevel = formatPriceLevel(place.priceLevel);
   
-  const friendsWant = friendsWhoSaved.filter(f => !f.hasBeen);
-  const friendsBeen = friendsWhoSaved.filter(f => f.hasBeen);
+  const locationDisplay = place.neighborhood || place.locality || "";
+  const listsForThisPlace = listsData.filter(l => listsContainingPlace.includes(l.id));
 
   return (
     <div className="h-full flex flex-col bg-background" data-testid="place-detail-panel">
@@ -182,26 +256,15 @@ export function PlaceDetailPanel({
 
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4">
-          <div>
-            <h2 className="text-xl font-semibold" data-testid="panel-place-name">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold" data-testid="panel-place-name">
               {place.name}
-            </h2>
-            <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground flex-wrap">
-              {myReview && (
-                <>
-                  <div className="flex items-center gap-1 flex-wrap">
-                    <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
-                    <span className="font-medium text-foreground">{myReview.rating}/10</span>
-                  </div>
-                  <span>·</span>
-                </>
-              )}
-              <span data-testid="panel-place-address">{place.formattedAddress}</span>
-            </div>
-            <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground flex-wrap">
+            </h1>
+            
+            <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
               {placeType && (
-                <div className="flex items-center gap-1 flex-wrap">
-                  <Utensils className="h-3 w-3" />
+                <div className="flex items-center gap-1">
+                  <Utensils className="h-3.5 w-3.5" />
                   <span>{placeType}</span>
                 </div>
               )}
@@ -211,6 +274,31 @@ export function PlaceDetailPanel({
                   <span>{priceLevel}</span>
                 </>
               )}
+              {locationDisplay && (
+                <>
+                  <span>·</span>
+                  <span>{locationDisplay}</span>
+                </>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 text-sm flex-wrap">
+              {savedPlace.hasBeen && (
+                <Badge variant="secondary" className="gap-1">
+                  <BadgeCheck className="h-3 w-3" />
+                  {savedPlace.rating ? RATING_LABELS[savedPlace.rating] : "Been"}
+                </Badge>
+              )}
+              {listsForThisPlace.length > 0 && (
+                <span className="text-muted-foreground">
+                  In {listsForThisPlace.length} list{listsForThisPlace.length !== 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5 shrink-0" />
+              <span data-testid="panel-place-address">{place.formattedAddress}</span>
             </div>
           </div>
 
@@ -238,30 +326,50 @@ export function PlaceDetailPanel({
           )}
 
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="w-full justify-start flex-wrap">
+            <TabsList className="w-full justify-start">
               <TabsTrigger value="overview" data-testid="panel-tab-overview">Overview</TabsTrigger>
-              <TabsTrigger value="friends" data-testid="panel-tab-friends">Friends</TabsTrigger>
+              <TabsTrigger value="feed" data-testid="panel-tab-feed">Feed</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview" className="pt-4 space-y-4">
-              <div className="space-y-3">
-                <Badge 
-                  variant={savedPlace.hasBeen ? "default" : "secondary"}
-                  data-testid="panel-badge-status"
-                >
-                  {savedPlace.hasBeen ? (
-                    <><CheckCircle className="mr-1 h-3 w-3" />Been there{savedPlace.rating && ` (${savedPlace.rating === 3 ? 'Great' : savedPlace.rating === 2 ? 'Okay' : 'Bad'})`}</>
-                  ) : (
-                    <><Heart className="mr-1 h-3 w-3" />Saved</>
-                  )}
-                </Badge>
-                
-                {myReview?.note && (
-                  <p className="text-sm text-muted-foreground" data-testid="panel-review-note">
-                    {myReview.note}
-                  </p>
-                )}
+            <TabsContent value="overview" className="pt-4 space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">About</h3>
+                <p className="text-sm text-muted-foreground">
+                  A popular {placeType?.toLowerCase() || "place"} in {locationDisplay || "the area"}. 
+                  Known for great ambiance and quality service. Perfect for dining with friends and family.
+                </p>
               </div>
+
+              {listsForThisPlace.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium">Lists</h3>
+                  <div className="flex gap-3 overflow-x-auto pb-2">
+                    {listsForThisPlace.map((list) => (
+                      <ListRowCard key={list.id} list={list} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activities.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium">Recent Activity</h3>
+                    <Button variant="ghost" size="sm" className="text-xs" asChild>
+                      <Link href="#" onClick={(e) => {
+                        e.preventDefault();
+                        const feedTab = document.querySelector('[data-testid="panel-tab-feed"]') as HTMLButtonElement;
+                        feedTab?.click();
+                      }}>
+                        See all <ChevronRight className="h-3 w-3 ml-1" />
+                      </Link>
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    <FeedPost activity={activities[0]} />
+                  </div>
+                </div>
+              )}
 
               <Separator />
 
@@ -291,85 +399,22 @@ export function PlaceDetailPanel({
               </div>
             </TabsContent>
 
-            <TabsContent value="friends" className="pt-4">
-              {friendsWhoSaved.length === 0 ? (
-                <p className="text-sm text-muted-foreground" data-testid="panel-text-no-friends">
-                  None of your friends have saved this place yet.
+            <TabsContent value="feed" className="pt-4">
+              {activities.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8" data-testid="text-no-activity">
+                  No activity for this place yet.
                 </p>
               ) : (
-                <div className="space-y-3">
-                  {friendsBeen.length > 0 && (
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-2">Been here</p>
-                      <div className="space-y-2">
-                        {friendsBeen.map((friend) => {
-                          const displayName = friend.user.firstName
-                            ? `${friend.user.firstName}${friend.user.lastName ? ` ${friend.user.lastName}` : ""}`
-                            : friend.user.username || "User";
-                          return (
-                            <Link
-                              key={friend.id}
-                              href={`/u/${friend.user.username || friend.user.id}`}
-                              className="flex items-center gap-2 p-2 rounded-md hover-elevate flex-wrap"
-                              data-testid={`panel-friend-${friend.id}`}
-                            >
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={friend.user.profileImageUrl || undefined} alt={displayName} />
-                                <AvatarFallback>{displayName.charAt(0).toUpperCase()}</AvatarFallback>
-                              </Avatar>
-                              <span className="text-sm font-medium">{displayName}</span>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                  {friendsWant.length > 0 && (
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-2">Want to visit</p>
-                      <div className="space-y-2">
-                        {friendsWant.map((friend) => {
-                          const displayName = friend.user.firstName
-                            ? `${friend.user.firstName}${friend.user.lastName ? ` ${friend.user.lastName}` : ""}`
-                            : friend.user.username || "User";
-                          return (
-                            <Link
-                              key={friend.id}
-                              href={`/u/${friend.user.username || friend.user.id}`}
-                              className="flex items-center gap-2 p-2 rounded-md hover-elevate flex-wrap"
-                              data-testid={`panel-friend-${friend.id}`}
-                            >
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={friend.user.profileImageUrl || undefined} alt={displayName} />
-                                <AvatarFallback>{displayName.charAt(0).toUpperCase()}</AvatarFallback>
-                              </Avatar>
-                              <span className="text-sm font-medium">{displayName}</span>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                <div className="space-y-4">
+                  {activities.map((activity) => (
+                    <FeedPost key={activity.id} activity={activity} />
+                  ))}
                 </div>
               )}
             </TabsContent>
           </Tabs>
         </div>
       </ScrollArea>
-
-      <div className="border-t p-3">
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={onDelete}
-          disabled={isDeleting}
-          className="text-destructive hover:text-destructive w-full"
-          data-testid="panel-button-delete"
-        >
-          <Trash2 className="mr-1 h-4 w-4" />
-          Remove from saved
-        </Button>
-      </div>
     </div>
   );
 }
