@@ -79,11 +79,6 @@ function formatPlaceType(type: string | null): string {
 export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
   ({ savedPlace, isSelected, showStatus = true, showSaveDropdown = false, hideDropdownUntilHover = false, listsContainingPlace = [], actionButton, onClick, isOwnProfile = true, currentUserData }, ref) => {
     const queryClient = useQueryClient();
-    const photoRef = savedPlace.place.photoRefs?.[0];
-    const photoUrl = photoRef 
-      ? `/api/places/photo?photoRef=${encodeURIComponent(photoRef)}&maxWidth=100`
-      : null;
-    
     const placeType = formatPlaceType(savedPlace.place.primaryType);
     const locationDisplay = savedPlace.place.neighborhood 
       || savedPlace.place.locality 
@@ -141,39 +136,26 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
           data-testid={`place-row-${savedPlace.id}`}
           className="flex items-center gap-3 flex-1 min-w-0"
         >
-          <div className="relative w-16 h-16 flex-shrink-0">
-            <div className="w-full h-full rounded-md overflow-hidden bg-muted">
-              {photoUrl ? (
-                <img
-                  src={photoUrl}
-                  alt={savedPlace.place.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : null}
+          {isOwnProfile ? (
+            <EmojiPickerPopover
+              emoji={savedPlace.emoji || null}
+              onEmojiSelect={handleEmojiSelect}
+              disabled={updateEmojiMutation.isPending}
+              variant="area"
+              testId={`button-emoji-picker-${savedPlace.id}`}
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+              {savedPlace.emoji ? (
+                <span className="text-2xl">{savedPlace.emoji}</span>
+              ) : (
+                <MapPin className="h-5 w-5 text-muted-foreground" />
+              )}
             </div>
-            {savedPlace.rating === 5 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 text-base drop-shadow-sm">
-                    🤩
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="top">
-                  Amazing!
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
+          )}
 
           <div className="flex-1 min-w-0 overflow-hidden">
             <h3 className="font-medium text-sm truncate flex items-center gap-1">
-              {isOwnProfile && (
-                <EmojiPickerPopover
-                  emoji={savedPlace.emoji || null}
-                  onEmojiSelect={handleEmojiSelect}
-                  disabled={updateEmojiMutation.isPending}
-                />
-              )}
               {savedPlace.place.name}
               {savedPlace.hasBeen && (
                 <Tooltip>
