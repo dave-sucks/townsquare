@@ -7,6 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Smile, X, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const CATEGORY_ICONS = [
+  { id: "smileys-emotion", icon: "😀", label: "Smileys" },
+  { id: "people-body", icon: "👋", label: "People" },
+  { id: "animals-nature", icon: "🐻", label: "Animals" },
+  { id: "food-drink", icon: "🍔", label: "Food" },
+  { id: "travel-places", icon: "✈️", label: "Travel" },
+  { id: "activities", icon: "⚽", label: "Activities" },
+  { id: "objects", icon: "💡", label: "Objects" },
+  { id: "symbols", icon: "❤️", label: "Symbols" },
+  { id: "flags", icon: "🏳️", label: "Flags" },
+];
+
 interface EmojiPickerPopoverProps {
   emoji: string | null;
   onEmojiSelect: (emoji: string | null) => void;
@@ -39,31 +51,53 @@ export function EmojiPickerPopover({
 
   const emojiPickerContent = (
     <div className="relative" data-testid="emoji-picker-container">
-      {emoji && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute top-2 right-2 z-10 gap-1"
-          onClick={handleClear}
-          data-testid="button-clear-emoji"
-        >
-          <X className="h-3 w-3" />
-          <span data-testid="text-clear-emoji">Clear</span>
-        </Button>
-      )}
       <EmojiPicker.Root
         className="isolate flex h-[340px] w-[320px] flex-col bg-popover text-popover-foreground"
         onEmojiSelect={handleEmojiSelect}
       >
-        <div className="relative mx-2 mt-2">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-          <EmojiPicker.Search
-            placeholder="Search emoji..."
-            className="w-full appearance-none rounded-md border border-input bg-background pl-8 pr-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            data-testid="input-emoji-search"
-          />
+        <div className="flex items-center gap-2 mx-2 mt-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <EmojiPicker.Search
+              placeholder="Search emoji..."
+              className="w-full appearance-none rounded-md border border-input bg-background pl-8 pr-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              data-testid="input-emoji-search"
+            />
+          </div>
+          {emoji && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleClear}
+              data-testid="button-clear-emoji"
+              className="flex-shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
-        <EmojiPicker.Viewport className="relative flex-1 outline-hidden mt-2">
+        <div className="flex items-center justify-between px-2 py-1.5 border-b border-border">
+          {CATEGORY_ICONS.map((cat) => (
+            <button
+              key={cat.id}
+              className="flex items-center justify-center w-7 h-7 rounded-md text-base hover-elevate"
+              title={cat.label}
+              data-testid={`button-category-${cat.id}`}
+              onClick={(e) => {
+                e.preventDefault();
+                const categoryElement = document.querySelector(
+                  `[data-testid="text-emoji-category-${cat.label.toLowerCase()}"]`
+                ) as HTMLElement;
+                if (categoryElement) {
+                  categoryElement.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+              }}
+            >
+              {cat.icon}
+            </button>
+          ))}
+        </div>
+        <EmojiPicker.Viewport className="relative flex-1 outline-hidden">
           <EmojiPicker.Loading className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm" data-testid="text-emoji-loading">
             Loading...
           </EmojiPicker.Loading>
