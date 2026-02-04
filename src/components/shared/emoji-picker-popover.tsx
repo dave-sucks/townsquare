@@ -8,15 +8,15 @@ import { Smile, X, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const CATEGORY_ICONS = [
-  { id: "smileys-emotion", icon: "😀", label: "Smileys" },
-  { id: "people-body", icon: "👋", label: "People" },
-  { id: "animals-nature", icon: "🐻", label: "Animals" },
-  { id: "food-drink", icon: "🍔", label: "Food" },
-  { id: "travel-places", icon: "✈️", label: "Travel" },
-  { id: "activities", icon: "⚽", label: "Activities" },
-  { id: "objects", icon: "💡", label: "Objects" },
-  { id: "symbols", icon: "❤️", label: "Symbols" },
-  { id: "flags", icon: "🏳️", label: "Flags" },
+  { id: "smileys-emotion", icon: "😀", label: "Smileys", dataLabel: "smileys-&-emotion" },
+  { id: "people-body", icon: "👋", label: "People", dataLabel: "people-&-body" },
+  { id: "animals-nature", icon: "🐻", label: "Animals", dataLabel: "animals-&-nature" },
+  { id: "food-drink", icon: "🍔", label: "Food", dataLabel: "food-&-drink" },
+  { id: "travel-places", icon: "✈️", label: "Travel", dataLabel: "travel-&-places" },
+  { id: "activities", icon: "⚽", label: "Activities", dataLabel: "activities" },
+  { id: "objects", icon: "💡", label: "Objects", dataLabel: "objects" },
+  { id: "symbols", icon: "❤️", label: "Symbols", dataLabel: "symbols" },
+  { id: "flags", icon: "🏳️", label: "Flags", dataLabel: "flags" },
 ];
 
 interface EmojiPickerPopoverProps {
@@ -85,7 +85,7 @@ export function EmojiPickerPopover({
               onClick={(e) => {
                 e.preventDefault();
                 const categoryElement = document.querySelector(
-                  `[data-testid="text-emoji-category-${cat.label.toLowerCase()}"]`
+                  `[data-testid="text-emoji-category-${cat.dataLabel}"]`
                 ) as HTMLElement;
                 if (categoryElement) {
                   categoryElement.scrollIntoView({ behavior: "smooth", block: "start" });
