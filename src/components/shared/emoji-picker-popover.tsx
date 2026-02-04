@@ -60,7 +60,7 @@ export function EmojiPickerPopover({
             <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
             <EmojiPicker.Search
               placeholder="Search emoji..."
-              className="flex-1 h-9 bg-transparent pl-8 pr-8 text-base placeholder:text-muted-foreground focus:outline-none touch-manipulation"
+              className="flex-1 h-9 bg-transparent pl-8 pr-8 text-base placeholder:text-muted-foreground focus:outline-none touch-manipulation [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
               data-testid="input-emoji-search"
             />
             {emoji && (
