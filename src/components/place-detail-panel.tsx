@@ -163,7 +163,7 @@ function ListRowCard({ list }: { list: ListInfo }) {
   return (
     <Link 
       href={`/lists/${list.id}`}
-      className="flex items-center gap-3 p-3 rounded-lg border bg-card hover-elevate min-w-[200px]"
+      className="flex items-center gap-3 p-3 rounded-lg border bg-card hover-elevate"
       data-testid={`list-row-${list.id}`}
     >
       <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0">
@@ -295,7 +295,7 @@ export function PlaceDetailPanel({
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4">
           <div className="space-y-2">
-            <div className="flex items-start gap-3">
+            <div className="flex items-center gap-3">
               <EmojiPickerPopover
                 emoji={savedPlace.emoji || null}
                 onEmojiSelect={(emoji) => updateEmojiMutation.mutate(emoji)}
@@ -329,24 +329,24 @@ export function PlaceDetailPanel({
               )}
             </div>
 
-            <div className="flex items-center gap-2 text-sm flex-wrap">
-              {savedPlace.hasBeen && (
+            {savedPlace.hasBeen && (
+              <div className="flex items-center gap-2 text-sm flex-wrap">
                 <Badge variant="secondary" className="gap-1">
                   <BadgeCheck className="h-3 w-3" />
                   {savedPlace.rating ? RATING_LABELS[savedPlace.rating] : "Been"}
                 </Badge>
-              )}
-              {listsForThisPlace.length > 0 && (
-                <span className="text-muted-foreground">
-                  In {listsForThisPlace.length} list{listsForThisPlace.length !== 1 ? "s" : ""}
-                </span>
-              )}
-            </div>
+              </div>
+            )}
 
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <a 
+              href={`https://www.google.com/maps/place/?q=place_id:${place.googlePlaceId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
               <MapPin className="h-3.5 w-3.5 shrink-0" />
-              <span data-testid="panel-place-address">{place.formattedAddress}</span>
-            </div>
+              <span className="truncate" data-testid="panel-place-address">{place.formattedAddress}</span>
+            </a>
           </div>
 
           {fetchedFriends.length > 0 && (
@@ -388,7 +388,7 @@ export function PlaceDetailPanel({
               {listsForThisPlace.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="text-sm font-medium">Lists</h3>
-                  <div className="flex gap-3 overflow-x-auto pb-2">
+                  <div className="flex flex-col gap-2">
                     {listsForThisPlace.map((list) => (
                       <ListRowCard key={list.id} list={list} />
                     ))}

@@ -174,7 +174,7 @@ function ListRowCard({ list }: { list: ListData }) {
   return (
     <Link 
       href={`/lists/${list.id}`}
-      className="flex items-center gap-3 p-3 rounded-lg border bg-card hover-elevate min-w-[200px] shrink-0"
+      className="flex items-center gap-3 p-3 rounded-lg border bg-card hover-elevate"
       data-testid={`list-row-${list.id}`}
     >
       <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0">
@@ -391,7 +391,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
         <div className="space-y-6">
           {/* Header: Big title, inline metadata */}
           <div className="space-y-3">
-            <div className="flex items-start gap-3">
+            <div className="flex items-center gap-3">
               {savedPlace && (
                 <EmojiPickerPopover
                   emoji={savedPlace.emoji || null}
@@ -429,25 +429,25 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
             </div>
 
             {/* Status badges */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {savedPlace?.hasBeen && (
+            {savedPlace?.hasBeen && (
+              <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="secondary" className="gap-1">
                   <BadgeCheck className="h-3 w-3" />
                   {savedPlace.rating ? RATING_LABELS[savedPlace.rating] : "Been"}
                 </Badge>
-              )}
-              {listsContainingPlace.length > 0 && (
-                <span className="text-sm text-muted-foreground">
-                  In {listsContainingPlace.length} list{listsContainingPlace.length !== 1 ? "s" : ""}
-                </span>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* Separate address line */}
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            {/* Address - clickable to Google Maps */}
+            <a 
+              href={`https://www.google.com/maps/place/?q=place_id:${place.googlePlaceId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
               <MapPin className="h-3.5 w-3.5 shrink-0" />
-              <span data-testid="text-place-address">{place.formattedAddress}</span>
-            </div>
+              <span className="truncate" data-testid="text-place-address">{place.formattedAddress}</span>
+            </a>
           </div>
 
           {/* Friends context */}
@@ -520,7 +520,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
               {listsContainingPlace.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="text-sm font-medium">Lists</h3>
-                  <div className="flex gap-3 overflow-x-auto pb-2">
+                  <div className="flex flex-col gap-2">
                     {listsContainingPlace.map((list) => (
                       <ListRowCard key={list.id} list={list} />
                     ))}
