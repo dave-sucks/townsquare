@@ -419,7 +419,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                   testId="button-emoji-page"
                 />
               )}
-              <h1 className="text-3xl font-bold flex items-center gap-2" data-testid="text-place-name">
+              <h1 className="text-3xl font-bold flex items-center gap-2 font-brand" data-testid="text-place-name">
                 {place.name}
                 {savedPlace?.hasBeen && (
                   <Tooltip>

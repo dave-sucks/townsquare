@@ -105,14 +105,14 @@ export function ListSidebar({
     <div className="h-full flex flex-col bg-background" data-testid="list-sidebar">
       <div className="flex items-center gap-2 p-3 border-b">
         <SidebarTrigger data-testid="button-sidebar-toggle" />
-        <span className="font-semibold text-sm flex-1">{placeCount} {placeCount === 1 ? "place" : "places"}</span>
+        <span className="font-semibold text-sm flex-1 font-brand">{placeCount} {placeCount === 1 ? "place" : "places"}</span>
         {list.visibility === "PRIVATE" && (
           <Lock className="h-4 w-4 text-muted-foreground" />
         )}
       </div>
 
       <div className="p-3 border-b">
-        <h2 className="text-sm font-semibold truncate" data-testid="text-list-name">{list.name}</h2>
+        <h2 className="text-sm font-semibold truncate font-brand" data-testid="text-list-name">{list.name}</h2>
         <Link 
           href={`/u/${ownerHandle}`} 
           className="text-xs text-muted-foreground hover:underline"

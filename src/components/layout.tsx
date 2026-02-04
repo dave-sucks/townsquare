@@ -92,7 +92,7 @@ function SidebarNav({ user }: { user: User | null }) {
                   <MapPin className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                  <span className="truncate font-semibold">Beli</span>
+                  <span className="truncate font-semibold font-brand">Beli</span>
                   <span className="truncate text-xs text-muted-foreground">Places you love</span>
                 </div>
               </Link>
@@ -246,7 +246,7 @@ export function PageHeader({ title, children, size, showTrigger = true, backHref
   return (
     <header className={pageHeaderVariants({ size })}>
       {showTrigger && <SidebarTrigger data-testid="button-sidebar-toggle" />}
-      {title && <h1 className="font-semibold text-sm">{title}</h1>}
+      {title && <h1 className="font-semibold text-sm font-brand">{title}</h1>}
       <div className="ml-auto flex items-center gap-2">
         {children}
       </div>

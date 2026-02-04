@@ -23,7 +23,7 @@ export function MapSettingsPanel({ onBack }: MapSettingsPanelProps) {
         >
           <X className="h-4 w-4" />
         </Button>
-        <h1 className="font-semibold text-sm flex-1">Map Settings</h1>
+        <h1 className="font-semibold text-sm flex-1 font-brand">Map Settings</h1>
       </div>
       
       <div className="flex-1 overflow-y-auto p-4">

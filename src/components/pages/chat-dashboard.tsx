@@ -314,7 +314,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 p-3 border-b">
         <SidebarTrigger data-testid="button-sidebar-toggle" />
-        <h1 className="font-semibold text-sm flex-1">AI Chat</h1>
+        <h1 className="font-semibold text-sm flex-1 font-brand">AI Chat</h1>
         {activeConversationId && (
           <Button
             variant="ghost"
@@ -632,7 +632,7 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
           </div>
 
           <div className="flex-1 min-w-0 overflow-hidden">
-            <h3 className="font-medium text-sm truncate">
+            <h3 className="font-medium text-sm truncate font-brand">
               {place.name}
             </h3>
             

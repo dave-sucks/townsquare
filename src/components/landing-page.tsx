@@ -11,7 +11,7 @@ export function LandingPage() {
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-2">
             <MapPin className="h-6 w-6 text-primary" />
-            <span className="text-xl font-semibold">Beli</span>
+            <span className="text-xl font-semibold font-brand">Beli</span>
           </div>
           <Button asChild data-testid="button-login">
             <a href="/api/login">Sign In</a>
@@ -22,7 +22,7 @@ export function LandingPage() {
       <main className="flex-1">
         <section className="container py-24 lg:py-32">
           <div className="mx-auto flex max-w-3xl flex-col items-center gap-8 text-center">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl font-brand">
               Save and Track Your Favorite Places
             </h1>
             <p className="max-w-xl text-lg text-muted-foreground">

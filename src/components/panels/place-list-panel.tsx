@@ -91,7 +91,7 @@ export function PlaceListPanel({
     <div className="h-full flex flex-col bg-background" data-testid="place-list-panel">
       <div className="flex items-center gap-2 p-3 border-b">
         <SidebarTrigger data-testid="button-sidebar-toggle" />
-        <h1 className="font-semibold text-sm flex-1">Places</h1>
+        <h1 className="font-semibold text-sm flex-1 font-brand">Places</h1>
         <Button
           variant="ghost"
           size="icon"

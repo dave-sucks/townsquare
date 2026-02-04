@@ -140,7 +140,7 @@ function ProfileHeader({
       </Avatar>
       
       <div className="flex-1 min-w-0">
-        <h2 className="text-sm font-semibold truncate" data-testid="text-profile-name">{displayName}</h2>
+        <h2 className="text-sm font-semibold truncate font-brand" data-testid="text-profile-name">{displayName}</h2>
         <p className="text-xs text-muted-foreground" data-testid="text-profile-username">@{handle}</p>
         
         <div className="flex items-center gap-4 mt-1 text-xs">
@@ -250,7 +250,7 @@ export function UserSidebar({
     <div className="h-full flex flex-col bg-background" data-testid="user-sidebar">
       <div className="flex items-center gap-2 p-3 border-b">
         <SidebarTrigger data-testid="button-sidebar-toggle" />
-        <span className="font-semibold text-sm flex-1 truncate">{displayName}</span>
+        <span className="font-semibold text-sm flex-1 truncate font-brand">{displayName}</span>
         {!isOwnProfile && (
           <Button
             variant={localIsFollowing ? "outline" : "default"}
