@@ -342,10 +342,10 @@ export function PlaceDetailPanel({
               href={`https://www.google.com/maps/place/?q=place_id:${place.googlePlaceId}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors min-w-0 max-w-full"
+              className="flex items-start gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              <MapPin className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate" data-testid="panel-place-address">{place.formattedAddress}</span>
+              <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <span className="line-clamp-1" data-testid="panel-place-address">{place.formattedAddress}</span>
             </a>
           </div>
 
