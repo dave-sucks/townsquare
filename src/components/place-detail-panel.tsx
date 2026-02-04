@@ -293,16 +293,16 @@ export function PlaceDetailPanel({
       <ScrollArea className="flex-1">
         {/* Hero Photo */}
         {place.photoRefs && place.photoRefs.length > 0 ? (
-          <div className="w-full aspect-[16/9] bg-muted relative overflow-hidden">
+          <div className="w-full h-48 bg-muted relative overflow-hidden">
             <img
-              src={`/api/places/photo?photoRef=${encodeURIComponent(place.photoRefs[0] as string)}&maxWidth=800`}
+              src={`/api/places/photo?photoRef=${encodeURIComponent(place.photoRefs[0] as string)}&maxWidth=600`}
               alt={place.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-center"
               data-testid="panel-hero-photo"
             />
           </div>
         ) : (
-          <div className="w-full aspect-[16/9] bg-muted flex items-center justify-center">
+          <div className="w-full h-48 bg-muted flex items-center justify-center">
             <MapPin className="h-12 w-12 text-muted-foreground" />
           </div>
         )}

@@ -533,19 +533,21 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                       </Link>
                     </Button>
                   </div>
-                  <FeedPost activity={activities[0]} />
+                  <div className="-mx-4">
+                    <FeedPost activity={activities[0]} />
+                  </div>
                 </div>
               )}
 
               </TabsContent>
 
-            <TabsContent value="feed" className="pt-4">
+            <TabsContent value="feed" className="pt-4 -mx-4">
               {activities.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8" data-testid="text-no-activity">
+                <p className="text-sm text-muted-foreground text-center py-8 px-4" data-testid="text-no-activity">
                   No activity for this place yet.
                 </p>
               ) : (
-                <div className="space-y-4">
+                <div>
                   {activities.map((activity) => (
                     <FeedPost key={activity.id} activity={activity} />
                   ))}
