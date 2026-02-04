@@ -82,8 +82,6 @@ export async function GET(request: NextRequest) {
             note: true,
             source: true,
             instagramUrl: true,
-            socialPostAuthor: true,
-            socialPostAuthorImage: true,
             socialPostCaption: true,
             socialPostMediaUrl: true,
             socialPostMediaType: true,
@@ -114,8 +112,9 @@ export async function GET(request: NextRequest) {
               note: review.note,
             },
             socialPost: hasSocialPost ? {
-              author: review.socialPostAuthor,
-              authorImage: review.socialPostAuthorImage,
+              // Author comes from the activity actor (the user who created the review)
+              author: activity.actor.username || `${activity.actor.firstName} ${activity.actor.lastName}`.trim(),
+              authorImage: activity.actor.profileImageUrl,
               caption: review.socialPostCaption,
               mediaUrl: review.socialPostMediaUrl,
               mediaType: review.socialPostMediaType,

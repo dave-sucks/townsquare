@@ -166,8 +166,7 @@ model Review {
   source             review_source @default(manual)
   
   // Social post content (for rendering preview without API calls)
-  socialPostAuthor      String?    @map("social_post_author")
-  socialPostAuthorImage String?    @map("social_post_author_image")
+  // Author info comes from the user relationship - no need to duplicate
   socialPostCaption     String?    @map("social_post_caption")
   socialPostMediaUrl    String?    @map("social_post_media_url")
   socialPostMediaType   String?    @map("social_post_media_type") // image, video, carousel
