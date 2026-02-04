@@ -293,6 +293,7 @@ export function PlaceDetailPanel({
       </div>
 
       <ScrollArea className="flex-1">
+        {/* Header section with padding */}
         <div className="p-4 space-y-4">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
@@ -369,86 +370,89 @@ export function PlaceDetailPanel({
               </span>
             </div>
           )}
+        </div>
 
-          <Tabs defaultValue="overview" className="w-full">
+        {/* Tabs section - manages its own padding per tab */}
+        <Tabs defaultValue="overview" className="w-full">
+          <div className="px-4">
             <TabsList className="w-full justify-start">
               <TabsTrigger value="overview" data-testid="panel-tab-overview">Overview</TabsTrigger>
               <TabsTrigger value="feed" data-testid="panel-tab-feed">Feed</TabsTrigger>
             </TabsList>
+          </div>
 
-            <TabsContent value="overview" className="pt-4 space-y-6">
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium">About</h3>
-                <p className="text-sm text-muted-foreground">
-                  A popular {placeType?.toLowerCase() || "place"} in {locationDisplay || "the area"}. 
-                  Known for great ambiance and quality service. Perfect for dining with friends and family.
-                </p>
-              </div>
+          <TabsContent value="overview" className="p-4 pt-4 space-y-6">
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">About</h3>
+              <p className="text-sm text-muted-foreground">
+                A popular {placeType?.toLowerCase() || "place"} in {locationDisplay || "the area"}. 
+                Known for great ambiance and quality service. Perfect for dining with friends and family.
+              </p>
+            </div>
 
-              {listsForThisPlace.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-sm font-medium">Lists</h3>
-                  <div className="flex flex-col gap-2">
-                    {listsForThisPlace.map((list) => (
-                      <ListRowCard key={list.id} list={list} />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {activities.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium">Recent Activity</h3>
-                    <Button variant="ghost" size="sm" className="text-xs" asChild>
-                      <Link href="#" onClick={(e) => {
-                        e.preventDefault();
-                        const feedTab = document.querySelector('[data-testid="panel-tab-feed"]') as HTMLButtonElement;
-                        feedTab?.click();
-                      }}>
-                        See all <ChevronRight className="h-3 w-3 ml-1" />
-                      </Link>
-                    </Button>
-                  </div>
-                  <div className="space-y-2">
-                    <FeedPost activity={activities[0]} />
-                  </div>
-                </div>
-              )}
-
-              {!myReview && onAddReview && (
-                <>
-                  <Separator />
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={onAddReview}
-                      data-testid="panel-button-add-review"
-                    >
-                      <Star className="mr-1 h-4 w-4" />
-                      Add Review
-                    </Button>
-                  </div>
-                </>
-              )}
-            </TabsContent>
-
-            <TabsContent value="feed" className="pt-4">
-              {activities.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8" data-testid="text-no-activity">
-                  No activity for this place yet.
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {activities.map((activity) => (
-                    <FeedPost key={activity.id} activity={activity} />
+            {listsForThisPlace.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium">Lists</h3>
+                <div className="flex flex-col gap-2">
+                  {listsForThisPlace.map((list) => (
+                    <ListRowCard key={list.id} list={list} />
                   ))}
                 </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
+              </div>
+            )}
+
+            {activities.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium">Recent Activity</h3>
+                  <Button variant="ghost" size="sm" className="text-xs" asChild>
+                    <Link href="#" onClick={(e) => {
+                      e.preventDefault();
+                      const feedTab = document.querySelector('[data-testid="panel-tab-feed"]') as HTMLButtonElement;
+                      feedTab?.click();
+                    }}>
+                      See all <ChevronRight className="h-3 w-3 ml-1" />
+                    </Link>
+                  </Button>
+                </div>
+                <div className="-mx-4">
+                  <FeedPost activity={activities[0]} />
+                </div>
+              </div>
+            )}
+
+            {!myReview && onAddReview && (
+              <>
+                <Separator />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onAddReview}
+                    data-testid="panel-button-add-review"
+                  >
+                    <Star className="mr-1 h-4 w-4" />
+                    Add Review
+                  </Button>
+                </div>
+              </>
+            )}
+          </TabsContent>
+
+          <TabsContent value="feed" className="pt-4">
+            {activities.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8 px-4" data-testid="text-no-activity">
+                No activity for this place yet.
+              </p>
+            ) : (
+              <div>
+                {activities.map((activity) => (
+                  <FeedPost key={activity.id} activity={activity} />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </ScrollArea>
     </div>
   );
