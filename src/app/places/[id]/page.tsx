@@ -387,7 +387,24 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
         />
       </PageHeader>
 
-      <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full">
+      <div className="flex-1 overflow-auto">
+        {/* Hero Photo */}
+        {place.photoRefs && (place.photoRefs as string[]).length > 0 ? (
+          <div className="w-full aspect-[16/9] max-h-[300px] bg-muted relative overflow-hidden">
+            <img
+              src={`/api/places/photo?photoRef=${encodeURIComponent((place.photoRefs as string[])[0])}&maxWidth=1200`}
+              alt={place.name}
+              className="w-full h-full object-cover"
+              data-testid="page-hero-photo"
+            />
+          </div>
+        ) : (
+          <div className="w-full aspect-[16/9] max-h-[300px] bg-muted flex items-center justify-center">
+            <MapPin className="h-16 w-16 text-muted-foreground" />
+          </div>
+        )}
+
+        <div className="p-4 max-w-3xl mx-auto w-full">
         <div className="space-y-6">
           {/* Header: Big title, inline metadata */}
           <div className="space-y-3">
@@ -489,33 +506,6 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                 </p>
               </div>
 
-              {/* Your Review section */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium flex items-center gap-2">
-                  <Star className="h-4 w-4" />
-                  Your Review
-                </h3>
-                {myReview ? (
-                  <ReviewCard 
-                    review={myReview} 
-                    isOwn={true}
-                    onEdit={() => setReviewDialogOpen(true)}
-                    onDelete={() => deleteReviewMutation.mutate(myReview.id)}
-                    isDeleting={deleteReviewMutation.isPending}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center py-6 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Share your experience at this place
-                    </p>
-                    <Button onClick={() => setReviewDialogOpen(true)} data-testid="button-add-review">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Review
-                    </Button>
-                  </div>
-                )}
-              </div>
-
               {/* Lists in horizontal scrollable cards */}
               {listsContainingPlace.length > 0 && (
                 <div className="space-y-3">
@@ -563,6 +553,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
               )}
             </TabsContent>
           </Tabs>
+        </div>
         </div>
       </div>
 
