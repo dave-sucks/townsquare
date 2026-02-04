@@ -135,9 +135,10 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 ### Custom Emoji Markers (February 2026)
 - **Feature**: Users can assign custom emojis to their saved places that display as map markers
 - **Database**: Added `emoji` field (nullable string) to `SavedPlace` model
-- **Emoji Picker**: Uses `emoji-picker-react` library with two variants:
-  - `inline`: Small ghost button next to text (original)
+- **Emoji Picker**: Uses `frimousse` library (headless, unstyled, Radix-style primitives) with two variants:
+  - `inline`: Small ghost button next to text, hidden until hover/focus
   - `area`: 48px muted square that replaces the photo as primary visual
+- **Emoji Picker Styling**: Fully styled with ShadCN design tokens (bg-popover, text-popover-foreground, border-input, bg-accent for hover states)
 - **Place Cards**: Emoji now replaces the photo as the primary visual element
   - 48px muted background square with centered emoji
   - Entire area is clickable to open the emoji picker
