@@ -80,6 +80,15 @@ export async function GET(request: NextRequest) {
             placeId: true,
             rating: true,
             note: true,
+            source: true,
+            instagramUrl: true,
+            socialPostAuthor: true,
+            socialPostAuthorImage: true,
+            socialPostCaption: true,
+            socialPostMediaUrl: true,
+            socialPostMediaType: true,
+            socialPostLikes: true,
+            socialPostPostedAt: true,
           },
         })
       : [];
@@ -92,10 +101,11 @@ export async function GET(request: NextRequest) {
       if (activity.list && activity.list.visibility === "PRIVATE" && activity.list.userId !== user.id) {
         return { ...activity, list: null };
       }
-      // Enrich REVIEW_CREATED activities with the actual review note
+      // Enrich REVIEW_CREATED activities with the actual review note and social post data
       if (activity.type === "REVIEW_CREATED" && activity.placeId) {
         const review = reviewMap.get(`${activity.actorId}-${activity.placeId}`);
         if (review) {
+          const hasSocialPost = review.socialPostMediaUrl || review.socialPostCaption;
           return {
             ...activity,
             metadata: {
@@ -103,6 +113,17 @@ export async function GET(request: NextRequest) {
               rating: review.rating,
               note: review.note,
             },
+            socialPost: hasSocialPost ? {
+              author: review.socialPostAuthor,
+              authorImage: review.socialPostAuthorImage,
+              caption: review.socialPostCaption,
+              mediaUrl: review.socialPostMediaUrl,
+              mediaType: review.socialPostMediaType,
+              likes: review.socialPostLikes,
+              postedAt: review.socialPostPostedAt?.toISOString(),
+              permalink: review.instagramUrl,
+              source: review.source as 'instagram' | 'tiktok' | 'manual',
+            } : null,
           };
         }
       }

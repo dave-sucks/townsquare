@@ -164,6 +164,16 @@ model Review {
   instagramShortcode String?       @map("instagram_shortcode")
   instagramUrl       String?       @map("instagram_url")
   source             review_source @default(manual)
+  
+  // Social post content (for rendering preview without API calls)
+  socialPostAuthor      String?    @map("social_post_author")
+  socialPostAuthorImage String?    @map("social_post_author_image")
+  socialPostCaption     String?    @map("social_post_caption")
+  socialPostMediaUrl    String?    @map("social_post_media_url")
+  socialPostMediaType   String?    @map("social_post_media_type") // image, video, carousel
+  socialPostLikes       Int?       @map("social_post_likes")
+  socialPostPostedAt    DateTime?  @map("social_post_posted_at") @db.Timestamp(6)
+  
   photos             Photo[]
   place              Place         @relation(fields: [placeId], references: [id], onDelete: Cascade)
   user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)

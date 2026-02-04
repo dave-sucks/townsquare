@@ -50,6 +50,18 @@ interface ListData {
   _count: { listPlaces: number };
 }
 
+interface SocialPostData {
+  author: string;
+  authorImage?: string | null;
+  caption?: string | null;
+  mediaUrl?: string | null;
+  mediaType?: string | null;
+  likes?: number | null;
+  postedAt?: string | null;
+  permalink?: string | null;
+  source?: 'instagram' | 'tiktok' | 'manual';
+}
+
 interface ActivityData {
   id: string;
   actorId: string;
@@ -78,6 +90,7 @@ interface ActivityData {
     visibility: string;
     userId: string;
   } | null;
+  socialPost?: SocialPostData | null;
 }
 
 interface CurrentUserPlaceData {

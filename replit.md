@@ -153,3 +153,23 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
   - Not shown on list detail pages (list_place IDs differ from saved_place IDs)
 - **API**: PATCH `/api/saved-places/[id]` accepts `emoji` field for updating saved place emoji
 - **Backfill**: Script at `scripts/backfill-emojis.ts` assigns emojis based on place type (restaurant→🍽️, bar→🍸, park→🌳, etc.)
+
+### Social Post Embeds in Reviews (February 2026)
+- **Feature**: Reviews can now include Instagram/TikTok post content that renders as a native-looking preview
+- **Database fields added to Review model**:
+  - `socialPostAuthor`: Username of the original poster
+  - `socialPostAuthorImage`: Profile image URL
+  - `socialPostCaption`: The post caption/text
+  - `socialPostMediaUrl`: Image or video URL
+  - `socialPostMediaType`: 'image', 'video', or 'carousel'
+  - `socialPostLikes`: Like count
+  - `socialPostPostedAt`: When the original post was made
+- **UI Components**:
+  - `SocialPostCard` (`src/components/shared/social-post-card.tsx`): Renders Instagram-style post preview
+  - Shows author avatar, caption, media, likes, and timestamp
+  - Links to original post via permalink
+- **Data Flow**:
+  - Feed API (`/api/feed`) includes `socialPost` object when review has social content
+  - Profile API (`/api/users/[username]`) includes `socialPost` in activities
+  - `FeedPost` component renders `SocialPostCard` when social post data is present
+- **Seed Data Template**: `SEED_DATA_TEMPLATE.md` provides schema reference and instructions for generating test data

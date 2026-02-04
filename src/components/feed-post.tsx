@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Heart, MessageCircle, Bookmark, ListPlus } from "lucide-react";
+import { SocialPostCard } from "@/components/shared/social-post-card";
 
 interface ActivityActor {
   id: string;
@@ -29,6 +30,18 @@ interface ActivityList {
   userId: string;
 }
 
+interface SocialPostData {
+  author: string;
+  authorImage?: string | null;
+  caption?: string | null;
+  mediaUrl?: string | null;
+  mediaType?: string | null;
+  likes?: number | null;
+  postedAt?: string | null;
+  permalink?: string | null;
+  source?: 'instagram' | 'tiktok' | 'manual';
+}
+
 interface Activity {
   id: string;
   actorId: string;
@@ -40,6 +53,7 @@ interface Activity {
   actor: ActivityActor;
   place: ActivityPlace | null;
   list: ActivityList | null;
+  socialPost?: SocialPostData | null;
 }
 
 const RATING_COLORS: Record<number, string> = {
@@ -215,8 +229,25 @@ export function FeedPost({ activity }: FeedPostProps) {
           </Link>
         )}
 
-        {/* Review Text */}
-        {reviewText && (
+        {/* Social Post Embed (only show if there's media) */}
+        {activity.socialPost?.mediaUrl && (
+          <div className="mt-3">
+            <SocialPostCard
+              author={activity.socialPost.author}
+              authorImage={activity.socialPost.authorImage}
+              caption={activity.socialPost.caption}
+              mediaUrl={activity.socialPost.mediaUrl}
+              mediaType={activity.socialPost.mediaType}
+              likes={activity.socialPost.likes}
+              postedAt={activity.socialPost.postedAt}
+              permalink={activity.socialPost.permalink}
+              source={activity.socialPost.source}
+            />
+          </div>
+        )}
+
+        {/* Review Text (show if there's no social post with media) */}
+        {reviewText && !activity.socialPost?.mediaUrl && (
           <p className="text-sm leading-relaxed mt-3" data-testid={`feed-note-${activity.id}`}>
             {reviewText}
           </p>
