@@ -5,12 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  Star, 
   ArrowLeft,
   Maximize,
   Utensils,
@@ -421,22 +419,6 @@ export function PlaceDetailPanel({
               </div>
             )}
 
-            {!myReview && onAddReview && (
-              <>
-                <Separator />
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={onAddReview}
-                    data-testid="panel-button-add-review"
-                  >
-                    <Star className="mr-1 h-4 w-4" />
-                    Add Review
-                  </Button>
-                </div>
-              </>
-            )}
           </TabsContent>
 
           <TabsContent value="feed" className="pt-4">
