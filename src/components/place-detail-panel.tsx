@@ -17,6 +17,7 @@ import {
   List as ListIcon,
   ChevronRight,
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SaveToListDropdown } from "./shared/save-to-list-dropdown";
 import { FeedPost } from "./feed-post";
 import { EmojiPickerPopover } from "./shared/emoji-picker-popover";
@@ -318,8 +319,18 @@ export function PlaceDetailPanel({
                 variant="area"
                 testId="button-emoji-panel"
               />
-              <h1 className="text-2xl font-bold" data-testid="panel-place-name">
+              <h1 className="text-2xl font-bold flex items-center gap-2" data-testid="panel-place-name">
                 {place.name}
+                {savedPlace.hasBeen && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <BadgeCheck className="w-5 h-5 flex-shrink-0 fill-foreground text-background" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      {savedPlace.rating ? RATING_LABELS[savedPlace.rating] : "Been here"}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
               </h1>
             </div>
             
@@ -343,15 +354,6 @@ export function PlaceDetailPanel({
                 </>
               )}
             </div>
-
-            {savedPlace.hasBeen && (
-              <div className="flex items-center gap-2 text-sm flex-wrap">
-                <Badge variant="secondary" className="gap-1">
-                  <BadgeCheck className="h-3 w-3" />
-                  {savedPlace.rating ? RATING_LABELS[savedPlace.rating] : "Been"}
-                </Badge>
-              </div>
-            )}
 
             <a 
               href={`https://www.google.com/maps/place/?q=place_id:${place.googlePlaceId}`}

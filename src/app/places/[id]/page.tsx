@@ -18,6 +18,7 @@ import {
   Edit,
   Trash2,
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
@@ -418,8 +419,18 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                   testId="button-emoji-page"
                 />
               )}
-              <h1 className="text-3xl font-bold" data-testid="text-place-name">
+              <h1 className="text-3xl font-bold flex items-center gap-2" data-testid="text-place-name">
                 {place.name}
+                {savedPlace?.hasBeen && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <BadgeCheck className="w-6 h-6 flex-shrink-0 fill-foreground text-background" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      {savedPlace.rating ? RATING_LABELS[savedPlace.rating] : "Been here"}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
               </h1>
             </div>
             
@@ -444,16 +455,6 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                 </>
               )}
             </div>
-
-            {/* Status badges */}
-            {savedPlace?.hasBeen && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="secondary" className="gap-1">
-                  <BadgeCheck className="h-3 w-3" />
-                  {savedPlace.rating ? RATING_LABELS[savedPlace.rating] : "Been"}
-                </Badge>
-              </div>
-            )}
 
             {/* Address - clickable to Google Maps */}
             <a 
