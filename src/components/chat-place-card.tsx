@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Utensils } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SaveToListDropdown } from "./shared/save-to-list-dropdown";
 
@@ -91,7 +91,7 @@ export function ChatPlaceCard({ place, onSaved }: ChatPlaceCardProps) {
   return (
     <div
       className={cn(
-        "group flex items-center gap-3 p-2 rounded-md transition-colors bg-muted/50"
+        "group flex items-center gap-3 p-1 rounded-md transition-colors"
       )}
       data-testid={`chat-place-card-${place.googlePlaceId}`}
     >
@@ -106,21 +106,11 @@ export function ChatPlaceCard({ place, onSaved }: ChatPlaceCardProps) {
           </h3>
           
           <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-            {placeType && (
-              <>
-                <Utensils className="h-3 w-3 flex-shrink-0" />
-                <span className="truncate">{placeType}</span>
-              </>
-            )}
-            {locationDisplay && placeType && <span>·</span>}
-            {locationDisplay && (
-              <span className="truncate">{locationDisplay}</span>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
             <MapPin className="h-3 w-3 flex-shrink-0" />
-            <span className="truncate">{place.formattedAddress}</span>
+            <span className="truncate">
+              {locationDisplay}
+              {placeType && <> — {placeType}</>}
+            </span>
           </div>
         </div>
       </div>
