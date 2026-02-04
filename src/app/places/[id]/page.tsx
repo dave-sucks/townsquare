@@ -23,7 +23,6 @@ import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { ReviewDialog } from "@/components/review-dialog";
-import { PlacePhotoGrid } from "@/components/place-photo-grid";
 import { AppShell, PageHeader } from "@/components/layout";
 import { SaveToListDropdown } from "@/components/shared/save-to-list-dropdown";
 import { FeedPost } from "@/components/feed-post";
@@ -392,13 +391,13 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
         <div className="space-y-6">
           {/* Header: Big title, inline metadata */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-start gap-3">
               {savedPlace && (
                 <EmojiPickerPopover
                   emoji={savedPlace.emoji || null}
                   onEmojiSelect={(emoji) => updateEmojiMutation.mutate(emoji)}
                   disabled={updateEmojiMutation.isPending}
-                  variant="inline"
+                  variant="area"
                   testId="button-emoji-page"
                 />
               )}
@@ -450,9 +449,6 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
               <span data-testid="text-place-address">{place.formattedAddress}</span>
             </div>
           </div>
-
-          {/* Photos */}
-          <PlacePhotoGrid photos={photos} maxDisplay={5} />
 
           {/* Friends context */}
           {friendsWhoSaved.length > 0 && (

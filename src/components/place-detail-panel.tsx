@@ -19,7 +19,6 @@ import {
   List as ListIcon,
   ChevronRight,
 } from "lucide-react";
-import { PlacePhotoGrid } from "./place-photo-grid";
 import { SaveToListDropdown } from "./shared/save-to-list-dropdown";
 import { FeedPost } from "./feed-post";
 import { EmojiPickerPopover } from "./shared/emoji-picker-popover";
@@ -296,12 +295,12 @@ export function PlaceDetailPanel({
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4">
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-start gap-3">
               <EmojiPickerPopover
                 emoji={savedPlace.emoji || null}
                 onEmojiSelect={(emoji) => updateEmojiMutation.mutate(emoji)}
                 disabled={updateEmojiMutation.isPending}
-                variant="inline"
+                variant="area"
                 testId="button-emoji-panel"
               />
               <h1 className="text-2xl font-bold" data-testid="panel-place-name">
@@ -349,8 +348,6 @@ export function PlaceDetailPanel({
               <span data-testid="panel-place-address">{place.formattedAddress}</span>
             </div>
           </div>
-
-          <PlacePhotoGrid photos={fetchedPhotos} maxDisplay={5} />
 
           {fetchedFriends.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
