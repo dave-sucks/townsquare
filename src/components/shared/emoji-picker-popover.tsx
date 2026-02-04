@@ -6,11 +6,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { Smile, X, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-} from "@/components/ui/input-group";
 
 const CATEGORY_ICONS = [
   { id: "smileys-emotion", icon: "😀", label: "Smileys" },
@@ -61,29 +56,24 @@ export function EmojiPickerPopover({
         onEmojiSelect={handleEmojiSelect}
       >
         <div className="mx-2 mt-2">
-          <InputGroup className="touch-manipulation">
-            <InputGroupAddon align="inline-start">
-              <Search className="h-4 w-4" />
-            </InputGroupAddon>
+          <div className="relative flex items-center rounded-md border border-input bg-background touch-manipulation">
+            <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
             <EmojiPicker.Search
               placeholder="Search emoji..."
-              className="flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent text-base touch-manipulation"
-              data-slot="input-group-control"
+              className="flex-1 h-9 bg-transparent pl-8 pr-8 text-base placeholder:text-muted-foreground focus:outline-none touch-manipulation"
               data-testid="input-emoji-search"
             />
             {emoji && (
-              <InputGroupAddon align="inline-end">
-                <InputGroupButton
-                  size="icon-xs"
-                  onClick={handleClear}
-                  data-testid="button-clear-emoji"
-                  aria-label="Clear emoji"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </InputGroupButton>
-              </InputGroupAddon>
+              <button
+                onClick={handleClear}
+                className="absolute right-2 h-6 w-6 flex items-center justify-center rounded-sm hover-elevate text-muted-foreground"
+                data-testid="button-clear-emoji"
+                aria-label="Clear emoji"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
             )}
-          </InputGroup>
+          </div>
         </div>
         <div className="flex items-center justify-between px-2 py-1.5 border-b border-border touch-manipulation">
           {CATEGORY_ICONS.map((cat) => (
