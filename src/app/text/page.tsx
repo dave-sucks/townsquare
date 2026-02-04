@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MapPin, BadgeCheck } from "lucide-react";
 
 const FONTS = [
   { value: "font-sans", label: "Host Grotesk (default)" },
@@ -57,6 +58,27 @@ export default function TextPage() {
           </div>
 
           <div className={`space-y-8 ${selectedFont}`}>
+            <div className="mb-8">
+              <p className="text-xs text-muted-foreground mb-2">Place Card Preview</p>
+              <div className="flex items-center gap-3 p-1 rounded-md bg-accent max-w-sm">
+                <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+                  <MapPin className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <h3 className="font-semibold text-sm truncate flex items-center gap-1">
+                    Pizzeria Delfina
+                    <BadgeCheck className="w-4 h-4 flex-shrink-0 fill-foreground text-background" />
+                  </h3>
+                  <div className="flex items-center gap-1.5 text-xs mt-0.5">
+                    <span className="text-foreground truncate">Want to Go</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate">
+                    Mission District
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-6">
                 <div>
