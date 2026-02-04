@@ -6,6 +6,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { Smile, X, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+} from "@/components/ui/input-group";
 
 const CATEGORY_ICONS = [
   { id: "smileys-emotion", icon: "😀", label: "Smileys" },
@@ -52,29 +57,33 @@ export function EmojiPickerPopover({
   const emojiPickerContent = (
     <div className="relative touch-manipulation" data-testid="emoji-picker-container">
       <EmojiPicker.Root
-        className="isolate flex h-[340px] w-[320px] flex-col bg-popover text-popover-foreground touch-manipulation"
+        className="isolate flex h-[340px] w-fit flex-col bg-popover text-popover-foreground touch-manipulation"
         onEmojiSelect={handleEmojiSelect}
       >
-        <div className="flex items-center gap-2 mx-2 mt-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <div className="mx-2 mt-2">
+          <InputGroup className="touch-manipulation">
+            <InputGroupAddon align="inline-start">
+              <Search className="h-4 w-4" />
+            </InputGroupAddon>
             <EmojiPicker.Search
               placeholder="Search emoji..."
-              className="w-full appearance-none rounded-md border border-input bg-background pl-8 pr-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 touch-manipulation"
+              className="flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent text-base touch-manipulation"
+              data-slot="input-group-control"
               data-testid="input-emoji-search"
             />
-          </div>
-          {emoji && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleClear}
-              data-testid="button-clear-emoji"
-              className="flex-shrink-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
+            {emoji && (
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                  size="icon-xs"
+                  onClick={handleClear}
+                  data-testid="button-clear-emoji"
+                  aria-label="Clear emoji"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </InputGroupButton>
+              </InputGroupAddon>
+            )}
+          </InputGroup>
         </div>
         <div className="flex items-center justify-between px-2 py-1.5 border-b border-border touch-manipulation">
           {CATEGORY_ICONS.map((cat) => (
