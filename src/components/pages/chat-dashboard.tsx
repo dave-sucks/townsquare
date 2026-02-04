@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card } from "@/components/ui/card";
 import { 
   MessageCircle, 
   Plus, 
@@ -21,9 +20,6 @@ import {
   Bot,
   User,
   Loader2,
-  Star,
-  Bookmark,
-  Check,
   RotateCcw
 } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -595,9 +591,8 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
       return type.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
     };
 
-    const photoUrl = place.photoRef 
-      ? `/api/places/photo?ref=${place.photoRef}&maxwidth=200`
-      : null;
+    const placeType = formatType(place.primaryType);
+    const locationDisplay = place.formattedAddress.split(",")[0];
 
     const placeForDropdown = {
       id: savedPlace?.place.id,
@@ -613,100 +608,63 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
     };
 
     const isSaved = !!savedPlace;
-    const hasBeen = savedPlace?.hasBeen ?? false;
-    const rating = savedPlace?.rating;
-    const lists = savedPlace?.lists || [];
-
-    const RATING_COLORS: Record<number, string> = {
-      1: "bg-red-500",
-      2: "bg-yellow-500",
-      3: "bg-green-500",
-    };
 
     return (
-      <Card
+      <div
         ref={ref}
+        role="button"
+        tabIndex={0}
         onClick={onClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick();
+          }
+        }}
         className={cn(
-          "group overflow-hidden cursor-pointer transition-all",
-          isSelected && "ring-2 ring-primary"
+          "group flex items-center gap-3 p-1 rounded-md transition-colors cursor-pointer",
+          isSelected ? "bg-accent" : "hover:bg-accent"
         )}
       >
-        <div className="flex">
-          {photoUrl && (
-            <div className="w-16 h-16 shrink-0">
-              <img 
-                src={photoUrl} 
-                alt={place.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-          <div className="flex-1 p-2 min-w-0">
-            <div className="flex items-start justify-between gap-1">
-              <div className="min-w-0 flex-1">
-                <h4 className="font-medium text-xs truncate">{place.name}</h4>
-                <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-muted-foreground">
-                  {formatType(place.primaryType) && (
-                    <span>{formatType(place.primaryType)}</span>
-                  )}
-                  {place.rating && (
-                    <span className="flex items-center gap-0.5">
-                      <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
-                      {place.rating.toFixed(1)}
-                    </span>
-                  )}
-                </div>
-                {isSaved ? (
-                  <div className="flex items-center gap-1 mt-0.5 text-[10px]">
-                    {hasBeen ? (
-                      <>
-                        <span 
-                          className={cn(
-                            "inline-block w-1.5 h-1.5 rounded-full flex-shrink-0",
-                            rating ? RATING_COLORS[rating] : "bg-green-500"
-                          )} 
-                        />
-                        <span className="text-foreground">Been</span>
-                      </>
-                    ) : lists.length > 0 ? (
-                      <span className="text-muted-foreground">
-                        {lists.map(l => l.name).join(" · ")}
-                      </span>
-                    ) : null}
-                  </div>
-                ) : (
-                  <p className="text-[10px] text-muted-foreground mt-0.5 truncate flex items-center gap-0.5">
-                    <MapPin className="h-2.5 w-2.5 shrink-0" />
-                    {place.formattedAddress.split(",")[0]}
-                  </p>
-                )}
-              </div>
-              <div 
-                onClick={(e) => e.stopPropagation()}
-                className={cn(
-                  "flex-shrink-0",
-                  !isSaved && "invisible group-hover:visible"
-                )}
-              >
-                <SaveToListDropdown
-                  place={placeForDropdown}
-                  savedPlace={savedPlace ? {
-                    id: savedPlace.id,
-                    placeId: savedPlace.placeId,
-                    hasBeen: savedPlace.hasBeen,
-                    rating: savedPlace.rating,
-                  } : undefined}
-                  listsContainingPlace={savedPlace?.lists?.map(l => l.id) || []}
-                  showLabel={false}
-                  variant={isSaved ? "ghost" : "outline"}
-                  size="icon"
-                />
-              </div>
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+            <MapPin className="h-5 w-5 text-muted-foreground" />
+          </div>
+
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <h3 className="font-medium text-sm truncate">
+              {place.name}
+            </h3>
+            
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+              <MapPin className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">
+                {locationDisplay}
+                {placeType && <> — {placeType}</>}
+              </span>
             </div>
           </div>
         </div>
-      </Card>
+        
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          className="flex-shrink-0"
+        >
+          <SaveToListDropdown
+            place={placeForDropdown}
+            savedPlace={savedPlace ? {
+              id: savedPlace.id,
+              placeId: savedPlace.placeId,
+              hasBeen: savedPlace.hasBeen,
+              rating: savedPlace.rating,
+            } : undefined}
+            listsContainingPlace={savedPlace?.lists?.map(l => l.id) || []}
+            showLabel={false}
+            variant="ghost"
+            size="icon"
+          />
+        </div>
+      </div>
     );
   }
 );
