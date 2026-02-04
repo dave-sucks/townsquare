@@ -50,9 +50,9 @@ export function EmojiPickerPopover({
   };
 
   const emojiPickerContent = (
-    <div className="relative" data-testid="emoji-picker-container">
+    <div className="relative touch-manipulation" data-testid="emoji-picker-container">
       <EmojiPicker.Root
-        className="isolate flex h-[340px] w-[320px] flex-col bg-popover text-popover-foreground"
+        className="isolate flex h-[340px] w-[320px] flex-col bg-popover text-popover-foreground touch-manipulation"
         onEmojiSelect={handleEmojiSelect}
       >
         <div className="flex items-center gap-2 mx-2 mt-2">
@@ -60,7 +60,7 @@ export function EmojiPickerPopover({
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <EmojiPicker.Search
               placeholder="Search emoji..."
-              className="w-full appearance-none rounded-md border border-input bg-background pl-8 pr-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="w-full appearance-none rounded-md border border-input bg-background pl-8 pr-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 touch-manipulation"
               data-testid="input-emoji-search"
             />
           </div>
@@ -76,11 +76,11 @@ export function EmojiPickerPopover({
             </Button>
           )}
         </div>
-        <div className="flex items-center justify-between px-2 py-1.5 border-b border-border">
+        <div className="flex items-center justify-between px-2 py-1.5 border-b border-border touch-manipulation">
           {CATEGORY_ICONS.map((cat) => (
             <button
               key={cat.id}
-              className="flex items-center justify-center w-7 h-7 rounded-md text-base hover-elevate"
+              className="flex items-center justify-center w-7 h-7 rounded-md text-base hover-elevate touch-manipulation"
               title={cat.label}
               data-testid={`button-category-${cat.id}`}
               onClick={(e) => {
