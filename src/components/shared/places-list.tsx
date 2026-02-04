@@ -155,7 +155,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
           )}
 
           <div className="flex-1 min-w-0 overflow-hidden">
-            <h3 className="font-medium text-sm truncate flex items-center gap-1 font-brand">
+            <h3 className="font-semibold text-sm truncate flex items-center gap-1 font-brand">
               {savedPlace.place.name}
               {savedPlace.hasBeen && (
                 <Tooltip>
