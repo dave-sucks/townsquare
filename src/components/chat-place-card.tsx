@@ -1,19 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, DollarSign, Bookmark, Check, Loader2 } from "lucide-react";
-import { queryClient, apiRequest } from "@/lib/query-client";
-import { toast } from "sonner";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { MapPin, Utensils } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SaveToListDropdown } from "./shared/save-to-list-dropdown";
 
 interface PlaceResult {
   googlePlaceId: string;
   name: string;
   formattedAddress: string;
+  neighborhood?: string | null;
+  locality?: string | null;
   lat: number;
   lng: number;
   types: string[];
@@ -24,111 +22,120 @@ interface PlaceResult {
   photoRef: string | null;
 }
 
+interface SavedPlaceInfo {
+  id: string;
+  placeId: string;
+  hasBeen: boolean;
+  rating: number | null;
+  lists: Array<{ id: string; name: string }>;
+}
+
 interface ChatPlaceCardProps {
   place: PlaceResult;
   onSaved?: () => void;
 }
 
-export function ChatPlaceCard({ place, onSaved }: ChatPlaceCardProps) {
-  const [isSaved, setIsSaved] = useState(false);
+function formatPlaceType(type: string | null): string {
+  if (!type) return "";
+  return type
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (l) => l.toUpperCase());
+}
 
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      const detailsResponse = await fetch(`/api/places/details?place_id=${place.googlePlaceId}`);
-      const detailsData = await detailsResponse.json();
-      if (!detailsData.place) throw new Error("Failed to get place details");
-      
-      return apiRequest("/api/saved-places", {
-        method: "POST",
-        body: JSON.stringify({ ...detailsData.place, hasBeen: false }),
-      });
-    },
-    onSuccess: () => {
-      setIsSaved(true);
-      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
-      toast.success(`Saved ${place.name}!`);
-      onSaved?.();
-    },
-    onError: (error: Error) => {
-      if (error.message.includes("already saved")) {
-        setIsSaved(true);
-        toast.info("Already in your places!");
-      } else {
-        toast.error(error.message || "Failed to save place");
-      }
-    },
+export function ChatPlaceCard({ place, onSaved }: ChatPlaceCardProps) {
+  const [savedPlaceInfo, setSavedPlaceInfo] = useState<SavedPlaceInfo | null>(null);
+  
+  const { data: savedPlacesData } = useQuery<{ savedPlaces: Array<{ id: string; placeId: string; hasBeen: boolean; rating: number | null; place: { googlePlaceId: string }; lists?: Array<{ id: string; name: string }> }> }>({
+    queryKey: ["saved-places"],
   });
 
-  const formatType = (type: string | null) => {
-    if (!type) return "Place";
-    return type.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
-  };
+  useEffect(() => {
+    if (savedPlacesData?.savedPlaces) {
+      const found = savedPlacesData.savedPlaces.find(
+        sp => sp.place.googlePlaceId === place.googlePlaceId
+      );
+      if (found) {
+        setSavedPlaceInfo({
+          id: found.id,
+          placeId: found.placeId,
+          hasBeen: found.hasBeen,
+          rating: found.rating,
+          lists: found.lists || [],
+        });
+      } else {
+        setSavedPlaceInfo(null);
+      }
+    }
+  }, [savedPlacesData, place.googlePlaceId]);
 
-  const getPriceLevel = (level: string | null) => {
-    if (!level) return null;
-    const num = parseInt(level);
-    return "$".repeat(num);
-  };
+  const placeType = formatPlaceType(place.primaryType);
+  const locationDisplay = place.neighborhood 
+    || place.locality 
+    || place.formattedAddress.split(",")[0];
 
-  const photoUrl = place.photoRef 
-    ? `/api/places/photo?ref=${place.photoRef}&maxwidth=400`
-    : null;
+  const placeForDropdown = {
+    id: "",
+    googlePlaceId: place.googlePlaceId,
+    name: place.name,
+    formattedAddress: place.formattedAddress,
+    neighborhood: place.neighborhood || null,
+    locality: place.locality || null,
+    lat: place.lat,
+    lng: place.lng,
+    primaryType: place.primaryType,
+    types: place.types,
+    priceLevel: place.priceLevel,
+    photoRefs: place.photoRef ? [place.photoRef] : null,
+  };
 
   return (
-    <Card className="overflow-hidden">
-      <div className="flex">
-        {photoUrl && (
-          <div className="w-24 h-24 shrink-0">
-            <img 
-              src={photoUrl} 
-              alt={place.name}
-              className="w-full h-full object-cover"
-            />
+    <div
+      className={cn(
+        "group flex items-center gap-3 p-2 rounded-md transition-colors bg-muted/50"
+      )}
+      data-testid={`chat-place-card-${place.googlePlaceId}`}
+    >
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+          <MapPin className="h-5 w-5 text-muted-foreground" />
+        </div>
+
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <h3 className="font-medium text-sm truncate">
+            {place.name}
+          </h3>
+          
+          <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+            {placeType && (
+              <>
+                <Utensils className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{placeType}</span>
+              </>
+            )}
+            {locationDisplay && placeType && <span>·</span>}
+            {locationDisplay && (
+              <span className="truncate">{locationDisplay}</span>
+            )}
           </div>
-        )}
-        <div className="flex-1 p-3 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <h4 className="font-medium text-sm truncate">{place.name}</h4>
-              <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-                <span>{formatType(place.primaryType)}</span>
-                {place.rating && (
-                  <span className="flex items-center gap-0.5">
-                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    {place.rating.toFixed(1)}
-                    {place.userRatingsTotal && (
-                      <span className="text-muted-foreground">({place.userRatingsTotal})</span>
-                    )}
-                  </span>
-                )}
-                {getPriceLevel(place.priceLevel) && (
-                  <span className="text-muted-foreground">{getPriceLevel(place.priceLevel)}</span>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 truncate flex items-center gap-1">
-                <MapPin className="h-3 w-3 shrink-0" />
-                {place.formattedAddress}
-              </p>
-            </div>
-            <Button
-              size="icon"
-              variant={isSaved ? "default" : "outline"}
-              onClick={() => saveMutation.mutate()}
-              disabled={saveMutation.isPending || isSaved}
-              data-testid={`button-save-place-${place.googlePlaceId}`}
-            >
-              {saveMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : isSaved ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <Bookmark className="h-4 w-4" />
-              )}
-            </Button>
+          
+          <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+            <MapPin className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">{place.formattedAddress}</span>
           </div>
         </div>
       </div>
-    </Card>
+      
+      <div className="flex-shrink-0">
+        <SaveToListDropdown
+          place={placeForDropdown}
+          savedPlace={savedPlaceInfo}
+          listsContainingPlace={savedPlaceInfo?.lists?.map(l => l.id) || []}
+          showLabel={false}
+          variant="ghost"
+          size="icon"
+        />
+      </div>
+    </div>
   );
 }
 
