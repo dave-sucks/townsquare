@@ -1,17 +1,14 @@
 "use client";
 
-import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
 
 interface SocialPostCardProps {
   author: string;
   authorImage?: string | null;
   caption?: string | null;
   mediaUrl?: string | null;
-  mediaType?: string | null; // 'image' | 'video' | 'carousel'
+  mediaType?: string | null;
   likes?: number | null;
   postedAt?: Date | string | null;
   permalink?: string | null;
@@ -19,115 +16,92 @@ interface SocialPostCardProps {
   className?: string;
 }
 
+declare global {
+  interface Window {
+    instgrm?: {
+      Embeds: {
+        process: () => void;
+      };
+    };
+  }
+}
+
 export function SocialPostCard({
-  author,
-  authorImage,
-  caption,
-  mediaUrl,
-  mediaType = 'image',
-  likes,
-  postedAt,
   permalink,
   source = 'instagram',
   className,
 }: SocialPostCardProps) {
-  const initials = author?.slice(0, 2).toUpperCase() || '??';
-  
-  const formattedDate = postedAt 
-    ? formatDistanceToNow(new Date(postedAt), { addSuffix: true })
-    : null;
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const formattedLikes = likes 
-    ? likes >= 1000 
-      ? `${(likes / 1000).toFixed(1)}k` 
-      : likes.toString()
-    : null;
+  useEffect(() => {
+    if (!permalink || source !== 'instagram') return;
 
-  const handleOpenOriginal = () => {
-    if (permalink) {
-      window.open(permalink, '_blank', 'noopener,noreferrer');
-    }
-  };
+    const loadInstagramEmbed = () => {
+      if (window.instgrm) {
+        window.instgrm.Embeds.process();
+      } else {
+        const script = document.createElement('script');
+        script.src = 'https://www.instagram.com/embed.js';
+        script.async = true;
+        script.onload = () => {
+          if (window.instgrm) {
+            window.instgrm.Embeds.process();
+          }
+        };
+        document.body.appendChild(script);
+      }
+    };
+
+    loadInstagramEmbed();
+  }, [permalink, source]);
+
+  if (!permalink) {
+    return null;
+  }
+
+  if (source === 'instagram') {
+    return (
+      <div ref={containerRef} className={cn("overflow-hidden", className)}>
+        <blockquote
+          className="instagram-media"
+          data-instgrm-captioned
+          data-instgrm-permalink={permalink}
+          data-instgrm-version="14"
+          style={{
+            background: '#FFF',
+            border: 0,
+            borderRadius: '3px',
+            boxShadow: '0 0 1px 0 rgba(0,0,0,0.5), 0 1px 10px 0 rgba(0,0,0,0.15)',
+            margin: '1px',
+            maxWidth: '540px',
+            minWidth: '326px',
+            padding: 0,
+            width: 'calc(100% - 2px)',
+          }}
+        >
+          <a
+            href={permalink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-muted-foreground hover:underline"
+          >
+            View this post on Instagram
+          </a>
+        </blockquote>
+      </div>
+    );
+  }
 
   return (
-    <div className={cn("border rounded-lg bg-card overflow-hidden", className)}>
-      <div className="flex items-center gap-3 p-3">
-        <Avatar className="h-8 w-8">
-          <AvatarImage src={authorImage || undefined} alt={author} />
-          <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-        </Avatar>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate">{author}</p>
-        </div>
-        {permalink && (
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleOpenOriginal}
-            data-testid="button-open-original-post"
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-
-      {mediaUrl && (
-        <div className="relative aspect-square bg-muted">
-          {mediaType === 'video' ? (
-            <video
-              src={mediaUrl}
-              className="w-full h-full object-cover"
-              controls
-              playsInline
-            />
-          ) : (
-            <img
-              src={mediaUrl}
-              alt={caption || 'Post image'}
-              className="w-full h-full object-cover"
-            />
-          )}
-        </div>
-      )}
-
-      <div className="p-3 space-y-2">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="no-default-hover-elevate">
-            <Heart className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="no-default-hover-elevate">
-            <MessageCircle className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="no-default-hover-elevate">
-            <Send className="h-5 w-5" />
-          </Button>
-          <div className="flex-1" />
-          <Button variant="ghost" size="icon" className="no-default-hover-elevate">
-            <Bookmark className="h-5 w-5" />
-          </Button>
-        </div>
-
-        {formattedLikes && (
-          <p className="text-sm font-semibold">{formattedLikes} likes</p>
-        )}
-
-        {caption && (
-          <p className="text-sm">
-            <span className="font-semibold">{author}</span>{' '}
-            <span className="text-muted-foreground">{caption}</span>
-          </p>
-        )}
-
-        {formattedDate && (
-          <p className="text-xs text-muted-foreground uppercase">{formattedDate}</p>
-        )}
-
-        {source !== 'manual' && (
-          <p className="text-xs text-muted-foreground">
-            via {source === 'instagram' ? 'Instagram' : 'TikTok'}
-          </p>
-        )}
-      </div>
+    <div className={cn("border rounded-lg bg-card p-4", className)}>
+      <a
+        href={permalink}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm text-primary hover:underline"
+      >
+        View original post
+      </a>
     </div>
   );
 }

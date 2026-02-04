@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
       if (activity.type === "REVIEW_CREATED" && activity.placeId) {
         const review = reviewMap.get(`${activity.actorId}-${activity.placeId}`);
         if (review) {
-          const hasSocialPost = review.socialPostMediaUrl || review.socialPostCaption;
+          const hasSocialPost = review.instagramUrl || review.socialPostMediaUrl || review.socialPostCaption;
           return {
             ...activity,
             metadata: {
