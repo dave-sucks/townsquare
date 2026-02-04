@@ -136,6 +136,34 @@
   font-family: "Tuffy", ui-sans-serif, system-ui, sans-serif;
 }
 
+.font-cal-sans {
+  font-family: "Cal Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-elms-sans {
+  font-family: "Elms Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-google-sans {
+  font-family: "Google Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-google-sans-flex {
+  font-family: "Google Sans Flex", ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-mozilla-text {
+  font-family: "Mozilla Text", ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-nata-sans {
+  font-family: "Nata Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-oranienbaum {
+  font-family: "Oranienbaum", ui-serif, serif;
+}
+
 .touch-manipulation {
   touch-action: manipulation;
 }

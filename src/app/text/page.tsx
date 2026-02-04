@@ -15,6 +15,13 @@ const FONTS = [
   { value: "font-sans", label: "Host Grotesk (default)" },
   { value: "font-brand", label: "Tuffy (brand)" },
   { value: "font-schibsted", label: "Schibsted Grotesk" },
+  { value: "font-cal-sans", label: "Cal Sans" },
+  { value: "font-elms-sans", label: "Elms Sans" },
+  { value: "font-google-sans", label: "Google Sans" },
+  { value: "font-google-sans-flex", label: "Google Sans Flex" },
+  { value: "font-mozilla-text", label: "Mozilla Text" },
+  { value: "font-nata-sans", label: "Nata Sans" },
+  { value: "font-oranienbaum", label: "Oranienbaum" },
 ];
 
 const SAMPLE_TEXT_LONG = `No one shall be subjected to arbitrary arrest, detention or exile. Everyone is entitled in full equality to a fair and public hearing by an independent and impartial tribunal, in the determination of his rights and obligations and of any criminal charge against him. No one shall be subjected to arbitrary interference with his privacy, family, home or correspondence, nor to attacks upon his honour and reputation. Everyone has the right to the protection of the law against such interference or attacks.`;
