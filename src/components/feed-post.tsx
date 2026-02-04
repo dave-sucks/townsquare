@@ -229,8 +229,8 @@ export function FeedPost({ activity }: FeedPostProps) {
           </Link>
         )}
 
-        {/* Social Post Embed (only show if there's media) */}
-        {activity.socialPost?.mediaUrl && (
+        {/* Social Post Embed (show if there's a permalink) */}
+        {activity.socialPost?.permalink && (
           <div className="mt-3">
             <SocialPostCard
               author={activity.socialPost.author}
@@ -246,8 +246,8 @@ export function FeedPost({ activity }: FeedPostProps) {
           </div>
         )}
 
-        {/* Review Text (show if there's no social post with media) */}
-        {reviewText && !activity.socialPost?.mediaUrl && (
+        {/* Review Text (show if there's no social post) */}
+        {reviewText && !activity.socialPost?.permalink && (
           <p className="text-sm leading-relaxed mt-3" data-testid={`feed-note-${activity.id}`}>
             {reviewText}
           </p>
