@@ -22,7 +22,9 @@ import {
 import { PlacePhotoGrid } from "./place-photo-grid";
 import { SaveToListDropdown } from "./shared/save-to-list-dropdown";
 import { FeedPost } from "./feed-post";
-import { apiRequest } from "@/lib/query-client";
+import { EmojiPickerPopover } from "./shared/emoji-picker-popover";
+import { apiRequest, queryClient } from "@/lib/query-client";
+import { useMutation } from "@tanstack/react-query";
 
 interface Place {
   id: string;
@@ -45,6 +47,7 @@ interface SavedPlace {
   placeId: string;
   hasBeen: boolean;
   rating: number | null;
+  emoji?: string | null;
   visitedAt: string | null;
   createdAt: string;
   place: Place;
@@ -202,6 +205,20 @@ export function PlaceDetailPanel({
   onAddReview,
   isDeleting,
 }: PlaceDetailPanelProps) {
+  const updateEmojiMutation = useMutation({
+    mutationFn: async (emoji: string | null) => {
+      if (!savedPlace) return;
+      return apiRequest(`/api/saved-places/${savedPlace.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ emoji }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
+      queryClient.invalidateQueries({ queryKey: ["place-detail"] });
+    },
+  });
+
   // Fetch full place details including activities
   const { data: placeDetails, isLoading: isLoadingDetails } = useQuery<PlaceDetailResponse>({
     queryKey: ["place-detail", savedPlace?.place?.googlePlaceId],
@@ -279,9 +296,18 @@ export function PlaceDetailPanel({
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4">
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold" data-testid="panel-place-name">
-              {place.name}
-            </h1>
+            <div className="flex items-center gap-2">
+              <EmojiPickerPopover
+                emoji={savedPlace.emoji || null}
+                onEmojiSelect={(emoji) => updateEmojiMutation.mutate(emoji)}
+                disabled={updateEmojiMutation.isPending}
+                variant="inline"
+                testId="button-emoji-panel"
+              />
+              <h1 className="text-2xl font-bold" data-testid="panel-place-name">
+                {place.name}
+              </h1>
+            </div>
             
             <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
               {placeType && (

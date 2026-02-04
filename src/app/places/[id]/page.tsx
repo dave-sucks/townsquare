@@ -27,6 +27,7 @@ import { PlacePhotoGrid } from "@/components/place-photo-grid";
 import { AppShell, PageHeader } from "@/components/layout";
 import { SaveToListDropdown } from "@/components/shared/save-to-list-dropdown";
 import { FeedPost } from "@/components/feed-post";
+import { EmojiPickerPopover } from "@/components/shared/emoji-picker-popover";
 
 interface Place {
   id: string;
@@ -49,6 +50,7 @@ interface SavedPlace {
   placeId: string;
   hasBeen: boolean;
   rating: number | null;
+  emoji?: string | null;
   visitedAt: string | null;
   createdAt: string;
 }
@@ -311,6 +313,20 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
     },
   });
 
+  const updateEmojiMutation = useMutation({
+    mutationFn: async (emoji: string | null) => {
+      if (!savedPlace) return;
+      return apiRequest(`/api/saved-places/${savedPlace.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ emoji }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["place-detail", placeId] });
+      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
+    },
+  });
+
   if (!isAuthenticated) {
     return (
       <AppShell user={user}>
@@ -376,9 +392,20 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
         <div className="space-y-6">
           {/* Header: Big title, inline metadata */}
           <div className="space-y-3">
-            <h1 className="text-3xl font-bold" data-testid="text-place-name">
-              {place.name}
-            </h1>
+            <div className="flex items-center gap-2">
+              {savedPlace && (
+                <EmojiPickerPopover
+                  emoji={savedPlace.emoji || null}
+                  onEmojiSelect={(emoji) => updateEmojiMutation.mutate(emoji)}
+                  disabled={updateEmojiMutation.isPending}
+                  variant="inline"
+                  testId="button-emoji-page"
+                />
+              )}
+              <h1 className="text-3xl font-bold" data-testid="text-place-name">
+                {place.name}
+              </h1>
+            </div>
             
             {/* Inline metadata: type · price · neighborhood */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
