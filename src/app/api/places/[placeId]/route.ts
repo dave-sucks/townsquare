@@ -69,6 +69,12 @@ export async function GET(
     // If not found locally, fetch from Google Places API and cache it
     if (!place) {
       place = await fetchAndCachePlaceFromGoogle(placeId);
+    } else if (!place.photoRefs || place.photoRefs.length === 0) {
+      // If place exists but has no photos, try to fetch them from Google
+      const refreshedPlace = await fetchAndCachePlaceFromGoogle(placeId);
+      if (refreshedPlace) {
+        place = refreshedPlace;
+      }
     }
 
     if (!place) {
@@ -81,6 +87,12 @@ export async function GET(
           userId: user.id,
           placeId: place.id,
         },
+      },
+      select: {
+        id: true,
+        hasBeen: true,
+        rating: true,
+        emoji: true,
       },
     });
 
@@ -231,7 +243,7 @@ export async function GET(
       }));
 
     // Fetch all activities related to this place
-    const allActivities = await prisma.activity.findMany({
+    const allActivitiesRaw = await prisma.activity.findMany({
       where: {
         placeId: place.id,
       },
@@ -265,6 +277,47 @@ export async function GET(
       },
       orderBy: { createdAt: "desc" },
       take: 50,
+    });
+
+    // For REVIEW_CREATED activities, fetch the associated review data
+    const reviewActivityActorIds = allActivitiesRaw
+      .filter(a => a.type === "REVIEW_CREATED")
+      .map(a => a.actorId);
+
+    const reviewsWithInstagram = await prisma.review.findMany({
+      where: {
+        placeId: place.id,
+        userId: { in: reviewActivityActorIds },
+        instagramUrl: { not: null },
+      },
+      select: {
+        userId: true,
+        instagramUrl: true,
+        instagramShortcode: true,
+        socialPostCaption: true,
+        socialPostMediaUrl: true,
+        socialPostMediaType: true,
+      },
+    });
+
+    // Create a map of userId -> review for quick lookup
+    const reviewByUserId = new Map(reviewsWithInstagram.map(r => [r.userId, r]));
+
+    // Transform activities to include socialPost data
+    const allActivities = allActivitiesRaw.map(activity => {
+      const review = activity.type === "REVIEW_CREATED" ? reviewByUserId.get(activity.actorId) : null;
+      return {
+        ...activity,
+        socialPost: review?.instagramUrl ? {
+          author: activity.actor.username || activity.actor.firstName || "User",
+          authorImage: activity.actor.profileImageUrl,
+          caption: review.socialPostCaption,
+          mediaUrl: review.socialPostMediaUrl,
+          mediaType: review.socialPostMediaType,
+          permalink: review.instagramUrl,
+          source: "instagram" as const,
+        } : null,
+      };
     });
 
     // Filter activities from people the user follows (+ own activities)

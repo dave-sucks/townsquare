@@ -184,7 +184,7 @@ function ListRowCard({ list }: { list: ListInfo }) {
 
 interface PlaceDetailResponse {
   place: Place;
-  savedPlace: { id: string; hasBeen: boolean; rating: number | null } | null;
+  savedPlace: { id: string; hasBeen: boolean; rating: number | null; emoji?: string | null } | null;
   listsContainingPlace: ListInfo[];
   friendsWhoSaved: FriendSaved[];
   myReview: Review | null;
@@ -334,7 +334,7 @@ export function PlaceDetailPanel({
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <EmojiPickerPopover
-                emoji={savedPlace.emoji || null}
+                emoji={placeDetails?.savedPlace?.emoji || savedPlace.emoji || null}
                 onEmojiSelect={(emoji) => updateEmojiMutation.mutate(emoji)}
                 disabled={updateEmojiMutation.isPending}
                 variant="area"
