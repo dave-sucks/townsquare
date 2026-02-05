@@ -197,14 +197,12 @@ export function TagsWithPopover({
       {hasMoreTags && (
         <Popover>
           <PopoverTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-6 w-6 shrink-0"
-              data-testid="button-view-all-tags"
+            <span 
+              className="text-sm text-muted-foreground cursor-pointer border-b border-dotted border-muted-foreground hover:text-foreground hover:border-foreground transition-colors ml-1"
+              data-testid="text-view-all-tags"
             >
-              <Plus className="h-4 w-4" />
-            </Button>
+              view all
+            </span>
           </PopoverTrigger>
           <PopoverContent className="w-72 p-3" align="start">
             <GroupedTags tagGroups={tagGroups} />
