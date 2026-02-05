@@ -20,6 +20,7 @@ import {
   SidebarInset,
   SidebarRail,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
@@ -74,14 +75,23 @@ export function AppShell({
 
 function SidebarNav({ user }: { user: User | null }) {
   const pathname = usePathname();
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
   const userName = user?.firstName || user?.email?.split("@")[0] || "User";
   const userEmail = user?.email || "";
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="p-4">
+      <SidebarHeader className={cn("flex items-center justify-center", isCollapsed ? "p-2" : "p-4")}>
         <Link href="/">
-          <img src="/twn-logo.png" alt="TWN" className="h-5 w-auto" />
+          <img 
+            src="/twn-logo.png" 
+            alt="TWN" 
+            className={cn(
+              "w-auto transition-all",
+              isCollapsed ? "h-6" : "h-5"
+            )} 
+          />
         </Link>
       </SidebarHeader>
 
