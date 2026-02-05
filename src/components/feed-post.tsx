@@ -95,9 +95,68 @@ export function FeedPost({ activity }: FeedPostProps) {
 
   const reviewText = activity.metadata?.note || activity.metadata?.review_preview;
   const rating = activity.metadata?.rating;
+  const hasSocialPost = !!activity.socialPost?.permalink;
 
+  // For posts with social embeds, use different layout
+  if (hasSocialPost) {
+    return (
+      <article className="bg-card" data-testid={`feed-post-${activity.id}`}>
+        {/* Full-width Instagram embed - no padding */}
+        <SocialPostCard
+          author={activity.socialPost!.author}
+          authorImage={activity.socialPost!.authorImage}
+          caption={activity.socialPost!.caption}
+          mediaUrl={activity.socialPost!.mediaUrl}
+          mediaType={activity.socialPost!.mediaType}
+          likes={activity.socialPost!.likes}
+          postedAt={activity.socialPost!.postedAt}
+          permalink={activity.socialPost!.permalink}
+          source={activity.socialPost!.source}
+        />
+        
+        {/* Location banner - minimal spacing above, tight to embed */}
+        {activity.place && (
+          <Link
+            href={`/places/${activity.place.googlePlaceId}`}
+            className="flex items-center gap-3 px-4 py-2 bg-muted/40 hover:bg-muted/60 transition-colors border-t"
+            data-testid={`feed-place-${activity.id}`}
+          >
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm truncate">{activity.place.name}</p>
+              <p className="text-xs text-muted-foreground truncate">{activity.place.formattedAddress}</p>
+            </div>
+            {/* Rating indicator */}
+            {rating && (
+              <div className="flex items-center gap-1">
+                <span className={`w-2.5 h-2.5 rounded-full ${RATING_COLORS[rating] || "bg-green-500"}`} />
+                <span className="text-sm text-muted-foreground">{rating}/10</span>
+              </div>
+            )}
+          </Link>
+        )}
+        
+        {/* Actions bar */}
+        <div className="flex items-center gap-1 px-2 py-1 border-t">
+          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" data-testid={`feed-like-${activity.id}`}>
+            <Heart className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" data-testid={`feed-comment-${activity.id}`}>
+            <MessageCircle className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" data-testid={`feed-save-${activity.id}`}>
+            <Bookmark className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" data-testid={`feed-add-list-${activity.id}`}>
+            <ListPlus className="h-5 w-5" />
+          </Button>
+        </div>
+      </article>
+    );
+  }
+
+  // Standard layout for non-social posts
   return (
-    <article className="bg-card border-b" data-testid={`feed-post-${activity.id}`}>
+    <article className="bg-card" data-testid={`feed-post-${activity.id}`}>
       <div className="p-4">
         {/* Header: Avatar + "Name @ Place" */}
         <div className="flex items-start gap-3">
@@ -229,25 +288,8 @@ export function FeedPost({ activity }: FeedPostProps) {
           </Link>
         )}
 
-        {/* Social Post Embed (show if there's a permalink) */}
-        {activity.socialPost?.permalink && (
-          <div className="mt-3">
-            <SocialPostCard
-              author={activity.socialPost.author}
-              authorImage={activity.socialPost.authorImage}
-              caption={activity.socialPost.caption}
-              mediaUrl={activity.socialPost.mediaUrl}
-              mediaType={activity.socialPost.mediaType}
-              likes={activity.socialPost.likes}
-              postedAt={activity.socialPost.postedAt}
-              permalink={activity.socialPost.permalink}
-              source={activity.socialPost.source}
-            />
-          </div>
-        )}
-
-        {/* Review Text (show if there's no social post) */}
-        {reviewText && !activity.socialPost?.permalink && (
+        {/* Review Text */}
+        {reviewText && (
           <p className="text-sm leading-relaxed mt-3" data-testid={`feed-note-${activity.id}`}>
             {reviewText}
           </p>

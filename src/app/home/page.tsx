@@ -125,9 +125,11 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
-          <div className="border rounded-lg bg-card divide-y">
+          <div className="space-y-4">
             {allActivities.map((activity) => (
-              <FeedPost key={activity.id} activity={activity} />
+              <div key={activity.id} className="border rounded-lg overflow-hidden">
+                <FeedPost activity={activity} />
+              </div>
             ))}
           </div>
         )}
