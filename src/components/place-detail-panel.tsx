@@ -299,7 +299,7 @@ export function PlaceDetailPanel({
 
       <ScrollArea className="flex-1 overflow-hidden">
         {/* Header section with padding */}
-        <div className="p-4 space-y-4">
+        <div className="p-4 pt-0 space-y-4">
           {/* Hero Photo - inline with padding and rounded */}
           {place.photoRefs && place.photoRefs.length > 0 ? (
             <div className="w-full h-48 bg-muted relative overflow-hidden rounded-lg">
