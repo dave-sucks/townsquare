@@ -29,6 +29,7 @@ import { SaveToListDropdown } from "@/components/shared/save-to-list-dropdown";
 import { FeedPost } from "@/components/feed-post";
 import { EmojiPickerPopover } from "@/components/shared/emoji-picker-popover";
 import { GroupedTags, InlineTags, TagCategoryGroup, TagInfo, TagsWithPopover } from "@/components/shared/place-tags";
+import { SiGooglemaps } from "react-icons/si";
 
 interface Place {
   id: string;
@@ -452,6 +453,19 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
             />
             
             <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+              {locationDisplay && (
+                <a 
+                  href={`https://www.google.com/maps/place/?q=place_id:${place.googlePlaceId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="no-default-hover-elevate no-default-active-elevate"
+                >
+                  <Badge variant="secondary" className="flex items-center gap-1.5 py-1 px-2.5 cursor-pointer">
+                    <SiGooglemaps className="size-3 text-[#4285F4]" />
+                    <span>{locationDisplay}</span>
+                  </Badge>
+                </a>
+              )}
               {priceLevel && (
                 <>
                   <span>{priceLevel}</span>

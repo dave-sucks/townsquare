@@ -22,6 +22,7 @@ import { SaveToListDropdown } from "./shared/save-to-list-dropdown";
 import { FeedPost } from "./feed-post";
 import { EmojiPickerPopover } from "./shared/emoji-picker-popover";
 import { GroupedTags, InlineTags, TagCategoryGroup, TagInfo, TagsWithPopover } from "./shared/place-tags";
+import { SiGooglemaps } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/query-client";
 import { useMutation } from "@tanstack/react-query";
 
@@ -348,6 +349,19 @@ export function PlaceDetailPanel({
             />
             
             <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+              {locationDisplay && (
+                <a 
+                  href={`https://www.google.com/maps/place/?q=place_id:${place.googlePlaceId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="no-default-hover-elevate no-default-active-elevate"
+                >
+                  <Badge variant="secondary" className="flex items-center gap-1.5 py-1 px-2.5 cursor-pointer">
+                    <SiGooglemaps className="size-3 text-[#4285F4]" />
+                    <span>{locationDisplay}</span>
+                  </Badge>
+                </a>
+              )}
               {priceLevel && (
                 <>
                   <span>{priceLevel}</span>
