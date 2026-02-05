@@ -389,9 +389,9 @@ export function PlaceDetailPanel({
         </div>
 
         {/* Tabs section - manages its own padding per tab */}
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs defaultValue="overview" className="w-fit">
           <div className="px-4">
-            <TabsList className="w-full justify-start">
+            <TabsList className="justify-start">
               <TabsTrigger value="overview" data-testid="panel-tab-overview">Overview</TabsTrigger>
               <TabsTrigger value="feed" data-testid="panel-tab-feed">Feed</TabsTrigger>
             </TabsList>

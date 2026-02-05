@@ -492,8 +492,8 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
           )}
 
           {/* Two tabs: Overview and Feed */}
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="w-full justify-start">
+          <Tabs defaultValue="overview" className="w-fit">
+            <TabsList className="justify-start">
               <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
               <TabsTrigger value="feed" data-testid="tab-feed">Feed</TabsTrigger>
             </TabsList>
