@@ -70,26 +70,19 @@ export function InlineTags({ tags, maxTags = 3, size = "sm", className }: Inline
 
   return (
     <div className={cn("flex flex-wrap gap-1", className)}>
-      {displayTags.map((tag) => {
-        const colorClass = tag.categorySlug 
-          ? CATEGORY_COLORS[tag.categorySlug] 
-          : "bg-muted text-muted-foreground";
-        
-        return (
-          <Badge
-            key={tag.id}
-            variant="secondary"
-            className={cn(
-              "no-default-hover-elevate no-default-active-elevate border-0",
-              size === "sm" ? "text-[10px] px-1.5 py-0" : "text-xs px-2 py-0.5",
-              colorClass
-            )}
-            data-testid={`tag-${tag.slug}`}
-          >
-            {tag.displayName}
-          </Badge>
-        );
-      })}
+      {displayTags.map((tag) => (
+        <Badge
+          key={tag.id}
+          variant="secondary"
+          className={cn(
+            "no-default-hover-elevate no-default-active-elevate border-0",
+            size === "sm" ? "text-[10px] px-1.5 py-0" : "text-xs px-2 py-0.5"
+          )}
+          data-testid={`tag-${tag.slug}`}
+        >
+          {tag.displayName}
+        </Badge>
+      ))}
       {remaining > 0 && (
         <Badge
           variant="secondary"
@@ -116,34 +109,25 @@ export function GroupedTags({ tagGroups, className }: GroupedTagsProps) {
 
   return (
     <div className={cn("space-y-3", className)}>
-      {tagGroups.map((group) => {
-        const IconComponent = CATEGORY_ICONS[group.category.slug] || TagIcon;
-        const colorClass = CATEGORY_COLORS[group.category.slug] || "bg-muted text-muted-foreground";
-
-        return (
-          <div key={group.category.slug} className="space-y-1.5">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <IconComponent className="h-3 w-3" />
-              <span className="font-medium">{group.category.displayName}</span>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {group.tags.map((tag) => (
-                <Badge
-                  key={tag.id}
-                  variant="secondary"
-                  className={cn(
-                    "no-default-hover-elevate no-default-active-elevate border-0",
-                    colorClass
-                  )}
-                  data-testid={`tag-${tag.slug}`}
-                >
-                  {tag.displayName}
-                </Badge>
-              ))}
-            </div>
+      {tagGroups.map((group) => (
+        <div key={group.category.slug} className="space-y-1.5">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="font-medium">{group.category.displayName}</span>
           </div>
-        );
-      })}
+          <div className="flex flex-wrap gap-1.5">
+            {group.tags.map((tag) => (
+              <Badge
+                key={tag.id}
+                variant="secondary"
+                className="no-default-hover-elevate no-default-active-elevate border-0"
+                data-testid={`tag-${tag.slug}`}
+              >
+                {tag.displayName}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
