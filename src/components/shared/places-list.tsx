@@ -205,9 +205,15 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
               testId={`button-emoji-picker-${savedPlace.id}`}
             />
           ) : (
-            <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
               {savedPlace.emoji ? (
                 <span className="text-2xl">{savedPlace.emoji}</span>
+              ) : savedPlace.place.photoRefs && savedPlace.place.photoRefs.length > 0 ? (
+                <img 
+                  src={`/api/places/photo?photoRef=${savedPlace.place.photoRefs[0]}&maxWidth=96`}
+                  alt={savedPlace.place.name}
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <MapPin className="h-5 w-5 text-muted-foreground" />
               )}

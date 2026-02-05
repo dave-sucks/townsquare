@@ -68,6 +68,59 @@ export async function GET(
       }
     });
 
+    // Build currentUserPlaceData for the logged-in user (for save button)
+    const currentUserPlaceData: Record<string, {
+      savedPlaceId: string | null;
+      hasBeen: boolean;
+      rating: number | null;
+      lists: Array<{ id: string; name: string }>;
+    }> = {};
+
+    if (user) {
+      const placeIds = list.listPlaces.map(lp => lp.placeId);
+      
+      // Get current user's saved places for these places
+      const currentUserSavedPlaces = await prisma.savedPlace.findMany({
+        where: {
+          userId: user.id,
+          placeId: { in: placeIds },
+        },
+      });
+
+      // Get current user's lists that contain these places
+      const currentUserListPlaces = await prisma.listPlace.findMany({
+        where: {
+          placeId: { in: placeIds },
+          list: { userId: user.id },
+        },
+        include: {
+          list: {
+            select: { id: true, name: true },
+          },
+        },
+      });
+
+      // Build a map of placeId to lists
+      const placeToLists: Record<string, Array<{ id: string; name: string }>> = {};
+      for (const lp of currentUserListPlaces) {
+        if (!placeToLists[lp.placeId]) {
+          placeToLists[lp.placeId] = [];
+        }
+        placeToLists[lp.placeId].push({ id: lp.list.id, name: lp.list.name });
+      }
+
+      // Build the map
+      for (const placeId of placeIds) {
+        const savedPlace = currentUserSavedPlaces.find(sp => sp.placeId === placeId);
+        currentUserPlaceData[placeId] = {
+          savedPlaceId: savedPlace?.id || null,
+          hasBeen: savedPlace?.hasBeen || false,
+          rating: savedPlace?.rating || null,
+          lists: placeToLists[placeId] || [],
+        };
+      }
+    }
+
     const formattedList = {
       ...list,
       listPlaces: list.listPlaces.map(lp => ({
@@ -96,7 +149,10 @@ export async function GET(
       })),
     };
 
-    return NextResponse.json({ list: formattedList });
+    return NextResponse.json({ 
+      list: formattedList,
+      currentUserPlaceData: user ? currentUserPlaceData : null,
+    });
   } catch (error: any) {
     console.error("Get list error:", error);
     return NextResponse.json({ error: "Failed to get list" }, { status: 500 });

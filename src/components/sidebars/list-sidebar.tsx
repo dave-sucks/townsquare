@@ -40,6 +40,13 @@ interface ListOwner {
   profileImageUrl: string | null;
 }
 
+interface CurrentUserPlaceData {
+  savedPlaceId: string | null;
+  hasBeen: boolean;
+  rating: number | null;
+  lists: Array<{ id: string; name: string }>;
+}
+
 interface ListData {
   id: string;
   name: string;
@@ -58,6 +65,7 @@ interface ListSidebarProps extends Partial<SidebarInjectedProps> {
   currentUserId?: string;
   onRemovePlace?: (placeId: string) => void;
   isRemovingPlace?: boolean;
+  currentUserPlaceData?: Record<string, CurrentUserPlaceData> | null;
 }
 
 export function ListSidebar({
@@ -70,6 +78,7 @@ export function ListSidebar({
   placeRowRefs,
   onRemovePlace,
   isRemovingPlace = false,
+  currentUserPlaceData,
 }: ListSidebarProps) {
   const [copied, setCopied] = useState(false);
 
@@ -163,6 +172,7 @@ export function ListSidebar({
           showStatus={false}
           showSaveDropdown={true}
           isOwnProfile={false}
+          currentUserPlaceData={currentUserPlaceData || undefined}
           emptyMessage="No places in this list"
           emptySubMessage={isOwner ? "Add places from your saved places" : "This list is empty"}
           renderAction={isOwner && onRemovePlace ? (savedPlace) => (

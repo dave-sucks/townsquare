@@ -139,9 +139,12 @@ export async function GET(
       orderBy: { createdAt: "desc" },
     });
 
-    // Get user's activities for the feed tab
+    // Get user's REVIEW_CREATED activities for the feed tab
     const activities = await prisma.activity.findMany({
-      where: { actorId: user.id },
+      where: { 
+        actorId: user.id,
+        type: "REVIEW_CREATED",
+      },
       include: {
         actor: {
           select: {
@@ -174,9 +177,9 @@ export async function GET(
       take: 50,
     });
 
-    // Fetch reviews for REVIEW_CREATED activities to get the actual note
+    // Fetch reviews for activities to get the actual note
     const reviewActivityIds = activities
-      .filter((a) => a.type === "REVIEW_CREATED" && a.placeId)
+      .filter((a) => a.placeId)
       .map((a) => ({ actorId: a.actorId, placeId: a.placeId! }));
 
     const activityReviews = reviewActivityIds.length > 0
@@ -216,8 +219,8 @@ export async function GET(
         return true;
       })
       .map((activity) => {
-        // Enrich REVIEW_CREATED activities with the actual review note and social post data
-        if (activity.type === "REVIEW_CREATED" && activity.placeId) {
+        // Enrich activities with the actual review note and social post data
+        if (activity.placeId) {
           const review = reviewMap.get(`${activity.actorId}-${activity.placeId}`);
           if (review) {
             const hasSocialPost = review.instagramUrl || review.socialPostMediaUrl || review.socialPostCaption;

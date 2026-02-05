@@ -242,10 +242,11 @@ export async function GET(
         categorySlug: pt.tag.category.slug,
       }));
 
-    // Fetch all activities related to this place
+    // Fetch all REVIEW_CREATED activities related to this place
     const allActivitiesRaw = await prisma.activity.findMany({
       where: {
         placeId: place.id,
+        type: "REVIEW_CREATED",
       },
       include: {
         actor: {
@@ -279,10 +280,8 @@ export async function GET(
       take: 50,
     });
 
-    // For REVIEW_CREATED activities, fetch the associated review data
-    const reviewActivityActorIds = allActivitiesRaw
-      .filter(a => a.type === "REVIEW_CREATED")
-      .map(a => a.actorId);
+    // Fetch the associated review data for these activities
+    const reviewActivityActorIds = allActivitiesRaw.map(a => a.actorId);
 
     const reviewsWithInstagram = await prisma.review.findMany({
       where: {
@@ -305,7 +304,7 @@ export async function GET(
 
     // Transform activities to include socialPost data
     const allActivities = allActivitiesRaw.map(activity => {
-      const review = activity.type === "REVIEW_CREATED" ? reviewByUserId.get(activity.actorId) : null;
+      const review = reviewByUserId.get(activity.actorId);
       return {
         ...activity,
         socialPost: review?.instagramUrl ? {

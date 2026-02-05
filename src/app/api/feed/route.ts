@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
     const activities = await prisma.activity.findMany({
       where: {
         actorId: { in: actorIds },
+        type: "REVIEW_CREATED",
       },
       include: {
         actor: {

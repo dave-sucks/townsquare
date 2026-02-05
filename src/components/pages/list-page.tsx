@@ -61,6 +61,18 @@ interface ListData {
   listPlaces: ListPlace[];
 }
 
+interface CurrentUserPlaceData {
+  savedPlaceId: string | null;
+  hasBeen: boolean;
+  rating: number | null;
+  lists: Array<{ id: string; name: string }>;
+}
+
+interface ListApiResponse {
+  list: ListData;
+  currentUserPlaceData: Record<string, CurrentUserPlaceData> | null;
+}
+
 type SidebarView = "list" | "detail";
 
 interface ListPageProps {
@@ -74,13 +86,14 @@ export function ListPage({ listId, currentUser, isAuthenticated }: ListPageProps
   const [currentView, setCurrentView] = useState<SidebarView>("list");
   const [viewingPlaceId, setViewingPlaceId] = useState<string | null>(null);
 
-  const { data, isLoading, error } = useQuery<{ list: ListData }>({
+  const { data, isLoading, error } = useQuery<ListApiResponse>({
     queryKey: ["lists", listId],
     queryFn: () => apiRequest(`/api/lists/${listId}`),
     enabled: isAuthenticated,
   });
 
   const list = data?.list;
+  const currentUserPlaceData = data?.currentUserPlaceData;
   const isOwner = currentUser?.id === list?.userId;
 
   const removePlaceMutation = useMutation({
@@ -179,6 +192,7 @@ export function ListPage({ listId, currentUser, isAuthenticated }: ListPageProps
       isRemovingPlace={removePlaceMutation.isPending}
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={handlePlaceSelect}
+      currentUserPlaceData={currentUserPlaceData || null}
     />
   );
 
