@@ -58,6 +58,7 @@ interface SaveToListDropdownProps {
   savedPlace?: SavedPlace | null;
   listsContainingPlace?: string[];
   onSaveSuccess?: () => void;
+  variant?: "default" | "ghost" | "outline";
   size?: "default" | "sm" | "icon";
   showLabel?: boolean;
   className?: string;
@@ -74,6 +75,7 @@ export function SaveToListDropdown({
   savedPlace,
   listsContainingPlace = [],
   onSaveSuccess,
+  variant = "outline",
   size = "sm",
   showLabel = true,
   className,
@@ -286,7 +288,7 @@ export function SaveToListDropdown({
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
-          variant={isSaved ? "default" : "outline"}
+          variant={variant}
           size={size}
           className={cn(className)}
           onClick={(e) => {
