@@ -284,6 +284,11 @@ export function PlaceDetailPanel({
               <Maximize className="h-4 w-4" />
             </Link>
           </Button>
+          {fetchedLists.length > 0 && (
+            <Button variant="ghost" size="sm" className="text-muted-foreground" data-testid="button-list-count-panel">
+              {fetchedLists.length}
+            </Button>
+          )}
           <SaveToListDropdown
             place={place}
             savedPlace={{

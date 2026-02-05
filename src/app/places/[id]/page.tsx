@@ -384,6 +384,11 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
         title={place.name}
         backHref="/"
       >
+        {listsContainingPlace.length > 0 && (
+          <Button variant="ghost" size="sm" className="text-muted-foreground" data-testid="button-list-count">
+            {listsContainingPlace.length} {listsContainingPlace.length === 1 ? "list" : "lists"}
+          </Button>
+        )}
         <SaveToListDropdown
           place={place}
           savedPlace={savedPlace ? {
