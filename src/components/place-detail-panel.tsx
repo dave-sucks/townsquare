@@ -187,6 +187,7 @@ interface PlaceDetailResponse {
   myReview: Review | null;
   photos: Photo[];
   activities: Activity[];
+  followingActivities: Activity[];
 }
 
 export function PlaceDetailPanel({
@@ -224,8 +225,8 @@ export function PlaceDetailPanel({
     enabled: !!savedPlace?.place?.googlePlaceId,
   });
 
-  // Use fetched activities or fall back to passed activities
-  const activities = placeDetails?.activities || passedActivities;
+  // Use following activities only in the panel (show reviews from people user follows)
+  const activities = placeDetails?.followingActivities || passedActivities;
   const fetchedPhotos = placeDetails?.photos || photos;
   const fetchedFriends = placeDetails?.friendsWhoSaved || friendsWhoSaved;
   const fetchedLists = placeDetails?.listsContainingPlace || listsData;

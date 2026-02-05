@@ -4,7 +4,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Lock, Trash2 } from "lucide-react";
+import { Lock, Trash2, Share2, Check } from "lucide-react";
+import { toast } from "sonner";
+import { useState } from "react";
 import type { SidebarInjectedProps } from "@/components/map/map-layout";
 import { PlacesList } from "@/components/shared/places-list";
 
@@ -68,6 +70,19 @@ export function ListSidebar({
   onRemovePlace,
   isRemovingPlace = false,
 }: ListSidebarProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = () => {
+    const url = `${window.location.origin}/lists/${list?.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      toast.success("Link copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {
+      toast.error("Failed to copy link");
+    });
+  };
+
   const savedPlaces = list?.listPlaces.map(lp => ({
     id: lp.id,
     placeId: lp.placeId,
@@ -106,6 +121,16 @@ export function ListSidebar({
       <div className="flex items-center gap-2 p-3 border-b">
         <SidebarTrigger data-testid="button-sidebar-toggle" />
         <span className="font-semibold text-sm flex-1 font-brand">{placeCount} {placeCount === 1 ? "place" : "places"}</span>
+        {list.visibility === "PUBLIC" && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleShare}
+            data-testid="button-share-list"
+          >
+            {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+          </Button>
+        )}
         {list.visibility === "PRIVATE" && (
           <Lock className="h-4 w-4 text-muted-foreground" />
         )}

@@ -178,8 +178,8 @@ export async function GET(
       orderBy: { createdAt: "desc" },
     });
 
-    // Fetch activities related to this place (from user and people they follow)
-    const activities = await prisma.activity.findMany({
+    // Fetch all activities related to this place
+    const allActivities = await prisma.activity.findMany({
       where: {
         placeId: place.id,
       },
@@ -215,6 +215,10 @@ export async function GET(
       take: 50,
     });
 
+    // Filter activities from people the user follows (+ own activities)
+    const followingSet = new Set([...followingIds, user.id]);
+    const followingActivities = allActivities.filter(a => followingSet.has(a.actorId));
+
     return NextResponse.json({
       place,
       savedPlace,
@@ -223,7 +227,8 @@ export async function GET(
       myReview,
       reviews: sortedReviews,
       photos,
-      activities,
+      activities: allActivities,
+      followingActivities,
     });
   } catch (error: any) {
     console.error("Get place error:", error?.message || error);

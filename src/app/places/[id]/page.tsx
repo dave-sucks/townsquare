@@ -142,6 +142,7 @@ interface PlaceDetailData {
   reviews: Review[];
   photos: Photo[];
   activities?: Activity[];
+  followingActivities?: Activity[];
 }
 
 function formatPlaceType(type: string | null): string {
@@ -279,6 +280,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
   const { id: placeId } = use(params);
   const { user, isAuthenticated } = useAuth();
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [feedFilter, setFeedFilter] = useState<"following" | "all">("following");
 
   const { data, isLoading, refetch } = useQuery<PlaceDetailData>({
     queryKey: ["place-detail", placeId],
@@ -293,7 +295,9 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
   const myReview = data?.myReview;
   const reviews = data?.reviews || [];
   const photos = data?.photos || [];
-  const activities = data?.activities || [];
+  const allActivities = data?.activities || [];
+  const followingActivities = data?.followingActivities || [];
+  const activities = feedFilter === "following" ? followingActivities : allActivities;
 
   const placeType = formatPlaceType(place?.primaryType || null);
   const priceLevel = formatPriceLevel(place?.priceLevel || null);
@@ -542,18 +546,40 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
 
               </TabsContent>
 
-            <TabsContent value="feed" className="pt-4 -mx-4">
-              {activities.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8 px-4" data-testid="text-no-activity">
-                  No activity for this place yet.
-                </p>
-              ) : (
-                <div>
-                  {activities.map((activity) => (
-                    <FeedPost key={activity.id} activity={activity} />
-                  ))}
-                </div>
-              )}
+            <TabsContent value="feed" className="pt-4">
+              <div className="flex gap-2 mb-4">
+                <Button
+                  variant={feedFilter === "following" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFeedFilter("following")}
+                  data-testid="button-filter-following"
+                >
+                  Following ({followingActivities.length})
+                </Button>
+                <Button
+                  variant={feedFilter === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFeedFilter("all")}
+                  data-testid="button-filter-all"
+                >
+                  All ({allActivities.length})
+                </Button>
+              </div>
+              <div className="-mx-4">
+                {activities.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8 px-4" data-testid="text-no-activity">
+                    {feedFilter === "following" 
+                      ? "No reviews from people you follow yet."
+                      : "No activity for this place yet."}
+                  </p>
+                ) : (
+                  <div>
+                    {activities.map((activity) => (
+                      <FeedPost key={activity.id} activity={activity} />
+                    ))}
+                  </div>
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </div>
