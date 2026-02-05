@@ -234,8 +234,9 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
               </div>
             )}
             
-            {/* Row 2: Location + list info (gray text, no pin icon) */}
+            {/* Row 2: Location + list info (gray text) */}
             <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1 truncate" data-testid="place-card-location-row">
+              <MapPin className="h-3 w-3 flex-shrink-0" />
               <span className="truncate">{locationDisplay}</span>
               {showStatus && listDisplayText && (
                 <>
