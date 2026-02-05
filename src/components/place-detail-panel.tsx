@@ -400,7 +400,7 @@ export function PlaceDetailPanel({
           <TabsContent value="overview" className="p-4 pt-4 space-y-6">
             <div className="space-y-2">
               <h3 className="text-sm font-medium">About</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-base text-muted-foreground">
                 A popular {placeType?.toLowerCase() || "place"} in {locationDisplay || "the area"}. 
                 Known for great ambiance and quality service. Perfect for dining with friends and family.
               </p>
