@@ -82,16 +82,18 @@ function SidebarNav({ user }: { user: User | null }) {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className={cn("flex items-center", isCollapsed ? "justify-center p-2" : "justify-start p-4")}>
-        <Link href="/" className="flex-shrink-0">
-          <img 
-            src="/twn-logo.svg" 
-            alt="TWN" 
-            className={cn(
-              "transition-all",
-              isCollapsed ? "h-4 w-auto" : "h-4 w-auto"
-            )} 
-          />
+      <SidebarHeader className="p-4">
+        <Link href="/" className="block">
+          {!isCollapsed && (
+            <img 
+              src="/twn-logo.svg" 
+              alt="TWN" 
+              className="h-5 w-auto"
+            />
+          )}
+          {isCollapsed && (
+            <span className="text-primary font-bold text-sm">T</span>
+          )}
         </Link>
       </SidebarHeader>
 
