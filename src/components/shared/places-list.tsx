@@ -3,11 +3,11 @@
 import { forwardRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { MapPin, Bookmark, BadgeCheck } from "lucide-react";
+import { MapPin, BadgeCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SaveToListDropdown } from "./save-to-list-dropdown";
 import { EmojiPickerPopover } from "./emoji-picker-popover";
-import { CompactTags, TagInfo } from "./place-tags";
+import { TagInfo } from "./place-tags";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/query-client";
 
@@ -71,7 +71,45 @@ interface PlaceCardProps {
   currentUserData?: CurrentUserPlaceData | null;
 }
 
-function formatPlaceType(type: string | null): string {
+// Priority order for determining primary category from types array
+const CATEGORY_PRIORITY = [
+  "restaurant",
+  "bar", 
+  "cafe",
+  "bakery",
+  "coffee_shop",
+  "food",
+  "night_club",
+  "meal_takeaway",
+  "meal_delivery",
+];
+
+function getBestCategory(primaryType: string | null, types: string[] | null): string {
+  // Check types array for a better category than generic "establishment"
+  if (types && types.length > 0) {
+    for (const category of CATEGORY_PRIORITY) {
+      if (types.includes(category)) {
+        return formatCategoryName(category);
+      }
+    }
+    // If no priority category found, use first non-generic type
+    const nonGenericTypes = types.filter(t => 
+      !["establishment", "point_of_interest", "food", "store"].includes(t)
+    );
+    if (nonGenericTypes.length > 0) {
+      return formatCategoryName(nonGenericTypes[0]);
+    }
+  }
+  
+  // Fall back to primaryType if it's not "establishment"
+  if (primaryType && primaryType !== "establishment") {
+    return formatCategoryName(primaryType);
+  }
+  
+  return "";
+}
+
+function formatCategoryName(type: string): string {
   if (!type) return "";
   return type
     .replace(/_/g, " ")
@@ -81,7 +119,7 @@ function formatPlaceType(type: string | null): string {
 export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
   ({ savedPlace, isSelected, showStatus = true, showSaveDropdown = false, hideDropdownUntilHover = false, listsContainingPlace = [], actionButton, onClick, isOwnProfile = true, currentUserData }, ref) => {
     const queryClient = useQueryClient();
-    const placeType = formatPlaceType(savedPlace.place.primaryType);
+    const category = getBestCategory(savedPlace.place.primaryType, savedPlace.place.types);
     const locationDisplay = savedPlace.place.neighborhood 
       || savedPlace.place.locality 
       || savedPlace.place.formattedAddress.split(",")[0];
@@ -114,6 +152,17 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
         updateEmojiMutation.mutate(emoji);
       }
     };
+
+    // Get up to 2 tags for display in the category row
+    const displayTags = savedPlace.place.topTags?.slice(0, 2) || [];
+    
+    // Build list display text
+    const lists = savedPlace.lists || [];
+    const listDisplayText = lists.length === 1 
+      ? lists[0].name 
+      : lists.length > 1 
+        ? `${lists.length} lists` 
+        : null;
 
     return (
       <div
@@ -171,25 +220,30 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
               )}
             </h3>
             
-            {showStatus && savedPlace.lists && savedPlace.lists.length > 0 && (
-              <div className="flex items-center gap-1.5 text-xs mt-0.5">
-                <span className="text-foreground truncate">
-                  {savedPlace.lists.map(l => l.name).join(" · ")}
-                </span>
+            {/* Row 1: Category — Tags (black text) */}
+            {(category || displayTags.length > 0) && (
+              <div className="flex items-center gap-1 text-xs text-foreground mt-0.5 truncate" data-testid="place-card-category-row">
+                {category && <span>{category}</span>}
+                {category && displayTags.length > 0 && <span>—</span>}
+                {displayTags.map((tag, i) => (
+                  <span key={tag.id}>
+                    {i > 0 && ", "}
+                    {tag.displayName}
+                  </span>
+                ))}
               </div>
             )}
             
-            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-              <MapPin className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">
-                {locationDisplay}
-                {placeType && <> — {placeType}</>}
-              </span>
+            {/* Row 2: Location + list info (gray text, no pin icon) */}
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5 truncate" data-testid="place-card-location-row">
+              <span className="truncate">{locationDisplay}</span>
+              {showStatus && listDisplayText && (
+                <>
+                  <span className="flex-shrink-0">·</span>
+                  <span className="truncate">{listDisplayText}</span>
+                </>
+              )}
             </div>
-            
-            {savedPlace.place.topTags && savedPlace.place.topTags.length > 0 && (
-              <CompactTags tags={savedPlace.place.topTags} maxTags={2} className="mt-0.5" />
-            )}
           </div>
         </div>
         
