@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -20,7 +19,6 @@ import {
   SidebarInset,
   SidebarRail,
   SidebarTrigger,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
@@ -33,7 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Users, List, LogOut, ChevronsUpDown, Activity, MessageCircle, MapPin } from "lucide-react";
+import { Users, List, LogOut, ChevronDown, Activity, MessageCircle, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarThemeToggle } from "@/components/theme-toggle";
 
@@ -75,27 +73,82 @@ export function AppShell({
 
 function SidebarNav({ user }: { user: User | null }) {
   const pathname = usePathname();
-  const { state } = useSidebar();
-  const isCollapsed = state === "collapsed";
   const userName = user?.firstName || user?.email?.split("@")[0] || "User";
   const userEmail = user?.email || "";
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-2">
-        <Link href="/">
-          <img 
-            src="/twn-logo.svg" 
-            alt="TWN" 
-            className="max-w-full h-auto object-contain"
-            style={{ maxHeight: isCollapsed ? '16px' : '24px' }}
-          />
-        </Link>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton className="w-fit px-1.5" data-testid="button-user-menu">
+                    <Avatar className="h-5 w-5 rounded-md">
+                      <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
+                      <AvatarFallback className="rounded-md text-xs">
+                        {userName.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="truncate font-medium">{userName}</span>
+                    <ChevronDown className="opacity-50" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-56 rounded-lg"
+                  align="start"
+                  side="bottom"
+                  sideOffset={4}
+                >
+                  <DropdownMenuLabel className="p-0 font-normal">
+                    <div className="flex items-center gap-2 px-2 py-1.5 text-left text-sm">
+                      <Avatar className="h-8 w-8 rounded-lg">
+                        <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
+                        <AvatarFallback className="rounded-lg">
+                          {userName.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="grid flex-1 text-left text-sm leading-tight">
+                        <span className="truncate font-semibold">{userName}</span>
+                        <span className="truncate text-xs text-muted-foreground">{userEmail}</span>
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/u/${user.username || user.id}`} className="flex items-center gap-2 w-full" data-testid="link-my-profile">
+                        <Users className="size-4" />
+                        My Profile
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <a href="/api/logout" className="flex items-center gap-2 w-full" data-testid="button-logout">
+                      <LogOut className="size-4" />
+                      Log out
+                    </a>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <SidebarMenuButton asChild className="w-fit px-1.5">
+                <a href="/api/login" data-testid="button-login">
+                  <Avatar className="h-5 w-5 rounded-md">
+                    <AvatarFallback className="rounded-md text-xs">?</AvatarFallback>
+                  </Avatar>
+                  <span>Sign In</span>
+                </a>
+              </SidebarMenuButton>
+            )}
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {NAV_ITEMS.map((item) => {
@@ -132,81 +185,6 @@ function SidebarNav({ user }: { user: User | null }) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="group-data-[collapsible=icon]:p-0">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <SidebarMenuButton
-                    size="lg"
-                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                    data-testid="button-user-menu"
-                  >
-                    <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
-                      <AvatarFallback className="rounded-lg">
-                        {userName.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                      <span className="truncate font-medium">{userName}</span>
-                      <span className="truncate text-xs text-muted-foreground">{userEmail}</span>
-                    </div>
-                    <ChevronsUpDown className="ml-auto size-4 group-data-[collapsible=icon]:hidden" />
-                  </SidebarMenuButton>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                  side="bottom"
-                  align="end"
-                  sideOffset={4}
-                >
-                  <DropdownMenuLabel className="p-0 font-normal">
-                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                      <Avatar className="h-8 w-8 rounded-lg">
-                        <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
-                        <AvatarFallback className="rounded-lg">
-                          {userName.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="grid flex-1 text-left text-sm leading-tight">
-                        <span className="truncate font-semibold">{userName}</span>
-                        <span className="truncate text-xs">{userEmail}</span>
-                      </div>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem asChild>
-                      <Link href={`/u/${user.username || user.id}`} className="flex items-center gap-2 w-full" data-testid="link-my-profile">
-                        <Users className="size-4" />
-                        My Profile
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <a href="/api/logout" className="flex items-center gap-2 w-full" data-testid="button-logout">
-                      <LogOut className="size-4" />
-                      Log out
-                    </a>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <SidebarMenuButton asChild size="lg">
-                <a href="/api/login" data-testid="button-login">
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarFallback className="rounded-lg">?</AvatarFallback>
-                  </Avatar>
-                  <span className="group-data-[collapsible=icon]:hidden">Sign In</span>
-                </a>
-              </SidebarMenuButton>
-            )}
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
@@ -232,6 +210,7 @@ interface PageHeaderProps extends VariantProps<typeof pageHeaderVariants> {
   children?: React.ReactNode;
   showTrigger?: boolean;
   backHref?: string;
+  className?: string;
 }
 
 export function PageHeader({ title, children, size, showTrigger = true, backHref, className }: PageHeaderProps) {
