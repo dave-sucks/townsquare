@@ -7,6 +7,7 @@ import { MapPin, Bookmark, BadgeCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SaveToListDropdown } from "./save-to-list-dropdown";
 import { EmojiPickerPopover } from "./emoji-picker-popover";
+import { CompactTags, TagInfo } from "./place-tags";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/query-client";
 
@@ -23,6 +24,7 @@ interface Place {
   types: string[] | null;
   priceLevel: string | null;
   photoRefs: string[] | null;
+  topTags?: TagInfo[];
 }
 
 interface ListInfo {
@@ -184,6 +186,10 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
                 {placeType && <> — {placeType}</>}
               </span>
             </div>
+            
+            {savedPlace.place.topTags && savedPlace.place.topTags.length > 0 && (
+              <CompactTags tags={savedPlace.place.topTags} maxTags={2} className="mt-0.5" />
+            )}
           </div>
         </div>
         

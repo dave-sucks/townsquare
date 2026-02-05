@@ -21,6 +21,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { SaveToListDropdown } from "./shared/save-to-list-dropdown";
 import { FeedPost } from "./feed-post";
 import { EmojiPickerPopover } from "./shared/emoji-picker-popover";
+import { GroupedTags, InlineTags, TagCategoryGroup, TagInfo } from "./shared/place-tags";
 import { apiRequest, queryClient } from "@/lib/query-client";
 import { useMutation } from "@tanstack/react-query";
 
@@ -186,6 +187,8 @@ interface PlaceDetailResponse {
   friendsWhoSaved: FriendSaved[];
   myReview: Review | null;
   photos: Photo[];
+  tags: TagCategoryGroup[];
+  topTags: TagInfo[];
   activities: Activity[];
   followingActivities: Activity[];
 }
@@ -231,6 +234,8 @@ export function PlaceDetailPanel({
   const fetchedFriends = placeDetails?.friendsWhoSaved || friendsWhoSaved;
   const fetchedLists = placeDetails?.listsContainingPlace || listsData;
   const fetchedListIds = fetchedLists.map(l => l.id);
+  const fetchedTags = placeDetails?.tags || [];
+  const fetchedTopTags = placeDetails?.topTags || [];
 
   if (isLoading || isLoadingDetails) {
     return (
@@ -399,6 +404,12 @@ export function PlaceDetailPanel({
           </div>
 
           <TabsContent value="overview" className="p-4 pt-4 space-y-6">
+            {fetchedTopTags.length > 0 && (
+              <div className="space-y-2">
+                <InlineTags tags={fetchedTopTags} maxTags={5} size="default" />
+              </div>
+            )}
+
             <div className="space-y-2">
               <h3 className="text-sm font-medium">About</h3>
               <p className="text-sm text-muted-foreground">
@@ -406,6 +417,13 @@ export function PlaceDetailPanel({
                 Known for great ambiance and quality service. Perfect for dining with friends and family.
               </p>
             </div>
+
+            {fetchedTags.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium">Tags</h3>
+                <GroupedTags tagGroups={fetchedTags} />
+              </div>
+            )}
 
             {listsForThisPlace.length > 0 && (
               <div className="space-y-3">

@@ -24,6 +24,20 @@ export async function GET() {
               where: {
                 list: { userId: user.id }
               }
+            },
+            placeTags: {
+              include: {
+                tag: {
+                  include: {
+                    category: true
+                  }
+                }
+              },
+              orderBy: [
+                { tag: { category: { searchWeight: "desc" } } },
+                { tag: { sortOrder: "asc" } }
+              ],
+              take: 5
             }
           }
         }
@@ -46,6 +60,12 @@ export async function GET() {
         types: sp.place.types,
         priceLevel: sp.place.priceLevel,
         photoRefs: sp.place.photoRefs,
+        topTags: sp.place.placeTags.map(pt => ({
+          id: pt.tag.id,
+          slug: pt.tag.slug,
+          displayName: pt.tag.displayName,
+          categorySlug: pt.tag.category.slug,
+        })),
       },
       lists: sp.place.listPlaces.map(lp => lp.list),
     }));

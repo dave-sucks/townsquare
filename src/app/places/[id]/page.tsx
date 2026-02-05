@@ -28,6 +28,7 @@ import { AppShell, PageHeader } from "@/components/layout";
 import { SaveToListDropdown } from "@/components/shared/save-to-list-dropdown";
 import { FeedPost } from "@/components/feed-post";
 import { EmojiPickerPopover } from "@/components/shared/emoji-picker-popover";
+import { GroupedTags, InlineTags, TagCategoryGroup, TagInfo } from "@/components/shared/place-tags";
 
 interface Place {
   id: string;
@@ -141,6 +142,8 @@ interface PlaceDetailData {
   myReview: Review | null;
   reviews: Review[];
   photos: Photo[];
+  tags?: TagCategoryGroup[];
+  topTags?: TagInfo[];
   activities?: Activity[];
   followingActivities?: Activity[];
 }
@@ -298,6 +301,8 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
   const allActivities = data?.activities || [];
   const followingActivities = data?.followingActivities || [];
   const activities = feedFilter === "following" ? followingActivities : allActivities;
+  const tags = data?.tags || [];
+  const topTags = data?.topTags || [];
 
   const placeType = formatPlaceType(place?.primaryType || null);
   const priceLevel = formatPriceLevel(place?.priceLevel || null);
@@ -502,6 +507,10 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
             </TabsList>
 
             <TabsContent value="overview" className="pt-4 space-y-6">
+              {topTags.length > 0 && (
+                <InlineTags tags={topTags} maxTags={5} size="default" />
+              )}
+
               {/* Static bio/description */}
               <div className="space-y-2">
                 <h3 className="text-sm font-medium">About</h3>
@@ -510,6 +519,13 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                   Known for great ambiance and quality service. Perfect for dining with friends and family.
                 </p>
               </div>
+
+              {tags.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium">Tags</h3>
+                  <GroupedTags tagGroups={tags} />
+                </div>
+              )}
 
               {/* Lists in horizontal scrollable cards */}
               {listsContainingPlace.length > 0 && (

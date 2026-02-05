@@ -65,6 +65,7 @@ model Place {
   activities       Activity[]
   listPlaces       ListPlace[]
   photos           Photo[]
+  placeTags        PlaceTag[]
   reviews          Review[]
   savedPlaces      SavedPlace[]
 
@@ -274,4 +275,56 @@ model ChatMessage {
 
   @@index([conversationId, createdAt])
   @@map("chat_messages")
+}
+
+model TagCategory {
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  slug         String  @unique
+  displayName  String  @map("display_name")
+  description  String?
+  searchWeight Float   @default(1.0) @map("search_weight")
+  sortOrder    Int     @default(0) @map("sort_order")
+  iconName     String? @map("icon_name")
+  tags         Tag[]
+
+  @@map("tag_categories")
+}
+
+model Tag {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  categoryId  String      @map("category_id") @db.VarChar(36)
+  slug        String      @unique
+  displayName String      @map("display_name")
+  description String?
+  iconName    String?     @map("icon_name")
+  sortOrder   Int         @default(0) @map("sort_order")
+  category    TagCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  placeTags   PlaceTag[]
+
+  @@index([categoryId])
+  @@map("tags")
+}
+
+model PlaceTag {
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  placeId    String     @map("place_id") @db.VarChar(36)
+  tagId      String     @map("tag_id") @db.VarChar(36)
+  source     tag_source @default(manual)
+  confidence Float?
+  addedById  String?    @map("added_by_id") @db.VarChar(36)
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
+  place      Place      @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  tag        Tag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([placeId, tagId])
+  @@index([placeId])
+  @@index([tagId])
+  @@map("place_tags")
+}
+
+enum tag_source {
+  manual
+  ai
+  google
+  user
 }

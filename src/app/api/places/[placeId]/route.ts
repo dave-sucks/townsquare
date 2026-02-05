@@ -178,6 +178,58 @@ export async function GET(
       orderBy: { createdAt: "desc" },
     });
 
+    // Fetch tags for this place, grouped by category
+    const placeTags = await prisma.placeTag.findMany({
+      where: { placeId: place.id },
+      include: {
+        tag: {
+          include: {
+            category: true,
+          },
+        },
+      },
+      orderBy: [
+        { tag: { category: { sortOrder: "asc" } } },
+        { tag: { sortOrder: "asc" } },
+      ],
+    });
+
+    // Transform tags into a grouped structure
+    const tagsGrouped = placeTags.reduce((acc, pt) => {
+      const categorySlug = pt.tag.category.slug;
+      if (!acc[categorySlug]) {
+        acc[categorySlug] = {
+          category: {
+            slug: pt.tag.category.slug,
+            displayName: pt.tag.category.displayName,
+            iconName: pt.tag.category.iconName,
+            searchWeight: pt.tag.category.searchWeight,
+          },
+          tags: [],
+        };
+      }
+      acc[categorySlug].tags.push({
+        id: pt.tag.id,
+        slug: pt.tag.slug,
+        displayName: pt.tag.displayName,
+        iconName: pt.tag.iconName,
+      });
+      return acc;
+    }, {} as Record<string, { category: any; tags: any[] }>);
+
+    const tags = Object.values(tagsGrouped);
+
+    // Flat list of top tags for display in cards (sorted by category search weight)
+    const topTags = placeTags
+      .sort((a, b) => (b.tag.category.searchWeight || 1) - (a.tag.category.searchWeight || 1))
+      .slice(0, 5)
+      .map(pt => ({
+        id: pt.tag.id,
+        slug: pt.tag.slug,
+        displayName: pt.tag.displayName,
+        categorySlug: pt.tag.category.slug,
+      }));
+
     // Fetch all activities related to this place
     const allActivities = await prisma.activity.findMany({
       where: {
@@ -227,6 +279,8 @@ export async function GET(
       myReview,
       reviews: sortedReviews,
       photos,
+      tags,
+      topTags,
       activities: allActivities,
       followingActivities,
     });

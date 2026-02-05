@@ -58,7 +58,24 @@ export async function GET(
         userId: user.id,
         hasBeen: false,
       },
-      include: { place: true },
+      include: { 
+        place: {
+          include: {
+            placeTags: {
+              include: {
+                tag: {
+                  include: { category: true }
+                }
+              },
+              orderBy: [
+                { tag: { category: { searchWeight: "desc" } } },
+                { tag: { sortOrder: "asc" } }
+              ],
+              take: 5
+            }
+          }
+        }
+      },
       orderBy: { createdAt: "desc" },
     });
 
@@ -67,7 +84,24 @@ export async function GET(
         userId: user.id,
         hasBeen: true,
       },
-      include: { place: true },
+      include: { 
+        place: {
+          include: {
+            placeTags: {
+              include: {
+                tag: {
+                  include: { category: true }
+                }
+              },
+              orderBy: [
+                { tag: { category: { searchWeight: "desc" } } },
+                { tag: { sortOrder: "asc" } }
+              ],
+              take: 5
+            }
+          }
+        }
+      },
       orderBy: { createdAt: "desc" },
     });
 
@@ -217,17 +251,19 @@ export async function GET(
       where: { userId: user.id },
       include: {
         place: {
-          select: {
-            id: true,
-            googlePlaceId: true,
-            name: true,
-            formattedAddress: true,
-            lat: true,
-            lng: true,
-            primaryType: true,
-            types: true,
-            priceLevel: true,
-            photoRefs: true,
+          include: {
+            placeTags: {
+              include: {
+                tag: {
+                  include: { category: true }
+                }
+              },
+              orderBy: [
+                { tag: { category: { searchWeight: "desc" } } },
+                { tag: { sortOrder: "asc" } }
+              ],
+              take: 5
+            }
           },
         },
       },
@@ -311,15 +347,40 @@ export async function GET(
       orderBy: { createdAt: "desc" },
     });
 
+    // Transform places to include topTags
+    const formatPlaceWithTags = (sp: typeof wantPlaces[0]) => ({
+      ...sp,
+      place: {
+        id: sp.place.id,
+        googlePlaceId: sp.place.googlePlaceId,
+        name: sp.place.name,
+        formattedAddress: sp.place.formattedAddress,
+        neighborhood: sp.place.neighborhood,
+        locality: sp.place.locality,
+        lat: sp.place.lat,
+        lng: sp.place.lng,
+        primaryType: sp.place.primaryType,
+        types: sp.place.types,
+        priceLevel: sp.place.priceLevel,
+        photoRefs: sp.place.photoRefs,
+        topTags: sp.place.placeTags.map(pt => ({
+          id: pt.tag.id,
+          slug: pt.tag.slug,
+          displayName: pt.tag.displayName,
+          categorySlug: pt.tag.category.slug,
+        })),
+      },
+    });
+
     return NextResponse.json({
       user,
       isOwnProfile,
       isFollowing,
       followerCount,
       followingCount,
-      wantPlaces,
-      beenPlaces,
-      allSavedPlaces,
+      wantPlaces: wantPlaces.map(formatPlaceWithTags),
+      beenPlaces: beenPlaces.map(formatPlaceWithTags),
+      allSavedPlaces: allSavedPlaces.map(formatPlaceWithTags),
       lists: listsWithPlaces,
       reviews,
       activities: filteredActivities,

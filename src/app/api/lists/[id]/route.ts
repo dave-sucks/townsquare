@@ -23,7 +23,26 @@ export async function GET(
           },
         },
         listPlaces: {
-          include: { place: true },
+          include: { 
+            place: {
+              include: {
+                placeTags: {
+                  include: {
+                    tag: {
+                      include: {
+                        category: true
+                      }
+                    }
+                  },
+                  orderBy: [
+                    { tag: { category: { searchWeight: "desc" } } },
+                    { tag: { sortOrder: "asc" } }
+                  ],
+                  take: 5
+                }
+              }
+            }
+          },
           orderBy: { addedAt: "desc" },
         },
         _count: {
@@ -40,7 +59,34 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    return NextResponse.json({ list });
+    const formattedList = {
+      ...list,
+      listPlaces: list.listPlaces.map(lp => ({
+        ...lp,
+        place: {
+          id: lp.place.id,
+          googlePlaceId: lp.place.googlePlaceId,
+          name: lp.place.name,
+          formattedAddress: lp.place.formattedAddress,
+          neighborhood: lp.place.neighborhood,
+          locality: lp.place.locality,
+          lat: lp.place.lat,
+          lng: lp.place.lng,
+          primaryType: lp.place.primaryType,
+          types: lp.place.types,
+          priceLevel: lp.place.priceLevel,
+          photoRefs: lp.place.photoRefs,
+          topTags: lp.place.placeTags.map(pt => ({
+            id: pt.tag.id,
+            slug: pt.tag.slug,
+            displayName: pt.tag.displayName,
+            categorySlug: pt.tag.category.slug,
+          })),
+        },
+      })),
+    };
+
+    return NextResponse.json({ list: formattedList });
   } catch (error: any) {
     console.error("Get list error:", error);
     return NextResponse.json({ error: "Failed to get list" }, { status: 500 });
