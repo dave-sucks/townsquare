@@ -33,7 +33,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Users, List, LogOut, ChevronsUpDown, Activity, MessageCircle, MapPin } from "lucide-react";
-import { TwnSqLogo } from "@/components/ui/twnsq-logo";
 import { Button } from "@/components/ui/button";
 import { SidebarThemeToggle } from "@/components/theme-toggle";
 
@@ -81,9 +80,8 @@ function SidebarNav({ user }: { user: User | null }) {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
-        <Link href="/" className="flex items-center gap-3">
-          <TwnSqLogo className="h-12 w-12 text-brand" />
-          <span className="text-2xl font-bold font-brand group-data-[collapsible=icon]:hidden">TWN SQ</span>
+        <Link href="/">
+          <img src="/twnsq-logo.png" alt="TWN SQ" className="h-14 w-14 rounded-lg" />
         </Link>
       </SidebarHeader>
 
