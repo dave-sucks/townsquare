@@ -28,7 +28,7 @@ import { AppShell, PageHeader } from "@/components/layout";
 import { SaveToListDropdown } from "@/components/shared/save-to-list-dropdown";
 import { FeedPost } from "@/components/feed-post";
 import { EmojiPickerPopover } from "@/components/shared/emoji-picker-popover";
-import { GroupedTags, InlineTags, TagCategoryGroup, TagInfo } from "@/components/shared/place-tags";
+import { GroupedTags, InlineTags, TagCategoryGroup, TagInfo, TagsWithPopover } from "@/components/shared/place-tags";
 
 interface Place {
   id: string;
@@ -398,9 +398,10 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
       </PageHeader>
 
       <div className="flex-1 overflow-auto">
-        {/* Hero Photo */}
+        <div className="p-4 max-w-3xl mx-auto w-full">
+        {/* Hero Photo - inline with padding and rounded */}
         {place.photoRefs && (place.photoRefs as string[]).length > 0 ? (
-          <div className="w-full aspect-[16/9] max-h-[300px] bg-muted relative overflow-hidden">
+          <div className="w-full aspect-[16/9] max-h-[300px] bg-muted relative overflow-hidden rounded-lg mb-4">
             <img
               src={`/api/places/photo?photoRef=${encodeURIComponent((place.photoRefs as string[])[0])}&maxWidth=1200`}
               alt={place.name}
@@ -409,12 +410,10 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
             />
           </div>
         ) : (
-          <div className="w-full aspect-[16/9] max-h-[300px] bg-muted flex items-center justify-center">
+          <div className="w-full aspect-[16/9] max-h-[300px] bg-muted flex items-center justify-center rounded-lg mb-4">
             <MapPin className="h-16 w-16 text-muted-foreground" />
           </div>
         )}
-
-        <div className="p-4 max-w-3xl mx-auto w-full">
         <div className="space-y-6">
           {/* Header: Big title, inline metadata */}
           <div className="space-y-3">
@@ -443,26 +442,18 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
               </h1>
             </div>
             
-            {/* Inline metadata: type · price · neighborhood */}
+            {/* Inline metadata: category — tags, view all | price · neighborhood */}
+            <TagsWithPopover 
+              category={placeType || "Place"} 
+              tags={topTags} 
+              tagGroups={tags}
+              maxInlineTags={3}
+            />
+            
             <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-              {placeType && (
-                <div className="flex items-center gap-1">
-                  <Utensils className="h-3.5 w-3.5" />
-                  <span>{placeType}</span>
-                </div>
-              )}
-              {priceLevel && (
-                <>
-                  <span>·</span>
-                  <span>{priceLevel}</span>
-                </>
-              )}
-              {locationDisplay && (
-                <>
-                  <span>·</span>
-                  <span>{locationDisplay}</span>
-                </>
-              )}
+              {priceLevel && <span>{priceLevel}</span>}
+              {priceLevel && locationDisplay && <span>·</span>}
+              {locationDisplay && <span>{locationDisplay}</span>}
             </div>
 
             {/* Address - clickable to Google Maps */}
@@ -507,10 +498,6 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
             </TabsList>
 
             <TabsContent value="overview" className="pt-4 space-y-6">
-              {topTags.length > 0 && (
-                <InlineTags tags={topTags} maxTags={5} size="default" />
-              )}
-
               {/* Static bio/description */}
               <div className="space-y-2">
                 <h3 className="text-sm font-medium">About</h3>
@@ -519,13 +506,6 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                   Known for great ambiance and quality service. Perfect for dining with friends and family.
                 </p>
               </div>
-
-              {tags.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-sm font-medium">Tags</h3>
-                  <GroupedTags tagGroups={tags} />
-                </div>
-              )}
 
               {/* Lists in horizontal scrollable cards */}
               {listsContainingPlace.length > 0 && (

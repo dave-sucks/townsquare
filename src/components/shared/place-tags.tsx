@@ -11,6 +11,11 @@ import {
   Tag as TagIcon 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export interface TagInfo {
   id: string;
@@ -156,5 +161,54 @@ export function CompactTags({ tags, maxTags = 2, className }: CompactTagsProps) 
     <span className={cn("text-xs text-muted-foreground truncate", className)}>
       {displayTags.map(t => t.displayName).join(" · ")}
     </span>
+  );
+}
+
+interface TagsWithPopoverProps {
+  category: string;
+  tags: TagInfo[];
+  tagGroups?: TagCategoryGroup[];
+  maxInlineTags?: number;
+  className?: string;
+}
+
+export function TagsWithPopover({ 
+  category, 
+  tags, 
+  tagGroups = [], 
+  maxInlineTags = 3,
+  className 
+}: TagsWithPopoverProps) {
+  const displayTags = tags.slice(0, maxInlineTags);
+  const tagNames = displayTags.map(t => t.displayName).join(", ");
+  const hasMoreTags = tagGroups.length > 0 && tagGroups.some(g => g.tags.length > 0);
+
+  return (
+    <div className={cn("flex items-center gap-1.5 text-sm text-muted-foreground flex-wrap", className)}>
+      <Utensils className="h-3.5 w-3.5 flex-shrink-0" />
+      <span className="font-medium text-foreground">{category}</span>
+      {tagNames && (
+        <>
+          <span className="text-muted-foreground">—</span>
+          <span>{tagNames}</span>
+        </>
+      )}
+      {hasMoreTags && (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Badge 
+              variant="secondary" 
+              className="cursor-pointer text-[10px] px-1.5 py-0"
+              data-testid="badge-view-all-tags"
+            >
+              view all
+            </Badge>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 p-3" align="start">
+            <GroupedTags tagGroups={tagGroups} />
+          </PopoverContent>
+        </Popover>
+      )}
+    </div>
   );
 }

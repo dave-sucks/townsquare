@@ -21,7 +21,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { SaveToListDropdown } from "./shared/save-to-list-dropdown";
 import { FeedPost } from "./feed-post";
 import { EmojiPickerPopover } from "./shared/emoji-picker-popover";
-import { GroupedTags, InlineTags, TagCategoryGroup, TagInfo } from "./shared/place-tags";
+import { GroupedTags, InlineTags, TagCategoryGroup, TagInfo, TagsWithPopover } from "./shared/place-tags";
 import { apiRequest, queryClient } from "@/lib/query-client";
 import { useMutation } from "@tanstack/react-query";
 
@@ -298,24 +298,23 @@ export function PlaceDetailPanel({
       </div>
 
       <ScrollArea className="flex-1 overflow-hidden">
-        {/* Hero Photo */}
-        {place.photoRefs && place.photoRefs.length > 0 ? (
-          <div className="w-full h-48 bg-muted relative overflow-hidden">
-            <img
-              src={`/api/places/photo?photoRef=${encodeURIComponent(place.photoRefs[0] as string)}&maxWidth=600`}
-              alt={place.name}
-              className="w-full h-full object-cover object-center"
-              data-testid="panel-hero-photo"
-            />
-          </div>
-        ) : (
-          <div className="w-full h-48 bg-muted flex items-center justify-center">
-            <MapPin className="h-12 w-12 text-muted-foreground" />
-          </div>
-        )}
-
         {/* Header section with padding */}
         <div className="p-4 space-y-4">
+          {/* Hero Photo - inline with padding and rounded */}
+          {place.photoRefs && place.photoRefs.length > 0 ? (
+            <div className="w-full h-48 bg-muted relative overflow-hidden rounded-lg">
+              <img
+                src={`/api/places/photo?photoRef=${encodeURIComponent(place.photoRefs[0] as string)}&maxWidth=600`}
+                alt={place.name}
+                className="w-full h-full object-cover object-center"
+                data-testid="panel-hero-photo"
+              />
+            </div>
+          ) : (
+            <div className="w-full h-48 bg-muted flex items-center justify-center rounded-lg">
+              <MapPin className="h-12 w-12 text-muted-foreground" />
+            </div>
+          )}
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <EmojiPickerPopover
@@ -340,25 +339,18 @@ export function PlaceDetailPanel({
               </h1>
             </div>
             
+            {/* Inline metadata: category — tags, view all | price · neighborhood */}
+            <TagsWithPopover 
+              category={placeType || "Place"} 
+              tags={fetchedTopTags} 
+              tagGroups={fetchedTags}
+              maxInlineTags={3}
+            />
+            
             <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-              {placeType && (
-                <div className="flex items-center gap-1">
-                  <Utensils className="h-3.5 w-3.5" />
-                  <span>{placeType}</span>
-                </div>
-              )}
-              {priceLevel && (
-                <>
-                  <span>·</span>
-                  <span>{priceLevel}</span>
-                </>
-              )}
-              {locationDisplay && (
-                <>
-                  <span>·</span>
-                  <span>{locationDisplay}</span>
-                </>
-              )}
+              {priceLevel && <span>{priceLevel}</span>}
+              {priceLevel && locationDisplay && <span>·</span>}
+              {locationDisplay && <span>{locationDisplay}</span>}
             </div>
 
             <a 
@@ -404,12 +396,6 @@ export function PlaceDetailPanel({
           </div>
 
           <TabsContent value="overview" className="p-4 pt-4 space-y-6">
-            {fetchedTopTags.length > 0 && (
-              <div className="space-y-2">
-                <InlineTags tags={fetchedTopTags} maxTags={5} size="default" />
-              </div>
-            )}
-
             <div className="space-y-2">
               <h3 className="text-sm font-medium">About</h3>
               <p className="text-sm text-muted-foreground">
@@ -417,13 +403,6 @@ export function PlaceDetailPanel({
                 Known for great ambiance and quality service. Perfect for dining with friends and family.
               </p>
             </div>
-
-            {fetchedTags.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium">Tags</h3>
-                <GroupedTags tagGroups={fetchedTags} />
-              </div>
-            )}
 
             {listsForThisPlace.length > 0 && (
               <div className="space-y-3">
