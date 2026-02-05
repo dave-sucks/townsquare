@@ -201,7 +201,7 @@ export function TagsWithPopover({
               className="text-sm text-muted-foreground cursor-pointer border-b border-dotted border-muted-foreground hover:text-foreground hover:border-foreground transition-colors ml-1"
               data-testid="text-view-all-tags"
             >
-              view all
+              , View all
             </span>
           </PopoverTrigger>
           <PopoverContent className="w-72 p-3" align="start">
