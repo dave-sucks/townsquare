@@ -82,18 +82,14 @@ function SidebarNav({ user }: { user: User | null }) {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="p-4">
-        <Link href="/" className="block">
-          {!isCollapsed && (
-            <img 
-              src="/twn-logo.svg" 
-              alt="TWN" 
-              className="h-5 w-auto"
-            />
-          )}
-          {isCollapsed && (
-            <span className="text-primary font-bold text-sm">T</span>
-          )}
+      <SidebarHeader className="p-2">
+        <Link href="/">
+          <img 
+            src="/twn-logo.svg" 
+            alt="TWN" 
+            className="max-w-full h-auto object-contain"
+            style={{ maxHeight: isCollapsed ? '16px' : '24px' }}
+          />
         </Link>
       </SidebarHeader>
 
