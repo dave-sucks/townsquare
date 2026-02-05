@@ -39,7 +39,8 @@ export async function GET(
                     { tag: { sortOrder: "asc" } }
                   ],
                   take: 5
-                }
+                },
+                savedPlaces: true
               }
             }
           },
@@ -59,10 +60,19 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const ownerSavedPlaceEmojis: Record<string, string | null> = {};
+    list.listPlaces.forEach(lp => {
+      const ownerSavedPlace = lp.place.savedPlaces.find(sp => sp.userId === list.userId);
+      if (ownerSavedPlace) {
+        ownerSavedPlaceEmojis[lp.placeId] = ownerSavedPlace.emoji;
+      }
+    });
+
     const formattedList = {
       ...list,
       listPlaces: list.listPlaces.map(lp => ({
         ...lp,
+        emoji: ownerSavedPlaceEmojis[lp.placeId] || null,
         place: {
           id: lp.place.id,
           googlePlaceId: lp.place.googlePlaceId,

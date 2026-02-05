@@ -28,6 +28,7 @@ interface ListPlace {
   listId: string;
   placeId: string;
   addedAt: string;
+  emoji?: string | null;
   place: Place;
 }
 
@@ -88,6 +89,7 @@ export function ListSidebar({
     placeId: lp.placeId,
     hasBeen: false,
     rating: null,
+    emoji: lp.emoji || null,
     createdAt: lp.addedAt,
     place: lp.place,
   })) || [];
