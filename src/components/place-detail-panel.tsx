@@ -288,12 +288,12 @@ export function PlaceDetailPanel({
           </Button>
           <SaveToListDropdown
             place={place}
-            savedPlace={{
-              id: savedPlace.id,
+            savedPlace={placeDetails?.savedPlace ? {
+              id: placeDetails.savedPlace.id,
               placeId: savedPlace.placeId,
-              hasBeen: savedPlace.hasBeen,
-              rating: savedPlace.rating,
-            }}
+              hasBeen: placeDetails.savedPlace.hasBeen,
+              rating: placeDetails.savedPlace.rating,
+            } : null}
             listsContainingPlace={fetchedListIds}
           />
         </div>
