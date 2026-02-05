@@ -80,21 +80,11 @@ function SidebarNav({ user }: { user: User | null }) {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="group-data-[collapsible=icon]:p-0">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-              asChild
-            >
-              <Link href="/">
-                <TwnSqLogo className="size-8 text-brand" />
-                <span className="truncate font-semibold text-lg font-brand group-data-[collapsible=icon]:hidden">TWN SQ</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarHeader className="p-4">
+        <Link href="/" className="flex items-center gap-3">
+          <TwnSqLogo className="h-12 w-12 text-brand" />
+          <span className="text-2xl font-bold font-brand group-data-[collapsible=icon]:hidden">TWN SQ</span>
+        </Link>
       </SidebarHeader>
 
       <SidebarContent>
