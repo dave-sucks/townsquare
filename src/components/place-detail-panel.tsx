@@ -285,8 +285,8 @@ export function PlaceDetailPanel({
             </Link>
           </Button>
           {fetchedLists.length > 0 && (
-            <Button variant="ghost" size="sm" className="text-muted-foreground" data-testid="button-list-count-panel">
-              {fetchedLists.length}
+            <Button variant="outline" size="sm" data-testid="button-list-count-panel">
+              {fetchedLists.length} {fetchedLists.length === 1 ? "list" : "lists"}
             </Button>
           )}
           <SaveToListDropdown

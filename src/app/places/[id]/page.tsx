@@ -385,7 +385,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
         backHref="/"
       >
         {listsContainingPlace.length > 0 && (
-          <Button variant="ghost" size="sm" className="text-muted-foreground" data-testid="button-list-count">
+          <Button variant="outline" size="sm" data-testid="button-list-count">
             {listsContainingPlace.length} {listsContainingPlace.length === 1 ? "list" : "lists"}
           </Button>
         )}
