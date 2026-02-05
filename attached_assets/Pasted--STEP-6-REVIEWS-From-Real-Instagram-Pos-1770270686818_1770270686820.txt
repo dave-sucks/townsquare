@@ -1,0 +1,112 @@
+-- =====================================================
+-- STEP 6: REVIEWS (From Real Instagram Posts)
+-- =====================================================
+
+INSERT INTO reviews (id, user_id, place_id, rating, note, source, instagram_url, instagram_shortcode, social_post_caption, social_post_media_url, social_post_media_type) VALUES
+
+('review-001', 'user-brotherlyburgers', 'place-001', 5, 'BROTHERLY BURGERS EP. 18 🍔  📍One White Street  The 18th NYC burger review is of One White Street, a formerly Michelin-starred restaurant in Tribeca. W...', 'instagram', 'https://www.instagram.com/p/DSA7_bDEXd0/', 'DSA7_bDEXd0', 'BROTHERLY BURGERS EP. 18 🍔
+
+📍One White Street
+
+The 18th NYC burger review is of One White Street, a formerly Michelin-starred restaurant in Tribeca. We really liked the burger. The patty was cooked and seasoned expertly, the thinly shaved onions added a great bite, and the house sauce gave a nice tang which cut through the fattiness of the patties. The initial bites were very juicy and flavorful, and had a great flavor balance that allowed the quality of the ingredients to shine. Our qualm with the burger was that by the back half, the bun was overwhelming and airy and began to take over the flavor of the burger. One White Street landed in our Elite Tier at an 8.6.
+
+Full review and rankings at brotherlyburgers.com.
+
+We’re looking for the best burgers in NYC. Where should we go next?', 'https://scontent-mia5-1.cdninstagram.com/v/t51.2885-15/619897950_17859387117594268_6914443486900525259_n.jpg?stp=dst-jpg_e35_p1080x1080_sh0.08_tt6&_nc_ht=scontent-mia5-1.cdninstagram.com&_nc_cat=104&_nc_oc=Q6cZ2QH3nX4MOB_QkH3fr8_I3aXHOvfz2aVowYmmwcXvcEO0-6HggfU5B38txcagY59SJ3I&_nc_ohc=mMNvHED47-YQ7kNvwHw3dUo&_nc_gid=z_VpkdMRIsP90CQFO0FUEA&edm=APs17CUBAAAA&ccb=7-5&oh=00_AfvsQIjRqnJBCPYCMT1P4XM30Ft1UhOa3Y56Vo-6dvutaw&oe=698A0AE8&_nc_sid=10d13b', 'Video'),
+
+('review-002', 'user-brotherlyburgers', 'place-002', 5, 'BROTHERLY BURGERS EP. 33 🍔   📍Fairfax  The 33rd NYC burger review is of Fairfax in West Village. Before you all jump to attack us… we’ve both been mul...', 'instagram', 'https://www.instagram.com/p/DT1DPAqkjEF/', 'DT1DPAqkjEF', 'BROTHERLY BURGERS EP. 33 🍔 
+
+📍Fairfax
+
+The 33rd NYC burger review is of Fairfax in West Village. Before you all jump to attack us… we’ve both been multiple times and have thought the burger was just alright each time. The patty is the most critical element of a burger and this one falls flat for us. The meaty flavor was hidden under a mix of tang, vinegar, and crunch that made for an interesting flavor balance and was more reminiscent of a sandwich than a burger. The BBQ Mayo sauce was more tangy than smoky, and tasted as though it had a hint of fish sauce mixed with vinegar. 
+Fairfax did not place in a Tier at a 5.7, but it’s worth a try if you’re on a burger hunt like ourselves.
+
+Full review and rankings at brotherlyburgers.com.
+
+We’re looking for the best burgers in NYC. Where should we go next?', 'https://scontent-bos5-1.cdninstagram.com/v/t51.2885-15/621822954_17859858408594268_6821935538669897973_n.jpg?stp=dst-jpg_e35_p1080x1080_sh0.08_tt6&_nc_ht=scontent-bos5-1.cdninstagram.com&_nc_cat=104&_nc_oc=Q6cZ2QFC4AZJWnV4Boyd-hl0lG3j62Za4J4NJD9KEpX02UFnyVL0rybOOq_TKQzP_ugagS0&_nc_ohc=lq6o8GwE79IQ7kNvwGJ_uqf&_nc_gid=o3LczN-u10_CyzP4gOXP9A&edm=APs17CUBAAAA&ccb=7-5&oh=00_Aft2yU2-raqGbHNC50fElJ5duSy7w7iUln179wSOXQu-SA&oe=698A0010&_nc_sid=10d13b', 'Video'),
+
+('review-003', 'user-brotherlyburgers', 'place-003', 5, 'BROTHERLY BURGERS EP. 28 🍔   📍Smashed  The 28th NYC burger review is of Smashed, a smashburger in West Village. Both burgers were solid but nothing cr...', 'instagram', 'https://www.instagram.com/p/DTGsRczEah3/', 'DTGsRczEah3', 'BROTHERLY BURGERS EP. 28 🍔 
+
+📍Smashed
+
+The 28th NYC burger review is of Smashed, a smashburger in West Village. Both burgers were solid but nothing crazy. We liked it. It was a decent smashburger.
+Smashed landed in our Solid, Worth a Try Tier at a 6.4.
+
+Full review and rankings at brotherlyburgers.com.
+
+We’re looking for the best burgers in NYC. Where should we go next?', 'https://instagram.fdtw2-1.fna.fbcdn.net/v/t51.2885-15/620855017_17859388359594268_6299304918394144647_n.jpg?stp=dst-jpg_e35_p1080x1080_sh0.08_tt6&_nc_ht=instagram.fdtw2-1.fna.fbcdn.net&_nc_cat=104&_nc_oc=Q6cZ2QEgvWuL4GTl2vlGEgH7o1x2mxW8nxmI4AqePCD_rQQmig6DknD2pEeHzGVdePW8UMw&_nc_ohc=XsiydO8IXyIQ7kNvwHfz9-F&_nc_gid=zoX1SIwrNrmVo5Bkb0cp_g&edm=APs17CUBAAAA&ccb=7-5&oh=00_Afu5eDF4Wga6InPztgrjB2vHJH_6Mso7IjOzRRsgBgwsKg&oe=698A03A5&_nc_sid=10d13b', 'Video'),
+
+('review-004', 'user-brotherlyburgers', 'place-004', 5, 'BROTHERLY BURGERS EP. 32 🍔   📍The Spaniard  The 32nd NYC burger review is of The Spaniard in West Village. We went at 12:30PM, as opposed to 12:30AM. ...', 'instagram', 'https://www.instagram.com/p/DTss5odjVHP/', 'DTss5odjVHP', 'BROTHERLY BURGERS EP. 32 🍔 
+
+📍The Spaniard
+
+The 32nd NYC burger review is of The Spaniard in West Village. We went at 12:30PM, as opposed to 12:30AM. We were pleasantly surprised by the burger, and consider it a hidden gem for NYC burgers. Typically, we consider smashburgers to be very uniform, but sometimes one stands out. The Spaniard had juicy, flavorful meat with a fantastic crust and maillard, a well-toasted bun, the right balance of toppings, a complimentary sauce, and overall was very good. The burger nailed the balance required while boasting a fantastic flavor. The Spaniard landed in our Elite Tier at an 8.7.
+
+Full review and rankings at brotherlyburgers.com.
+
+We’re looking for the best burgers in NYC. Where should we go next?', 'https://scontent-sjc6-1.cdninstagram.com/v/t51.2885-15/619821386_17859388992594268_6883503311255156221_n.jpg?stp=dst-jpg_e35_p1080x1080_sh0.08_tt6&_nc_ht=scontent-sjc6-1.cdninstagram.com&_nc_cat=104&_nc_oc=Q6cZ2QGvo5apRAIRcNO1GX0HmS1DFO_hmA4ceDXUJ5gwt-4-DS2-AA8xFXBC9EAvyG_Lqm4&_nc_ohc=QjTYg64PM9QQ7kNvwEbSF3R&_nc_gid=WLQ_eAAK1SGae9BXZU7fdA&edm=APs17CUBAAAA&ccb=7-5&oh=00_Afs08LCXeuOQ_KFMQWgNO2DmKXEZzxaMHXH-Nf6VQC_ZHQ&oe=6989E719&_nc_sid=10d13b', 'Video'),
+
+('review-005', 'user-brotherlyburgers', 'place-005', 5, 'BROTHERLY BURGERS EP. 36 🍔 THE UMAMI BOMB  📍Manhatta   The 36th NYC burger review is of Manhatta in FiDi. The umami bomb. We really enjoyed the burger...', 'instagram', 'https://www.instagram.com/p/DUQ7uPkkUEd/', 'DUQ7uPkkUEd', 'BROTHERLY BURGERS EP. 36 🍔 THE UMAMI BOMB
+
+📍Manhatta 
+
+The 36th NYC burger review is of Manhatta in FiDi. The umami bomb. We really enjoyed the burger. The meat was cooked and seasoned well, and the koji onions and shiitake mayo gave a unique umami-savory twist flavor wise. Even though we enjoyed it, we thought it was a one-note, umami-forward flavor that would have benefitted from brightness or acidity to cut through the umami bomb. We thought the bun was also a bit bready and airy. But it was overall a very good burger, and our favorite in FiDi so far.
+
+Manhatta landed in our Strong Recommend at an 8.2.
+
+Full review and rankings at brotherlyburgers.com.
+
+We’re looking for the best burgers in NYC. Follow us for new burger reviews every few days.', 'https://scontent-sjc6-1.cdninstagram.com/v/t51.2885-15/627432651_17861241405594268_3778699005055504442_n.jpg?stp=dst-jpg_e35_p1080x1080_sh0.08_tt6&_nc_ht=scontent-sjc6-1.cdninstagram.com&_nc_cat=104&_nc_oc=Q6cZ2QG-Z8YsmbvUL_UHm1ryae78IiTsA-G6ZKEBAd2ZIsg9IiB1CCAqdACwnBH_UPhG57E&_nc_ohc=6-FihQ1fjToQ7kNvwHItj3G&_nc_gid=OhzBfAdKMNCJCzdwSLhHYw&edm=APs17CUBAAAA&ccb=7-5&oh=00_AfsaxpqjzHKflUTpbzfcnF-jHYtZzzAoAKkxp8jZk1WWmA&oe=6989FA0E&_nc_sid=10d13b', 'Video'),
+
+('review-006', 'user-brotherlyburgers', 'place-006', 5, 'BROTHERLY BURGERS REDUX 🍔 — Emmett’s on Grove  📍Emmett’s on Grove  The 29th NYC burger review and inaugural Brotherly Bickering episode is of Emmett’s...', 'instagram', 'https://www.instagram.com/p/DTn8rRnkX0r/', 'DTn8rRnkX0r', 'BROTHERLY BURGERS REDUX 🍔 — Emmett’s on Grove
+
+📍Emmett’s on Grove
+
+The 29th NYC burger review and inaugural Brotherly Bickering episode is of Emmett’s on Grove in West Village. We re-ranked the Char Cheddar and the Dry Aged Burger. The dry aged burger was cooked insanely well, it’s a clear Elite Tier burger.
+The Char Cheddar is a very unique burger. Sharp, seemingly double cheddar cheese, caramelized onions, sport peppers, relish, tomato, ketchup, & mustard all combined into a crazy amalgamation of flavor. The flavor balance was… interesting to say the least, and oftentimes overwhelming. Full review will be coming to our website. We gave it an 8.5. Is it elite?
+
+The Dry Aged Burger was a classic dry aged burger - American cheese, sesame seed bun, and raw, white onion underneath. The burger was phenomenal, cooked and seasoned expertly. Undoubtedly deserved an 8.8 in our Elite Tier.
+
+Full review and rankings at brotherlyburgers.com.
+
+We’re looking for the best burgers in NYC. Where should we go next?', 'https://scontent-mia5-1.cdninstagram.com/v/t51.2885-15/620458192_17859388929594268_2230528862110650610_n.jpg?stp=dst-jpg_e35_p1080x1080_sh0.08_tt6&_nc_ht=scontent-mia5-1.cdninstagram.com&_nc_cat=104&_nc_oc=Q6cZ2QHQ0ZRXzR_rfMx6tTtvIOTe1mW2ZTk0FwOYLq3Kc_iB75dc0gBPZFqNq1D5V-rNBQQ&_nc_ohc=61abtLIpknwQ7kNvwE7lVkf&_nc_gid=AVj1VxAa1ZFePMo5tvGXxQ&edm=APs17CUBAAAA&ccb=7-5&oh=00_AfuyTCBeN0gGGRhkFnjauF81xw3FMj1xQb2P1rU5XFffMA&oe=6989F808&_nc_sid=10d13b', 'Video'),
+
+('review-007', 'user-thehungryskipper', 'place-007', 5, 'On DEC 2nd, Chef Donato Galvez from Stuntburger in San Paolo, Brazil brought his famous RACLETTE BURGER to NYC for a one-day collaboration with George...', 'instagram', 'https://www.instagram.com/p/DSK4mmekQm6/', 'DSK4mmekQm6', 'On DEC 2nd, Chef Donato Galvez from Stuntburger in San Paolo, Brazil brought his famous RACLETTE BURGER to NYC for a one-day collaboration with George Motz at the Legends Lunch at Hamburger America!
+
+This was a treat! @chefdonatogalvez came by @hamburger_america and made his raclette burger with @motzburger for a special one-day collaboration.
+
+Not only was this the first international burger to be featured at Hamburger America but also the first thick patty!
+
+Griddled 5.5 ounce Thick Patty of Prime Chuck, Topped with Melty Raclette Cheese on a Toasted Pretzel Roll – Juicy, beefy and so cheesy.
+
+This was an amazing Legends Lunch. If you missed it catch a flight to San Paolo, and visit @chefdonatogalvez at @stuntburger #raclette #racletteburger', 'https://scontent-mia3-1.cdninstagram.com/v/t51.2885-15/587818189_1169054072017379_463649320692941536_n.jpg?stp=dst-jpg_e15_tt6&_nc_ht=scontent-mia3-1.cdninstagram.com&_nc_cat=111&_nc_oc=Q6cZ2QHEGa3mGcT1wvv92A7Rb6y1WKL9DkI_c0pedmn0s4ORqiodtMOSPUV1owL5jUO4MtI&_nc_ohc=dRdopbcJM0cQ7kNvwHMkBpU&_nc_gid=zcPyXOhstYapsMo6D3oGdQ&edm=APs17CUBAAAA&ccb=7-5&oh=00_AfveoCy4digeRvh__pAIqozHDigme2K2bvTxo7Esd39K9Q&oe=698A0427&_nc_sid=10d13b', 'Video'),
+
+('review-008', 'user-sistersnacking', 'place-008', 5, 'Four new burgers to try in NYC! 🌟 the sickest new menu addition at @sipandguzzlenyc  🌟 new neighborhood joint @dannysnyc is doing a classic burger tha...', 'instagram', 'https://www.instagram.com/p/DS7vMePAG8u/', 'DS7vMePAG8u', 'Four new burgers to try in NYC!
+🌟 the sickest new menu addition at @sipandguzzlenyc 
+🌟 new neighborhood joint @dannysnyc is doing a classic burger that hits 
+🌟 we loved everything about @wildcherrynyc from the @frenchettenyc team and their cheeseburger 
+🌟 the fritas (Cuban style burgers) from @fritabrooklyn are a unique new burger in nyc 
+•
+#sistersnacking #nyc #nycfood #newyorkcity #nycfoodie', 'https://scontent-atl3-3.cdninstagram.com/v/t51.2885-15/609220946_2639301349775528_8404621720212287602_n.jpg?stp=dst-jpg_e15_tt6&_nc_ht=scontent-atl3-3.cdninstagram.com&_nc_cat=108&_nc_oc=Q6cZ2QE3akvypXcSXKPudxdHuPVtwTAg4CWXlCypJpndexSmAMtvSQSRaJpPcl-5w-NQkP0&_nc_ohc=G6iv56oXd-QQ7kNvwGGCyfK&_nc_gid=DkHzXbjchX7j--k15VIrSg&edm=APs17CUBAAAA&ccb=7-5&oh=00_AfsQVJ6WWYTXiU7-W18PG0IySZ0L94plrCJ8ckKvdPbuBw&oe=6989E498&_nc_sid=10d13b', 'Video'),
+
+('review-009', 'user-immaeatthis', 'place-007', 5, 'So I went to @hamburger_america on W Houston st! #hamburgeramerica #cheeseburger #georgemotz #newforkcity #nyc #nycfood #yum #eeeeeats', 'instagram', 'https://www.instagram.com/p/C6M2OrjPf0u/', 'C6M2OrjPf0u', 'So I went to @hamburger_america on W Houston st! #hamburgeramerica #cheeseburger #georgemotz #newforkcity #nyc #nycfood #yum #eeeeeats', 'https://scontent-atl3-2.cdninstagram.com/v/t51.2885-15/503919532_23967040099595392_4594298696795589333_n.jpg?stp=dst-jpg_e15_fr_p1080x1080_tt6&_nc_ht=scontent-atl3-2.cdninstagram.com&_nc_cat=104&_nc_oc=Q6cZ2QE7izfTeO1h_xlQwqb2puwuLJ4W-1I8IkBsbn_xzdYBFiZ2OYH1XBaXtvBG4S0VMYLn_sU_GaFWMMfdKZnOR81b&_nc_ohc=svIVEt6Q2mUQ7kNvwE-L2P_&_nc_gid=izBJme5tvoHR_BbMluq4vQ&edm=APs17CUBAAAA&ccb=7-5&oh=00_AfvijBHYb8LYqujMMKjq-W1_X_mqw3ZJb76TLHG6QlC5fg&oe=698A041B&_nc_sid=10d13b', 'Video'),
+
+('review-010', 'user-devourpower', 'place-010', 5, 'BURGER & SANDWICH HEAVEN at @butchersburger75 in Brooklyn NYC! 🔥🤤 #DEVOURPOWER', 'instagram', 'https://www.instagram.com/p/DUBdvq5Dq9u/', 'DUBdvq5Dq9u', 'BURGER & SANDWICH HEAVEN at @butchersburger75 in Brooklyn NYC! 🔥🤤 #DEVOURPOWER', 'https://scontent-ord5-2.cdninstagram.com/v/t51.2885-15/623601718_1399644451704866_7003186802341042253_n.jpg?stp=dst-jpg_e15_tt6&_nc_ht=scontent-ord5-2.cdninstagram.com&_nc_cat=102&_nc_oc=Q6cZ2QHuqRMdXFwY1lcrue-hDSSjS4SL0gbzG2gexJow_udf64-RRT1bjk0G3bvN5I6nWIY&_nc_ohc=uv0GK38sTHIQ7kNvwEkQgIJ&_nc_gid=Cq5PAdTunMhPMacv1I21VQ&edm=APs17CUBAAAA&ccb=7-5&oh=00_AfvdApOMHZ-cRFdx3VJ3PaUGL-9DYokoelALOw-Ydc4iJg&oe=698A05C4&_nc_sid=10d13b', 'Video'),
+
+('review-011', 'user-jacksdiningroom', 'place-008', 5, 'Trying what was voted the best burger in all of North America! 📍 @sipandguzzlenyc , New York  #burger #cheeseburger #wagyu #bestburger', 'instagram', 'https://www.instagram.com/p/DPPkKmFgDd_/', 'DPPkKmFgDd_', 'Trying what was voted the best burger in all of North America!
+📍 @sipandguzzlenyc , New York
+
+#burger #cheeseburger #wagyu #bestburger', 'https://scontent-lax3-1.cdninstagram.com/v/t51.2885-15/558447260_25164688149815218_6738059074890490015_n.jpg?stp=dst-jpg_e15_tt6&_nc_ht=scontent-lax3-1.cdninstagram.com&_nc_cat=110&_nc_oc=Q6cZ2QFSfHva6eIPkntfJIkmjMQTTxZAsefvwG9QIoKzk2wqJFokh1hiSsLDxC6m_sp1ddQ&_nc_ohc=ORHayJRKMX0Q7kNvwEjBJ58&_nc_gid=gSAP4p33TeYcz2FUm1Tw9A&edm=APs17CUBAAAA&ccb=7-5&oh=00_AfsmFlvbKSWsIoWptQYWIeqS6dhmLPeNuVZ7KW3FcDzdWw&oe=6989F58F&_nc_sid=10d13b', 'Video'),
+
+('review-012', 'user-brotherlyburgers', 'place-007', 5, 'BROTHERLY BURGERS EP. 2 🍔  Second stop is Hamburger America in SoHo. We tried the @motzburger Fried Onion Burger, an homage to the taste and style of ...', 'instagram', 'https://www.instagram.com/p/DP4c8ynEZU8/', 'DP4c8ynEZU8', 'BROTHERLY BURGERS EP. 2 🍔
+
+Second stop is Hamburger America in SoHo. We tried the @motzburger Fried Onion Burger, an homage to the taste and style of old school American burgers.
+
+We’re looking for the best burgers in NYC. Where should we go next?
+
+📍@hamburger_america', 'https://instagram.fbdo2-1.fna.fbcdn.net/v/t51.2885-15/620922592_17859385992594268_3918526238009450189_n.jpg?stp=dst-jpg_e35_p1080x1080_sh0.08_tt6&_nc_ht=instagram.fbdo2-1.fna.fbcdn.net&_nc_cat=104&_nc_oc=Q6cZ2QFGvwiBmpS56hfrweYH5sD37WBOGV-sgOfALmugqVVQLrjVIAhhYNb2TrnM7ouP-P4&_nc_ohc=9a7dRYNp-6kQ7kNvwF1ReQe&_nc_gid=qA0JCUC-noRrDyTyTFAOsQ&edm=APs17CUBAAAA&ccb=7-5&oh=00_AfsPDCgukok1-F7YSFtUqkPzBycwSCvPGV6MvKhC_t6pQA&oe=698A04D4&_nc_sid=10d13b', 'Video'),
+
+('review-013', 'user-jacksdiningroom', 'place-009', 5, 'Trying what many say is NYC’s best new smashburger! 📍 @nadcburger , NYC  #smashburger #cheeseburger #nycburger #michelinchef #wagyu #wagyubeef #nycfoo...', 'instagram', 'https://www.instagram.com/p/DJ2bkaQSbZw/', 'DJ2bkaQSbZw', 'Trying what many say is NYC’s best new smashburger!
+📍 @nadcburger , NYC
+
+#smashburger #cheeseburger #nycburger #michelinchef #wagyu #wagyubeef #nycfood', 'https://scontent-ord5-1.cdninstagram.com/v/t51.2885-15/499272499_1815782362316252_6361015358682114682_n.jpg?stp=dst-jpg_e15_tt6&_nc_ht=scontent-ord5-1.cdninstagram.com&_nc_cat=108&_nc_oc=Q6cZ2QGrMPcWDzOC8Pw7tZrLAEAcF_p1paA3L96f6dd8mOB7YfvVnC-bmIyVqmnFkFwfT-M&_nc_ohc=YSlmicOcSSEQ7kNvwGATVEc&_nc_gid=91b5rslPBivrzIdhAjomfg&edm=APs17CUBAAAA&ccb=7-5&oh=00_AfvzSeTx23ke6v86ep5lGCJRCrJ1whS84mU3wka2au7NHg&oe=6989FF95&_nc_sid=10d13b', 'Video');
