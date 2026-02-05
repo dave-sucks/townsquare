@@ -78,13 +78,18 @@ const CATEGORY_PRIORITY = [
   "cafe",
   "bakery",
   "coffee_shop",
-  "food",
   "night_club",
+  "food",
   "meal_takeaway",
   "meal_delivery",
 ];
 
 function getBestCategory(primaryType: string | null, types: string[] | null): string {
+  // If primaryType is a priority type, use it immediately
+  if (primaryType && CATEGORY_PRIORITY.includes(primaryType)) {
+    return formatCategoryName(primaryType);
+  }
+
   // Check types array for a better category than generic "establishment"
   if (types && types.length > 0) {
     for (const category of CATEGORY_PRIORITY) {
@@ -101,10 +106,14 @@ function getBestCategory(primaryType: string | null, types: string[] | null): st
     }
   }
   
-  // Fall back to primaryType if it's not "establishment"
-  if (primaryType && primaryType !== "establishment") {
+  // Fall back to primaryType if it's not generic
+  if (primaryType && !["establishment", "point_of_interest", "food"].includes(primaryType)) {
     return formatCategoryName(primaryType);
   }
+  
+  // If everything is generic but "restaurant" is in types, we already checked that in priority.
+  // Last resort: if "restaurant" is anywhere, use it.
+  if (types?.includes("restaurant")) return "Restaurant";
   
   return "";
 }
