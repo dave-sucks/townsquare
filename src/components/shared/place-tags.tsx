@@ -200,7 +200,7 @@ export function TagsWithPopover({
           <Popover>
             <PopoverTrigger asChild>
               <span 
-                className="text-base text-muted-foreground cursor-pointer border-b border-dotted border-muted-foreground hover:text-foreground hover:border-foreground transition-colors whitespace-nowrap"
+                className="text-muted-foreground cursor-pointer underline decoration-dotted underline-offset-4 hover:text-foreground transition-colors "
                 data-testid="text-view-all-tags"
               >
                 View all
