@@ -125,7 +125,7 @@ function SidebarNav({ user }: { user: User | null }) {
                   <SidebarMenuButton className="w-fit px-1.5" data-testid="button-user-menu">
                     <Avatar className="h-5 w-5 rounded-md">
                       <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
-                      <AvatarFallback className="rounded-md text-xs">
+                      <AvatarFallback className="rounded-md text-xs bg-[#0004eb] text-white">
                         {userName.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -141,9 +141,9 @@ function SidebarNav({ user }: { user: User | null }) {
                 >
                   <DropdownMenuLabel className="p-0 font-normal">
                     <div className="flex items-center gap-2 px-2 py-1.5 text-left text-sm">
-                      <Avatar className="h-8 w-8 rounded-lg">
+                      <Avatar className="h-8 w-8 rounded-md">
                         <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
-                        <AvatarFallback className="rounded-lg">
+                        <AvatarFallback className="rounded-md bg-[#0004eb] text-white">
                           {userName.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
