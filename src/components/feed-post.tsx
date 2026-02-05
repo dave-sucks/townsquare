@@ -159,9 +159,9 @@ export function FeedPost({ activity }: FeedPostProps) {
     <article className="bg-card" data-testid={`feed-post-${activity.id}`}>
       <div className="p-4">
         {/* Header: Avatar + "Name @ Place" */}
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2">
           <Link href={actorLink} data-testid={`feed-avatar-${activity.id}`}>
-            <Avatar className="h-10 w-10">
+            <Avatar className="h-8 w-8">
               <AvatarImage src={activity.actor.profileImageUrl || undefined} alt={actorName} />
               <AvatarFallback className="text-sm">{actorInitials}</AvatarFallback>
             </Avatar>
@@ -169,28 +169,28 @@ export function FeedPost({ activity }: FeedPostProps) {
           <div className="flex-1 min-w-0">
             {/* Name @ Place + Action */}
             <div className="flex items-center gap-1 flex-wrap">
-              <Link href={actorLink} className="font-medium hover:underline" data-testid={`feed-author-${activity.id}`}>
+              <Link href={actorLink} className="text-sm font-medium hover:underline" data-testid={`feed-author-${activity.id}`}>
                 {actorName}
               </Link>
               {placeName && (
                 <>
-                  <span className="text-muted-foreground">@</span>
+                  <span className="text-sm text-muted-foreground">@</span>
                   {activity.place ? (
                     <Link 
                       href={`/places/${activity.place.googlePlaceId}`} 
-                      className="font-medium hover:underline"
+                      className="text-sm font-medium hover:underline"
                       data-testid={`feed-place-name-${activity.id}`}
                     >
                       {placeName}
                     </Link>
                   ) : (
-                    <span className="font-medium">{placeName}</span>
+                    <span className="text-sm font-medium">{placeName}</span>
                   )}
                 </>
               )}
               {/* Action indicator */}
               {activity.type === "PLACE_MARKED_BEEN" && (
-                <span className="flex items-center gap-1 text-muted-foreground">
+                <span className="text-sm flex items-center gap-1 text-muted-foreground">
                   <span>·</span>
                   <span 
                     className={`inline-block w-2.5 h-2.5 rounded-full ${rating ? RATING_COLORS[rating] : "bg-green-500"}`} 
@@ -231,7 +231,7 @@ export function FeedPost({ activity }: FeedPostProps) {
             </div>
 
             {/* Timestamp */}
-            <p className="text-sm text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {formatTimeAgo(activity.createdAt)}
             </p>
 
