@@ -186,28 +186,31 @@ export function TagsWithPopover({
   const hasMoreTags = tagGroups.length > 0 && tagGroups.some(g => g.tags.length > 0);
 
   return (
-    <div className={cn("flex items-center gap-1.5 text-base text-black flex-nowrap overflow-hidden", className)}>
-      <span className="font-regular whitespace-nowrap">{category}</span>
+    <div className={cn("flex items-center gap-1 text-base text-black flex-nowrap overflow-hidden", className)}>
+      <span className="whitespace-nowrap">{category}</span>
       {tagNames && (
         <>
-          <span className="text-muted-foreground">—</span>
-          <span className="font-regular truncate">{tagNames}</span>
+          <span className="text-muted-foreground mx-1">—</span>
+          <span className="truncate">{tagNames}</span>
         </>
       )}
       {hasMoreTags && (
-        <Popover>
-          <PopoverTrigger asChild>
-            <span 
-              className="text-sm text-muted-foreground cursor-pointer border-b border-dotted border-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
-              data-testid="text-view-all-tags"
-            >
-              , View all
-            </span>
-          </PopoverTrigger>
-          <PopoverContent className="w-72 p-3" align="start">
-            <GroupedTags tagGroups={tagGroups} />
-          </PopoverContent>
-        </Popover>
+        <>
+          <span className="text-muted-foreground">,</span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <span 
+                className="text-base text-muted-foreground cursor-pointer border-b border-dotted border-muted-foreground hover:text-foreground hover:border-foreground transition-colors whitespace-nowrap"
+                data-testid="text-view-all-tags"
+              >
+                View all
+              </span>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-3" align="start">
+              <GroupedTags tagGroups={tagGroups} />
+            </PopoverContent>
+          </Popover>
+        </>
       )}
     </div>
   );
