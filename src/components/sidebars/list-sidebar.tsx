@@ -171,25 +171,11 @@ export function ListSidebar({
           placeRowRefs={placeRowRefs}
           showStatus={false}
           showSaveDropdown={true}
+          hideDropdownUntilHover={true}
           isOwnProfile={false}
           currentUserPlaceData={currentUserPlaceData || undefined}
           emptyMessage="No places in this list"
           emptySubMessage={isOwner ? "Add places from your saved places" : "This list is empty"}
-          renderAction={isOwner && onRemovePlace ? (savedPlace) => (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="invisible group-hover:visible shrink-0"
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemovePlace(savedPlace.placeId);
-              }}
-              disabled={isRemovingPlace}
-              data-testid={`button-remove-place-${savedPlace.id}`}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          ) : undefined}
         />
       </div>
     </div>
