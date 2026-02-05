@@ -220,9 +220,9 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
               )}
             </h3>
             
-            {/* Row 1: Category — Tags (black text) */}
+            {/* Row 1: Category — Tags (black text, slightly larger) */}
             {(category || displayTags.length > 0) && (
-              <div className="flex items-center gap-1 text-xs text-foreground mt-0.5 truncate" data-testid="place-card-category-row">
+              <div className="flex items-center gap-1 text-sm text-foreground truncate" data-testid="place-card-category-row">
                 {category && <span>{category}</span>}
                 {category && displayTags.length > 0 && <span>—</span>}
                 {displayTags.map((tag, i) => (
@@ -235,7 +235,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
             )}
             
             {/* Row 2: Location + list info (gray text, no pin icon) */}
-            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5 truncate" data-testid="place-card-location-row">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1 truncate" data-testid="place-card-location-row">
               <span className="truncate">{locationDisplay}</span>
               {showStatus && listDisplayText && (
                 <>
