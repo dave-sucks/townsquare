@@ -32,7 +32,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MapPin, Users, List, LogOut, ChevronsUpDown, Activity, MessageCircle } from "lucide-react";
+import { Users, List, LogOut, ChevronsUpDown, Activity, MessageCircle, MapPin } from "lucide-react";
+import { TwnSqLogo } from "@/components/ui/twnsq-logo";
 import { Button } from "@/components/ui/button";
 import { SidebarThemeToggle } from "@/components/theme-toggle";
 
@@ -88,13 +89,8 @@ function SidebarNav({ user }: { user: User | null }) {
               asChild
             >
               <Link href="/">
-                <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <MapPin className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                  <span className="truncate font-semibold font-brand">Beli</span>
-                  <span className="truncate text-xs text-muted-foreground">Places you love</span>
-                </div>
+                <TwnSqLogo className="size-8 text-brand" />
+                <span className="truncate font-semibold text-lg font-brand group-data-[collapsible=icon]:hidden">TWN SQ</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
