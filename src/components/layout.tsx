@@ -242,9 +242,9 @@ interface PageHeaderProps extends VariantProps<typeof pageHeaderVariants> {
   backHref?: string;
 }
 
-export function PageHeader({ title, children, size, showTrigger = true, backHref }: PageHeaderProps) {
+export function PageHeader({ title, children, size, showTrigger = true, backHref, className }: PageHeaderProps) {
   return (
-    <header className={pageHeaderVariants({ size })}>
+    <header className={cn(pageHeaderVariants({ size }), className)}>
       {showTrigger && <SidebarTrigger data-testid="button-sidebar-toggle" />}
       {title && <h1 className="font-semibold text-sm font-brand">{title}</h1>}
       <div className="ml-auto flex items-center gap-2">

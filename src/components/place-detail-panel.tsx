@@ -264,7 +264,7 @@ export function PlaceDetailPanel({
 
   return (
     <div className="h-full flex flex-col bg-background" data-testid="place-detail-panel">
-      <div className="flex items-center gap-2 p-3 border-b">
+      <div className="flex items-center gap-2 p-3">
         <Button
           variant="ghost"
           size="icon"
@@ -397,7 +397,7 @@ export function PlaceDetailPanel({
             </TabsList>
           </div>
 
-          <TabsContent value="overview" className="p-4 pt-4 space-y-6">
+          <TabsContent value="overview" className="p-4 pt-0 space-y-6">
             <div className="space-y-2">
               <h3 className="text-sm font-medium">About</h3>
               <p className="text-base text-muted-foreground">

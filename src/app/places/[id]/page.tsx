@@ -383,6 +383,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
       <PageHeader 
         title={place.name}
         backHref="/"
+        className="border-b-0"
       >
         <SaveToListDropdown
           place={place}
@@ -498,7 +499,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
               <TabsTrigger value="feed" data-testid="tab-feed">Feed</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview" className="pt-4 space-y-6">
+            <TabsContent value="overview" className="pt-0 space-y-6">
               {/* Static bio/description */}
               <div className="space-y-2">
                 <h3 className="text-sm font-medium">About</h3>
