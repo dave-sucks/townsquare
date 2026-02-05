@@ -344,7 +344,7 @@ export function PlaceDetailPanel({
               category={placeType || "Place"} 
               tags={fetchedTopTags} 
               tagGroups={fetchedTags}
-              maxInlineTags={3}
+              maxInlineTags={2}
             />
             
             <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">

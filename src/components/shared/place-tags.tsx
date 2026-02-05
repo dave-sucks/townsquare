@@ -8,9 +8,11 @@ import {
   Star, 
   Leaf, 
   Wine,
-  Tag as TagIcon 
+  Tag as TagIcon,
+  Plus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
@@ -176,7 +178,7 @@ export function TagsWithPopover({
   category, 
   tags, 
   tagGroups = [], 
-  maxInlineTags = 3,
+  maxInlineTags = 2,
   className 
 }: TagsWithPopoverProps) {
   const displayTags = tags.slice(0, maxInlineTags);
@@ -184,24 +186,25 @@ export function TagsWithPopover({
   const hasMoreTags = tagGroups.length > 0 && tagGroups.some(g => g.tags.length > 0);
 
   return (
-    <div className={cn("flex items-center gap-1.5 text-base text-black flex-wrap", className)}>
-      <span className="font-regular">{category}</span>
+    <div className={cn("flex items-center gap-1.5 text-base text-black flex-nowrap overflow-hidden", className)}>
+      <span className="font-regular whitespace-nowrap">{category}</span>
       {tagNames && (
         <>
           <span className="text-muted-foreground">—</span>
-          <span className="font-regular">{tagNames}</span>
+          <span className="font-regular truncate">{tagNames}</span>
         </>
       )}
       {hasMoreTags && (
         <Popover>
           <PopoverTrigger asChild>
-            <Badge 
-              variant="secondary" 
-              className="cursor-pointer text-[10px] px-1.5 py-0"
-              data-testid="badge-view-all-tags"
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6 shrink-0"
+              data-testid="button-view-all-tags"
             >
-              view all
-            </Badge>
+              <Plus className="h-4 w-4" />
+            </Button>
           </PopoverTrigger>
           <PopoverContent className="w-72 p-3" align="start">
             <GroupedTags tagGroups={tagGroups} />

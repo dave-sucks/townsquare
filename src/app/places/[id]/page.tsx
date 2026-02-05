@@ -447,7 +447,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
               category={placeType || "Place"} 
               tags={topTags} 
               tagGroups={tags}
-              maxInlineTags={3}
+              maxInlineTags={2}
             />
             
             <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
