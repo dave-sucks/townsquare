@@ -297,7 +297,7 @@ export function PlaceDetailPanel({
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 overflow-hidden">
         {/* Hero Photo */}
         {place.photoRefs && place.photoRefs.length > 0 ? (
           <div className="w-full h-48 bg-muted relative overflow-hidden">
