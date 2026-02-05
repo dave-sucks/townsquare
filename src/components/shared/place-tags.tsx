@@ -184,13 +184,12 @@ export function TagsWithPopover({
   const hasMoreTags = tagGroups.length > 0 && tagGroups.some(g => g.tags.length > 0);
 
   return (
-    <div className={cn("flex items-center gap-1.5 text-sm text-muted-foreground flex-wrap", className)}>
-      <Utensils className="h-3.5 w-3.5 flex-shrink-0" />
-      <span className="font-medium text-foreground">{category}</span>
+    <div className={cn("flex items-center gap-1.5 text-base text-black flex-wrap", className)}>
+      <span className="font-regular">{category}</span>
       {tagNames && (
         <>
           <span className="text-muted-foreground">—</span>
-          <span>{tagNames}</span>
+          <span className="font-regular">{tagNames}</span>
         </>
       )}
       {hasMoreTags && (

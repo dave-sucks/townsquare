@@ -451,21 +451,22 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
             />
             
             <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-              {priceLevel && <span>{priceLevel}</span>}
-              {priceLevel && locationDisplay && <span>·</span>}
-              {locationDisplay && <span>{locationDisplay}</span>}
+              {priceLevel && (
+                <>
+                  <span>{priceLevel}</span>
+                  <span>·</span>
+                </>
+              )}
+              <a 
+                href={`https://www.google.com/maps/place/?q=place_id:${place.googlePlaceId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 hover:text-foreground transition-colors"
+              >
+                <MapPin className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate" data-testid="text-place-address">{place.formattedAddress}</span>
+              </a>
             </div>
-
-            {/* Address - clickable to Google Maps */}
-            <a 
-              href={`https://www.google.com/maps/place/?q=place_id:${place.googlePlaceId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <MapPin className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate" data-testid="text-place-address">{place.formattedAddress}</span>
-            </a>
           </div>
 
           {/* Friends context */}
