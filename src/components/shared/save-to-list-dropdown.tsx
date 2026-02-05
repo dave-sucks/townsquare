@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Bookmark, Check, Plus, Loader2, Info, Trash2 } from "lucide-react";
+import { Bookmark, Check, Plus, Loader2, Info, Trash2, ThumbsDown, ThumbsUp, Heart } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -65,9 +65,9 @@ interface SaveToListDropdownProps {
 }
 
 const RATING_OPTIONS = [
-  { value: 1, emoji: "👎", label: "ehh" },
-  { value: 3, emoji: "👍", label: "liked" },
-  { value: 5, emoji: "🤩", label: "loved" },
+  { value: 1, icon: ThumbsDown, label: "ehh" },
+  { value: 3, icon: ThumbsUp, label: "liked" },
+  { value: 5, icon: Heart, label: "loved" },
 ];
 
 export function SaveToListDropdown({
@@ -227,7 +227,8 @@ export function SaveToListDropdown({
 
   const handleButtonClick = () => {
     if (!isSaved) {
-      savePlaceMutation.mutate({});
+      // Instantly save with hasBeen=true (as "Been")
+      savePlaceMutation.mutate({ hasBeen: true });
     }
   };
 
@@ -351,7 +352,7 @@ export function SaveToListDropdown({
                   data-testid={`rating-button-${option.value}`}
                   className="flex-1 gap-1"
                 >
-                  <span className="text-sm">{option.emoji}</span>
+                  <option.icon className="h-4 w-4" />
                   <span className="text-xs">{option.label}</span>
                 </ToggleGroupItem>
               ))}

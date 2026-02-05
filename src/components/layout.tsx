@@ -81,7 +81,7 @@ function SidebarNav({ user }: { user: User | null }) {
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <Link href="/">
-          <img src="/twnsq-logo.png" alt="TWN SQ" className="h-14 w-14 rounded-lg" />
+          <img src="/twn-logo.png" alt="TWN" className="h-10 w-auto" />
         </Link>
       </SidebarHeader>
 
