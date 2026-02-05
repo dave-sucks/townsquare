@@ -129,7 +129,7 @@ function SidebarNav({ user }: { user: User | null }) {
                         {userName.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="truncate font-medium">{userName}</span>
+                    <span className="truncate font-medium text-[#0004eb]">{userName}</span>
                     <ChevronDown className="opacity-50" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
