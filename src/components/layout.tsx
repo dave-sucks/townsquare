@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -31,9 +32,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Users, List, LogOut, ChevronDown, Activity, MessageCircle, MapPin } from "lucide-react";
+import { Users, List, LogOut, ChevronDown, Activity, MessageCircle, MapPin, Sparkles, BadgeCheck, CreditCard, Bell, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SidebarThemeToggle } from "@/components/theme-toggle";
+import { useTheme } from "next-themes";
 
 interface User {
   id: string;
@@ -71,9 +72,46 @@ export function AppShell({
   );
 }
 
+function ThemeToggleButton() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const handleToggle = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+  };
+
+  if (!mounted) {
+    return (
+      <Button variant="ghost" size="icon" disabled>
+        <Sun className="h-4 w-4" />
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={handleToggle}
+      data-testid="button-theme-toggle"
+    >
+      {theme === "dark" ? (
+        <Sun className="h-4 w-4" />
+      ) : (
+        <Moon className="h-4 w-4" />
+      )}
+    </Button>
+  );
+}
+
 function SidebarNav({ user }: { user: User | null }) {
   const pathname = usePathname();
-  const userName = user?.firstName || user?.email?.split("@")[0] || "User";
+  const userName = user?.username || user?.firstName || user?.email?.split("@")[0] || "User";
   const userEmail = user?.email || "";
 
   return (
@@ -118,9 +156,30 @@ function SidebarNav({ user }: { user: User | null }) {
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
                     <DropdownMenuItem asChild>
+                      <Link href="/upgrade" className="flex items-center gap-2 w-full">
+                        <Sparkles className="size-4" />
+                        Upgrade to Pro
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem asChild>
                       <Link href={`/u/${user.username || user.id}`} className="flex items-center gap-2 w-full" data-testid="link-my-profile">
-                        <Users className="size-4" />
-                        My Profile
+                        <BadgeCheck className="size-4" />
+                        Account
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/billing" className="flex items-center gap-2 w-full">
+                        <CreditCard className="size-4" />
+                        Billing
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/notifications" className="flex items-center gap-2 w-full">
+                        <Bell className="size-4" />
+                        Notifications
                       </Link>
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
@@ -173,17 +232,11 @@ function SidebarNav({ user }: { user: User | null }) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Settings</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarThemeToggle />
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="p-2">
+        <ThemeToggleButton />
+      </SidebarFooter>
 
       <SidebarRail />
     </Sidebar>
