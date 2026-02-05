@@ -340,7 +340,7 @@ export function PlaceDetailPanel({
                 variant="area"
                 testId="button-emoji-panel"
               />
-              <h1 className="text-xl font-bold flex items-center gap-2 font-brand" data-testid="panel-place-name">
+              <h1 className="text-base font-bold flex items-center gap-2 font-brand" data-testid="panel-place-name">
                 {place.name}
                 {savedPlace.hasBeen && (
                   <Tooltip>
