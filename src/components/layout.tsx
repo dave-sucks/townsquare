@@ -123,7 +123,7 @@ function SidebarNav({ user }: { user: User | null }) {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton className="w-fit px-1.5" data-testid="button-user-menu">
-                    <div className="size-8 shrink-0 rounded-md border-none border-[#0004EC] overflow-hidden bg-blue-100 flex items-center justify-center p-0.5">
+                    <div className="size-8 shrink-0 rounded-md overflow-hidden bg-brand-light flex items-center justify-center p-0.5">
                       <img 
                         src="/user-logo.svg" 
                         alt={userName} 
@@ -142,7 +142,7 @@ function SidebarNav({ user }: { user: User | null }) {
                 >
                   <DropdownMenuLabel className="p-0 font-normal">
                     <div className="flex items-center gap-2 px-2 py-1.5 text-left text-sm">
-                      <div className="size-8 shrink-0 rounded-md border-2 border-[#0004EC] overflow-hidden bg-white flex items-center justify-center p-0.5">
+                      <div className="size-8 shrink-0 rounded-md overflow-hidden bg-brand-light flex items-center justify-center p-0.5">
                         <img 
                           src="/user-logo.svg" 
                           alt={userName} 
