@@ -120,12 +120,12 @@ function SidebarNav({ user }: { user: User | null }) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="w-fit px-1.5">
+            <SidebarMenuButton asChild className="w-fit">
               <Link href="/">
                 <img 
                   src="/user-logo.svg" 
                   alt="TWN" 
-                  className="size-10 shrink-0 object-contain"
+                  className="size-8 shrink-0 object-contain"
                 />
               </Link>
             </SidebarMenuButton>
