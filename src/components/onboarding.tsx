@@ -94,20 +94,20 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         }`}
       >
         <div
-          className="w-full max-w-sm bg-black/20 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/10 p-6 flex flex-col items-center gap-5"
+          className="w-full max-w-[300px] bg-black/20 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/10 p-5 flex flex-col items-center gap-4"
           data-testid="onboarding-card"
         >
           <div
-            className="w-24 h-24 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center shadow-inner"
+            className="w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center"
             data-testid="avatar-display"
           >
-            <span className="text-5xl">{selectedEmoji}</span>
+            <span className="text-[44px]">{selectedEmoji}</span>
           </div>
 
           <div className="w-full" data-testid="emoji-picker">
             <div
               ref={scrollRef}
-              className="flex gap-2 overflow-x-auto pb-1 scrollbar-none"
+              className="flex gap-1.5 overflow-x-auto py-1 px-0.5 scrollbar-none"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
               {AVATAR_EMOJIS.map((emoji) => (
@@ -118,10 +118,10 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                     setSelectedEmoji(emoji);
                     setError(null);
                   }}
-                  className={`shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-xl transition-all ${
+                  className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-all ${
                     selectedEmoji === emoji
-                      ? "bg-white/20 ring-2 ring-white/50 scale-110"
-                      : "bg-white/5 hover:bg-white/10"
+                      ? "bg-white/15 border-2 border-white"
+                      : "hover:bg-white/10"
                   }`}
                   data-testid={`emoji-option-${emoji}`}
                 >
@@ -133,7 +133,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
           <div className="w-full flex flex-col gap-2">
             <Input
-              placeholder="username"
+              placeholder="Create Username"
               value={username}
               onChange={(e) => {
                 setUsername(e.target.value);
@@ -142,7 +142,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSubmit();
               }}
-              className="text-center text-base bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-white/30"
+              className="text-center text-base bg-white/5 border-white/10 text-white placeholder:text-white/40 focus-visible:ring-white/30"
               maxLength={20}
               data-testid="input-username"
             />
@@ -158,7 +158,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           onClick={handleSubmit}
           disabled={isSubmitting}
           size="lg"
-          className="w-full max-w-sm bg-white text-black border-white hover:bg-white/90"
+          className="w-full max-w-[300px] bg-white text-black border-white hover:bg-white/90"
           data-testid="button-complete-onboarding"
         >
           {isSubmitting ? "Setting up..." : "Let's go"}
