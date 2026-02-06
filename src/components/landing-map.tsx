@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { RETRO_STYLE } from "@/lib/map-styles";
+import { DARK_STYLE, getLabelDensityStyles } from "@/lib/map-styles";
 
 const DEMO_LOCATIONS = [
   { lat: 40.7580, lng: -73.9855, emoji: "\u{1F354}", label: "best burger in NYC" },
@@ -49,7 +49,7 @@ export function LandingMap({ onReady }: LandingMapProps) {
         transform: translate(-50%, -100%) scale(0);
         transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
         opacity: 0;
-        filter: drop-shadow(0 3px 6px rgba(0,0,0,0.25));
+        filter: drop-shadow(0 3px 8px rgba(0,0,0,0.5));
         pointer-events: none;
         z-index: 1;
       `;
@@ -140,6 +140,8 @@ export function LandingMap({ onReady }: LandingMapProps) {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     if (!apiKey || !mapRef.current) return;
 
+    const darkMinimalStyles = [...DARK_STYLE, ...getLabelDensityStyles("minimal")];
+
     const initMap = () => {
       if (!mapRef.current || !window.google) return;
 
@@ -153,7 +155,7 @@ export function LandingMap({ onReady }: LandingMapProps) {
         fullscreenControl: false,
         gestureHandling: "none",
         keyboardShortcuts: false,
-        styles: RETRO_STYLE,
+        styles: darkMinimalStyles,
       });
 
       mapInstanceRef.current = map;
@@ -196,20 +198,19 @@ export function LandingMap({ onReady }: LandingMapProps) {
   return (
     <div className="absolute inset-0">
       <div ref={mapRef} className="h-full w-full" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
 
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none z-10">
         <div
-          className="bg-white/90 dark:bg-black/70 backdrop-blur-xl rounded-full px-5 py-3 shadow-lg border border-white/20 min-w-[320px] flex items-center gap-3"
+          className="bg-black/50 backdrop-blur-lg rounded-full px-5 py-3 shadow-lg border border-white/10 min-w-[320px] flex items-center gap-3"
           data-testid="landing-search-demo"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground shrink-0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/40 shrink-0">
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.3-4.3" />
           </svg>
-          <span className="text-sm text-muted-foreground truncate">
+          <span className="text-sm text-white/50 truncate">
             {currentQuery || "searching places..."}
-            {isTyping && <span className="inline-block w-[2px] h-[14px] bg-foreground/60 ml-0.5 animate-pulse align-middle" />}
+            {isTyping && <span className="inline-block w-[2px] h-[14px] bg-white/60 ml-0.5 animate-pulse align-middle" />}
           </span>
         </div>
       </div>
