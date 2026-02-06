@@ -125,7 +125,7 @@ function SidebarNav({ user }: { user: User | null }) {
                   <SidebarMenuButton className="w-fit px-1.5" data-testid="button-user-menu">
                     <Avatar className="h-6 w-6 rounded-lg">
                       <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
-                      <AvatarFallback className="rounded-md bg-[#0004eb] text-white">
+                      <AvatarFallback className="rounded-md bg-brand text-brand-foreground">
                         {userName.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
