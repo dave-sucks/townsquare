@@ -219,6 +219,7 @@ function SidebarNav({ user }: { user: User | null }) {
                       asChild
                       isActive={isActive}
                       tooltip={item.label}
+                      className={cn(!isActive && "opacity-60")}
                     >
                       <Link href={item.href} data-testid={`nav-${item.label.toLowerCase()}`}>
                         <item.icon className="size-4" />
