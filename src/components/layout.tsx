@@ -123,13 +123,13 @@ function SidebarNav({ user }: { user: User | null }) {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton className="w-fit px-1.5" data-testid="button-user-menu">
-                    <Avatar className="h-5 w-5 rounded-md">
+                    <Avatar className="h-6 w-6 rounded-lg">
                       <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
-                      <AvatarFallback className="rounded-md text-xs bg-[#0004eb] text-white">
+                      <AvatarFallback className="rounded-md bg-[#0004eb] text-white">
                         {userName.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="truncate font-bold font-brand uppercase">{userName}</span>
+                    <span className="truncate font-bold font-brand">{userName}</span>
                     <ChevronDown className="opacity-50" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
