@@ -123,13 +123,14 @@ function SidebarNav({ user }: { user: User | null }) {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton className="w-fit px-1.5" data-testid="button-user-menu">
-                    <Avatar className="h-6 w-6 rounded-lg">
-                      <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
-                      <AvatarFallback className="rounded-md bg-[#0004EC] text-white">
-                        {userName.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="truncate font-bold font-brand">{userName}</span>
+                    <div className="size-6 shrink-0 rounded-md border-2 border-[#0004EC] overflow-hidden bg-white flex items-center justify-center p-0.5">
+                      <img 
+                        src="/user-logo.svg" 
+                        alt={userName} 
+                        className="size-full object-contain"
+                      />
+                    </div>
+                    <span className="truncate font-bold font-brand uppercase">{userName}</span>
                     <ChevronDown className="opacity-50" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
@@ -141,12 +142,13 @@ function SidebarNav({ user }: { user: User | null }) {
                 >
                   <DropdownMenuLabel className="p-0 font-normal">
                     <div className="flex items-center gap-2 px-2 py-1.5 text-left text-sm">
-                      <Avatar className="h-8 w-8 rounded-md">
-                        <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
-                        <AvatarFallback className="rounded-md bg-[#0004eb] text-white">
-                          {userName.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
+                      <div className="size-8 shrink-0 rounded-md border-2 border-[#0004EC] overflow-hidden bg-white flex items-center justify-center p-0.5">
+                        <img 
+                          src="/user-logo.svg" 
+                          alt={userName} 
+                          className="size-full object-contain"
+                        />
+                      </div>
                       <div className="grid flex-1 text-left text-sm leading-tight">
                         <span className="truncate font-semibold">{userName}</span>
                         <span className="truncate text-xs text-muted-foreground">{userEmail}</span>
