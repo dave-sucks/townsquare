@@ -190,7 +190,7 @@ function SidebarNav({ user }: { user: User | null }) {
                   >
                     <Avatar className="h-8 w-8 rounded-md">
                       <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
-                      <AvatarFallback className="rounded-md bg-brand text-brand-foreground">
+                      <AvatarFallback className="rounded-md">
                         {userName.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -211,7 +211,7 @@ function SidebarNav({ user }: { user: User | null }) {
                     <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                       <Avatar className="h-8 w-8 rounded-md">
                         <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
-                        <AvatarFallback className="rounded-md bg-brand text-brand-foreground">
+                        <AvatarFallback className="rounded-md">
                           {userName.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -264,7 +264,7 @@ function SidebarNav({ user }: { user: User | null }) {
               <SidebarMenuButton asChild size="lg">
                 <a href="/api/login" data-testid="button-login">
                   <Avatar className="h-8 w-8 rounded-md">
-                    <AvatarFallback className="rounded-md bg-brand text-brand-foreground">?</AvatarFallback>
+                    <AvatarFallback className="rounded-md">?</AvatarFallback>
                   </Avatar>
                   <span className="group-data-[collapsible=icon]:hidden">Sign In</span>
                 </a>
