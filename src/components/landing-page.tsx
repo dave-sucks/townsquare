@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { LandingMap } from "@/components/landing-map";
+import { Button } from "@/components/ui/button";
 
 export function LandingPage() {
   const [mapReady, setMapReady] = useState(false);
@@ -44,21 +45,24 @@ export function LandingPage() {
           </div>
 
           <div className="w-full flex flex-col gap-3">
-            <a
-              href="/api/login"
-              className="flex items-center justify-center w-full rounded-lg bg-white px-4 py-3 text-sm font-semibold text-black transition-colors hover:bg-white/90"
+            <Button
+              asChild
+              size="lg"
+              className="w-full bg-white text-black border-white hover:bg-white/90"
               data-testid="button-signup"
             >
-              Sign Up
-            </a>
+              <a href="/api/login">Sign Up</a>
+            </Button>
 
-            <a
-              href="/api/login"
-              className="flex items-center justify-center w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/20"
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="w-full border-white/20 bg-white/10 text-white"
               data-testid="button-login"
             >
-              Log In
-            </a>
+              <a href="/api/login">Log In</a>
+            </Button>
           </div>
 
           <p className="text-[11px] text-white/30 text-center leading-snug">
