@@ -122,22 +122,22 @@ function SidebarNav({ user }: { user: User | null }) {
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
-              asChild
+              className="data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground"
+              onClick={() => window.location.href = "/"}
+              data-testid="nav-logo"
             >
-              <Link href="/" data-testid="nav-logo">
-                <Button size="icon-sm" asChild className="size-8">
-                  <span>
-                    <img
-                      src="/user-logo.svg"
-                      alt="TWN"
-                      className="size-5 shrink-0 object-contain"
-                    />
-                  </span>
-                </Button>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">TWN</span>
-                </div>
-              </Link>
+              <Button size="icon-sm" asChild className="size-8">
+                <span>
+                  <img
+                    src="/user-logo.svg"
+                    alt="TWN"
+                    className="size-5 shrink-0 object-contain"
+                  />
+                </span>
+              </Button>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">TWN</span>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
