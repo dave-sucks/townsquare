@@ -86,7 +86,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   return (
     <div className="relative h-screen w-full overflow-hidden">
       <div className="absolute inset-0 bg-[#212121]" />
-      <LandingMap onReady={() => setMapReady(true)} />
+      <LandingMap onReady={() => setMapReady(true)} showSearch={false} />
 
       <div
         className={`absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 p-4 transition-opacity duration-700 ${
@@ -94,10 +94,10 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         }`}
       >
         <div
-          className="w-[240px] aspect-[3/4] bg-black/20 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/10 flex flex-col items-center justify-between overflow-hidden"
+          className="w-[240px] aspect-[3/4] bg-black/20 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/10 flex flex-col items-center overflow-hidden"
           data-testid="onboarding-card"
         >
-          <div className="flex-1 flex items-center justify-center">
+          <div className="pt-5 pb-2 flex flex-col items-center">
             <div
               className="w-28 h-28 rounded-2xl bg-white/10 flex items-center justify-center"
               data-testid="avatar-display"
@@ -106,55 +106,55 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             </div>
           </div>
 
-          <div className="w-full flex flex-col gap-3 pb-5">
-            <div className="w-full" data-testid="emoji-picker">
-              <div
-                ref={scrollRef}
-                className="flex gap-1 overflow-x-auto px-4 scrollbar-none"
-                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-              >
-                {AVATAR_EMOJIS.map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => {
-                      setSelectedEmoji(emoji);
-                      setError(null);
-                    }}
-                    className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all box-border ${
-                      selectedEmoji === emoji
-                        ? "bg-white/15 border-2 border-white"
-                        : "border-2 border-transparent hover:bg-white/10"
-                    }`}
-                    data-testid={`emoji-option-${emoji}`}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
+          <div className="w-full" data-testid="emoji-picker">
+            <div
+              ref={scrollRef}
+              className="flex gap-1 overflow-x-auto px-4 scrollbar-none"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              {AVATAR_EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => {
+                    setSelectedEmoji(emoji);
+                    setError(null);
+                  }}
+                  className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all box-border ${
+                    selectedEmoji === emoji
+                      ? "bg-white/15 border-2 border-white"
+                      : "border-2 border-transparent hover:bg-white/10"
+                  }`}
+                  data-testid={`emoji-option-${emoji}`}
+                >
+                  {emoji}
+                </button>
+              ))}
             </div>
+          </div>
 
-            <div className="w-full px-4 flex flex-col gap-2">
-              <Input
-                placeholder="Create Username"
-                value={username}
-                onChange={(e) => {
-                  setUsername(e.target.value);
-                  setError(null);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSubmit();
-                }}
-                className="text-center text-base bg-white/5 border-white/10 text-white placeholder:text-white/40 focus-visible:ring-white/30"
-                maxLength={20}
-                data-testid="input-username"
-              />
-              {error && (
-                <p className="text-xs text-red-400 text-center" data-testid="text-error">
-                  {error}
-                </p>
-              )}
-            </div>
+          <div className="flex-1" />
+
+          <div className="w-full px-4 pb-5 flex flex-col gap-2">
+            <Input
+              placeholder="Create Username"
+              value={username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                setError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSubmit();
+              }}
+              className="text-center text-base bg-white/5 border-white/10 text-white placeholder:text-white/40 focus-visible:ring-white/30"
+              maxLength={20}
+              data-testid="input-username"
+            />
+            {error && (
+              <p className="text-xs text-red-400 text-center" data-testid="text-error">
+                {error}
+              </p>
+            )}
           </div>
         </div>
 

@@ -113,9 +113,10 @@ const SEARCH_SEQUENCES = [
 
 interface LandingMapProps {
   onReady?: () => void;
+  showSearch?: boolean;
 }
 
-export function LandingMap({ onReady }: LandingMapProps) {
+export function LandingMap({ onReady, showSearch = true }: LandingMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const overlaysRef = useRef<google.maps.OverlayView[]>([]);
@@ -295,21 +296,23 @@ export function LandingMap({ onReady }: LandingMapProps) {
     <div className="absolute inset-0">
       <div ref={mapRef} className="h-full w-full" />
 
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none z-10">
-        <div
-          className="bg-black/50 backdrop-blur-lg rounded-full px-5 py-3 shadow-lg border border-white/10 min-w-[320px] flex items-center gap-3"
-          data-testid="landing-search-demo"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/40 shrink-0">
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
-          <span className="text-sm text-white/50 truncate">
-            {currentQuery || "searching places..."}
-            {isTyping && <span className="inline-block w-[2px] h-[14px] bg-white/60 ml-0.5 animate-pulse align-middle" />}
-          </span>
+      {showSearch && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none z-10">
+          <div
+            className="bg-black/50 backdrop-blur-lg rounded-full px-5 py-3 shadow-lg border border-white/10 min-w-[320px] flex items-center gap-3"
+            data-testid="landing-search-demo"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/40 shrink-0">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <span className="text-sm text-white/50 truncate">
+              {currentQuery || "searching places..."}
+              {isTyping && <span className="inline-block w-[2px] h-[14px] bg-white/60 ml-0.5 animate-pulse align-middle" />}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
