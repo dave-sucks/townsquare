@@ -28,7 +28,7 @@ export function LandingPage() {
         }`}
       >
         <div
-          className="w-full max-w-sm bg-black/50 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/10 p-8 flex flex-col items-center gap-6"
+          className="w-full max-w-sm bg-black/20 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/10 p-8 flex flex-col items-center gap-6"
           data-testid="landing-card"
         >
           <div className="flex flex-col items-center gap-1">
