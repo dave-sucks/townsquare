@@ -124,7 +124,7 @@ function SidebarNav({ user }: { user: User | null }) {
                 <img 
                   src="/user-logo.svg" 
                   alt="TWN" 
-                  className="size-6 shrink-0 object-contain"
+                  className="size-10 shrink-0 object-contain"
                 />
               </Link>
             </SidebarMenuButton>
