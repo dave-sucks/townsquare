@@ -116,39 +116,94 @@ function SidebarNav({ user }: { user: User | null }) {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="p-2">
+      <SidebarHeader>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild className="w-fit px-1.5">
+              <Link href="/">
+                <div className="size-5 shrink-0 rounded-md overflow-hidden bg-brand-light flex items-center justify-center">
+                  <img 
+                    src="/user-logo.svg" 
+                    alt="TWN" 
+                    className="size-full object-contain"
+                  />
+                </div>
+                <span className="truncate font-bold font-brand uppercase">TWN</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {NAV_ITEMS.map((item) => {
+                const isActive = pathname === item.href || 
+                  (item.href !== "/" && pathname.startsWith(item.href));
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      tooltip={item.label}
+                      className={cn(!isActive && "opacity-60")}
+                    >
+                      <Link href={item.href} data-testid={`nav-${item.label.toLowerCase()}`}>
+                        <item.icon className="size-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <ThemeToggleButton />
+          </SidebarMenuItem>
           <SidebarMenuItem>
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <SidebarMenuButton className="w-fit px-1.5" data-testid="button-user-menu">
-                    <div className="size-8 shrink-0 rounded-md overflow-hidden bg-brand-light flex items-center justify-center p-0.5">
-                      <img 
-                        src="/user-logo.svg" 
-                        alt={userName} 
-                        className="size-full object-contain"
-                      />
+                  <SidebarMenuButton
+                    size="lg"
+                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                    data-testid="button-user-menu"
+                  >
+                    <Avatar className="h-8 w-8 rounded-md">
+                      <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
+                      <AvatarFallback className="rounded-md bg-brand text-brand-foreground">
+                        {userName.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                      <span className="truncate font-semibold">{userName}</span>
+                      <span className="truncate text-xs text-muted-foreground">{userEmail}</span>
                     </div>
-                    <span className="truncate font-bold font-brand uppercase">{userName}</span>
-                    <ChevronDown className="opacity-50" />
+                    <ChevronDown className="ml-auto size-4 group-data-[collapsible=icon]:hidden opacity-50" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
-                  className="w-56 rounded-lg"
-                  align="start"
+                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
                   side="bottom"
+                  align="end"
                   sideOffset={4}
                 >
                   <DropdownMenuLabel className="p-0 font-normal">
-                    <div className="flex items-center gap-2 px-2 py-1.5 text-left text-sm">
-                      <div className="size-8 shrink-0 rounded-md overflow-hidden bg-brand-light flex items-center justify-center p-0.5">
-                        <img 
-                          src="/user-logo.svg" 
-                          alt={userName} 
-                          className="size-full object-contain"
-                        />
-                      </div>
+                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                      <Avatar className="h-8 w-8 rounded-md">
+                        <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
+                        <AvatarFallback className="rounded-md bg-brand text-brand-foreground">
+                          {userName.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
                       <div className="grid flex-1 text-left text-sm leading-tight">
                         <span className="truncate font-semibold">{userName}</span>
                         <span className="truncate text-xs text-muted-foreground">{userEmail}</span>
@@ -195,50 +250,17 @@ function SidebarNav({ user }: { user: User | null }) {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <SidebarMenuButton asChild className="w-fit px-1.5">
+              <SidebarMenuButton asChild size="lg">
                 <a href="/api/login" data-testid="button-login">
-                  <Avatar className="h-5 w-5 rounded-md">
-                    <AvatarFallback className="rounded-md text-xs">?</AvatarFallback>
+                  <Avatar className="h-8 w-8 rounded-md">
+                    <AvatarFallback className="rounded-md bg-brand text-brand-foreground">?</AvatarFallback>
                   </Avatar>
-                  <span>Sign In</span>
+                  <span className="group-data-[collapsible=icon]:hidden">Sign In</span>
                 </a>
               </SidebarMenuButton>
             )}
           </SidebarMenuItem>
         </SidebarMenu>
-      </SidebarHeader>
-
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {NAV_ITEMS.map((item) => {
-                const isActive = pathname === item.href || 
-                  (item.href !== "/" && pathname.startsWith(item.href));
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      tooltip={item.label}
-                      className={cn(!isActive && "opacity-60")}
-                    >
-                      <Link href={item.href} data-testid={`nav-${item.label.toLowerCase()}`}>
-                        <item.icon className="size-4" />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-      </SidebarContent>
-
-      <SidebarFooter className="p-2">
-        <ThemeToggleButton />
       </SidebarFooter>
 
       <SidebarRail />
