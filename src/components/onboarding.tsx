@@ -94,20 +94,22 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         }`}
       >
         <div
-          className="w-full max-w-[300px] bg-black/20 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/10 p-5 flex flex-col items-center gap-4"
+          className="w-[260px] bg-black/20 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/10 flex flex-col items-center overflow-hidden"
           data-testid="onboarding-card"
         >
-          <div
-            className="w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center"
-            data-testid="avatar-display"
-          >
-            <span className="text-[44px]">{selectedEmoji}</span>
+          <div className="pt-6 pb-3 flex flex-col items-center">
+            <div
+              className="w-24 h-24 rounded-2xl bg-white/10 flex items-center justify-center"
+              data-testid="avatar-display"
+            >
+              <span className="text-[56px] leading-none">{selectedEmoji}</span>
+            </div>
           </div>
 
           <div className="w-full" data-testid="emoji-picker">
             <div
               ref={scrollRef}
-              className="flex gap-1.5 overflow-x-auto py-1 px-0.5 scrollbar-none"
+              className="flex gap-1 overflow-x-auto px-4 py-2 scrollbar-none"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
               {AVATAR_EMOJIS.map((emoji) => (
@@ -118,7 +120,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                     setSelectedEmoji(emoji);
                     setError(null);
                   }}
-                  className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-all ${
+                  className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all ${
                     selectedEmoji === emoji
                       ? "bg-white/15 border-2 border-white"
                       : "hover:bg-white/10"
@@ -131,7 +133,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             </div>
           </div>
 
-          <div className="w-full flex flex-col gap-2">
+          <div className="w-full px-5 pt-2 pb-5 flex flex-col gap-2">
             <Input
               placeholder="Create Username"
               value={username}
@@ -158,7 +160,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           onClick={handleSubmit}
           disabled={isSubmitting}
           size="lg"
-          className="w-full max-w-[300px] bg-white text-black border-white hover:bg-white/90"
+          className="w-[260px] bg-white text-black border-white hover:bg-white/90"
           data-testid="button-complete-onboarding"
         >
           {isSubmitting ? "Setting up..." : "Let's go"}
