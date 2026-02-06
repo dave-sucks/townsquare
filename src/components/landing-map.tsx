@@ -3,19 +3,112 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { DARK_STYLE, getLabelDensityStyles } from "@/lib/map-styles";
 
-const DEMO_LOCATIONS = [
-  { lat: 40.7580, lng: -73.9855, emoji: "\u{1F354}", label: "best burger in NYC" },
-  { lat: 40.7614, lng: -73.9776, emoji: "\u{1F363}", label: "sushi near Midtown" },
-  { lat: 40.7291, lng: -73.9965, emoji: "\u{1F355}", label: "pizza in the Village" },
-  { lat: 40.7189, lng: -73.9890, emoji: "\u{1F35C}", label: "ramen in Lower East Side" },
-  { lat: 40.7484, lng: -73.9857, emoji: "\u{2615}", label: "coffee near Empire State" },
-  { lat: 40.7831, lng: -73.9712, emoji: "\u{1F950}", label: "brunch on the Upper West" },
-  { lat: 40.7282, lng: -74.0776, emoji: "\u{1F32E}", label: "tacos in Jersey City" },
-  { lat: 40.6892, lng: -74.0445, emoji: "\u{1F366}", label: "ice cream near Liberty" },
-  { lat: 40.7527, lng: -73.9772, emoji: "\u{1F370}", label: "dessert in Midtown East" },
-  { lat: 40.7061, lng: -74.0087, emoji: "\u{1F377}", label: "wine bar in FiDi" },
-  { lat: 40.7425, lng: -73.9549, emoji: "\u{1F969}", label: "steak in Murray Hill" },
-  { lat: 40.7681, lng: -73.9819, emoji: "\u{1F96F}", label: "bagels near Columbus Circle" },
+const REACTION_EMOJIS = ["\u{1F525}", "\u{1F929}", "\u{1F60D}", "\u{2B50}", "\u{1F4AF}", "\u{1F44C}"];
+
+const SEARCH_SEQUENCES = [
+  {
+    query: "best burger in NYC",
+    centerLat: 40.7480,
+    centerLng: -73.9850,
+    pins: [
+      { lat: 40.7580, lng: -73.9855, emoji: "\u{1F354}" },
+      { lat: 40.7520, lng: -73.9920, emoji: "\u{1F354}" },
+      { lat: 40.7440, lng: -73.9780, emoji: "\u{1F354}" },
+      { lat: 40.7610, lng: -73.9700, emoji: "\u{1F525}" },
+      { lat: 40.7380, lng: -73.9950, emoji: "\u{1F354}" },
+      { lat: 40.7550, lng: -73.9650, emoji: "\u{1F929}" },
+      { lat: 40.7650, lng: -73.9800, emoji: "\u{1F354}" },
+      { lat: 40.7350, lng: -73.9870, emoji: "\u{1F525}" },
+      { lat: 40.7490, lng: -74.0010, emoji: "\u{1F354}" },
+      { lat: 40.7700, lng: -73.9750, emoji: "\u{1F44C}" },
+    ],
+  },
+  {
+    query: "sushi near Midtown",
+    centerLat: 40.7550,
+    centerLng: -73.9800,
+    pins: [
+      { lat: 40.7614, lng: -73.9776, emoji: "\u{1F363}" },
+      { lat: 40.7550, lng: -73.9830, emoji: "\u{1F363}" },
+      { lat: 40.7490, lng: -73.9720, emoji: "\u{1F363}" },
+      { lat: 40.7580, lng: -73.9900, emoji: "\u{1F60D}" },
+      { lat: 40.7640, lng: -73.9680, emoji: "\u{1F363}" },
+      { lat: 40.7450, lng: -73.9860, emoji: "\u{2B50}" },
+      { lat: 40.7520, lng: -73.9950, emoji: "\u{1F363}" },
+      { lat: 40.7680, lng: -73.9750, emoji: "\u{1F363}" },
+      { lat: 40.7410, lng: -73.9790, emoji: "\u{1F525}" },
+      { lat: 40.7570, lng: -73.9630, emoji: "\u{1F363}" },
+      { lat: 40.7700, lng: -73.9850, emoji: "\u{1F44C}" },
+    ],
+  },
+  {
+    query: "pizza in the Village",
+    centerLat: 40.7320,
+    centerLng: -73.9980,
+    pins: [
+      { lat: 40.7291, lng: -73.9965, emoji: "\u{1F355}" },
+      { lat: 40.7340, lng: -74.0020, emoji: "\u{1F355}" },
+      { lat: 40.7260, lng: -73.9900, emoji: "\u{1F525}" },
+      { lat: 40.7380, lng: -73.9940, emoji: "\u{1F355}" },
+      { lat: 40.7310, lng: -74.0080, emoji: "\u{1F355}" },
+      { lat: 40.7220, lng: -73.9980, emoji: "\u{1F929}" },
+      { lat: 40.7360, lng: -74.0060, emoji: "\u{1F355}" },
+      { lat: 40.7190, lng: -74.0030, emoji: "\u{1F355}" },
+      { lat: 40.7400, lng: -73.9880, emoji: "\u{2B50}" },
+      { lat: 40.7250, lng: -74.0100, emoji: "\u{1F355}" },
+    ],
+  },
+  {
+    query: "ramen in Lower East Side",
+    centerLat: 40.7200,
+    centerLng: -73.9880,
+    pins: [
+      { lat: 40.7189, lng: -73.9890, emoji: "\u{1F35C}" },
+      { lat: 40.7230, lng: -73.9840, emoji: "\u{1F35C}" },
+      { lat: 40.7150, lng: -73.9920, emoji: "\u{1F525}" },
+      { lat: 40.7210, lng: -73.9960, emoji: "\u{1F35C}" },
+      { lat: 40.7170, lng: -73.9810, emoji: "\u{1F35C}" },
+      { lat: 40.7260, lng: -73.9870, emoji: "\u{1F60D}" },
+      { lat: 40.7130, lng: -73.9950, emoji: "\u{1F35C}" },
+      { lat: 40.7240, lng: -73.9780, emoji: "\u{2B50}" },
+      { lat: 40.7280, lng: -73.9930, emoji: "\u{1F35C}" },
+      { lat: 40.7110, lng: -73.9860, emoji: "\u{1F35C}" },
+    ],
+  },
+  {
+    query: "coffee near Empire State",
+    centerLat: 40.7500,
+    centerLng: -73.9870,
+    pins: [
+      { lat: 40.7484, lng: -73.9857, emoji: "\u{2615}" },
+      { lat: 40.7520, lng: -73.9900, emoji: "\u{2615}" },
+      { lat: 40.7450, lng: -73.9810, emoji: "\u{2615}" },
+      { lat: 40.7540, lng: -73.9830, emoji: "\u{1F525}" },
+      { lat: 40.7470, lng: -73.9930, emoji: "\u{2615}" },
+      { lat: 40.7510, lng: -73.9770, emoji: "\u{1F44C}" },
+      { lat: 40.7430, lng: -73.9880, emoji: "\u{2615}" },
+      { lat: 40.7560, lng: -73.9920, emoji: "\u{2615}" },
+      { lat: 40.7490, lng: -73.9750, emoji: "\u{1F929}" },
+      { lat: 40.7410, lng: -73.9960, emoji: "\u{2615}" },
+    ],
+  },
+  {
+    query: "tacos in Jersey City",
+    centerLat: 40.7280,
+    centerLng: -74.0500,
+    pins: [
+      { lat: 40.7282, lng: -74.0476, emoji: "\u{1F32E}" },
+      { lat: 40.7320, lng: -74.0530, emoji: "\u{1F32E}" },
+      { lat: 40.7250, lng: -74.0420, emoji: "\u{1F525}" },
+      { lat: 40.7340, lng: -74.0580, emoji: "\u{1F32E}" },
+      { lat: 40.7210, lng: -74.0500, emoji: "\u{1F32E}" },
+      { lat: 40.7300, lng: -74.0380, emoji: "\u{1F929}" },
+      { lat: 40.7360, lng: -74.0450, emoji: "\u{1F32E}" },
+      { lat: 40.7190, lng: -74.0550, emoji: "\u{1F32E}" },
+      { lat: 40.7270, lng: -74.0620, emoji: "\u{2B50}" },
+      { lat: 40.7380, lng: -74.0400, emoji: "\u{1F32E}" },
+    ],
+  },
 ];
 
 interface LandingMapProps {
@@ -29,6 +122,7 @@ export function LandingMap({ onReady }: LandingMapProps) {
   const [currentQuery, setCurrentQuery] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const animationRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const sequenceRef = useRef(0);
 
   const createDemoOverlay = useCallback((
@@ -36,7 +130,8 @@ export function LandingMap({ onReady }: LandingMapProps) {
     lat: number,
     lng: number,
     emoji: string,
-    delay: number
+    delay: number,
+    size: number = 32
   ) => {
     const overlay = new google.maps.OverlayView();
     const position = new google.maps.LatLng(lat, lng);
@@ -45,11 +140,11 @@ export function LandingMap({ onReady }: LandingMapProps) {
       const div = document.createElement("div");
       div.style.cssText = `
         position: absolute;
-        font-size: 28px;
+        font-size: ${size}px;
         transform: translate(-50%, -100%) scale(0);
-        transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+        transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
         opacity: 0;
-        filter: drop-shadow(0 3px 8px rgba(0,0,0,0.5));
+        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.7));
         pointer-events: none;
         z-index: 1;
       `;
@@ -60,10 +155,11 @@ export function LandingMap({ onReady }: LandingMapProps) {
 
       (this as any)._div = div;
 
-      setTimeout(() => {
+      const t = setTimeout(() => {
         div.style.transform = "translate(-50%, -100%) scale(1)";
         div.style.opacity = "1";
       }, delay);
+      timeoutsRef.current.push(t);
     };
 
     overlay.draw = function () {
@@ -95,22 +191,17 @@ export function LandingMap({ onReady }: LandingMapProps) {
       if (i <= text.length) {
         setCurrentQuery(text.slice(0, i));
         i++;
-        animationRef.current = setTimeout(type, 40 + Math.random() * 30);
+        animationRef.current = setTimeout(type, 50 + Math.random() * 40);
       } else {
         setIsTyping(false);
-        animationRef.current = setTimeout(onComplete, 1500);
+        animationRef.current = setTimeout(onComplete, 800);
       }
     };
     type();
   }, []);
 
   const runSequence = useCallback((map: google.maps.Map) => {
-    const idx = sequenceRef.current % DEMO_LOCATIONS.length;
-    const batchSize = 3;
-    const batch: typeof DEMO_LOCATIONS = [];
-    for (let i = 0; i < batchSize; i++) {
-      batch.push(DEMO_LOCATIONS[(idx + i) % DEMO_LOCATIONS.length]);
-    }
+    const seq = SEARCH_SEQUENCES[sequenceRef.current % SEARCH_SEQUENCES.length];
 
     overlaysRef.current.forEach((o) => {
       const div = (o as any)._div as HTMLDivElement | undefined;
@@ -118,21 +209,24 @@ export function LandingMap({ onReady }: LandingMapProps) {
         div.style.transform = "translate(-50%, -100%) scale(0)";
         div.style.opacity = "0";
       }
-      setTimeout(() => o.setMap(null), 400);
+      const t = setTimeout(() => o.setMap(null), 500);
+      timeoutsRef.current.push(t);
     });
     overlaysRef.current = [];
 
-    const primary = batch[0];
-    typeQuery(primary.label, () => {
-      map.panTo({ lat: primary.lat, lng: primary.lng });
+    typeQuery(seq.query, () => {
+      map.panTo({ lat: seq.centerLat, lng: seq.centerLng });
 
-      batch.forEach((loc, i) => {
-        const overlay = createDemoOverlay(map, loc.lat, loc.lng, loc.emoji, 300 + i * 200);
+      seq.pins.forEach((pin, i) => {
+        const isReaction = REACTION_EMOJIS.includes(pin.emoji);
+        const size = isReaction ? 24 : 36;
+        const delay = 200 + i * 400;
+        const overlay = createDemoOverlay(map, pin.lat, pin.lng, pin.emoji, delay, size);
         overlaysRef.current.push(overlay);
       });
 
       sequenceRef.current++;
-      animationRef.current = setTimeout(() => runSequence(map), 4500);
+      animationRef.current = setTimeout(() => runSequence(map), 7000);
     });
   }, [typeQuery, createDemoOverlay]);
 
@@ -190,6 +284,8 @@ export function LandingMap({ onReady }: LandingMapProps) {
 
     return () => {
       if (animationRef.current) clearTimeout(animationRef.current);
+      timeoutsRef.current.forEach(clearTimeout);
+      timeoutsRef.current = [];
       overlaysRef.current.forEach((o) => o.setMap(null));
       overlaysRef.current = [];
     };
