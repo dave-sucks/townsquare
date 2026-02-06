@@ -21,6 +21,7 @@ model User {
   isVerified         Boolean           @default(false) @map("is_verified")
   location           String?
   website            String?
+  avatarEmoji        String?           @map("avatar_emoji")
   instagramId        String?           @unique @map("instagram_id")
   instagramPostCount Int               @default(0) @map("instagram_post_count")
   isInstagramImport  Boolean           @default(false) @map("is_instagram_import")

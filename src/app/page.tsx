@@ -1,12 +1,19 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { LandingPage } from "@/components/landing-page";
+import { Onboarding } from "@/components/onboarding";
 import { DiscoverPage } from "@/components/pages/discover-page";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
   const { user, isLoading, isAuthenticated } = useAuth();
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
+
+  const handleOnboardingComplete = useCallback(() => {
+    setOnboardingComplete(true);
+  }, []);
 
   if (isLoading) {
     return (
@@ -21,6 +28,12 @@ export default function Home() {
 
   if (!isAuthenticated || !user) {
     return <LandingPage />;
+  }
+
+  const needsOnboarding = !user.username && !onboardingComplete;
+
+  if (needsOnboarding) {
+    return <Onboarding onComplete={handleOnboardingComplete} />;
   }
 
   return <DiscoverPage user={user} />;

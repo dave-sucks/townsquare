@@ -9,6 +9,7 @@ interface User {
   firstName: string | null;
   lastName: string | null;
   profileImageUrl: string | null;
+  avatarEmoji: string | null;
 }
 
 interface AuthState {

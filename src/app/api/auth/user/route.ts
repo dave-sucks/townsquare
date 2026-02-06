@@ -17,6 +17,7 @@ export async function GET() {
         firstName: user.firstName,
         lastName: user.lastName,
         profileImageUrl: user.profileImageUrl,
+        avatarEmoji: user.avatarEmoji,
       },
     });
   } catch (error: any) {
