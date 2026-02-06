@@ -118,7 +118,7 @@ export function FeedPost({ activity }: FeedPostProps) {
         {activity.place && (
           <Link
             href={`/places/${activity.place.googlePlaceId}`}
-            className="flex items-center gap-3 px-4 py-2 bg-muted/40 hover:bg-muted/60 transition-colors border-t"
+            className="flex items-center gap-3 px-4 py-2 bg-muted/40 hover:bg-muted/60 transition-colors"
             data-testid={`feed-place-${activity.id}`}
           >
             <div className="flex-1 min-w-0">
@@ -136,7 +136,7 @@ export function FeedPost({ activity }: FeedPostProps) {
         )}
         
         {/* Actions bar */}
-        <div className="flex items-center gap-1 px-2 py-1 border-t">
+        <div className="flex items-center gap-1 px-2 py-1">
           <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" data-testid={`feed-like-${activity.id}`}>
             <Heart className="h-5 w-5" />
           </Button>
