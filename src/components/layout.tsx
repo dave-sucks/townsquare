@@ -121,14 +121,11 @@ function SidebarNav({ user }: { user: User | null }) {
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="w-fit px-1.5">
               <Link href="/">
-                <div className="size-5 shrink-0 rounded-md overflow-hidden bg-brand-light flex items-center justify-center">
-                  <img 
-                    src="/user-logo.svg" 
-                    alt="TWN" 
-                    className="size-full object-contain"
-                  />
-                </div>
-                <span className="truncate font-bold font-brand uppercase">TWN</span>
+                <img 
+                  src="/user-logo.svg" 
+                  alt="TWN" 
+                  className="size-6 shrink-0 object-contain"
+                />
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
