@@ -18,7 +18,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Bookmark, Check, Plus, Loader2, Info, Trash2, ThumbsDown, ThumbsUp, Heart } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Bookmark01Icon, Tick01Icon, PlusSignIcon, Loading03Icon, InformationCircleIcon, Delete02Icon, ThumbsDownIcon, ThumbsUpIcon, FavouriteIcon } from "@hugeicons/core-free-icons";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -65,9 +66,9 @@ interface SaveToListDropdownProps {
 }
 
 const RATING_OPTIONS = [
-  { value: 1, icon: ThumbsDown, label: "ehh" },
-  { value: 3, icon: ThumbsUp, label: "liked" },
-  { value: 5, icon: Heart, label: "loved" },
+  { value: 1, icon: ThumbsDownIcon, label: "ehh" },
+  { value: 3, icon: ThumbsUpIcon, label: "liked" },
+  { value: 5, icon: FavouriteIcon, label: "loved" },
 ];
 
 export function SaveToListDropdown({
@@ -303,11 +304,11 @@ export function SaveToListDropdown({
           data-testid="button-save-to-list"
         >
           {isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
           ) : isSaved ? (
-            <Bookmark className="h-4 w-4 fill-current" />
+            <HugeiconsIcon icon={Bookmark01Icon} className="h-4 w-4 fill-current" />
           ) : (
-            <Bookmark className="h-4 w-4" />
+            <HugeiconsIcon icon={Bookmark01Icon} className="h-4 w-4" />
           )}
           {showLabel && (
             <span className="ml-1">{isSaved ? "Saved" : "Save"}</span>
@@ -321,7 +322,7 @@ export function SaveToListDropdown({
               Been here?
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                  <HugeiconsIcon icon={InformationCircleIcon} className="h-3 w-3 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[200px]">
                   Rate places you've been to help drive recommendations
@@ -352,7 +353,7 @@ export function SaveToListDropdown({
                   data-testid={`rating-button-${option.value}`}
                   className="flex-1 gap-1"
                 >
-                  <option.icon className="h-4 w-4" />
+                  <HugeiconsIcon icon={option.icon} className="h-4 w-4" />
                   <span className="text-xs">{option.label}</span>
                 </ToggleGroupItem>
               ))}
@@ -367,7 +368,7 @@ export function SaveToListDropdown({
           
           {listsLoading ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground px-1.5 py-1">
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
               Loading...
             </div>
           ) : lists.length === 0 ? (
@@ -388,7 +389,7 @@ export function SaveToListDropdown({
                   data-testid={`list-checkbox-${list.id}`}
                 >
                   <span className="flex-1 truncate">{list.name}</span>
-                  {isInList && <Check className="h-4 w-4 ml-auto" />}
+                  {isInList && <HugeiconsIcon icon={Tick01Icon} className="h-4 w-4 ml-auto" />}
                 </DropdownMenuItem>
               );
             })
@@ -448,7 +449,7 @@ export function SaveToListDropdown({
               disabled={!isSaved}
               data-testid="button-add-new-list"
             >
-              <Plus className="h-4 w-4" />
+              <HugeiconsIcon icon={PlusSignIcon} className="h-4 w-4" />
               Create new list
             </DropdownMenuItem>
           )}
@@ -465,7 +466,7 @@ export function SaveToListDropdown({
           data-testid="button-unsave"
           className="hover:text-destructive focus:text-destructive"
         >
-          <Trash2 className="h-4 w-4" />
+          <HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />
           <span>Remove from saved</span>
         </DropdownMenuItem>
       </DropdownMenuContent>

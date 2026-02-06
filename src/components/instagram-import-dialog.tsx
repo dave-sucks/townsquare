@@ -15,15 +15,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  Instagram,
-  Loader2,
-  MapPin,
-  User,
-  Image,
-  CheckCircle,
-  AlertCircle,
-} from "lucide-react";
+  InstagramIcon,
+  Loading03Icon,
+  Location01Icon,
+  UserIcon,
+  Image01Icon,
+  CheckmarkCircle01Icon,
+  AlertCircleIcon,
+} from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -173,7 +174,7 @@ export function InstagramImportDialog({
             className="flex items-center gap-2"
             data-testid="dialog-instagram-import-title"
           >
-            <Instagram className="h-5 w-5" />
+            <HugeiconsIcon icon={InstagramIcon} className="h-5 w-5" />
             Import from Instagram
           </DialogTitle>
           <DialogDescription>
@@ -205,7 +206,7 @@ export function InstagramImportDialog({
                   data-testid="button-preview"
                 >
                   {isPreviewing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
                   ) : (
                     "Preview"
                   )}
@@ -217,7 +218,7 @@ export function InstagramImportDialog({
           {previewQuery.isError && (
             <Card className="border-destructive bg-destructive/10 p-4">
               <div className="flex items-start gap-2 text-destructive">
-                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                <HugeiconsIcon icon={AlertCircleIcon} className="h-4 w-4 mt-0.5 shrink-0" />
                 <div className="space-y-2">
                   <span className="text-sm font-medium">
                     {previewQuery.error?.message || "Failed to load preview"}
@@ -240,7 +241,7 @@ export function InstagramImportDialog({
           {hasPreview && previewQuery.data && (
             <Card className="p-4 space-y-4">
               <div className="flex items-center gap-3">
-                <User className="h-5 w-5 text-muted-foreground" />
+                <HugeiconsIcon icon={UserIcon} className="h-5 w-5 text-muted-foreground" />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span
@@ -260,7 +261,7 @@ export function InstagramImportDialog({
                   </span>
                 </div>
                 {previewQuery.data.instagram_user.exists_in_db ? (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <HugeiconsIcon icon={CheckmarkCircle01Icon} className="h-4 w-4 text-green-500" />
                 ) : (
                   <Badge variant="outline">New</Badge>
                 )}
@@ -270,7 +271,7 @@ export function InstagramImportDialog({
 
               {previewQuery.data.location ? (
                 <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <HugeiconsIcon icon={Location01Icon} className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div className="flex-1">
                     <span
                       className="font-medium"
@@ -300,14 +301,14 @@ export function InstagramImportDialog({
                     </div>
                   </div>
                   {previewQuery.data.location.matched_place_id ? (
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <HugeiconsIcon icon={CheckmarkCircle01Icon} className="h-4 w-4 text-green-500" />
                   ) : (
                     <Badge variant="outline">New</Badge>
                   )}
                 </div>
               ) : (
                 <div className="flex items-center gap-3 text-amber-600">
-                  <AlertCircle className="h-5 w-5" />
+                  <HugeiconsIcon icon={AlertCircleIcon} className="h-5 w-5" />
                   <span className="text-sm">
                     No location detected - you may need to specify one
                   </span>
@@ -317,7 +318,7 @@ export function InstagramImportDialog({
               <Separator />
 
               <div className="flex items-start gap-3">
-                <Image className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <HugeiconsIcon icon={Image01Icon} className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm" data-testid="preview-media-count">
@@ -393,7 +394,7 @@ export function InstagramImportDialog({
               >
                 {isImporting ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <HugeiconsIcon icon={Loading03Icon} className="mr-2 h-4 w-4 animate-spin" />
                     Importing...
                   </>
                 ) : (

@@ -10,18 +10,17 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { 
-  MessageCircle, 
-  Plus, 
-  Send, 
-  Trash2, 
-  Sparkles,
-  MapPin,
-  Bot,
-  User,
-  Loader2,
-  RotateCcw
-} from "lucide-react";
+  PlusSignIcon, 
+  SentIcon, 
+  Delete02Icon, 
+  SparklesIcon,
+  Location01Icon,
+  AiChat02Icon,
+  Loading03Icon,
+  ArrowTurnBackwardIcon
+} from "@hugeicons/core-free-icons";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -326,7 +325,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
             }}
             data-testid="button-all-chats"
           >
-            <RotateCcw className="h-4 w-4" />
+            <HugeiconsIcon icon={ArrowTurnBackwardIcon} className="h-4 w-4" />
           </Button>
         )}
         <Button
@@ -336,7 +335,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
           disabled={createConversationMutation.isPending}
           data-testid="button-new-chat"
         >
-          <Plus className="h-4 w-4" />
+          <HugeiconsIcon icon={PlusSignIcon} className="h-4 w-4" />
         </Button>
       </div>
 
@@ -346,11 +345,11 @@ export function ChatDashboard({ user }: { user: UserData }) {
             <div className="p-2 space-y-1">
               {conversationsLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <HugeiconsIcon icon={Loading03Icon} className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
               ) : conversations.length === 0 ? (
                 <div className="text-center py-8 px-4">
-                  <Sparkles className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                  <HugeiconsIcon icon={SparklesIcon} className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                   <p className="text-sm text-muted-foreground">No conversations yet</p>
                   <p className="text-xs text-muted-foreground mt-1">Start a new chat to discover places</p>
                 </div>
@@ -378,7 +377,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
                       }}
                       data-testid={`button-delete-conversation-${conv.id}`}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <HugeiconsIcon icon={Delete02Icon} className="h-3 w-3" />
                     </Button>
                   </div>
                 ))
@@ -392,7 +391,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
             <div className="p-3 space-y-4">
               {messagesLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <HugeiconsIcon icon={Loading03Icon} className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
               ) : localMessages.length === 0 ? (
                 <div className="text-center py-8">
@@ -430,11 +429,11 @@ export function ChatDashboard({ user }: { user: UserData }) {
                 <div className="flex gap-2">
                   <Avatar className="h-6 w-6 shrink-0">
                     <AvatarFallback className="bg-primary/10 text-primary">
-                      <Bot className="h-3 w-3" />
+                      <HugeiconsIcon icon={AiChat02Icon} className="h-3 w-3" />
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
                     <span className="text-sm">Searching...</span>
                   </div>
                 </div>
@@ -463,9 +462,9 @@ export function ChatDashboard({ user }: { user: UserData }) {
                 data-testid="button-send-message"
               >
                 {isStreaming ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Send className="h-4 w-4" />
+                  <HugeiconsIcon icon={SentIcon} className="h-4 w-4" />
                 )}
               </Button>
             </div>
@@ -628,7 +627,7 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
-            <MapPin className="h-5 w-5 text-muted-foreground" />
+            <HugeiconsIcon icon={Location01Icon} className="h-5 w-5 text-muted-foreground" />
           </div>
 
           <div className="flex-1 min-w-0 overflow-hidden">
@@ -637,7 +636,7 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
             </h3>
             
             <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-              <MapPin className="h-3 w-3 flex-shrink-0" />
+              <HugeiconsIcon icon={Location01Icon} className="h-3 w-3 flex-shrink-0" />
               <span className="truncate">
                 {locationDisplay}
                 {placeType && <> — {placeType}</>}

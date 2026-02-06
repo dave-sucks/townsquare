@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowLeft01Icon, ArrowRight01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 interface Photo {
@@ -81,7 +82,7 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
                 onClick={closeLightbox}
                 data-testid="button-close-lightbox"
               >
-                <X className="h-4 w-4" />
+                <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
               </Button>
               {photos.length > 1 && (
                 <>
@@ -92,7 +93,7 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
                     onClick={goToPrevious}
                     data-testid="button-previous-photo"
                   >
-                    <ChevronLeft className="h-6 w-6" />
+                    <HugeiconsIcon icon={ArrowLeft01Icon} className="h-6 w-6" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -101,7 +102,7 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
                     onClick={goToNext}
                     data-testid="button-next-photo"
                   >
-                    <ChevronRight className="h-6 w-6" />
+                    <HugeiconsIcon icon={ArrowRight01Icon} className="h-6 w-6" />
                   </Button>
                 </>
               )}

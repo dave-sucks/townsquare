@@ -3,7 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Lock } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Location01Icon, LockIcon } from "@hugeicons/core-free-icons";
 
 interface ListCardPlace {
   id: string;
@@ -68,12 +69,12 @@ export function ListCard({
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <MapPin className="h-8 w-8 text-muted-foreground/30" />
+            <HugeiconsIcon icon={Location01Icon} className="h-8 w-8 text-muted-foreground/30" />
           </div>
         )}
         {visibility === "PRIVATE" && (
           <div className="absolute top-2 right-2 p-1 rounded bg-background/80">
-            <Lock className="h-3 w-3" />
+            <HugeiconsIcon icon={LockIcon} className="h-3 w-3" />
           </div>
         )}
       </div>

@@ -10,7 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MapPin, BadgeCheck } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Location01Icon, CheckmarkBadge01Icon } from "@hugeicons/core-free-icons";
 
 const FONTS = [
   { value: "font-sans", label: "Host Grotesk (default)" },
@@ -67,13 +68,13 @@ export default function TextPage() {
                 <div className="flex-1 min-w-0 overflow-hidden">
                   <h3 className="font-semibold text-sm truncate flex items-center gap-1">
                     Pizzeria Delfina
-                    <BadgeCheck className="w-4 h-4 flex-shrink-0 fill-foreground text-background" />
+                    <HugeiconsIcon icon={CheckmarkBadge01Icon} className="w-4 h-4 flex-shrink-0 fill-foreground text-background" />
                   </h3>
                   <div className="flex items-center gap-1.5 text-xs mt-0.5">
                     <span className="text-foreground truncate">Want to Go</span>
                   </div>
                   <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
+                    <HugeiconsIcon icon={Location01Icon} className="h-3 w-3" />
                     Mission District
                   </p>
                 </div>

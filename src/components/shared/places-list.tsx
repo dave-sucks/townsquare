@@ -3,7 +3,8 @@
 import { forwardRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { MapPin, BadgeCheck } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Location01Icon, CheckmarkBadge01Icon } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import { SaveToListDropdown } from "./save-to-list-dropdown";
 import { EmojiPickerPopover } from "./emoji-picker-popover";
@@ -215,7 +216,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <MapPin className="h-5 w-5 text-muted-foreground" />
+                <HugeiconsIcon icon={Location01Icon} className="h-5 w-5 text-muted-foreground" />
               )}
             </div>
           )}
@@ -226,7 +227,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
               {savedPlace.hasBeen && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <BadgeCheck className="w-4 h-4 flex-shrink-0 fill-foreground text-background" />
+                    <HugeiconsIcon icon={CheckmarkBadge01Icon} className="w-4 h-4 flex-shrink-0 fill-foreground text-background" />
                   </TooltipTrigger>
                   <TooltipContent side="top">
                     {isOwnProfile ? "You've been here" : "Been here"}: {savedPlace.rating ? RATING_NAMES[savedPlace.rating] : "rated"}
@@ -251,7 +252,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
             
             {/* Row 2: Location + list info (gray text) */}
             <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1 truncate" data-testid="place-card-location-row">
-              <MapPin className="h-3 w-3 flex-shrink-0" />
+              <HugeiconsIcon icon={Location01Icon} className="h-3 w-3 flex-shrink-0" />
               <span className="truncate">{locationDisplay}</span>
               {showStatus && listDisplayText && (
                 <>
@@ -333,7 +334,7 @@ export function PlacesList({
   if (places.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-        <MapPin className="mb-4 h-10 w-10 text-muted-foreground" />
+        <HugeiconsIcon icon={Location01Icon} className="mb-4 h-10 w-10 text-muted-foreground" />
         <p className="text-sm font-medium">{emptyMessage}</p>
         <p className="text-xs text-muted-foreground mt-1">{emptySubMessage}</p>
       </div>

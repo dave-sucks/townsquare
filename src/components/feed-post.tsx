@@ -4,7 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, Bookmark, ListPlus } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { FavouriteIcon, Comment01Icon, Bookmark01Icon, AddToListIcon } from "@hugeicons/core-free-icons";
 import { SocialPostCard } from "@/components/shared/social-post-card";
 
 interface ActivityActor {
@@ -138,16 +139,16 @@ export function FeedPost({ activity }: FeedPostProps) {
         {/* Actions bar */}
         <div className="flex items-center gap-1 px-2 py-1">
           <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" data-testid={`feed-like-${activity.id}`}>
-            <Heart className="h-5 w-5" />
+            <HugeiconsIcon icon={FavouriteIcon} className="h-5 w-5" />
           </Button>
           <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" data-testid={`feed-comment-${activity.id}`}>
-            <MessageCircle className="h-5 w-5" />
+            <HugeiconsIcon icon={Comment01Icon} className="h-5 w-5" />
           </Button>
           <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" data-testid={`feed-save-${activity.id}`}>
-            <Bookmark className="h-5 w-5" />
+            <HugeiconsIcon icon={Bookmark01Icon} className="h-5 w-5" />
           </Button>
           <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" data-testid={`feed-add-list-${activity.id}`}>
-            <ListPlus className="h-5 w-5" />
+            <HugeiconsIcon icon={AddToListIcon} className="h-5 w-5" />
           </Button>
         </div>
       </article>
@@ -201,7 +202,7 @@ export function FeedPost({ activity }: FeedPostProps) {
               {activity.type === "PLACE_SAVED" && (
                 <span className="flex items-center gap-1 text-muted-foreground">
                   <span>·</span>
-                  <Bookmark className="h-3 w-3" />
+                  <HugeiconsIcon icon={Bookmark01Icon} className="h-3 w-3" />
                   <span>Saved</span>
                 </span>
               )}
@@ -298,16 +299,16 @@ export function FeedPost({ activity }: FeedPostProps) {
         {/* Social Action Buttons */}
         <div className="flex items-center gap-1 mt-3 -ml-2">
           <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" data-testid={`feed-like-${activity.id}`}>
-            <Heart className="h-5 w-5" />
+            <HugeiconsIcon icon={FavouriteIcon} className="h-5 w-5" />
           </Button>
           <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" data-testid={`feed-comment-${activity.id}`}>
-            <MessageCircle className="h-5 w-5" />
+            <HugeiconsIcon icon={Comment01Icon} className="h-5 w-5" />
           </Button>
           <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" data-testid={`feed-save-${activity.id}`}>
-            <Bookmark className="h-5 w-5" />
+            <HugeiconsIcon icon={Bookmark01Icon} className="h-5 w-5" />
           </Button>
           <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" data-testid={`feed-add-list-${activity.id}`}>
-            <ListPlus className="h-5 w-5" />
+            <HugeiconsIcon icon={AddToListIcon} className="h-5 w-5" />
           </Button>
         </div>
       </div>

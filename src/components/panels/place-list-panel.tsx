@@ -9,7 +9,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { ChevronDown, Check, SlidersHorizontal } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowDown01Icon, Tick01Icon, SlidersHorizontalIcon } from "@hugeicons/core-free-icons";
 import { apiRequest } from "@/lib/query-client";
 import { PlacesList } from "@/components/shared/places-list";
 import type { SidebarInjectedProps } from "@/components/map/map-layout";
@@ -98,7 +99,7 @@ export function PlaceListPanel({
           onClick={onSettingsClick}
           data-testid="button-map-settings-trigger"
         >
-          <SlidersHorizontal className="h-4 w-4" />
+          <HugeiconsIcon icon={SlidersHorizontalIcon} className="h-4 w-4" />
         </Button>
       </div>
 
@@ -107,7 +108,7 @@ export function PlaceListPanel({
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" data-testid="select-status-filter">
               {selectedStatusLabel}
-              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              <HugeiconsIcon icon={ArrowDown01Icon} className="h-3 w-3 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
@@ -118,7 +119,7 @@ export function PlaceListPanel({
                 data-active={statusFilter === option.value}
               >
                 {option.label}
-                <Check className={`ml-auto h-4 w-4 ${statusFilter === option.value ? "opacity-100" : "opacity-0"}`} />
+                <HugeiconsIcon icon={Tick01Icon} className={`ml-auto h-4 w-4 ${statusFilter === option.value ? "opacity-100" : "opacity-0"}`} />
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -127,7 +128,7 @@ export function PlaceListPanel({
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" data-testid="select-list-filter">
               {selectedListLabel}
-              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              <HugeiconsIcon icon={ArrowDown01Icon} className="h-3 w-3 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
@@ -136,7 +137,7 @@ export function PlaceListPanel({
               data-active={listFilter === "all"}
             >
               All Lists
-              <Check className={`ml-auto h-4 w-4 ${listFilter === "all" ? "opacity-100" : "opacity-0"}`} />
+              <HugeiconsIcon icon={Tick01Icon} className={`ml-auto h-4 w-4 ${listFilter === "all" ? "opacity-100" : "opacity-0"}`} />
             </DropdownMenuItem>
             {lists.map((list) => (
               <DropdownMenuItem
@@ -145,7 +146,7 @@ export function PlaceListPanel({
                 data-active={listFilter === list.id}
               >
                 {list.name}
-                <Check className={`ml-auto h-4 w-4 ${listFilter === list.id ? "opacity-100" : "opacity-0"}`} />
+                <HugeiconsIcon icon={Tick01Icon} className={`ml-auto h-4 w-4 ${listFilter === list.id ? "opacity-100" : "opacity-0"}`} />
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

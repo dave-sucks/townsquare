@@ -3,7 +3,8 @@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Car, TrainFront } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Car01Icon, Train01Icon } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import {
   MAP_STYLES,
@@ -222,7 +223,7 @@ export function MapSettingsContent({
         <Label className="text-xs text-muted-foreground uppercase tracking-wide">Overlays</Label>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Car className="h-4 w-4 text-muted-foreground" />
+            <HugeiconsIcon icon={Car01Icon} className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm">Traffic</span>
           </div>
           <Switch
@@ -233,7 +234,7 @@ export function MapSettingsContent({
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <TrainFront className="h-4 w-4 text-muted-foreground" />
+            <HugeiconsIcon icon={Train01Icon} className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm">Transit</span>
           </div>
           <Switch

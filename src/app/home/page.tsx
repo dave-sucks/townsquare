@@ -7,7 +7,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, MapPin } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { UserMultiple02Icon, Location01Icon } from "@hugeicons/core-free-icons";
 import { apiRequest } from "@/lib/query-client";
 import { AppShell, PageHeader } from "@/components/layout";
 import { FeedPost } from "@/components/feed-post";
@@ -107,7 +108,7 @@ export default function HomePage() {
           </div>
         ) : allActivities.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <Users className="h-12 w-12 text-muted-foreground mb-4" />
+            <HugeiconsIcon icon={UserMultiple02Icon} className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="font-medium">Your feed is empty</p>
             <p className="text-sm text-muted-foreground mt-1 text-center max-w-xs">
               Follow people or save places to see activity here
@@ -118,7 +119,7 @@ export default function HomePage() {
               </Button>
               <Button variant="outline" asChild data-testid="button-go-map">
                 <Link href="/">
-                  <MapPin className="mr-1.5 h-4 w-4" />
+                  <HugeiconsIcon icon={Location01Icon} className="mr-1.5 h-4 w-4" />
                   Map
                 </Link>
               </Button>

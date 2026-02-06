@@ -2,15 +2,15 @@
 
 import { Badge } from "@/components/ui/badge";
 import { 
-  Sparkles, 
-  Utensils, 
-  Calendar, 
-  Star, 
-  Leaf, 
-  Wine,
-  Tag as TagIcon,
-  Plus
-} from "lucide-react";
+  SparklesIcon, 
+  Restaurant01Icon, 
+  Calendar03Icon, 
+  StarIcon, 
+  Leaf01Icon, 
+  DrinkIcon,
+  Tag01Icon,
+  PlusSignIcon
+} from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,13 +37,13 @@ export interface TagCategoryGroup {
   tags: TagInfo[];
 }
 
-const CATEGORY_ICONS: Record<string, typeof Sparkles> = {
-  vibe: Sparkles,
-  "food-type": Utensils,
-  occasion: Calendar,
-  features: Star,
-  dietary: Leaf,
-  drinks: Wine,
+const CATEGORY_ICONS: Record<string, typeof SparklesIcon> = {
+  vibe: SparklesIcon,
+  "food-type": Restaurant01Icon,
+  occasion: Calendar03Icon,
+  features: StarIcon,
+  dietary: Leaf01Icon,
+  drinks: DrinkIcon,
 };
 
 const CATEGORY_COLORS: Record<string, string> = {

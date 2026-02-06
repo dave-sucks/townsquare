@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Heart, CheckCircle } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Location01Icon, FavouriteIcon, CheckmarkCircle01Icon } from "@hugeicons/core-free-icons";
 
 export function LandingPage() {
   return (
@@ -10,7 +11,7 @@ export function LandingPage() {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-2">
-            <MapPin className="h-6 w-6 text-primary" />
+            <HugeiconsIcon icon={Location01Icon} className="h-6 w-6 text-primary" />
             <span className="text-xl font-semibold font-brand">Beli</span>
           </div>
           <Button asChild data-testid="button-login">
@@ -38,7 +39,7 @@ export function LandingPage() {
           <div className="grid gap-8 md:grid-cols-3">
             <Card>
               <CardHeader>
-                <MapPin className="mb-2 h-10 w-10 text-primary" />
+                <HugeiconsIcon icon={Location01Icon} className="mb-2 h-10 w-10 text-primary" />
                 <CardTitle>Search Places</CardTitle>
                 <CardDescription>
                   Find restaurants, cafes, attractions, and more using Google Places
@@ -47,7 +48,7 @@ export function LandingPage() {
             </Card>
             <Card>
               <CardHeader>
-                <Heart className="mb-2 h-10 w-10 text-red-500" />
+                <HugeiconsIcon icon={FavouriteIcon} className="mb-2 h-10 w-10 text-red-500" />
                 <CardTitle>Want to Visit</CardTitle>
                 <CardDescription>
                   Save places you want to visit and never forget about that new spot
@@ -56,7 +57,7 @@ export function LandingPage() {
             </Card>
             <Card>
               <CardHeader>
-                <CheckCircle className="mb-2 h-10 w-10 text-green-500" />
+                <HugeiconsIcon icon={CheckmarkCircle01Icon} className="mb-2 h-10 w-10 text-green-500" />
                 <CardTitle>Been There</CardTitle>
                 <CardDescription>
                   Mark places you've visited and build your personal map of experiences

@@ -1,5 +1,6 @@
 import * as React from "react"
-import { ChevronDownIcon } from "lucide-react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowDown01Icon } from "@hugeicons/core-free-icons"
 
 import { cn } from "@/lib/utils"
 
@@ -24,7 +25,8 @@ function NativeSelect({
         )}
         {...props}
       />
-      <ChevronDownIcon
+      <HugeiconsIcon
+        icon={ArrowDown01Icon}
         className="text-muted-foreground pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 opacity-50 select-none"
         aria-hidden="true"
         data-slot="native-select-icon"

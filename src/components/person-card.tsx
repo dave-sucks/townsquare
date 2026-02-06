@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, List as ListIcon, UserPlus, UserMinus, Loader2 } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Location01Icon, LeftToRightListBulletIcon, UserAdd01Icon, UserRemove01Icon, Loading03Icon } from "@hugeicons/core-free-icons";
 
 interface PersonCardProps {
   id: string;
@@ -65,11 +66,11 @@ export function PersonCard({
           <p className="text-xs text-muted-foreground truncate w-full">@{handle}</p>
           <div className="flex items-center justify-center gap-3 mt-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-0.5">
-              <MapPin className="h-3 w-3" />
+              <HugeiconsIcon icon={Location01Icon} className="h-3 w-3" />
               {savedPlacesCount}
             </span>
             <span className="flex items-center gap-0.5">
-              <ListIcon className="h-3 w-3" />
+              <HugeiconsIcon icon={LeftToRightListBulletIcon} className="h-3 w-3" />
               {listsCount}
             </span>
           </div>
@@ -82,15 +83,15 @@ export function PersonCard({
             data-testid={`button-follow-${id}`}
           >
             {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
             ) : isFollowing ? (
               <>
-                <UserMinus className="mr-1 h-3.5 w-3.5" />
+                <HugeiconsIcon icon={UserRemove01Icon} className="mr-1 h-3.5 w-3.5" />
                 Unfollow
               </>
             ) : (
               <>
-                <UserPlus className="mr-1 h-3.5 w-3.5" />
+                <HugeiconsIcon icon={UserAdd01Icon} className="mr-1 h-3.5 w-3.5" />
                 Follow
               </>
             )}
@@ -116,11 +117,11 @@ export function PersonCard({
         <p className="text-xs text-muted-foreground truncate">@{handle}</p>
         <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
           <span className="flex items-center gap-0.5">
-            <MapPin className="h-3 w-3" />
+            <HugeiconsIcon icon={Location01Icon} className="h-3 w-3" />
             {savedPlacesCount}
           </span>
           <span className="flex items-center gap-0.5">
-            <ListIcon className="h-3 w-3" />
+            <HugeiconsIcon icon={LeftToRightListBulletIcon} className="h-3 w-3" />
             {listsCount}
           </span>
         </div>
@@ -134,11 +135,11 @@ export function PersonCard({
         data-testid={`button-follow-${id}`}
       >
         {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
         ) : isFollowing ? (
-          <UserMinus className="h-4 w-4" />
+          <HugeiconsIcon icon={UserRemove01Icon} className="h-4 w-4" />
         ) : (
-          <UserPlus className="h-4 w-4" />
+          <HugeiconsIcon icon={UserAdd01Icon} className="h-4 w-4" />
         )}
       </Button>
     </Link>

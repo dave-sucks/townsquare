@@ -4,7 +4,8 @@ import { useState } from "react";
 import { EmojiPicker } from "frimousse";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Smile, X, Search } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { SmileIcon, Cancel01Icon, Search01Icon } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 
 const CATEGORY_ICONS = [
@@ -57,7 +58,7 @@ export function EmojiPickerPopover({
       >
         <div className="mx-2 mt-2">
           <div className="relative flex items-center rounded-md border border-input bg-background touch-manipulation">
-            <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <HugeiconsIcon icon={Search01Icon} className="absolute left-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
             <EmojiPicker.Search
               placeholder="Search emoji..."
               className="flex-1 h-9 bg-transparent pl-8 pr-8 text-base placeholder:text-muted-foreground focus:outline-none touch-manipulation [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
@@ -70,7 +71,7 @@ export function EmojiPickerPopover({
                 data-testid="button-clear-emoji"
                 aria-label="Clear emoji"
               >
-                <X className="h-3.5 w-3.5" />
+                <HugeiconsIcon icon={Cancel01Icon} className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
@@ -155,7 +156,7 @@ export function EmojiPickerPopover({
             {emoji ? (
               <span className="text-2xl" data-testid="text-selected-emoji">{emoji}</span>
             ) : (
-              <Smile className="h-5 w-5 text-muted-foreground" />
+              <HugeiconsIcon icon={SmileIcon} className="h-5 w-5 text-muted-foreground" />
             )}
           </div>
         </PopoverTrigger>
@@ -189,7 +190,7 @@ export function EmojiPickerPopover({
           {emoji ? (
             <span className="text-base" data-testid="text-selected-emoji">{emoji}</span>
           ) : (
-            <Smile className="h-3.5 w-3.5 text-muted-foreground" />
+            <HugeiconsIcon icon={SmileIcon} className="h-3.5 w-3.5 text-muted-foreground" />
           )}
         </Button>
       </PopoverTrigger>

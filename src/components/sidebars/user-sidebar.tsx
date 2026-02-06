@@ -13,7 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { UserPlus, UserMinus, Loader2, ChevronDown, Check, Activity } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { UserAdd01Icon, UserRemove01Icon, Loading03Icon, ArrowDown01Icon, Tick01Icon, Activity01Icon } from "@hugeicons/core-free-icons";
 import { apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { PlacesList } from "@/components/shared/places-list";
@@ -260,11 +261,11 @@ export function UserSidebar({
             data-testid="button-follow"
           >
             {followMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
             ) : localIsFollowing ? (
-              <><UserMinus className="mr-1.5 h-4 w-4" />Following</>
+              <><HugeiconsIcon icon={UserRemove01Icon} className="mr-1.5 h-4 w-4" />Following</>
             ) : (
-              <><UserPlus className="mr-1.5 h-4 w-4" />Follow</>
+              <><HugeiconsIcon icon={UserAdd01Icon} className="mr-1.5 h-4 w-4" />Follow</>
             )}
           </Button>
         )}
@@ -300,7 +301,7 @@ export function UserSidebar({
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" data-testid="select-status-filter">
                   {selectedStatusLabel}
-                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                  <HugeiconsIcon icon={ArrowDown01Icon} className="h-3 w-3 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
@@ -311,7 +312,7 @@ export function UserSidebar({
                     data-active={selectedStatusFilter === option.value}
                   >
                     {option.label}
-                    <Check className={`ml-auto h-4 w-4 ${selectedStatusFilter === option.value ? "opacity-100" : "opacity-0"}`} />
+                    <HugeiconsIcon icon={Tick01Icon} className={`ml-auto h-4 w-4 ${selectedStatusFilter === option.value ? "opacity-100" : "opacity-0"}`} />
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -321,7 +322,7 @@ export function UserSidebar({
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" data-testid="select-list-filter">
                     {selectedListLabel}
-                    <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                    <HugeiconsIcon icon={ArrowDown01Icon} className="h-3 w-3 text-muted-foreground" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
@@ -330,7 +331,7 @@ export function UserSidebar({
                     data-active={selectedListId === "all"}
                   >
                     All Lists
-                    <Check className={`ml-auto h-4 w-4 ${selectedListId === "all" ? "opacity-100" : "opacity-0"}`} />
+                    <HugeiconsIcon icon={Tick01Icon} className={`ml-auto h-4 w-4 ${selectedListId === "all" ? "opacity-100" : "opacity-0"}`} />
                   </DropdownMenuItem>
                   {publicLists.map((list) => (
                     <DropdownMenuItem
@@ -339,7 +340,7 @@ export function UserSidebar({
                       data-active={selectedListId === list.id}
                     >
                       {list.name}
-                      <Check className={`ml-auto h-4 w-4 ${selectedListId === list.id ? "opacity-100" : "opacity-0"}`} />
+                      <HugeiconsIcon icon={Tick01Icon} className={`ml-auto h-4 w-4 ${selectedListId === list.id ? "opacity-100" : "opacity-0"}`} />
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -366,7 +367,7 @@ export function UserSidebar({
         <TabsContent value="feed" className="flex-1 overflow-y-auto mt-0">
           {activities.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-              <Activity className="mb-4 h-10 w-10 text-muted-foreground" />
+              <HugeiconsIcon icon={Activity01Icon} className="mb-4 h-10 w-10 text-muted-foreground" />
               <p className="text-sm font-medium">No activity yet</p>
               <p className="text-xs text-muted-foreground mt-1">
                 {isOwnProfile ? "Your activity will appear here" : "This user doesn't have any activity yet"}

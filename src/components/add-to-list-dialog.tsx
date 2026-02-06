@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Check, List as ListIcon, Plus } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Tick01Icon, LeftToRightListBulletIcon, PlusSignIcon } from "@hugeicons/core-free-icons";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { cva } from "class-variance-authority";
@@ -162,7 +163,7 @@ export function AddToListDialog({ open, onOpenChange, placeId, placeName }: AddT
                 </div>
               ) : lists.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8">
-                  <ListIcon className="mb-2 h-8 w-8 text-muted-foreground" />
+                  <HugeiconsIcon icon={LeftToRightListBulletIcon} className="mb-2 h-8 w-8 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">No lists yet</p>
                 </div>
               ) : (
@@ -181,7 +182,7 @@ export function AddToListDialog({ open, onOpenChange, placeId, placeName }: AddT
                         </p>
                       </div>
                       {selectedListId === list.id && (
-                        <Check className="h-4 w-4 text-primary shrink-0" />
+                        <HugeiconsIcon icon={Tick01Icon} className="h-4 w-4 text-primary shrink-0" />
                       )}
                     </div>
                   ))}
@@ -195,7 +196,7 @@ export function AddToListDialog({ open, onOpenChange, placeId, placeName }: AddT
               onClick={() => setShowCreateForm(true)}
               data-testid="button-show-create-list"
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <HugeiconsIcon icon={PlusSignIcon} className="mr-2 h-4 w-4" />
               Create New List
             </Button>
 

@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/popover";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Search, Bookmark, Star, List, X, Loader2, Plus, Check, Info, ThumbsDown, ThumbsUp, Heart } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Search01Icon, Bookmark01Icon, StarIcon, LeftToRightListBulletIcon, Cancel01Icon, Loading03Icon, PlusSignIcon, Tick01Icon, InformationCircleIcon, ThumbsDownIcon, ThumbsUpIcon, FavouriteIcon } from "@hugeicons/core-free-icons";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 
@@ -42,9 +43,9 @@ interface SavedPlaceResult {
 }
 
 const RATING_OPTIONS = [
-  { value: 1, icon: ThumbsDown, label: "ehh" },
-  { value: 3, icon: ThumbsUp, label: "liked" },
-  { value: 5, icon: Heart, label: "loved" },
+  { value: 1, icon: ThumbsDownIcon, label: "ehh" },
+  { value: 3, icon: ThumbsUpIcon, label: "liked" },
+  { value: 5, icon: FavouriteIcon, label: "loved" },
 ];
 
 export function FloatingSearch() {
@@ -85,7 +86,7 @@ export function FloatingSearch() {
   return (
     <div className="absolute top-3 left-3 right-3 md:left-auto md:right-3 z-20 md:w-96">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <HugeiconsIcon icon={Search01Icon} className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search for a place..."
           value={searchQuery}
@@ -101,7 +102,7 @@ export function FloatingSearch() {
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             data-testid="button-clear-search"
           >
-            <X className="h-4 w-4" />
+            <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
           </button>
         )}
       </div>
@@ -330,9 +331,9 @@ function SearchResultRow({
               className="px-2"
             >
               {isPending ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <HugeiconsIcon icon={Loading03Icon} className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Bookmark className={isSaved ? "h-3.5 w-3.5 fill-current" : "h-3.5 w-3.5"} />
+                <HugeiconsIcon icon={Bookmark01Icon} className={isSaved ? "h-3.5 w-3.5 fill-current" : "h-3.5 w-3.5"} />
               )}
             </Button>
           </TooltipTrigger>
@@ -351,7 +352,7 @@ function SearchResultRow({
                   data-testid={`button-review-${result.place_id}`}
                   className="px-2"
                 >
-                  <Star className={hasBeen && currentRating ? "h-3.5 w-3.5 fill-current" : "h-3.5 w-3.5"} />
+                  <HugeiconsIcon icon={StarIcon} className={hasBeen && currentRating ? "h-3.5 w-3.5 fill-current" : "h-3.5 w-3.5"} />
                 </Button>
               </PopoverTrigger>
             </TooltipTrigger>
@@ -365,7 +366,7 @@ function SearchResultRow({
                 Been here?
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    <HugeiconsIcon icon={InformationCircleIcon} className="h-3 w-3 text-muted-foreground cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-[200px]">
                     Rate places you've been to help drive recommendations
@@ -393,7 +394,7 @@ function SearchResultRow({
                     data-testid={`search-rating-${option.value}-${result.place_id}`}
                     className="flex-1 gap-0.5"
                   >
-                    <option.icon className="h-3.5 w-3.5" />
+                    <HugeiconsIcon icon={option.icon} className="h-3.5 w-3.5" />
                     <span className="text-xs hidden sm:inline">{option.label}</span>
                   </ToggleGroupItem>
                 ))}
@@ -413,7 +414,7 @@ function SearchResultRow({
                   data-testid={`button-list-${result.place_id}`}
                   className="px-2"
                 >
-                  <List className="h-3.5 w-3.5" />
+                  <HugeiconsIcon icon={LeftToRightListBulletIcon} className="h-3.5 w-3.5" />
                 </Button>
               </PopoverTrigger>
             </TooltipTrigger>
@@ -426,7 +427,7 @@ function SearchResultRow({
               <p className="text-sm font-medium">Lists</p>
               {listsLoading ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
                   Loading...
                 </div>
               ) : lists.length === 0 ? (
@@ -446,7 +447,7 @@ function SearchResultRow({
                         data-testid={`search-list-${list.id}-${result.place_id}`}
                       >
                         <span className="flex-1 truncate text-left">{list.name}</span>
-                        {isInList && <Check className="h-4 w-4" />}
+                        {isInList && <HugeiconsIcon icon={Tick01Icon} className="h-4 w-4" />}
                       </Button>
                     );
                   })}
@@ -504,7 +505,7 @@ function SearchResultRow({
                   onClick={() => setShowCreateInput(true)}
                   data-testid={`button-new-list-${result.place_id}`}
                 >
-                  <Plus className="h-4 w-4" />
+                  <HugeiconsIcon icon={PlusSignIcon} className="h-4 w-4" />
                   Create new list
                 </Button>
               )}

@@ -8,16 +8,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { 
-  ArrowLeft,
-  Maximize,
-  Utensils,
-  MapPin,
-  BadgeCheck,
-  List as ListIcon,
-  ChevronRight,
-  ExternalLink,
-} from "lucide-react";
+  ArrowLeft01Icon,
+  Maximize01Icon,
+  Location01Icon,
+  CheckmarkBadge01Icon,
+  LeftToRightListBulletIcon,
+  ArrowRight01Icon,
+  LinkSquare01Icon,
+} from "@hugeicons/core-free-icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SaveToListDropdown } from "./shared/save-to-list-dropdown";
 import { FeedPost } from "./feed-post";
@@ -169,7 +169,7 @@ function ListRowCard({ list }: { list: ListInfo }) {
       data-testid={`list-row-${list.id}`}
     >
       <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0">
-        <ListIcon className="h-5 w-5 text-muted-foreground" />
+        <HugeiconsIcon icon={LeftToRightListBulletIcon} className="h-5 w-5 text-muted-foreground" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{list.name}</p>
@@ -177,7 +177,7 @@ function ListRowCard({ list }: { list: ListInfo }) {
           {list._count?.listPlaces || 0} places
         </p>
       </div>
-      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+      <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4 text-muted-foreground shrink-0" />
     </Link>
   );
 }
@@ -273,7 +273,7 @@ export function PlaceDetailPanel({
           onClick={onBack}
           data-testid="button-back-to-list"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <HugeiconsIcon icon={ArrowLeft01Icon} className="h-4 w-4" />
         </Button>
         <div className="flex items-center gap-2 ml-auto">
           <Button
@@ -283,7 +283,7 @@ export function PlaceDetailPanel({
             data-testid="button-open-full-page"
           >
             <Link href={`/places/${place.googlePlaceId}`}>
-              <Maximize className="h-4 w-4" />
+              <HugeiconsIcon icon={Maximize01Icon} className="h-4 w-4" />
             </Link>
           </Button>
           <SaveToListDropdown
@@ -321,14 +321,14 @@ export function PlaceDetailPanel({
                   <Badge variant="secondary" className="flex items-center gap-1.5 py-1 px-2.5 cursor-pointer bg-white/20 backdrop-blur-md border-none hover:bg-white/30 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                     <span className="text-white font-medium">{locationDisplay}</span>
-                    <ExternalLink className="size-3 text-white/80" />
+                    <HugeiconsIcon icon={LinkSquare01Icon} className="size-3 text-white/80" />
                   </Badge>
                 </a>
               )}
             </div>
           ) : (
             <div className="w-full h-48 bg-muted flex items-center justify-center rounded-lg">
-              <MapPin className="h-12 w-12 text-muted-foreground" />
+              <HugeiconsIcon icon={Location01Icon} className="h-12 w-12 text-muted-foreground" />
             </div>
           )}
           <div className="space-y-2">
@@ -345,7 +345,7 @@ export function PlaceDetailPanel({
                 {savedPlace.hasBeen && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <BadgeCheck className="w-5 h-5 flex-shrink-0 fill-foreground text-background" />
+                      <HugeiconsIcon icon={CheckmarkBadge01Icon} className="w-5 h-5 flex-shrink-0 fill-foreground text-background" />
                     </TooltipTrigger>
                     <TooltipContent side="top">
                       {savedPlace.rating ? RATING_LABELS[savedPlace.rating] : "Been here"}
@@ -433,7 +433,7 @@ export function PlaceDetailPanel({
                       const feedTab = document.querySelector('[data-testid="panel-tab-feed"]') as HTMLButtonElement;
                       feedTab?.click();
                     }}>
-                      See all <ChevronRight className="h-3 w-3 ml-1" />
+                      See all <HugeiconsIcon icon={ArrowRight01Icon} className="h-3 w-3 ml-1" />
                     </Link>
                   </Button>
                 </div>

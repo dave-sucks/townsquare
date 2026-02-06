@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, X, Image as ImageIcon } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowLeft01Icon, ArrowRight01Icon, Cancel01Icon, Image01Icon } from "@hugeicons/core-free-icons";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 interface Photo {
@@ -28,7 +29,7 @@ export function PlacePhotoGrid({ photos, maxDisplay = 5 }: PlacePhotoGridProps) 
         data-testid="photo-grid-empty"
       >
         <div className="text-center text-muted-foreground">
-          <ImageIcon className="mx-auto h-8 w-8 mb-2" />
+          <HugeiconsIcon icon={Image01Icon} className="mx-auto h-8 w-8 mb-2" />
           <p className="text-sm">No photos available</p>
         </div>
       </div>
@@ -133,7 +134,7 @@ export function PlacePhotoGrid({ photos, maxDisplay = 5 }: PlacePhotoGridProps) 
                 onClick={closeLightbox}
                 data-testid="button-close-lightbox"
               >
-                <X className="h-4 w-4" />
+                <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
               </Button>
               {photos.length > 1 && (
                 <>
@@ -144,7 +145,7 @@ export function PlacePhotoGrid({ photos, maxDisplay = 5 }: PlacePhotoGridProps) 
                     onClick={goToPrevious}
                     data-testid="button-previous-photo"
                   >
-                    <ChevronLeft className="h-6 w-6" />
+                    <HugeiconsIcon icon={ArrowLeft01Icon} className="h-6 w-6" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -153,7 +154,7 @@ export function PlacePhotoGrid({ photos, maxDisplay = 5 }: PlacePhotoGridProps) 
                     onClick={goToNext}
                     data-testid="button-next-photo"
                   >
-                    <ChevronRight className="h-6 w-6" />
+                    <HugeiconsIcon icon={ArrowRight01Icon} className="h-6 w-6" />
                   </Button>
                 </>
               )}

@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, List as ListIcon, Search } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { PlusSignIcon, LeftToRightListBulletIcon, Search01Icon } from "@hugeicons/core-free-icons";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
@@ -105,7 +106,7 @@ export default function ListsPage() {
         <PageHeader title="Lists" />
         <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full">
           <div className="flex flex-col items-center justify-center py-16">
-            <ListIcon className="h-12 w-12 text-muted-foreground mb-4" />
+            <HugeiconsIcon icon={LeftToRightListBulletIcon} className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="font-medium">Sign in to view your lists</p>
             <Button asChild className="mt-4">
               <a href="/api/login">Sign In</a>
@@ -122,7 +123,7 @@ export default function ListsPage() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button size="sm" data-testid="button-create-list">
-              <Plus className="mr-1 h-4 w-4" />
+              <HugeiconsIcon icon={PlusSignIcon} className="mr-1 h-4 w-4" />
               New List
             </Button>
           </DialogTrigger>
@@ -151,7 +152,7 @@ export default function ListsPage() {
       <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full">
         {/* Search */}
         <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <HugeiconsIcon icon={Search01Icon} className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search lists..."
             value={searchQuery}
@@ -175,7 +176,7 @@ export default function ListsPage() {
           </div>
         ) : filteredMyLists.length === 0 && filteredDiscoverLists.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <ListIcon className="h-12 w-12 text-muted-foreground mb-4" />
+            <HugeiconsIcon icon={LeftToRightListBulletIcon} className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="font-medium">{debouncedSearch ? "No lists found" : "No lists yet"}</p>
             <p className="text-sm text-muted-foreground mt-1">
               {debouncedSearch ? "Try a different search" : "Create your first list"}

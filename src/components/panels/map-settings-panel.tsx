@@ -1,7 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { MapSettingsContent } from "@/components/map-settings-content";
 import { useMapSettings } from "@/hooks/use-map-settings";
 
@@ -21,7 +22,7 @@ export function MapSettingsPanel({ onBack }: MapSettingsPanelProps) {
           onClick={onBack}
           data-testid="button-close-settings"
         >
-          <X className="h-4 w-4" />
+          <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
         </Button>
         <h1 className="font-semibold text-sm flex-1 font-brand">Map Settings</h1>
       </div>

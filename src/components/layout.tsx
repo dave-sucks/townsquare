@@ -32,7 +32,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Users, List, LogOut, ChevronDown, Activity, MessageCircle, MapPin, Sparkles, BadgeCheck, CreditCard, Bell, Moon, Sun } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { UserMultiple02Icon, LeftToRightListBulletIcon, Logout02Icon, ArrowDown01Icon, Activity01Icon, Comment01Icon, Location01Icon, SparklesIcon, CheckmarkBadge01Icon, CreditCardIcon, Notification02Icon, Moon02Icon, Sun03Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 
@@ -46,11 +47,11 @@ interface User {
 }
 
 const NAV_ITEMS = [
-  { href: "/", label: "Map", icon: MapPin },
-  { href: "/chat", label: "Chat", icon: MessageCircle },
-  { href: "/home", label: "Activity", icon: Activity },
-  { href: "/people", label: "People", icon: Users },
-  { href: "/lists", label: "Lists", icon: List },
+  { href: "/", label: "Map", icon: Location01Icon },
+  { href: "/chat", label: "Chat", icon: Comment01Icon },
+  { href: "/home", label: "Activity", icon: Activity01Icon },
+  { href: "/people", label: "People", icon: UserMultiple02Icon },
+  { href: "/lists", label: "Lists", icon: LeftToRightListBulletIcon },
 ] as const;
 
 export function AppShell({
@@ -88,7 +89,7 @@ function ThemeToggleButton() {
   if (!mounted) {
     return (
       <Button variant="ghost" size="icon" disabled>
-        <Sun className="h-4 w-4" />
+        <HugeiconsIcon icon={Sun03Icon} className="h-4 w-4" />
       </Button>
     );
   }
@@ -101,9 +102,9 @@ function ThemeToggleButton() {
       data-testid="button-theme-toggle"
     >
       {theme === "dark" ? (
-        <Sun className="h-4 w-4" />
+        <HugeiconsIcon icon={Sun03Icon} className="h-4 w-4" />
       ) : (
-        <Moon className="h-4 w-4" />
+        <HugeiconsIcon icon={Moon02Icon} className="h-4 w-4" />
       )}
     </Button>
   );
@@ -148,7 +149,7 @@ function SidebarNav({ user }: { user: User | null }) {
                       className={cn(!isActive && "opacity-60")}
                     >
                       <Link href={item.href} data-testid={`nav-${item.label.toLowerCase()}`}>
-                        <item.icon className="size-4" />
+                        <HugeiconsIcon icon={item.icon} className="size-4" />
                         <span>{item.label}</span>
                       </Link>
                     </SidebarMenuButton>
@@ -184,7 +185,7 @@ function SidebarNav({ user }: { user: User | null }) {
                       <span className="truncate font-semibold">{userName}</span>
                       <span className="truncate text-xs text-muted-foreground">{userEmail}</span>
                     </div>
-                    <ChevronDown className="ml-auto size-4 group-data-[collapsible=icon]:hidden opacity-50" />
+                    <HugeiconsIcon icon={ArrowDown01Icon} className="ml-auto size-4 group-data-[collapsible=icon]:hidden opacity-50" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
@@ -211,7 +212,7 @@ function SidebarNav({ user }: { user: User | null }) {
                   <DropdownMenuGroup>
                     <DropdownMenuItem asChild>
                       <Link href="/upgrade" className="flex items-center gap-2 w-full">
-                        <Sparkles className="size-4" />
+                        <HugeiconsIcon icon={SparklesIcon} className="size-4" />
                         Upgrade to Pro
                       </Link>
                     </DropdownMenuItem>
@@ -220,19 +221,19 @@ function SidebarNav({ user }: { user: User | null }) {
                   <DropdownMenuGroup>
                     <DropdownMenuItem asChild>
                       <Link href={`/u/${user.username || user.id}`} className="flex items-center gap-2 w-full" data-testid="link-my-profile">
-                        <BadgeCheck className="size-4" />
+                        <HugeiconsIcon icon={CheckmarkBadge01Icon} className="size-4" />
                         Account
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/billing" className="flex items-center gap-2 w-full">
-                        <CreditCard className="size-4" />
+                        <HugeiconsIcon icon={CreditCardIcon} className="size-4" />
                         Billing
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/notifications" className="flex items-center gap-2 w-full">
-                        <Bell className="size-4" />
+                        <HugeiconsIcon icon={Notification02Icon} className="size-4" />
                         Notifications
                       </Link>
                     </DropdownMenuItem>
@@ -240,7 +241,7 @@ function SidebarNav({ user }: { user: User | null }) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <a href="/api/logout" className="flex items-center gap-2 w-full" data-testid="button-logout">
-                      <LogOut className="size-4" />
+                      <HugeiconsIcon icon={Logout02Icon} className="size-4" />
                       Log out
                     </a>
                   </DropdownMenuItem>

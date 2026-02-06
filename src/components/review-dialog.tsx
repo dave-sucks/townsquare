@@ -13,7 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
-import { Star, Upload, X, Loader2 } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { StarIcon, Upload04Icon, Cancel01Icon, Loading03Icon } from "@hugeicons/core-free-icons";
 
 const reviewSchema = z.object({
   rating: z.number().int().min(0).max(10),
@@ -216,7 +217,7 @@ export function ReviewDialog({
           <div className="space-y-2">
             <Label htmlFor="rating">Rating: {rating}/10</Label>
             <div className="flex items-center gap-2">
-              <Star className="h-4 w-4 text-yellow-500" />
+              <HugeiconsIcon icon={StarIcon} className="h-4 w-4 text-yellow-500" />
               <Slider
                 id="rating"
                 min={0}
@@ -270,7 +271,7 @@ export function ReviewDialog({
                     onClick={() => removeUploadedPhoto(url)}
                     data-testid={`button-remove-photo-${url}`}
                   >
-                    <X className="h-3 w-3" />
+                    <HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
                   </Button>
                 </div>
               ))}
@@ -303,9 +304,9 @@ export function ReviewDialog({
                 data-testid="button-upload-photo"
               >
                 {isUploading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <HugeiconsIcon icon={Loading03Icon} className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <Upload className="mr-2 h-4 w-4" />
+                  <HugeiconsIcon icon={Upload04Icon} className="mr-2 h-4 w-4" />
                 )}
                 {isUploading ? "Uploading..." : "Upload Photo"}
               </Button>
@@ -323,7 +324,7 @@ export function ReviewDialog({
             </Button>
             <Button type="submit" disabled={isPending} data-testid="button-submit-review">
               {isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <HugeiconsIcon icon={Loading03Icon} className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
               {isEditing ? "Update Review" : "Submit Review"}
             </Button>

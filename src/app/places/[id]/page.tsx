@@ -7,18 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { 
-  MapPin, 
-  Star, 
-  Plus,
-  Utensils,
-  BadgeCheck,
-  List as ListIcon,
-  ChevronRight,
-  Edit,
-  Trash2,
-  ExternalLink,
-} from "lucide-react";
+  Location01Icon,
+  StarIcon,
+  CheckmarkBadge01Icon,
+  LeftToRightListBulletIcon,
+  ArrowRight01Icon,
+  PencilEdit01Icon,
+  Delete02Icon,
+} from "@hugeicons/core-free-icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { queryClient, apiRequest } from "@/lib/query-client";
@@ -185,7 +183,7 @@ function ListRowCard({ list }: { list: ListData }) {
       data-testid={`list-row-${list.id}`}
     >
       <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0">
-        <ListIcon className="h-5 w-5 text-muted-foreground" />
+        <HugeiconsIcon icon={LeftToRightListBulletIcon} className="h-5 w-5 text-muted-foreground" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{list.name}</p>
@@ -193,7 +191,7 @@ function ListRowCard({ list }: { list: ListData }) {
           {list._count?.listPlaces || 0} places
         </p>
       </div>
-      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+      <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4 text-muted-foreground shrink-0" />
     </Link>
   );
 }
@@ -228,7 +226,7 @@ function ReviewCard({ review, isOwn, onEdit, onDelete, isDeleting }: {
                 {displayName}
               </Link>
               <Badge variant="secondary" className="shrink-0">
-                <Star className="mr-1 h-3 w-3 fill-current" />
+                <HugeiconsIcon icon={StarIcon} className="mr-1 h-3 w-3 fill-current" />
                 {review.rating}/10
               </Badge>
             </div>
@@ -240,7 +238,7 @@ function ReviewCard({ review, isOwn, onEdit, onDelete, isDeleting }: {
                   onClick={onEdit}
                   data-testid="button-edit-review"
                 >
-                  <Edit className="h-3 w-3" />
+                  <HugeiconsIcon icon={PencilEdit01Icon} className="h-3 w-3" />
                 </Button>
                 <Button
                   size="sm"
@@ -250,7 +248,7 @@ function ReviewCard({ review, isOwn, onEdit, onDelete, isDeleting }: {
                   className="hover:text-destructive"
                   data-testid="button-delete-review"
                 >
-                  <Trash2 className="h-3 w-3" />
+                  <HugeiconsIcon icon={Delete02Icon} className="h-3 w-3" />
                 </Button>
               </div>
             )}
@@ -342,7 +340,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
     return (
       <AppShell user={user}>
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
-          <MapPin className="mb-4 h-12 w-12 text-muted-foreground" />
+          <HugeiconsIcon icon={Location01Icon} className="mb-4 h-12 w-12 text-muted-foreground" />
           <p className="text-lg font-medium">Please sign in</p>
           <Button asChild className="mt-4">
             <Link href="/">Go to Home</Link>
@@ -370,7 +368,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
     return (
       <AppShell user={user}>
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
-          <MapPin className="mb-4 h-12 w-12 text-muted-foreground" />
+          <HugeiconsIcon icon={Location01Icon} className="mb-4 h-12 w-12 text-muted-foreground" />
           <p className="text-lg font-medium">Place not found</p>
           <Button asChild className="mt-4">
             <Link href="/">Go to Map</Link>
@@ -427,7 +425,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
           </div>
         ) : (
           <div className="w-full aspect-[16/9] max-h-[300px] bg-muted flex items-center justify-center rounded-lg mb-4">
-            <MapPin className="h-16 w-16 text-muted-foreground" />
+            <HugeiconsIcon icon={Location01Icon} className="h-16 w-16 text-muted-foreground" />
           </div>
         )}
         <div className="space-y-6">
@@ -448,7 +446,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                 {savedPlace?.hasBeen && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <BadgeCheck className="w-6 h-6 flex-shrink-0 fill-foreground text-background" />
+                      <HugeiconsIcon icon={CheckmarkBadge01Icon} className="w-6 h-6 flex-shrink-0 fill-foreground text-background" />
                     </TooltipTrigger>
                     <TooltipContent side="top">
                       {savedPlace.rating ? RATING_LABELS[savedPlace.rating] : "Been here"}
@@ -537,7 +535,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                         const feedTab = document.querySelector('[data-testid="tab-feed"]') as HTMLButtonElement;
                         feedTab?.click();
                       }}>
-                        See all <ChevronRight className="h-3 w-3 ml-1" />
+                        See all <HugeiconsIcon icon={ArrowRight01Icon} className="h-3 w-3 ml-1" />
                       </Link>
                     </Button>
                   </div>

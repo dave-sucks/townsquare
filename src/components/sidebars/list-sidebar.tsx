@@ -4,7 +4,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Lock, Trash2, Share2, Check } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { LockIcon, Delete02Icon, Share01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
 import { toast } from "sonner";
 import { useState } from "react";
 import type { SidebarInjectedProps } from "@/components/map/map-layout";
@@ -139,11 +140,11 @@ export function ListSidebar({
             onClick={handleShare}
             data-testid="button-share-list"
           >
-            {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+            {copied ? <HugeiconsIcon icon={Tick01Icon} className="h-4 w-4" /> : <HugeiconsIcon icon={Share01Icon} className="h-4 w-4" />}
           </Button>
         )}
         {list.visibility === "PRIVATE" && (
-          <Lock className="h-4 w-4 text-muted-foreground" />
+          <HugeiconsIcon icon={LockIcon} className="h-4 w-4 text-muted-foreground" />
         )}
       </div>
 
