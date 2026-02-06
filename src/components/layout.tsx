@@ -117,20 +117,14 @@ function SidebarNav({ user }: { user: User | null }) {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild className="w-fit">
-              <Link href="/">
-                <img 
-                  src="/user-logo.svg" 
-                  alt="TWN" 
-                  className="size-8 shrink-0 object-contain"
-                />
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarHeader className="p-3">
+        <Link href="/" data-testid="nav-logo">
+          <img 
+            src="/user-logo.svg" 
+            alt="TWN" 
+            className="size-10 shrink-0 object-contain"
+          />
+        </Link>
       </SidebarHeader>
 
       <SidebarContent>
