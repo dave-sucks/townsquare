@@ -32,6 +32,7 @@ interface BottomSheetProps {
   header?: ReactNode;
   defaultSnapPoint?: SnapPoint;
   onSnapPointChange?: (snapPoint: SnapPoint) => void;
+  requestedSnapPoint?: SnapPoint | null;
 }
 
 /**
@@ -49,6 +50,7 @@ export function BottomSheet({
   header,
   defaultSnapPoint = "mid",
   onSnapPointChange,
+  requestedSnapPoint,
 }: BottomSheetProps) {
   const [snapPoint, setSnapPoint] = useState<SnapPoint>(defaultSnapPoint);
   const [isDragging, setIsDragging] = useState(false);
@@ -175,6 +177,17 @@ export function BottomSheet({
     },
     [getSnapHeight, sheetHeight, onSnapPointChange]
   );
+
+  // Respond to external snap point requests (e.g. when a place is selected)
+  useEffect(() => {
+    if (requestedSnapPoint && viewportHeight > 0) {
+      const currentHeight = sheetHeight.get();
+      const targetHeight = getSnapHeight(requestedSnapPoint);
+      if (currentHeight < targetHeight) {
+        snapTo(requestedSnapPoint);
+      }
+    }
+  }, [requestedSnapPoint, viewportHeight, getSnapHeight, sheetHeight, snapTo]);
 
   // Check if content is scrolled to top
   const isContentAtTop = useCallback(() => {

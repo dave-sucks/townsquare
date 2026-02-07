@@ -101,8 +101,8 @@ export function FeedPost({ activity }: FeedPostProps) {
   // For posts with social embeds, use different layout
   if (hasSocialPost) {
     return (
-      <article className="bg-card" data-testid={`feed-post-${activity.id}`}>
-        {/* Full-width Instagram embed - no padding */}
+      <article className="bg-card border-0" data-testid={`feed-post-${activity.id}`}>
+        {/* Full-width Instagram embed - no padding, no extra border */}
         <SocialPostCard
           author={activity.socialPost!.author}
           authorImage={activity.socialPost!.authorImage}

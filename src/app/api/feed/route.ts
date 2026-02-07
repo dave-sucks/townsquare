@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const cursor = searchParams.get("cursor");
     const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
+    const filter = searchParams.get("filter") || "following";
 
     const following = await prisma.follow.findMany({
       where: { followerId: user.id },
@@ -19,11 +20,18 @@ export async function GET(request: NextRequest) {
     });
 
     const followingIds = following.map((f) => f.followingId);
-    const actorIds = [user.id, ...followingIds];
+
+    let actorFilter: any;
+    if (filter === "all") {
+      actorFilter = {};
+    } else {
+      const actorIds = [user.id, ...followingIds];
+      actorFilter = { actorId: { in: actorIds } };
+    }
 
     const activities = await prisma.activity.findMany({
       where: {
-        actorId: { in: actorIds },
+        ...actorFilter,
         type: "REVIEW_CREATED",
       },
       include: {
@@ -134,6 +142,7 @@ export async function GET(request: NextRequest) {
       activities: filteredItems,
       nextCursor,
       hasMore,
+      hasFollowing: followingIds.length > 0,
     });
   } catch (error: any) {
     console.error("Get feed error:", error);

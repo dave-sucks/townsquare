@@ -134,10 +134,11 @@ export default function PeoplePage() {
               data-testid="input-search-users"
             />
           </div>
-          <div className="flex rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg border">
+          <div className="flex rounded-md border overflow-hidden">
             <Button
               variant={viewMode === "grid" ? "secondary" : "ghost"}
               size="icon"
+              className="rounded-none"
               onClick={() => setViewMode("grid")}
               data-testid="button-view-grid"
             >
@@ -146,6 +147,7 @@ export default function PeoplePage() {
             <Button
               variant={viewMode === "list" ? "secondary" : "ghost"}
               size="icon"
+              className="rounded-none"
               onClick={() => setViewMode("list")}
               data-testid="button-view-list"
             >

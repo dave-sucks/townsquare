@@ -94,6 +94,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
   const [streamingPlaces, setStreamingPlaces] = useState<PlaceResult[]>([]);
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const mapRef = useRef<PlaceMapHandle>(null);
@@ -117,6 +118,14 @@ export function ChatDashboard({ user }: { user: UserData }) {
       setLocalMessages(activeConversationData.conversation.messages);
     }
   }, [activeConversationData]);
+
+  useEffect(() => {
+    if (pendingMessage && activeConversationId && !isStreaming) {
+      const msg = pendingMessage;
+      setPendingMessage(null);
+      sendMessage(msg);
+    }
+  }, [activeConversationId, pendingMessage]);
 
   const allPlacesFromChat = useMemo(() => {
     const allPlaces: PlaceResult[] = [];
@@ -191,13 +200,14 @@ export function ChatDashboard({ user }: { user: UserData }) {
     onError: () => toast.error("Failed to delete conversation"),
   });
 
-  const sendMessage = async () => {
-    if (!inputValue.trim() || !activeConversationId || isStreaming) return;
+  const sendMessage = async (overrideContent?: string) => {
+    const content = overrideContent || inputValue.trim();
+    if (!content || !activeConversationId || isStreaming) return;
 
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       role: "user",
-      content: inputValue.trim(),
+      content,
       createdAt: new Date().toISOString(),
     };
 
@@ -284,6 +294,9 @@ export function ChatDashboard({ user }: { user: UserData }) {
   };
 
   const startNewChat = () => {
+    if (inputValue.trim() && !activeConversationId) {
+      setPendingMessage(inputValue.trim());
+    }
     createConversationMutation.mutate();
   };
 
@@ -340,21 +353,23 @@ export function ChatDashboard({ user }: { user: UserData }) {
       </div>
 
       {!activeConversationId ? (
-        <div className="flex-1 flex flex-col">
-          <ScrollArea className="flex-1">
-            <div className="p-2 space-y-1">
-              {conversationsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <HugeiconsIcon icon={Loading03Icon} className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : conversations.length === 0 ? (
-                <div className="text-center py-8 px-4">
-                  <HugeiconsIcon icon={SparklesIcon} className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">No conversations yet</p>
-                  <p className="text-xs text-muted-foreground mt-1">Start a new chat to discover places</p>
-                </div>
-              ) : (
-                conversations.map((conv) => (
+        <div className="flex-1 flex flex-col min-h-0">
+          {conversationsLoading ? (
+            <div className="flex-1 flex items-center justify-center">
+              <HugeiconsIcon icon={Loading03Icon} className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : conversations.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center px-4 gap-3">
+              <HugeiconsIcon icon={SparklesIcon} className="h-8 w-8 text-muted-foreground" />
+              <div className="text-center">
+                <p className="text-sm font-medium">Discover places with AI</p>
+                <p className="text-xs text-muted-foreground mt-1">Ask for recommendations, hidden gems, or plan your next outing</p>
+              </div>
+            </div>
+          ) : (
+            <ScrollArea className="flex-1">
+              <div className="p-2 space-y-1">
+                {conversations.map((conv) => (
                   <div
                     key={conv.id}
                     onClick={() => selectConversation(conv.id)}
@@ -380,10 +395,41 @@ export function ChatDashboard({ user }: { user: UserData }) {
                       <HugeiconsIcon icon={Delete02Icon} className="h-3 w-3" />
                     </Button>
                   </div>
-                ))
-              )}
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+
+          <div className="p-4 pt-2">
+            <div className="relative group">
+              <Textarea
+                ref={!activeConversationId ? inputRef : undefined}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (inputValue.trim()) {
+                      startNewChat();
+                    }
+                  }
+                }}
+                placeholder="Ask about places..."
+                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-sm bg-background/80 backdrop-blur-md border shadow-xl rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
+                disabled={createConversationMutation.isPending}
+                data-testid="input-chat-message-home"
+              />
+              <Button
+                size="sm"
+                className="absolute right-2 bottom-2 h-8 w-8 rounded-xl shadow-sm transition-transform active:scale-95"
+                onClick={startNewChat}
+                disabled={!inputValue.trim() || createConversationMutation.isPending}
+                data-testid="button-send-message-home"
+              >
+                <HugeiconsIcon icon={SentIcon} className="h-4 w-4" />
+              </Button>
             </div>
-          </ScrollArea>
+          </div>
         </div>
       ) : (
         <div className="flex-1 flex flex-col min-h-0">

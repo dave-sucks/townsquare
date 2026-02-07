@@ -47,8 +47,8 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       setError("Username must be at least 3 characters");
       return;
     }
-    if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) {
-      setError("Letters, numbers, and underscores only");
+    if (!/^[a-z0-9_]+$/.test(username.trim())) {
+      setError("Lowercase letters, numbers, and underscores only");
       return;
     }
     if (!selectedEmoji) {
@@ -142,12 +142,17 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               placeholder="Create Username"
               value={username}
               onChange={(e) => {
-                setUsername(e.target.value);
+                const filtered = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "");
+                setUsername(filtered);
                 setError(null);
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSubmit();
               }}
+              autoCapitalize="none"
+              autoCorrect="off"
+              autoComplete="off"
+              inputMode="email"
               className="text-center text-base bg-white/5 border-white/10 text-white placeholder:text-white/40 focus-visible:ring-white/30"
               maxLength={20}
               data-testid="input-username"

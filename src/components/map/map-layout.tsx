@@ -4,11 +4,13 @@ import {
   useRef,
   useCallback,
   useEffect,
+  useState,
   type ReactNode,
   type ReactElement,
   cloneElement,
   isValidElement,
 } from "react";
+import type { SnapPoint } from "@/components/bottom-sheet";
 import { PlaceMap, type PlaceMapHandle } from "@/components/place-map";
 import { BottomSheet } from "@/components/bottom-sheet";
 import { AppShell } from "@/components/layout";
@@ -75,22 +77,39 @@ export function MapLayout({
 }: MapLayoutProps) {
   const placeRowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const mapRef = useRef<PlaceMapHandle>(null);
+  const [sheetSnapRequest, setSheetSnapRequest] = useState<SnapPoint | null>(null);
+
+  const snapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerSnapRequest = useCallback((point: SnapPoint) => {
+    if (snapTimerRef.current) clearTimeout(snapTimerRef.current);
+    setSheetSnapRequest(point);
+    snapTimerRef.current = setTimeout(() => setSheetSnapRequest(null), 500);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (snapTimerRef.current) clearTimeout(snapTimerRef.current);
+    };
+  }, []);
 
   const handleMarkerClick = useCallback((savedPlaceId: string) => {
     onPlaceSelect(savedPlaceId);
+    triggerSnapRequest("mid");
     const rowElement = placeRowRefs.current.get(savedPlaceId);
     if (rowElement) {
       rowElement.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-  }, [onPlaceSelect]);
+  }, [onPlaceSelect, triggerSnapRequest]);
 
   const handleSidebarPlaceSelect = useCallback((savedPlaceId: string) => {
     onPlaceSelect(savedPlaceId);
+    triggerSnapRequest("mid");
     const selectedPlace = places.find(p => p.id === savedPlaceId);
     if (selectedPlace && mapRef.current) {
       mapRef.current.panTo(selectedPlace.place.lat, selectedPlace.place.lng);
     }
-  }, [places, onPlaceSelect]);
+  }, [places, onPlaceSelect, triggerSnapRequest]);
 
   useEffect(() => {
     if (selectedPlaceId) {
@@ -133,7 +152,7 @@ export function MapLayout({
         </div>
 
         <div className="md:hidden">
-          <BottomSheet defaultSnapPoint="mid">
+          <BottomSheet defaultSnapPoint="mid" requestedSnapPoint={sheetSnapRequest}>
             {renderChildrenWithProps(children)}
           </BottomSheet>
         </div>
