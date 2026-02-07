@@ -20,6 +20,7 @@ import {
   SidebarInset,
   SidebarRail,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
@@ -69,7 +70,7 @@ export function AppShell({
         <SidebarInset className="flex flex-col flex-1 overflow-hidden min-h-[100dvh]">
           {children}
         </SidebarInset>
-        <MobileNav user={user} />
+        <MobileNav />
       </div>
     </SidebarProvider>
   );
@@ -114,8 +115,15 @@ function ThemeToggleButton() {
 
 function SidebarNav({ user }: { user: User | null }) {
   const pathname = usePathname();
+  const { setOpenMobile, isMobile } = useSidebar();
   const userName = user?.username || user?.firstName || user?.email?.split("@")[0] || "User";
   const userEmail = user?.email || "";
+
+  React.useEffect(() => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  }, [pathname, isMobile, setOpenMobile]);
 
   return (
     <Sidebar collapsible="icon">
@@ -161,11 +169,11 @@ function SidebarNav({ user }: { user: User | null }) {
                       asChild
                       isActive={isActive}
                       tooltip={item.label}
-                      className={cn()}
+                      size="lg"
                     >
                       <Link href={item.href} data-testid={`nav-${item.label.toLowerCase()}`}>
-                        <HugeiconsIcon icon={item.icon} className="size-4" />
-                        <span>{item.label}</span>
+                        <HugeiconsIcon icon={item.icon} className="size-5" />
+                        <span className="text-base">{item.label}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

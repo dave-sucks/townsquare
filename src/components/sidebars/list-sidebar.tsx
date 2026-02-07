@@ -110,7 +110,7 @@ export function ListSidebar({
     return (
       <div className="h-full flex flex-col bg-background">
         <div className="flex items-center gap-2 p-3 border-b">
-          <SidebarTrigger data-testid="button-sidebar-toggle" />
+          <SidebarTrigger className="hidden md:flex" data-testid="button-sidebar-toggle" />
           <Skeleton className="h-4 w-20" />
         </div>
         <div className="p-3 border-b space-y-1">
@@ -131,7 +131,7 @@ export function ListSidebar({
   return (
     <div className="h-full flex flex-col bg-background" data-testid="list-sidebar">
       <div className="flex items-center gap-2 p-3 border-b">
-        <SidebarTrigger data-testid="button-sidebar-toggle" />
+        <SidebarTrigger className="hidden md:flex" data-testid="button-sidebar-toggle" />
         <span className="font-semibold text-sm flex-1 font-brand">{placeCount} {placeCount === 1 ? "place" : "places"}</span>
         {list.visibility === "PUBLIC" && (
           <Button

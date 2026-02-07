@@ -229,7 +229,7 @@ export function UserSidebar({
     return (
       <div className="h-full flex flex-col bg-background">
         <div className="flex items-center gap-2 p-3 border-b">
-          <SidebarTrigger data-testid="button-sidebar-toggle" />
+          <SidebarTrigger className="hidden md:flex" data-testid="button-sidebar-toggle" />
           <Skeleton className="h-4 w-24 flex-1" />
         </div>
         <div className="flex items-center gap-3 p-3 border-b">
@@ -250,7 +250,7 @@ export function UserSidebar({
   return (
     <div className="h-full flex flex-col bg-background" data-testid="user-sidebar">
       <div className="flex items-center gap-2 p-3 border-b">
-        <SidebarTrigger data-testid="button-sidebar-toggle" />
+        <SidebarTrigger className="hidden md:flex" data-testid="button-sidebar-toggle" />
         <span className="font-semibold text-sm flex-1 truncate font-brand">{displayName}</span>
         {!isOwnProfile && (
           <Button

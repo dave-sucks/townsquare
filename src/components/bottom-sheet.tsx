@@ -11,12 +11,12 @@ import {
 } from "react";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { MOBILE_NAV_HEIGHT } from "@/components/mobile-nav";
 
-// Snap points as percentages of viewport height (from bottom)
 const SNAP_POINTS = {
-  COLLAPSED: 56, // Just the grabber visible (in pixels)
-  MID: 0.3, // 30% of viewport
-  EXPANDED: 0.9, // 90% of viewport
+  COLLAPSED: 56,
+  MID: 0.3,
+  EXPANDED: 0.9,
 };
 
 // Velocity threshold for flicking to next snap point (pixels per second)
@@ -70,19 +70,20 @@ export function BottomSheet({
   // Track if we've determined this touch should be scrolling (not dragging)
   const isScrolling = useRef(false);
 
-  // Calculate snap point heights in pixels
+  const availableHeight = Math.max(viewportHeight - MOBILE_NAV_HEIGHT, SNAP_POINTS.COLLAPSED * 2);
+
   const getSnapHeight = useCallback(
     (point: SnapPoint): number => {
       switch (point) {
         case "collapsed":
           return SNAP_POINTS.COLLAPSED;
         case "mid":
-          return viewportHeight * SNAP_POINTS.MID;
+          return availableHeight * SNAP_POINTS.MID;
         case "expanded":
-          return viewportHeight * SNAP_POINTS.EXPANDED;
+          return availableHeight * SNAP_POINTS.EXPANDED;
       }
     },
-    [viewportHeight]
+    [availableHeight]
   );
 
   // Motion value for sheet height (y position from bottom)
@@ -247,7 +248,7 @@ export function BottomSheet({
         // Calculate new height (dragging up = increasing height)
         const newHeight = Math.max(
           SNAP_POINTS.COLLAPSED,
-          Math.min(viewportHeight * SNAP_POINTS.EXPANDED, dragStartSheetY.current - deltaFromStart)
+          Math.min(availableHeight * SNAP_POINTS.EXPANDED, dragStartSheetY.current - deltaFromStart)
         );
         sheetHeight.set(newHeight);
         return true; // Indicate we handled the event
@@ -397,10 +398,11 @@ export function BottomSheet({
       {/* Bottom sheet container */}
       <motion.div
         ref={sheetRef}
-        className="fixed left-0 right-0 bottom-0 z-50 md:hidden bg-background rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] flex flex-col"
+        className="fixed left-0 right-0 z-50 md:hidden bg-background rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] flex flex-col"
         style={{
           height: sheetHeight,
-          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+          bottom: `${MOBILE_NAV_HEIGHT}px`,
+          paddingBottom: 0,
         }}
         onPointerDown={(e) => e.stopPropagation()}
         data-testid="mobile-bottom-sheet"
