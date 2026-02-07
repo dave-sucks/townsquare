@@ -66,7 +66,7 @@ export function AppShell({
     <SidebarProvider>
       <div className="flex h-dvh w-full">
         <SidebarNav user={user} />
-        <SidebarInset className="flex flex-col flex-1 overflow-hidden min-h-[100dvh]">
+        <SidebarInset className="flex flex-col flex-1 overflow-hidden min-h-[100dvh] pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
           {children}
         </SidebarInset>
         <MobileNav user={user} />

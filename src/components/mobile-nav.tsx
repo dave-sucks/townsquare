@@ -83,7 +83,7 @@ export function MobileNav({ user }: { user: User | null }) {
           data-testid="mobile-menu-backdrop"
         >
           <div
-            className="absolute inset-0 flex flex-col items-end justify-end p-6 pb-24 gap-4"
+            className="absolute inset-0 flex flex-col items-end justify-end p-6 pb-20 gap-4"
             onClick={(e) => e.stopPropagation()}
           >
             {user && (
@@ -182,12 +182,10 @@ export function MobileNav({ user }: { user: User | null }) {
       )}
 
       <div
-        className="fixed bottom-5 inset-x-4 z-[99] grid grid-cols-[1fr_auto_1fr] items-center md:hidden"
+        className="fixed bottom-0 left-0 right-0 z-[99] md:hidden border-t border-border/40 bg-background/80 backdrop-blur-2xl pb-[env(safe-area-inset-bottom,0px)]"
         data-testid="mobile-bottom-nav"
       >
-        <div />
-
-        <nav className="flex items-center gap-1.5 bg-white/60 dark:bg-black/50 backdrop-blur-2xl border border-white/30 dark:border-white/10 rounded-full px-2 py-1.5 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+        <nav className="flex items-center justify-around px-2 py-1.5">
           {BOTTOM_NAV_ITEMS.map((item) => {
             const isActive =
               pathname === item.href ||
@@ -197,33 +195,33 @@ export function MobileNav({ user }: { user: User | null }) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center justify-center w-11 h-11 rounded-full transition-colors",
+                  "flex flex-col items-center justify-center gap-0.5 min-w-[3rem] py-1 rounded-lg transition-colors",
                   isActive
-                    ? "bg-white dark:bg-neutral-900 text-foreground shadow-sm"
+                    ? "text-foreground"
                     : "text-muted-foreground"
                 )}
                 data-testid={`mobile-nav-${item.label.toLowerCase()}`}
               >
                 <HugeiconsIcon icon={item.icon} className="size-5" />
+                <span className="text-[10px] font-medium">{item.label}</span>
               </Link>
             );
           })}
-        </nav>
 
-        <div className="flex justify-end">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className={cn(
-              "flex items-center justify-center w-11 h-11 rounded-full backdrop-blur-2xl border transition-colors shadow-[0_4px_30px_rgba(0,0,0,0.1)]",
+              "flex flex-col items-center justify-center gap-0.5 min-w-[3rem] py-1 rounded-lg transition-colors",
               menuOpen
-                ? "bg-white dark:bg-neutral-900 text-foreground border-white/30 dark:border-white/10"
-                : "bg-white/60 dark:bg-black/50 text-muted-foreground border-white/30 dark:border-white/10"
+                ? "text-foreground"
+                : "text-muted-foreground"
             )}
             data-testid="mobile-nav-menu"
           >
             <HugeiconsIcon icon={menuOpen ? Cancel01Icon : Menu01Icon} className="size-5" />
+            <span className="text-[10px] font-medium">Menu</span>
           </button>
-        </div>
+        </nav>
       </div>
     </>
   );
