@@ -195,7 +195,7 @@ export function MobileNav({ user }: { user: User | null }) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 min-w-[3rem] py-1 rounded-lg transition-colors",
+                  "flex items-center justify-center min-w-[2.5rem] p-2 rounded-lg transition-colors",
                   isActive
                     ? "text-foreground"
                     : "text-muted-foreground"
@@ -203,7 +203,6 @@ export function MobileNav({ user }: { user: User | null }) {
                 data-testid={`mobile-nav-${item.label.toLowerCase()}`}
               >
                 <HugeiconsIcon icon={item.icon} className="size-5" />
-                <span className="text-[10px] font-medium">{item.label}</span>
               </Link>
             );
           })}
@@ -211,7 +210,7 @@ export function MobileNav({ user }: { user: User | null }) {
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className={cn(
-              "flex flex-col items-center justify-center gap-0.5 min-w-[3rem] py-1 rounded-lg transition-colors",
+              "flex items-center justify-center min-w-[2.5rem] p-2 rounded-lg transition-colors",
               menuOpen
                 ? "text-foreground"
                 : "text-muted-foreground"
@@ -219,7 +218,6 @@ export function MobileNav({ user }: { user: User | null }) {
             data-testid="mobile-nav-menu"
           >
             <HugeiconsIcon icon={menuOpen ? Cancel01Icon : Menu01Icon} className="size-5" />
-            <span className="text-[10px] font-medium">Menu</span>
           </button>
         </nav>
       </div>
