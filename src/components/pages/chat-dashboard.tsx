@@ -95,6 +95,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const isStreamingRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const mapRef = useRef<PlaceMapHandle>(null);
@@ -114,10 +115,10 @@ export function ChatDashboard({ user }: { user: UserData }) {
   });
 
   useEffect(() => {
-    if (activeConversationData?.conversation?.messages && !isStreaming) {
+    if (activeConversationData?.conversation?.messages && !isStreamingRef.current) {
       setLocalMessages(activeConversationData.conversation.messages);
     }
-  }, [activeConversationData, isStreaming]);
+  }, [activeConversationData]);
 
   useEffect(() => {
     if (pendingMessage && activeConversationId && !isStreaming) {
@@ -213,6 +214,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
 
     setLocalMessages(prev => [...prev, userMessage]);
     setInputValue("");
+    isStreamingRef.current = true;
     setIsStreaming(true);
     setStreamingContent("");
     setStreamingPlaces([]);
@@ -250,7 +252,9 @@ export function ChatDashboard({ user }: { user: UserData }) {
               toast.error("Failed to get response. Please try again.");
               setStreamingContent("");
               setStreamingPlaces([]);
+              isStreamingRef.current = false;
               setIsStreaming(false);
+              queryClient.invalidateQueries({ queryKey: ["conversation", activeConversationId] });
               return;
             }
             if (data.places !== undefined) {
@@ -273,6 +277,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
               setStreamingContent("");
               setStreamingPlaces([]);
               queryClient.invalidateQueries({ queryKey: ["conversations"] });
+              queryClient.invalidateQueries({ queryKey: ["conversation", activeConversationId] });
             }
           } catch {
           }
@@ -282,6 +287,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
       console.error("Send message error:", error);
       toast.error("Failed to send message. Please try again.");
     } finally {
+      isStreamingRef.current = false;
       setIsStreaming(false);
     }
   };
