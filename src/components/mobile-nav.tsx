@@ -77,7 +77,7 @@ export function MobileNav({ user }: { user: User | null }) {
     <>
       {menuOpen && (
         <div
-          className="fixed inset-0 z-[98] bg-background/70 backdrop-blur-xl md:hidden"
+          className="fixed inset-0 z-[39] bg-background/70 backdrop-blur-xl md:hidden"
           onClick={() => setMenuOpen(false)}
           data-testid="mobile-menu-backdrop"
         >
@@ -167,7 +167,7 @@ export function MobileNav({ user }: { user: User | null }) {
       )}
 
       <div
-        className="fixed bottom-0 left-0 right-0 z-[99] md:hidden border-t border-border/40 bg-background/80 backdrop-blur-2xl pb-[env(safe-area-inset-bottom,0px)]"
+        className="fixed bottom-0 left-0 right-0 z-40 md:hidden border-t border-border/40 bg-background/80 backdrop-blur-2xl pb-[env(safe-area-inset-bottom,0px)]"
         data-testid="mobile-bottom-nav"
       >
         <nav className="grid grid-cols-[1fr_auto_1fr] items-center px-2 py-1.5">

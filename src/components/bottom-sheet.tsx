@@ -35,6 +35,7 @@ interface BottomSheetProps {
   defaultSnapPoint?: SnapPoint;
   onSnapPointChange?: (snapPoint: SnapPoint) => void;
   requestedSnapPoint?: SnapPoint | null;
+  expandOnInteraction?: boolean;
 }
 
 /**
@@ -53,6 +54,7 @@ export function BottomSheet({
   defaultSnapPoint = "mid",
   onSnapPointChange,
   requestedSnapPoint,
+  expandOnInteraction = true,
 }: BottomSheetProps) {
   const [snapPoint, setSnapPoint] = useState<SnapPoint>(defaultSnapPoint);
   const [isDragging, setIsDragging] = useState(false);
@@ -380,6 +382,26 @@ export function BottomSheet({
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDragging, handlePointerMove, handlePointerEnd]);
+
+  useEffect(() => {
+    if (!expandOnInteraction || !contentRef.current) return;
+
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT") {
+        if (snapPoint !== "expanded") {
+          snapTo("expanded");
+        }
+      }
+    };
+
+    const content = contentRef.current;
+    content.addEventListener("focusin", handleFocusIn);
+
+    return () => {
+      content.removeEventListener("focusin", handleFocusIn);
+    };
+  }, [expandOnInteraction, snapPoint, snapTo]);
 
   // Handle backdrop tap to snap to mid
   const handleBackdropClick = useCallback(() => {

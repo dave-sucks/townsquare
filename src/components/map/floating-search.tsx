@@ -13,6 +13,13 @@ import {
   DrawerContent,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { EmojiPickerPopover } from "@/components/shared/emoji-picker-popover";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -288,7 +295,7 @@ function SavePanelContent({
   isMobileDrawer?: boolean;
 }) {
   const [savedData, setSavedData] = useState<SavedData | null>(drawerPlace?.savedData || null);
-  const [showCreateInput, setShowCreateInput] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [optimisticLists, setOptimisticLists] = useState<string[]>([]);
 
@@ -296,7 +303,7 @@ function SavePanelContent({
     if (drawerPlace) {
       setSavedData(drawerPlace.savedData);
       setOptimisticLists([]);
-      setShowCreateInput(false);
+      setShowCreateDialog(false);
       setNewListName("");
     }
   }, [drawerPlace]);
@@ -385,7 +392,7 @@ function SavePanelContent({
     onSuccess: async (listId: string) => {
       await queryClient.invalidateQueries({ queryKey: ["lists"] });
       addToListMutation.mutate(listId);
-      setShowCreateInput(false);
+      setShowCreateDialog(false);
       setNewListName("");
     },
     onError: (error: Error) => {
@@ -528,61 +535,58 @@ function SavePanelContent({
             </div>
           )}
 
-          {showCreateInput ? (
-            <div className="space-y-2 pt-2 border-t">
-              <Input
-                placeholder="List name"
-                value={newListName}
-                onChange={(e) => setNewListName(e.target.value)}
-                onKeyDown={(e) => {
-                  e.stopPropagation();
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleCreateList();
-                  }
-                  if (e.key === "Escape") {
-                    setShowCreateInput(false);
-                    setNewListName("");
-                  }
-                }}
-                autoFocus
-                data-testid="save-panel-input-new-list"
-              />
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="flex-1"
-                  onClick={() => {
-                    setShowCreateInput(false);
-                    setNewListName("");
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  className="flex-1"
-                  onClick={handleCreateList}
-                  disabled={createListMutation.isPending || !newListName.trim()}
-                  data-testid="save-panel-button-create-list"
-                >
-                  Create
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <button
-              className="flex items-center gap-3 w-full text-left py-3 px-2 rounded-md hover-elevate text-muted-foreground transition-colors"
-              onClick={() => setShowCreateInput(true)}
-              data-testid="save-panel-button-new-list"
-            >
-              <HugeiconsIcon icon={PlusSignIcon} className="h-5 w-5" />
-              <span className="text-base font-medium">Create new list</span>
-            </button>
-          )}
+          <button
+            className="flex items-center gap-3 w-full text-left py-3 px-2 rounded-md hover-elevate text-muted-foreground transition-colors"
+            onClick={() => setShowCreateDialog(true)}
+            data-testid="save-panel-button-new-list"
+          >
+            <HugeiconsIcon icon={PlusSignIcon} className="h-5 w-5" />
+            <span className="text-base font-medium">Create new list</span>
+          </button>
         </div>
       </div>
+
+      <Dialog open={showCreateDialog} onOpenChange={(o) => { setShowCreateDialog(o); if (!o) setNewListName(""); }}>
+        <DialogContent className="z-[300]">
+          <DialogHeader>
+            <DialogTitle>Create new list</DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder="List name"
+            value={newListName}
+            onChange={(e) => setNewListName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleCreateList();
+              }
+            }}
+            autoFocus
+            style={{ fontSize: "16px" }}
+            data-testid="save-panel-input-new-list"
+          />
+          <DialogFooter className="flex-row gap-2">
+            <Button
+              variant="ghost"
+              className="flex-1 py-3 text-base"
+              onClick={() => {
+                setShowCreateDialog(false);
+                setNewListName("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="flex-1 py-3 text-base"
+              onClick={handleCreateList}
+              disabled={createListMutation.isPending || !newListName.trim()}
+              data-testid="save-panel-button-create-list"
+            >
+              {createListMutation.isPending ? "Creating..." : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

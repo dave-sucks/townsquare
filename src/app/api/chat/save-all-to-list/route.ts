@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createActivity } from "@/lib/activity";
+import { getDefaultEmoji } from "@/lib/default-emoji";
 
 interface PlaceData {
   googlePlaceId: string;
@@ -84,18 +85,20 @@ export async function POST(request: NextRequest) {
       });
 
       if (!savedPlace) {
+        const emoji = placeData.emoji || getDefaultEmoji(placeData.primaryType, placeData.types);
         savedPlace = await prisma.savedPlace.create({
           data: {
             userId: user.id,
             placeId: place.id,
             hasBeen: false,
-            emoji: placeData.emoji,
+            emoji,
           },
         });
-      } else if (placeData.emoji && !savedPlace.emoji) {
+      } else if (!savedPlace.emoji) {
+        const fallbackEmoji = placeData.emoji || getDefaultEmoji(placeData.primaryType, placeData.types);
         await prisma.savedPlace.update({
           where: { id: savedPlace.id },
-          data: { emoji: placeData.emoji },
+          data: { emoji: fallbackEmoji },
         });
       }
 

@@ -15,6 +15,13 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -82,11 +89,10 @@ export function SaveToListDropdown({
   className,
 }: SaveToListDropdownProps) {
   const [open, setOpen] = useState(false);
-  const [showCreateInput, setShowCreateInput] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [optimisticLists, setOptimisticLists] = useState<string[]>(listsContainingPlace);
 
-  // Sync optimistic state when server data changes
   useEffect(() => {
     setOptimisticLists(listsContainingPlace);
   }, [listsContainingPlace]);
@@ -126,7 +132,6 @@ export function SaveToListDropdown({
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       queryClient.invalidateQueries({ queryKey: ["place-detail"] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
-      toast.success("Saved!");
       onSaveSuccess?.();
     },
     onError: (error: Error) => {
@@ -164,7 +169,6 @@ export function SaveToListDropdown({
       });
     },
     onMutate: async (listId: string) => {
-      // Optimistic update - immediately add to list
       setOptimisticLists(prev => [...prev, listId]);
     },
     onSuccess: () => {
@@ -175,7 +179,6 @@ export function SaveToListDropdown({
       onSaveSuccess?.();
     },
     onError: (error: Error, listId: string) => {
-      // Rollback on error
       setOptimisticLists(prev => prev.filter(id => id !== listId));
       toast.error(error.message || "Failed to add to list");
     },
@@ -190,7 +193,6 @@ export function SaveToListDropdown({
       });
     },
     onMutate: async (listId: string) => {
-      // Optimistic update - immediately remove from list
       setOptimisticLists(prev => prev.filter(id => id !== listId));
     },
     onSuccess: () => {
@@ -201,7 +203,6 @@ export function SaveToListDropdown({
       onSaveSuccess?.();
     },
     onError: (error: Error, listId: string) => {
-      // Rollback on error
       setOptimisticLists(prev => [...prev, listId]);
       toast.error(error.message || "Failed to remove from list");
     },
@@ -218,7 +219,7 @@ export function SaveToListDropdown({
     onSuccess: async (listId: string) => {
       await queryClient.invalidateQueries({ queryKey: ["lists"] });
       addToListMutation.mutate(listId);
-      setShowCreateInput(false);
+      setShowCreateDialog(false);
       setNewListName("");
     },
     onError: (error: Error) => {
@@ -286,163 +287,124 @@ export function SaveToListDropdown({
   };
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant={variant}
-          size={size}
-          className={cn(className)}
-          onClick={(e) => {
-            if (!isSaved) {
-              e.preventDefault();
-              handleButtonClick();
-              setOpen(true);
-            }
-          }}
-          disabled={isPending}
-          data-testid="button-save-to-list"
-        >
-          {isPending ? (
-            <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
-          ) : isSaved ? (
-            <HugeiconsIcon icon={Bookmark01Icon} className="h-4 w-4 fill-current" />
-          ) : (
-            <HugeiconsIcon icon={Bookmark01Icon} className="h-4 w-4" />
-          )}
-          {showLabel && (
-            <span className="ml-1">{isSaved ? "Saved" : "Save"}</span>
-          )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>
-            <span className="flex items-center gap-1">
-              Been here?
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <HugeiconsIcon icon={InformationCircleIcon} className="h-3 w-3 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[200px]">
-                  Rate places you've been to help drive recommendations
-                </TooltipContent>
-              </Tooltip>
-            </span>
-          </DropdownMenuLabel>
-          <div className="px-2 pb-1">
-            <ToggleGroup
-              type="single"
-              value={hasBeen && currentRating ? String(currentRating) : ""}
-              onValueChange={(value) => {
-                if (value) {
-                  handleRatingSelect(Number(value));
-                } else if (hasBeen) {
-                  // Clicked same item to deselect - clear the rating
-                  updateSavedPlaceMutation.mutate({ hasBeen: false, rating: undefined });
-                }
-              }}
-              variant="outline"
-              className="w-full"
-            >
-              {RATING_OPTIONS.map((option) => (
-                <ToggleGroupItem
-                  key={option.value}
-                  value={String(option.value)}
-                  disabled={savePlaceMutation.isPending || updateSavedPlaceMutation.isPending}
-                  data-testid={`rating-button-${option.value}`}
-                  className="flex-1 gap-1"
-                >
-                  <span className="text-base">{option.emoji}</span>
-                  <span className="text-xs">{option.label}</span>
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
-        </DropdownMenuGroup>
-
-        <DropdownMenuSeparator />
-        
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>Lists</DropdownMenuLabel>
-          
-          {listsLoading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground px-1.5 py-1">
+    <>
+      <DropdownMenu open={open} onOpenChange={(o) => {
+        if (!isSaved && !o) return;
+        if (!isSaved) return;
+        setOpen(o);
+      }}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant={variant}
+            size={size}
+            className={cn(className)}
+            onClick={(e) => {
+              if (!isSaved) {
+                e.preventDefault();
+                e.stopPropagation();
+                handleButtonClick();
+              }
+            }}
+            disabled={isPending}
+            data-testid="button-save-to-list"
+          >
+            {isPending ? (
               <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
-              Loading...
-            </div>
-          ) : lists.length === 0 ? (
-            <div className="text-sm text-muted-foreground px-1.5 py-1">No lists yet</div>
-          ) : (
-            lists.map((list) => {
-              const isInList = optimisticLists.includes(list.id);
-              return (
-                <DropdownMenuItem
-                  key={list.id}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (isSaved) {
-                      handleListToggle(list.id);
-                    }
-                  }}
-                  disabled={!isSaved || addToListMutation.isPending || removeFromListMutation.isPending}
-                  data-testid={`list-checkbox-${list.id}`}
-                >
-                  <span className="flex-1 truncate">{list.name}</span>
-                  {isInList && <HugeiconsIcon icon={Tick01Icon} className="h-4 w-4 ml-auto" />}
-                </DropdownMenuItem>
-              );
-            })
-          )}
-
-          {showCreateInput ? (
-            <div className="px-2 py-1.5 space-y-2">
-              <Input
-                placeholder="List name"
-                value={newListName}
-                onChange={(e) => setNewListName(e.target.value)}
-                onKeyDown={(e) => {
-                  e.stopPropagation();
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleCreateList();
-                  }
-                  if (e.key === "Escape") {
-                    setShowCreateInput(false);
-                    setNewListName("");
+            ) : isSaved ? (
+              <HugeiconsIcon icon={Bookmark01Icon} className="h-4 w-4 fill-current" />
+            ) : (
+              <HugeiconsIcon icon={Bookmark01Icon} className="h-4 w-4" />
+            )}
+            {showLabel && (
+              <span className="ml-1">{isSaved ? "Saved" : "Save"}</span>
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" side="top" className="w-56 z-[200]">
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>
+              <span className="flex items-center gap-1">
+                Been here?
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HugeiconsIcon icon={InformationCircleIcon} className="h-3 w-3 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[200px]">
+                    Rate places you've been to help drive recommendations
+                  </TooltipContent>
+                </Tooltip>
+              </span>
+            </DropdownMenuLabel>
+            <div className="px-2 pb-1">
+              <ToggleGroup
+                type="single"
+                value={hasBeen && currentRating ? String(currentRating) : ""}
+                onValueChange={(value) => {
+                  if (value) {
+                    handleRatingSelect(Number(value));
+                  } else if (hasBeen) {
+                    updateSavedPlaceMutation.mutate({ hasBeen: false, rating: undefined });
                   }
                 }}
-                autoFocus
-                data-testid="input-new-list-name"
-              />
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="flex-1"
-                  onClick={() => {
-                    setShowCreateInput(false);
-                    setNewListName("");
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  className="flex-1"
-                  onClick={handleCreateList}
-                  disabled={createListMutation.isPending || !newListName.trim()}
-                  data-testid="button-create-list"
-                >
-                  Create
-                </Button>
-              </div>
+                variant="outline"
+                className="w-full"
+              >
+                {RATING_OPTIONS.map((option) => (
+                  <ToggleGroupItem
+                    key={option.value}
+                    value={String(option.value)}
+                    disabled={savePlaceMutation.isPending || updateSavedPlaceMutation.isPending}
+                    data-testid={`rating-button-${option.value}`}
+                    className="flex-1 gap-1"
+                  >
+                    <span className="text-base">{option.emoji}</span>
+                    <span className="text-xs">{option.label}</span>
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
             </div>
-          ) : (
+          </DropdownMenuGroup>
+
+          <DropdownMenuSeparator />
+          
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Lists</DropdownMenuLabel>
+            
+            {listsLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground px-1.5 py-1">
+                <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+                Loading...
+              </div>
+            ) : lists.length === 0 ? (
+              <div className="text-sm text-muted-foreground px-1.5 py-1">No lists yet</div>
+            ) : (
+              lists.map((list) => {
+                const isInList = optimisticLists.includes(list.id);
+                return (
+                  <DropdownMenuItem
+                    key={list.id}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (isSaved) {
+                        handleListToggle(list.id);
+                      }
+                    }}
+                    disabled={!isSaved || addToListMutation.isPending || removeFromListMutation.isPending}
+                    data-testid={`list-checkbox-${list.id}`}
+                  >
+                    <span className="flex-1 truncate">{list.name}</span>
+                    {isInList && <HugeiconsIcon icon={Tick01Icon} className="h-4 w-4 ml-auto" />}
+                  </DropdownMenuItem>
+                );
+              })
+            )}
+
             <DropdownMenuItem
               onClick={(e) => {
                 e.preventDefault();
                 if (isSaved) {
-                  setShowCreateInput(true);
+                  setOpen(false);
+                  setTimeout(() => setShowCreateDialog(true), 150);
                 }
               }}
               disabled={!isSaved}
@@ -451,24 +413,66 @@ export function SaveToListDropdown({
               <HugeiconsIcon icon={PlusSignIcon} className="h-4 w-4" />
               Create new list
             </DropdownMenuItem>
-          )}
-        </DropdownMenuGroup>
+          </DropdownMenuGroup>
 
-        <DropdownMenuSeparator />
+          <DropdownMenuSeparator />
 
-        <DropdownMenuItem
-          onClick={(e) => {
-            e.preventDefault();
-            handleUnsave();
-          }}
-          disabled={unsavePlaceMutation.isPending || !isSaved}
-          data-testid="button-unsave"
-          className="hover:text-destructive focus:text-destructive"
-        >
-          <HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />
-          <span>Remove from saved</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DropdownMenuItem
+            onClick={(e) => {
+              e.preventDefault();
+              handleUnsave();
+            }}
+            disabled={unsavePlaceMutation.isPending || !isSaved}
+            data-testid="button-unsave"
+            className="hover:text-destructive focus:text-destructive"
+          >
+            <HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />
+            <span>Remove from saved</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Dialog open={showCreateDialog} onOpenChange={(o) => { setShowCreateDialog(o); if (!o) setNewListName(""); }}>
+        <DialogContent className="z-[300]">
+          <DialogHeader>
+            <DialogTitle>Create new list</DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder="List name"
+            value={newListName}
+            onChange={(e) => setNewListName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleCreateList();
+              }
+            }}
+            autoFocus
+            style={{ fontSize: "16px" }}
+            data-testid="input-new-list-name-dialog"
+          />
+          <DialogFooter className="flex-row gap-2">
+            <Button
+              variant="ghost"
+              className="flex-1 py-3 text-base"
+              onClick={() => {
+                setShowCreateDialog(false);
+                setNewListName("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="flex-1 py-3 text-base"
+              onClick={handleCreateList}
+              disabled={createListMutation.isPending || !newListName.trim()}
+              data-testid="button-create-list-dialog"
+            >
+              {createListMutation.isPending ? "Creating..." : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
