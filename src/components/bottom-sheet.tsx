@@ -417,7 +417,7 @@ export function BottomSheet({
     <>
       {/* Semi-transparent backdrop - interactive when expanded */}
       <motion.div
-        className={`fixed inset-0 bg-black z-[49] md:hidden ${
+        className={`fixed inset-0 bg-black z-[41] md:hidden ${
           showBackdrop ? "pointer-events-auto" : "pointer-events-none"
         }`}
         style={{ opacity: backdropOpacity }}
@@ -428,7 +428,7 @@ export function BottomSheet({
       {/* Bottom sheet container */}
       <motion.div
         ref={sheetRef}
-        className="fixed left-0 right-0 bottom-0 z-50 md:hidden bg-background rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] flex flex-col"
+        className="fixed left-0 right-0 bottom-0 z-[42] md:hidden bg-background rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] flex flex-col"
         style={{
           height: sheetHeight,
           paddingBottom: "calc(2.75rem + env(safe-area-inset-bottom, 0px))",
