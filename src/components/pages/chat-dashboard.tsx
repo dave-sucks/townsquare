@@ -483,7 +483,6 @@ export function ChatDashboard({ user }: { user: UserData }) {
           selectedPlaceId={selectedPlaceId}
           onMarkerClick={handleMarkerClick}
           showSettings={true}
-          showSearch={false}
         />
 
         <div className="absolute top-0 left-0 bottom-0 z-10 w-[22rem] p-3 hidden md:block pointer-events-none">

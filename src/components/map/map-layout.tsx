@@ -12,6 +12,7 @@ import {
 import { PlaceMap, type PlaceMapHandle } from "@/components/place-map";
 import { BottomSheet } from "@/components/bottom-sheet";
 import { AppShell } from "@/components/layout";
+import { FloatingSearch } from "@/components/map/floating-search";
 
 interface Place {
   id: string;
@@ -123,8 +124,8 @@ export function MapLayout({
           selectedPlaceId={selectedPlaceId}
           onMarkerClick={handleMarkerClick}
           showSettings={showMapSettings}
-          showSearch={showSearch}
         />
+        {showSearch && <FloatingSearch />}
 
         <div className="absolute top-0 left-0 bottom-0 z-10 w-[25rem] p-3 hidden md:block">
           <div className="h-full bg-background rounded-lg border shadow-lg overflow-hidden">
