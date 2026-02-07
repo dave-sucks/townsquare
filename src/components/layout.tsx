@@ -69,7 +69,7 @@ export function AppShell({
         <SidebarInset className="flex flex-col flex-1 overflow-hidden min-h-[100dvh]">
           {children}
         </SidebarInset>
-        <MobileNav />
+        <MobileNav user={user} />
       </div>
     </SidebarProvider>
   );
@@ -161,7 +161,7 @@ function SidebarNav({ user }: { user: User | null }) {
                       asChild
                       isActive={isActive}
                       tooltip={item.label}
-                      size="lg"
+                      className={cn()}
                     >
                       <Link href={item.href} data-testid={`nav-${item.label.toLowerCase()}`}>
                         <HugeiconsIcon icon={item.icon} className="size-4" />
