@@ -9,15 +9,15 @@ import { SmileIcon, Cancel01Icon, Search01Icon } from "@hugeicons/core-free-icon
 import { cn } from "@/lib/utils";
 
 const CATEGORY_ICONS = [
-  { id: "smileys-emotion", icon: "😀", label: "Smileys", dataLabel: "smileys-&-emotion" },
-  { id: "people-body", icon: "👋", label: "People", dataLabel: "people-&-body" },
-  { id: "animals-nature", icon: "🐻", label: "Animals", dataLabel: "animals-&-nature" },
-  { id: "food-drink", icon: "🍔", label: "Food", dataLabel: "food-&-drink" },
-  { id: "travel-places", icon: "✈️", label: "Travel", dataLabel: "travel-&-places" },
-  { id: "activities", icon: "⚽", label: "Activities", dataLabel: "activities" },
-  { id: "objects", icon: "💡", label: "Objects", dataLabel: "objects" },
-  { id: "symbols", icon: "❤️", label: "Symbols", dataLabel: "symbols" },
-  { id: "flags", icon: "🏳️", label: "Flags", dataLabel: "flags" },
+  { id: "smileys-emotion", icon: "\u{1F600}", label: "Smileys", dataLabel: "smileys-&-emotion" },
+  { id: "people-body", icon: "\u{1F44B}", label: "People", dataLabel: "people-&-body" },
+  { id: "animals-nature", icon: "\u{1F43B}", label: "Animals", dataLabel: "animals-&-nature" },
+  { id: "food-drink", icon: "\u{1F354}", label: "Food", dataLabel: "food-&-drink" },
+  { id: "travel-places", icon: "\u{2708}\u{FE0F}", label: "Travel", dataLabel: "travel-&-places" },
+  { id: "activities", icon: "\u{26BD}", label: "Activities", dataLabel: "activities" },
+  { id: "objects", icon: "\u{1F4A1}", label: "Objects", dataLabel: "objects" },
+  { id: "symbols", icon: "\u{2764}\u{FE0F}", label: "Symbols", dataLabel: "symbols" },
+  { id: "flags", icon: "\u{1F3F3}\u{FE0F}", label: "Flags", dataLabel: "flags" },
 ];
 
 interface EmojiPickerPopoverProps {
@@ -61,8 +61,12 @@ export function EmojiPickerPopover({
             <HugeiconsIcon icon={Search01Icon} className="absolute left-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
             <EmojiPicker.Search
               placeholder="Search emoji..."
-              className="flex-1 h-9 bg-transparent pl-8 pr-8 text-base placeholder:text-muted-foreground focus:outline-none touch-manipulation [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
+              className="flex-1 h-9 bg-transparent pl-8 pr-8 text-[16px] placeholder:text-muted-foreground focus:outline-none touch-manipulation [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
               data-testid="input-emoji-search"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
             />
             {emoji && (
               <button

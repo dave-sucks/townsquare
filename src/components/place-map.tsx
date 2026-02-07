@@ -244,6 +244,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: false,
+      gestureHandling: "greedy",
     });
 
     mapInstance.addListener("idle", () => {

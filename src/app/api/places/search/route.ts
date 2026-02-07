@@ -12,15 +12,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ predictions: [] });
   }
 
+  const lat = request.nextUrl.searchParams.get("lat");
+  const lng = request.nextUrl.searchParams.get("lng");
+
   try {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: "Google Maps API key not configured" }, { status: 500 });
     }
 
-    const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&key=${apiKey}`
-    );
+    let url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&key=${apiKey}`;
+
+    if (lat && lng) {
+      url += `&location=${lat},${lng}&radius=50000`;
+    }
+
+    const response = await fetch(url);
 
     const data = await response.json();
     

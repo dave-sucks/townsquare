@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,7 +77,25 @@ export function FloatingSearch() {
   const [isSearching, setIsSearching] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [savedPlace, setSavedPlace] = useState<DrawerPlaceData | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const locationRequested = useRef(false);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    if (!locationRequested.current && navigator.geolocation) {
+      locationRequested.current = true;
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        () => {},
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+      );
+    }
+  }, []);
 
   const searchPlaces = useCallback(async (query: string) => {
     if (!query.trim()) {
@@ -86,7 +104,11 @@ export function FloatingSearch() {
     }
     setIsSearching(true);
     try {
-      const response = await fetch(`/api/places/search?q=${encodeURIComponent(query)}`);
+      let url = `/api/places/search?q=${encodeURIComponent(query)}`;
+      if (userLocation) {
+        url += `&lat=${userLocation.lat}&lng=${userLocation.lng}`;
+      }
+      const response = await fetch(url);
       const data = await response.json();
       setSearchResults(data.predictions || []);
     } catch (error) {
@@ -94,7 +116,7 @@ export function FloatingSearch() {
     } finally {
       setIsSearching(false);
     }
-  }, []);
+  }, [userLocation]);
 
   useEffect(() => {
     const debounce = setTimeout(() => searchPlaces(searchQuery), 300);
