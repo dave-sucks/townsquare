@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -242,7 +243,6 @@ function SearchResultRow({
     onSuccess: (data) => {
       setIsSaved(true);
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
-      toast.success("Saved!");
       onSaved({ prediction: result, savedData: data.savedPlace });
     },
     onError: (error: Error) => toast.error(error.message || "Failed to save place"),
@@ -467,9 +467,14 @@ function SavePanelContent({
         />
 
         <div className="flex-1 min-w-0 text-left">
-          <p className="font-semibold text-lg leading-tight truncate" data-testid="text-save-panel-name">
-            {placeName}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="font-semibold text-lg leading-tight truncate" data-testid="text-save-panel-name">
+              {placeName}
+            </p>
+            <Badge variant="secondary" className="shrink-0 text-xs" data-testid="badge-saved">
+              Saved
+            </Badge>
+          </div>
           <p className="text-sm text-muted-foreground truncate mt-0.5">
             {placeAddress}
           </p>
@@ -498,9 +503,9 @@ function SavePanelContent({
                 value={String(option.value)}
                 disabled={updateSavedPlaceMutation.isPending}
                 data-testid={`save-panel-rating-${option.value}`}
-                className="flex-1 gap-1.5"
+                className="flex-1 gap-1.5 py-3"
               >
-                <span className="text-lg">{option.emoji}</span>
+                <span className="text-xl">{option.emoji}</span>
                 <span className="text-sm">{option.label}</span>
               </ToggleGroupItem>
             ))}
@@ -523,13 +528,13 @@ function SavePanelContent({
                 return (
                   <button
                     key={list.id}
-                    className="flex items-center gap-3 w-full text-left py-2.5 px-1 rounded-md hover-elevate transition-colors"
+                    className="flex items-center gap-3 w-full text-left py-3 px-2 rounded-md hover-elevate transition-colors"
                     onClick={() => handleListToggle(list.id)}
                     disabled={addToListMutation.isPending || removeFromListMutation.isPending}
                     data-testid={`save-panel-list-${list.id}`}
                   >
-                    <span className="flex-1 text-sm font-medium truncate">{list.name}</span>
-                    {isInList && <HugeiconsIcon icon={Tick01Icon} className="h-4 w-4 flex-shrink-0" />}
+                    <span className="flex-1 text-base font-medium truncate">{list.name}</span>
+                    {isInList && <HugeiconsIcon icon={Tick01Icon} className="h-5 w-5 flex-shrink-0" />}
                   </button>
                 );
               })}
@@ -581,12 +586,12 @@ function SavePanelContent({
             </div>
           ) : (
             <button
-              className="flex items-center gap-3 w-full text-left py-2.5 px-1 rounded-md hover-elevate text-muted-foreground transition-colors"
+              className="flex items-center gap-3 w-full text-left py-3 px-2 rounded-md hover-elevate text-muted-foreground transition-colors"
               onClick={() => setShowCreateInput(true)}
               data-testid="save-panel-button-new-list"
             >
-              <HugeiconsIcon icon={PlusSignIcon} className="h-4 w-4" />
-              <span className="text-sm font-medium">Create new list</span>
+              <HugeiconsIcon icon={PlusSignIcon} className="h-5 w-5" />
+              <span className="text-base font-medium">Create new list</span>
             </button>
           )}
         </div>
