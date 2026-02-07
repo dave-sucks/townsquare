@@ -48,7 +48,7 @@ export function LandingPage() {
             <Button
               asChild
               size="lg"
-              className="w-full bg-white text-black border-white hover:bg-white/90"
+              className="w-full bg-white text-black border-white no-default-hover-elevate no-default-active-elevate hover:bg-white/85 active:bg-white/75"
               data-testid="button-signup"
             >
               <a href="/api/login">Sign Up</a>
@@ -58,7 +58,7 @@ export function LandingPage() {
               asChild
               variant="outline"
               size="lg"
-              className="w-full border-white/20 bg-white/10 text-white"
+              className="w-full border-white/20 bg-white/10 text-white no-default-hover-elevate no-default-active-elevate hover:bg-white/20 active:bg-white/25"
               data-testid="button-login"
             >
               <a href="/api/login">Log In</a>

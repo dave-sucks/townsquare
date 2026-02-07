@@ -164,7 +164,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           onClick={handleSubmit}
           disabled={isSubmitting}
           size="lg"
-          className="w-[240px] bg-white text-black border-white hover:bg-white/90"
+          className="w-[240px] bg-white text-black border-white no-default-hover-elevate no-default-active-elevate hover:bg-white/85 active:bg-white/75"
           data-testid="button-complete-onboarding"
         >
           {isSubmitting ? "Setting up..." : "Let's go"}
