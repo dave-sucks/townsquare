@@ -83,7 +83,14 @@ export function DiscoverSidebar({
   const viewingPlace = viewingPlaceId ? places.find((p) => p.id === viewingPlaceId) : null;
   const viewingReview = viewingPlace ? reviewsByPlaceId?.get(viewingPlace.placeId) : null;
 
-  // Handle place click - navigate to detail and optionally select on map
+  const handleSearchClick = () => {
+    const searchInput = document.querySelector<HTMLInputElement>('[data-testid="input-search-place"]');
+    if (searchInput) {
+      searchInput.focus();
+      searchInput.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   const handlePlaceClick = (savedPlaceId: string) => {
     onNavigate("detail", savedPlaceId);
     onPlaceSelect?.(savedPlaceId);
@@ -113,6 +120,7 @@ export function DiscoverSidebar({
             onListFilterChange={onListFilterChange}
             onPlaceClick={handlePlaceClick}
             onSettingsClick={() => onNavigate("settings")}
+            onSearchClick={handleSearchClick}
           />
         );
       }
@@ -141,6 +149,7 @@ export function DiscoverSidebar({
           onListFilterChange={onListFilterChange}
           onPlaceClick={handlePlaceClick}
           onSettingsClick={() => onNavigate("settings")}
+          onSearchClick={handleSearchClick}
         />
       );
   }

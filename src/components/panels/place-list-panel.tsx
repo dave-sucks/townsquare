@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowDown01Icon, Tick01Icon, SlidersHorizontalIcon } from "@hugeicons/core-free-icons";
+import { ArrowDown01Icon, Tick01Icon, SlidersHorizontalIcon, Search01Icon } from "@hugeicons/core-free-icons";
 import { apiRequest } from "@/lib/query-client";
 import { PlacesList } from "@/components/shared/places-list";
 import type { SidebarInjectedProps } from "@/components/map/map-layout";
@@ -56,6 +56,7 @@ interface PlaceListPanelProps extends Partial<SidebarInjectedProps> {
   onListFilterChange: (listId: string) => void;
   onPlaceClick: (savedPlaceId: string) => void;
   onSettingsClick: () => void;
+  onSearchClick?: () => void;
 }
 
 const statusOptions = [
@@ -75,6 +76,7 @@ export function PlaceListPanel({
   onListFilterChange,
   onPlaceClick,
   onSettingsClick,
+  onSearchClick,
 }: PlaceListPanelProps) {
   const { data: listsData } = useQuery<{ lists: ListData[] }>({
     queryKey: ["lists"],
@@ -93,6 +95,14 @@ export function PlaceListPanel({
       <div className="flex items-center gap-2 p-3 border-b">
         <SidebarTrigger data-testid="button-sidebar-toggle" />
         <h1 className="font-semibold text-sm flex-1 font-brand">Places</h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onSearchClick}
+          data-testid="button-search-trigger"
+        >
+          <HugeiconsIcon icon={Search01Icon} className="h-4 w-4" />
+        </Button>
         <Button
           variant="ghost"
           size="icon"
