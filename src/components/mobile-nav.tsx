@@ -205,7 +205,7 @@ export function MobileNav({ user }: { user: User | null }) {
                   )}
                   data-testid={`mobile-nav-${item.label.toLowerCase()}`}
                 >
-                  <HugeiconsIcon icon={item.icon} className="size-5" />
+                  <HugeiconsIcon icon={item.icon} className="size-6" />
                 </Link>
               );
             })}
@@ -222,7 +222,7 @@ export function MobileNav({ user }: { user: User | null }) {
               )}
               data-testid="mobile-nav-menu"
             >
-              <HugeiconsIcon icon={menuOpen ? Cancel01Icon : Menu01Icon} className="size-5" />
+              <HugeiconsIcon icon={menuOpen ? Cancel01Icon : Menu01Icon} className="size-6" />
             </button>
           </div>
         </nav>

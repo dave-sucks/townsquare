@@ -191,9 +191,13 @@ export function BottomSheet({
     }
   }, [requestedSnapPoint, viewportHeight, getSnapHeight, sheetHeight, snapTo]);
 
-  // Check if content is scrolled to top
+  // Check if content is scrolled to top (also checks nested scroll containers like ScrollArea)
   const isContentAtTop = useCallback(() => {
-    return (contentRef.current?.scrollTop ?? 0) <= 1;
+    if (!contentRef.current) return true;
+    if (contentRef.current.scrollTop > 1) return false;
+    const nestedScrollable = contentRef.current.querySelector('[data-radix-scroll-area-viewport], [data-scroll-container]');
+    if (nestedScrollable && nestedScrollable.scrollTop > 1) return false;
+    return true;
   }, []);
 
   // Handle pointer start on grabber (always initiates drag)
@@ -260,12 +264,15 @@ export function BottomSheet({
         return false;
       }
 
-      // Check current scroll position
-      const scrollTop = contentRef.current?.scrollTop ?? 0;
+      // Check current scroll position (including nested scroll containers)
+      const directScrollTop = contentRef.current?.scrollTop ?? 0;
+      const nestedScrollable = contentRef.current?.querySelector('[data-radix-scroll-area-viewport], [data-scroll-container]');
+      const nestedScrollTop = nestedScrollable?.scrollTop ?? 0;
+      const effectiveScrollTop = Math.max(directScrollTop, nestedScrollTop);
       
       // If content has scrolled away from top, this is definitely a scroll gesture
       // Don't try to start sheet drag
-      if (scrollTop > 1) {
+      if (effectiveScrollTop > 1) {
         isScrolling.current = true;
         return false;
       }
@@ -280,7 +287,7 @@ export function BottomSheet({
       // Check if we should start dragging the sheet
       // Only when: at top, finger moving DOWN significantly, and we started at top
       // Use a larger threshold (20px) to avoid accidental triggers
-      if (canStartDrag.current && scrollTop <= 1 && deltaFromStart > 20) {
+      if (canStartDrag.current && effectiveScrollTop <= 1 && deltaFromStart > 20) {
         isDraggingSheet.current = true;
         dragStartY.current = clientY; // Reset start position
         dragStartSheetY.current = sheetHeight.get();
