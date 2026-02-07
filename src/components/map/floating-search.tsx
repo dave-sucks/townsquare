@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
 import {
   Drawer,
   DrawerContent,
@@ -256,8 +256,10 @@ function SearchResultRow({
   };
 
   return (
-    <div
-      className="flex items-center gap-2 px-3 py-2 hover-elevate"
+    <button
+      className="flex items-center gap-2 px-3 py-2 hover-elevate w-full text-left"
+      onClick={handleSaveClick}
+      disabled={savePlaceMutation.isPending}
       data-testid={`search-result-${result.place_id}`}
     >
       <div className="flex-1 min-w-0">
@@ -266,28 +268,13 @@ function SearchResultRow({
       </div>
 
       <div className="flex items-center flex-shrink-0">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              size="icon"
-              variant={isSaved ? "default" : "ghost"}
-              onClick={handleSaveClick}
-              disabled={savePlaceMutation.isPending}
-              data-testid={`button-save-${result.place_id}`}
-            >
-              {savePlaceMutation.isPending ? (
-                <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
-              ) : (
-                <HugeiconsIcon icon={Bookmark01Icon} className={isSaved ? "h-4 w-4 fill-current" : "h-4 w-4"} />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            {isSaved ? "Saved" : "Save"}
-          </TooltipContent>
-        </Tooltip>
+        {savePlaceMutation.isPending ? (
+          <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin text-muted-foreground" />
+        ) : (
+          <HugeiconsIcon icon={Bookmark01Icon} className={isSaved ? "h-4 w-4 fill-current" : "h-4 w-4 text-muted-foreground"} />
+        )}
       </div>
-    </div>
+    </button>
   );
 }
 
