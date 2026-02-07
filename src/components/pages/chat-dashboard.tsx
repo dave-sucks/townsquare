@@ -379,13 +379,13 @@ export function ChatDashboard({ user }: { user: UserData }) {
       </div>
 
       {!activeConversationId ? (
-        <div className="flex-1 flex flex-col min-h-0 relative">
+        <div className="flex-1 overflow-y-auto relative">
           {conversationsLoading ? (
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex items-center justify-center h-full">
               <HugeiconsIcon icon={Loading03Icon} className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : conversations.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center px-4 gap-3">
+            <div className="flex flex-col items-center justify-center h-full px-4 gap-3 pb-20">
               <HugeiconsIcon icon={SparklesIcon} className="h-8 w-8 text-muted-foreground" />
               <div className="text-center">
                 <p className="text-sm font-medium">Discover places with AI</p>
@@ -393,40 +393,38 @@ export function ChatDashboard({ user }: { user: UserData }) {
               </div>
             </div>
           ) : (
-            <ScrollArea className="flex-1">
-              <div className="p-2 pb-20 space-y-1">
-                {conversations.map((conv) => (
-                  <div
-                    key={conv.id}
-                    onClick={() => selectConversation(conv.id)}
-                    className={cn(
-                      "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors group flex items-center justify-between cursor-pointer hover-elevate",
-                      activeConversationId === conv.id
-                        ? "bg-primary/10 text-primary"
-                        : "text-foreground"
-                    )}
-                    data-testid={`button-conversation-${conv.id}`}
+            <div className="p-2 pb-20 space-y-1">
+              {conversations.map((conv) => (
+                <div
+                  key={conv.id}
+                  onClick={() => selectConversation(conv.id)}
+                  className={cn(
+                    "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors group flex items-center justify-between cursor-pointer hover-elevate",
+                    activeConversationId === conv.id
+                      ? "bg-primary/10 text-primary"
+                      : "text-foreground"
+                  )}
+                  data-testid={`button-conversation-${conv.id}`}
+                >
+                  <span className="truncate flex-1">{conv.title}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteConversationMutation.mutate(conv.id);
+                    }}
+                    data-testid={`button-delete-conversation-${conv.id}`}
                   >
-                    <span className="truncate flex-1">{conv.title}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteConversationMutation.mutate(conv.id);
-                      }}
-                      data-testid={`button-delete-conversation-${conv.id}`}
-                    >
-                      <HugeiconsIcon icon={Delete02Icon} className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
+                    <HugeiconsIcon icon={Delete02Icon} className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
           )}
 
-          <div className="absolute bottom-0 left-0 right-0 p-3">
+          <div className="absolute bottom-0 left-0 right-0 p-3 bg-background/80 backdrop-blur-lg">
             <div className="relative group">
               <Textarea
                 ref={!activeConversationId ? inputRef : undefined}
@@ -441,7 +439,8 @@ export function ChatDashboard({ user }: { user: UserData }) {
                   }
                 }}
                 placeholder="Ask about places..."
-                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-base bg-muted/50 backdrop-blur-xl border-0 rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
+                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-base bg-muted/50 border-0 rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
+                style={{ fontSize: "16px" }}
                 disabled={createConversationMutation.isPending}
                 data-testid="input-chat-message-home"
               />
@@ -458,62 +457,60 @@ export function ChatDashboard({ user }: { user: UserData }) {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col min-h-0 relative">
-          <ScrollArea className="flex-1 min-h-0" ref={scrollRef}>
-            <div className="p-3 pb-20 space-y-4">
-              {messagesLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <HugeiconsIcon icon={Loading03Icon} className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : localMessages.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-sm text-muted-foreground">Ask about places to visit...</p>
-                </div>
-              ) : (
-                localMessages.map((message) => (
-                  <MessageBubble 
-                    key={message.id} 
-                    message={message} 
-                    user={user}
-                    selectedPlaceId={selectedPlaceId}
-                    onPlaceClick={handlePlaceCardClick}
-                    placeCardRefs={placeCardRefs}
-                  />
-                ))
-              )}
-              {isStreaming && (streamingContent || streamingPlaces.length > 0) && (
-                <MessageBubble
-                  message={{
-                    id: "streaming",
-                    role: "assistant",
-                    content: streamingContent,
-                    createdAt: new Date().toISOString(),
-                    places: streamingPlaces,
-                  }}
+        <div className="flex-1 overflow-y-auto relative" ref={scrollRef}>
+          <div className="p-3 pb-20 space-y-4">
+            {messagesLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <HugeiconsIcon icon={Loading03Icon} className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : localMessages.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground">Ask about places to visit...</p>
+              </div>
+            ) : (
+              localMessages.map((message) => (
+                <MessageBubble 
+                  key={message.id} 
+                  message={message} 
                   user={user}
-                  isStreaming
                   selectedPlaceId={selectedPlaceId}
                   onPlaceClick={handlePlaceCardClick}
                   placeCardRefs={placeCardRefs}
                 />
-              )}
-              {isStreaming && !streamingContent && streamingPlaces.length === 0 && (
-                <div className="flex gap-2">
-                  <Avatar className="h-6 w-6 shrink-0">
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      <HugeiconsIcon icon={AiChat02Icon} className="h-3 w-3" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
-                    <span className="text-sm">Searching...</span>
-                  </div>
+              ))
+            )}
+            {isStreaming && (streamingContent || streamingPlaces.length > 0) && (
+              <MessageBubble
+                message={{
+                  id: "streaming",
+                  role: "assistant",
+                  content: streamingContent,
+                  createdAt: new Date().toISOString(),
+                  places: streamingPlaces,
+                }}
+                user={user}
+                isStreaming
+                selectedPlaceId={selectedPlaceId}
+                onPlaceClick={handlePlaceCardClick}
+                placeCardRefs={placeCardRefs}
+              />
+            )}
+            {isStreaming && !streamingContent && streamingPlaces.length === 0 && (
+              <div className="flex gap-2">
+                <Avatar className="h-6 w-6 shrink-0">
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    <HugeiconsIcon icon={AiChat02Icon} className="h-3 w-3" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+                  <span className="text-sm">Searching...</span>
                 </div>
-              )}
-            </div>
-          </ScrollArea>
+              </div>
+            )}
+          </div>
 
-          <div className="absolute bottom-0 left-0 right-0 p-3">
+          <div className="sticky bottom-0 left-0 right-0 p-3 bg-background/80 backdrop-blur-lg">
             <div className="relative group">
               <Textarea
                 ref={inputRef}
@@ -521,7 +518,8 @@ export function ChatDashboard({ user }: { user: UserData }) {
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask about places..."
-                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-base bg-muted/50 backdrop-blur-xl border-0 rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
+                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-base bg-muted/50 border-0 rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
+                style={{ fontSize: "16px" }}
                 disabled={isStreaming}
                 data-testid="input-chat-message"
               />

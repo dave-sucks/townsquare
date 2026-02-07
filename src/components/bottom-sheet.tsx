@@ -449,13 +449,12 @@ export function BottomSheet({
         {/* Optional header */}
         {header && <div className="shrink-0 px-4 pb-2 border-b">{header}</div>}
 
-        {/* Scrollable content area */}
+        {/* Content area */}
         <div
           ref={contentRef}
-          className="flex-1 overflow-y-auto overscroll-contain"
+          className="flex-1 min-h-0 relative"
           onTouchStart={onContentTouchStart}
           style={{
-            // Allow normal scrolling in content, touchAction handled by event listeners
             touchAction: "pan-y",
           }}
           data-testid="bottom-sheet-content"
