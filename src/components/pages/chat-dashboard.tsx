@@ -573,6 +573,13 @@ export function ChatDashboard({ user }: { user: UserData }) {
   );
 }
 
+function sanitizeContent(text: string): string {
+  return text
+    .replace(/\{[^{}]*"(?:name|placeIds?|googlePlaceId|listName)"[^{}]*\}/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function MessageBubble({ 
   message, 
   user,
@@ -589,17 +596,18 @@ function MessageBubble({
   placeCardRefs?: React.MutableRefObject<Map<string, HTMLDivElement>>;
 }) {
   const isUser = message.role === "user";
+  const displayContent = isUser ? message.content : sanitizeContent(message.content);
 
   return (
     <div className={cn("flex flex-col gap-1", isUser ? "items-end" : "items-start")}>
-      <div className={cn("flex flex-col", isUser ? "items-end max-w-[90%]" : "items-start w-full")}>
+      <div className={cn("flex flex-col", isUser ? "items-end max-w-[90%]" : "items-start w-full overflow-hidden")}>
         <div className={cn(
-          "text-sm whitespace-pre-wrap break-words",
+          "text-sm whitespace-pre-wrap break-words w-full",
           isUser 
             ? "bg-primary text-primary-foreground px-3 py-2 rounded-lg rounded-br-none" 
             : "text-foreground py-1"
-        )}>
-          {message.content}
+        )} style={{ overflowWrap: "anywhere" }}>
+          {displayContent}
           {isStreaming && (
             <span className="inline-block w-1 h-3.5 bg-current ml-0.5 animate-pulse" />
           )}

@@ -176,14 +176,16 @@ ${placesContext || "No saved places yet."}
 The user has the following lists:
 ${listsContext || "No lists yet."}
 
-IMPORTANT: When users ask for place recommendations, you MUST use the search_places function to find real places. Always search when the user asks things like:
-- "best coffee shops in [area]"
-- "recommend restaurants near [location]"
-- "find bars in [neighborhood]"
+IMPORTANT RULES:
+1. When users ask for place recommendations, you MUST use the search_places function to find real places.
+2. After searching, present results as a SHORT, conversational summary. Keep descriptions to one sentence per place max. Do NOT write long paragraphs.
+3. ALWAYS also call suggest_save_to_list with a creative list name.
+4. NEVER output raw JSON, code, tool call data, function arguments, place IDs, or any technical data in your response text. The tools handle data transfer — your text should only be natural conversation.
+5. If a user asks about a social media account, influencer, blogger, or content creator (e.g., "@sistersnacking", "sistersnacking on Instagram"), do NOT search for places with similar names. Instead, explain that you can't access social media content directly, and ask the user to share specific places or neighborhoods they're interested in so you can search for those.
+6. Keep responses concise and scannable. Use short bullet-style lines with the place name, a brief highlight, and key info (rating, neighborhood). Do not write essays.
+7. When listing places, just mention the name and a quick note. The place cards displayed below your message already show full details like address, rating, and category.
 
-After searching, present the results naturally. ALWAYS also call the suggest_save_to_list tool with a creative list name based on the search context (e.g., "West Village Tacos", "Brooklyn Coffee Crawl"). This gives the user a one-click option to save all found places.
-
-Be conversational, helpful, and concise. Focus on helping users discover and manage places they love.`;
+Be conversational, helpful, and brief. Focus on helping users discover and manage places they love.`;
 }
 
 export async function POST(
@@ -295,11 +297,18 @@ export async function POST(
       }
     }
 
+    if (places.length > 0 || suggestedListName) {
+      finalMessages.push({
+        role: "system",
+        content: "CRITICAL: Your response MUST be plain conversational text only. DO NOT include any JSON, code blocks, place IDs, function call data, or technical data. The place cards and save button are already shown to the user automatically. Just write a brief, friendly summary mentioning each place name with a short highlight. Keep it concise — 2-3 sentences max, or short bullet points.",
+      });
+    }
+
     const stream = await openai.chat.completions.create({
       model: "gpt-5-mini",
       messages: finalMessages,
       stream: true,
-      max_completion_tokens: 2048,
+      max_completion_tokens: 800,
     });
 
     const encoder = new TextEncoder();
@@ -316,13 +325,44 @@ export async function POST(
             })}\n\n`));
           }
 
+          let jsonBuffer = "";
+          let inJsonBlock = false;
+          let braceDepth = 0;
+
           for await (const chunk of stream) {
             const chunkContent = chunk.choices[0]?.delta?.content || "";
-            if (chunkContent) {
-              fullResponse += chunkContent;
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: chunkContent })}\n\n`));
+            if (!chunkContent) continue;
+
+            let safeContent = "";
+            for (const char of chunkContent) {
+              if (char === "{") {
+                inJsonBlock = true;
+                braceDepth++;
+                jsonBuffer += char;
+              } else if (char === "}" && inJsonBlock) {
+                braceDepth--;
+                jsonBuffer += char;
+                if (braceDepth === 0) {
+                  inJsonBlock = false;
+                  if (!/["'](?:name|placeIds?|googlePlaceId|listName|query|location|type|success)["']/.test(jsonBuffer)) {
+                    safeContent += jsonBuffer;
+                  }
+                  jsonBuffer = "";
+                }
+              } else if (inJsonBlock) {
+                jsonBuffer += char;
+              } else {
+                safeContent += char;
+              }
+            }
+
+            if (safeContent) {
+              fullResponse += safeContent;
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: safeContent })}\n\n`));
             }
           }
+
+          fullResponse = fullResponse.replace(/\n{3,}/g, "\n\n").trim();
 
           await prisma.chatMessage.create({
             data: {
