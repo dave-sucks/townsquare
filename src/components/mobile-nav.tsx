@@ -12,6 +12,7 @@ import {
   Menu01Icon,
   Cancel01Icon,
 } from "@hugeicons/core-free-icons";
+import { useSidebar } from "@/components/ui/sidebar";
 
 export const MOBILE_NAV_HEIGHT = 56;
 
@@ -21,13 +22,9 @@ const BOTTOM_NAV_ITEMS = [
   { href: "/home", label: "Feed", icon: Image02Icon },
 ] as const;
 
-interface MobileNavProps {
-  menuOpen: boolean;
-  onMenuToggle: () => void;
-}
-
-export function MobileNav({ menuOpen, onMenuToggle }: MobileNavProps) {
+export function MobileNav() {
   const pathname = usePathname();
+  const { openMobile, toggleSidebar } = useSidebar();
 
   return (
     <nav
@@ -40,7 +37,7 @@ export function MobileNav({ menuOpen, onMenuToggle }: MobileNavProps) {
       <div className="flex items-center justify-around" style={{ height: `${MOBILE_NAV_HEIGHT}px` }}>
         {BOTTOM_NAV_ITEMS.map((item) => {
           const isActive =
-            !menuOpen && (pathname === item.href ||
+            !openMobile && (pathname === item.href ||
             (item.href !== "/" && pathname.startsWith(item.href)));
           return (
             <Link
@@ -60,15 +57,15 @@ export function MobileNav({ menuOpen, onMenuToggle }: MobileNavProps) {
           );
         })}
         <button
-          onClick={onMenuToggle}
+          onClick={toggleSidebar}
           className={cn(
             "flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors",
-            menuOpen ? "text-primary" : "text-muted-foreground"
+            openMobile ? "text-primary" : "text-muted-foreground"
           )}
           data-testid="mobile-nav-menu"
         >
-          <HugeiconsIcon icon={menuOpen ? Cancel01Icon : Menu01Icon} className="size-5" />
-          <span className="text-[10px] font-medium">{menuOpen ? "Close" : "Menu"}</span>
+          <HugeiconsIcon icon={openMobile ? Cancel01Icon : Menu01Icon} className="size-5" />
+          <span className="text-[10px] font-medium">{openMobile ? "Close" : "Menu"}</span>
         </button>
       </div>
     </nav>

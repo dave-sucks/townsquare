@@ -37,7 +37,6 @@ import { UserMultiple02Icon, LeftToRightListBulletIcon, Logout02Icon, ArrowDown0
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { MobileNav } from "@/components/mobile-nav";
-import { MobileMenuOverlay } from "@/components/mobile-menu-overlay";
 
 interface User {
   id: string;
@@ -63,8 +62,6 @@ export function AppShell({
   user: User | null;
   children: React.ReactNode;
 }) {
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-
   return (
     <SidebarProvider>
       <div className="flex h-dvh w-full">
@@ -72,15 +69,7 @@ export function AppShell({
         <SidebarInset className="flex flex-col flex-1 overflow-hidden min-h-[100dvh]">
           {children}
         </SidebarInset>
-        <MobileMenuOverlay
-          open={mobileMenuOpen}
-          onClose={() => setMobileMenuOpen(false)}
-          user={user}
-        />
-        <MobileNav
-          menuOpen={mobileMenuOpen}
-          onMenuToggle={() => setMobileMenuOpen((v) => !v)}
-        />
+        <MobileNav />
       </div>
     </SidebarProvider>
   );
@@ -172,6 +161,7 @@ function SidebarNav({ user }: { user: User | null }) {
                       asChild
                       isActive={isActive}
                       tooltip={item.label}
+                      size="lg"
                     >
                       <Link href={item.href} data-testid={`nav-${item.label.toLowerCase()}`}>
                         <HugeiconsIcon icon={item.icon} className="size-4" />
