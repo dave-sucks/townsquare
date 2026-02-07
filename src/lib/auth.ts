@@ -20,7 +20,7 @@ export interface SessionData {
 
 const sessionOptions: SessionOptions = {
   password: process.env.SESSION_SECRET!,
-  cookieName: "beli_session",
+  cookieName: "twnsq_session",
   cookieOptions: {
     secure: true,
     httpOnly: true,

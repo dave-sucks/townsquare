@@ -4,7 +4,7 @@ import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
-  title: "Beli - Save Your Favorite Places",
+  title: "Twn Sq - Save Your Favorite Places",
   description: "Discover, save, and track places you want to visit or have been to",
 };
 

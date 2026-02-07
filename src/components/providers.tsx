@@ -13,7 +13,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         enableSystem={false}
         disableTransitionOnChange
         forcedTheme={undefined}
-        storageKey="beli-theme"
+        storageKey="twnsq-theme"
       >
         {children}
       </ThemeProvider>

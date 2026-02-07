@@ -106,7 +106,7 @@ export async function fetchOEmbed(url: string): Promise<OEmbedResponse> {
   
   const response = await fetch(oembedUrl, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; BeliClone/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; TwnSq/1.0)',
     },
   });
   

@@ -12,9 +12,9 @@ import {
   DEFAULT_LABEL_DENSITY,
 } from "@/lib/map-styles";
 
-const RADIUS_STORAGE_KEY = "beli-map-radius";
-const TRAFFIC_STORAGE_KEY = "beli-map-traffic";
-const TRANSIT_STORAGE_KEY = "beli-map-transit";
+const RADIUS_STORAGE_KEY = "twnsq-map-radius";
+const TRAFFIC_STORAGE_KEY = "twnsq-map-traffic";
+const TRANSIT_STORAGE_KEY = "twnsq-map-transit";
 
 function getStoredRadius(): number {
   if (typeof window === "undefined") return 1;

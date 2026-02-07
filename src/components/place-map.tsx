@@ -61,7 +61,7 @@ const MARKER_COLORS = {
   selected: "#3b82f6",
 };
 
-const MAP_STORAGE_KEY = "beli-map-view";
+const MAP_STORAGE_KEY = "twnsq-map-view";
 const DEFAULT_CENTER = { lat: 40.7128, lng: -74.006 };
 const DEFAULT_ZOOM = 12;
 

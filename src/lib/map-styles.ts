@@ -105,8 +105,8 @@ export function applyMapStyle(map: google.maps.Map, styleKey: MapStyleKey, label
 }
 
 // Storage key for persisting map style preference
-export const MAP_STYLE_STORAGE_KEY = "beli-map-style";
-export const MAP_LABEL_DENSITY_STORAGE_KEY = "beli-map-label-density";
+export const MAP_STYLE_STORAGE_KEY = "twnsq-map-style";
+export const MAP_LABEL_DENSITY_STORAGE_KEY = "twnsq-map-label-density";
 
 export type LabelDensity = "minimal" | "low" | "normal" | "full";
 
