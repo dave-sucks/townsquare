@@ -125,6 +125,8 @@ export function LandingMap({ onReady, showSearch = true }: LandingMapProps) {
   const animationRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const sequenceRef = useRef(0);
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
 
   const createDemoOverlay = useCallback((
     map: google.maps.Map,
@@ -256,7 +258,7 @@ export function LandingMap({ onReady, showSearch = true }: LandingMapProps) {
       mapInstanceRef.current = map;
 
       google.maps.event.addListenerOnce(map, "tilesloaded", () => {
-        onReady?.();
+        onReadyRef.current?.();
         animationRef.current = setTimeout(() => runSequence(map), 1200);
       });
     };
@@ -290,7 +292,7 @@ export function LandingMap({ onReady, showSearch = true }: LandingMapProps) {
       overlaysRef.current.forEach((o) => o.setMap(null));
       overlaysRef.current = [];
     };
-  }, [runSequence, onReady]);
+  }, [runSequence]);
 
   return (
     <div className="absolute inset-0">

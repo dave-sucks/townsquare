@@ -27,6 +27,8 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
+  const handleMapReady = useCallback(() => setMapReady(true), []);
+
   useEffect(() => {
     const timer = setTimeout(() => setShowContent(true), 800);
     return () => clearTimeout(timer);
@@ -86,7 +88,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   return (
     <div className="relative h-screen w-full overflow-hidden">
       <div className="absolute inset-0 bg-[#212121]" />
-      <LandingMap onReady={() => setMapReady(true)} showSearch={false} />
+      <LandingMap onReady={handleMapReady} showSearch={false} />
 
       <div
         className={`absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 p-4 transition-opacity duration-700 ${
