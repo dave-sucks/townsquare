@@ -39,6 +39,7 @@ interface ListPlace {
   listId: string;
   placeId: string;
   addedAt: string;
+  emoji?: string | null;
   place: Place;
 }
 
@@ -117,6 +118,7 @@ export function ListPage({ listId, currentUser, isAuthenticated }: ListPageProps
     hasBeen: false,
     rating: null,
     visitedAt: null,
+    emoji: lp.emoji || null,
     createdAt: lp.addedAt,
     place: lp.place,
   })) || [];
