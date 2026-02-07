@@ -379,13 +379,13 @@ export function ChatDashboard({ user }: { user: UserData }) {
       </div>
 
       {!activeConversationId ? (
-        <div className="flex-1 overflow-y-auto relative">
+        <div className="flex-1 overflow-y-auto">
           {conversationsLoading ? (
             <div className="flex items-center justify-center h-full">
               <HugeiconsIcon icon={Loading03Icon} className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : conversations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full px-4 gap-3 pb-20">
+            <div className="flex flex-col items-center justify-center h-full px-4 gap-3">
               <HugeiconsIcon icon={SparklesIcon} className="h-8 w-8 text-muted-foreground" />
               <div className="text-center">
                 <p className="text-sm font-medium">Discover places with AI</p>
@@ -393,7 +393,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
               </div>
             </div>
           ) : (
-            <div className="p-2 pb-20 space-y-1">
+            <div className="p-2 space-y-1">
               {conversations.map((conv) => (
                 <div
                   key={conv.id}
@@ -423,94 +423,64 @@ export function ChatDashboard({ user }: { user: UserData }) {
               ))}
             </div>
           )}
-
-          <div className="absolute bottom-0 left-0 right-0 p-3 bg-background/80 backdrop-blur-lg">
-            <div className="relative group">
-              <Textarea
-                ref={!activeConversationId ? inputRef : undefined}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    if (inputValue.trim()) {
-                      startNewChat();
-                    }
-                  }
-                }}
-                placeholder="Ask about places..."
-                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-base bg-muted/50 border-0 rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
-                style={{ fontSize: "16px" }}
-                disabled={createConversationMutation.isPending}
-                data-testid="input-chat-message-home"
-              />
-              <Button
-                size="sm"
-                className="absolute right-2 bottom-2 h-8 w-8 rounded-xl transition-transform active:scale-95"
-                onClick={startNewChat}
-                disabled={!inputValue.trim() || createConversationMutation.isPending}
-                data-testid="button-send-message-home"
-              >
-                <HugeiconsIcon icon={SentIcon} className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto relative" ref={scrollRef}>
-          <div className="p-3 pb-20 space-y-4">
-            {messagesLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <HugeiconsIcon icon={Loading03Icon} className="h-5 w-5 animate-spin text-muted-foreground" />
-              </div>
-            ) : localMessages.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground">Ask about places to visit...</p>
-              </div>
-            ) : (
-              localMessages.map((message) => (
-                <MessageBubble 
-                  key={message.id} 
-                  message={message} 
+        <div className="flex-1 relative min-h-0">
+          <div className="absolute inset-0 overflow-y-auto" ref={scrollRef}>
+            <div className="p-3 pb-20 space-y-4">
+              {messagesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <HugeiconsIcon icon={Loading03Icon} className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : localMessages.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-muted-foreground">Ask about places to visit...</p>
+                </div>
+              ) : (
+                localMessages.map((message) => (
+                  <MessageBubble 
+                    key={message.id} 
+                    message={message} 
+                    user={user}
+                    selectedPlaceId={selectedPlaceId}
+                    onPlaceClick={handlePlaceCardClick}
+                    placeCardRefs={placeCardRefs}
+                  />
+                ))
+              )}
+              {isStreaming && (streamingContent || streamingPlaces.length > 0) && (
+                <MessageBubble
+                  message={{
+                    id: "streaming",
+                    role: "assistant",
+                    content: streamingContent,
+                    createdAt: new Date().toISOString(),
+                    places: streamingPlaces,
+                  }}
                   user={user}
+                  isStreaming
                   selectedPlaceId={selectedPlaceId}
                   onPlaceClick={handlePlaceCardClick}
                   placeCardRefs={placeCardRefs}
                 />
-              ))
-            )}
-            {isStreaming && (streamingContent || streamingPlaces.length > 0) && (
-              <MessageBubble
-                message={{
-                  id: "streaming",
-                  role: "assistant",
-                  content: streamingContent,
-                  createdAt: new Date().toISOString(),
-                  places: streamingPlaces,
-                }}
-                user={user}
-                isStreaming
-                selectedPlaceId={selectedPlaceId}
-                onPlaceClick={handlePlaceCardClick}
-                placeCardRefs={placeCardRefs}
-              />
-            )}
-            {isStreaming && !streamingContent && streamingPlaces.length === 0 && (
-              <div className="flex gap-2">
-                <Avatar className="h-6 w-6 shrink-0">
-                  <AvatarFallback className="bg-primary/10 text-primary">
-                    <HugeiconsIcon icon={AiChat02Icon} className="h-3 w-3" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
-                  <span className="text-sm">Searching...</span>
+              )}
+              {isStreaming && !streamingContent && streamingPlaces.length === 0 && (
+                <div className="flex gap-2">
+                  <Avatar className="h-6 w-6 shrink-0">
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      <HugeiconsIcon icon={AiChat02Icon} className="h-3 w-3" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Searching...</span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
-          <div className="sticky bottom-0 left-0 right-0 p-3 bg-background/80 backdrop-blur-lg">
+          <div className="absolute bottom-1 left-0 right-0 p-3">
             <div className="relative group">
               <Textarea
                 ref={inputRef}
@@ -518,7 +488,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask about places..."
-                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-base bg-muted/50 border-0 rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
+                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-base bg-background/80 backdrop-blur-lg border-0 rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
                 style={{ fontSize: "16px" }}
                 disabled={isStreaming}
                 data-testid="input-chat-message"
