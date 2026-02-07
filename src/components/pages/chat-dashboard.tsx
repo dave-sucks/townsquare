@@ -582,30 +582,32 @@ function MessageBubble({
 }) {
   const isUser = message.role === "user";
 
+  const hasPlaces = message.places && message.places.length > 0;
+
   return (
     <div className={cn("flex flex-col gap-1", isUser ? "items-end" : "items-start")}>
       <div className={cn("flex flex-col", isUser ? "items-end max-w-[90%]" : "items-start w-full")}>
-        {message.content && (
-          <div className={cn(
-            "text-sm whitespace-pre-wrap break-words",
-            isUser 
-              ? "bg-primary text-primary-foreground px-3 py-2 rounded-lg rounded-br-none" 
-              : "text-foreground py-1"
-          )} style={{ overflowWrap: "anywhere" }}>
+        {isUser && message.content && (
+          <div className="text-sm whitespace-pre-wrap break-words bg-primary text-primary-foreground px-3 py-2 rounded-lg rounded-br-none" style={{ overflowWrap: "anywhere" }}>
+            {message.content}
+          </div>
+        )}
+        {!isUser && !hasPlaces && message.content && (
+          <div className="text-sm whitespace-pre-wrap break-words text-foreground py-1" style={{ overflowWrap: "anywhere" }}>
             {message.content}
             {isStreaming && (
               <span className="inline-block w-1 h-3.5 bg-current ml-0.5 animate-pulse" />
             )}
           </div>
         )}
-        {!message.content && isStreaming && (
+        {!message.content && isStreaming && !hasPlaces && (
           <div className="text-sm text-foreground py-1">
             <span className="inline-block w-1 h-3.5 bg-current ml-0.5 animate-pulse" />
           </div>
         )}
-        {message.places && message.places.length > 0 && (
-          <div className="mt-2 space-y-1.5 w-full">
-            {message.places.map((place) => (
+        {hasPlaces && (
+          <div className="mt-1 space-y-1.5 w-full">
+            {message.places!.map((place) => (
               <ChatPlaceCardInline
                 key={place.googlePlaceId}
                 place={place}
@@ -618,9 +620,22 @@ function MessageBubble({
                 }}
               />
             ))}
+            {message.content && (
+              <div className="text-sm whitespace-pre-wrap break-words text-muted-foreground pt-1" style={{ overflowWrap: "anywhere" }}>
+                {message.content}
+                {isStreaming && (
+                  <span className="inline-block w-1 h-3.5 bg-current ml-0.5 animate-pulse" />
+                )}
+              </div>
+            )}
+            {!message.content && isStreaming && (
+              <div className="text-sm text-muted-foreground pt-1">
+                <span className="inline-block w-1 h-3.5 bg-current ml-0.5 animate-pulse" />
+              </div>
+            )}
             {!isStreaming && (
               <SaveAllToListButton 
-                places={message.places} 
+                places={message.places!} 
               />
             )}
           </div>
@@ -714,7 +729,7 @@ function SaveAllToListButton({ places }: { places: PlaceResult[] }) {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56">
+      <DropdownMenuContent side="top" align="start" className="w-56">
         <DropdownMenuLabel className="text-xs text-muted-foreground">
           Save {places.length} places to...
         </DropdownMenuLabel>

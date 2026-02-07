@@ -230,12 +230,19 @@ export async function POST(
       }
     }
 
-    const stream = await openai.chat.completions.create({
+    const streamOptions: any = {
       model: "gpt-5-mini",
       messages: finalMessages,
       stream: true,
       max_completion_tokens: 300,
-    });
+    };
+
+    if (places.length > 0) {
+      streamOptions.tools = tools;
+      streamOptions.tool_choice = "none";
+    }
+
+    const stream = await openai.chat.completions.create(streamOptions);
 
     const encoder = new TextEncoder();
     let fullResponse = "";
