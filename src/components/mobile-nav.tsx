@@ -9,14 +9,13 @@ import {
   Comment01Icon,
   Location01Icon,
   Image02Icon,
-  Menu01Icon,
+  LayoutAlignRightIcon,
   Cancel01Icon,
   UserMultiple02Icon,
   LeftToRightListBulletIcon,
   SparklesIcon,
   CheckmarkBadge01Icon,
   Notification02Icon,
-  Logout02Icon,
   Moon02Icon,
   Sun03Icon,
 } from "@hugeicons/core-free-icons";
@@ -83,19 +82,19 @@ export function MobileNav({ user }: { user: User | null }) {
           data-testid="mobile-menu-backdrop"
         >
           <div
-            className="absolute inset-0 flex flex-col items-end justify-end p-6 pb-20 gap-4"
+            className="absolute inset-0 flex flex-col items-end justify-end pr-4 pb-16"
             onClick={(e) => e.stopPropagation()}
           >
             {user && (
               <Link
                 href={`/u/${user.username || user.id}`}
-                className="flex items-center gap-4 hover-elevate rounded-xl px-4 py-3"
+                className="flex items-center gap-3 hover-elevate rounded-xl px-3 py-2"
                 data-testid="mobile-menu-account"
                 onClick={() => setMenuOpen(false)}
               >
-                <span className="text-lg font-medium">{userName}</span>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted/60">
-                  <HugeiconsIcon icon={CheckmarkBadge01Icon} className="size-6" />
+                <span className="text-base font-medium">{userName}</span>
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted/60">
+                  <HugeiconsIcon icon={CheckmarkBadge01Icon} className="size-5" />
                 </div>
               </Link>
             )}
@@ -104,13 +103,28 @@ export function MobileNav({ user }: { user: User | null }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-4 hover-elevate rounded-xl px-4 py-3"
+                className="flex items-center gap-3 hover-elevate rounded-xl px-3 py-2"
                 data-testid={`mobile-menu-${item.label.toLowerCase()}`}
                 onClick={() => setMenuOpen(false)}
               >
-                <span className="text-lg font-medium">{item.label}</span>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted/60">
-                  <HugeiconsIcon icon={item.icon} className="size-6" />
+                <span className="text-base font-medium">{item.label}</span>
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted/60">
+                  <HugeiconsIcon icon={item.icon} className="size-5" />
+                </div>
+              </Link>
+            ))}
+
+            {MENU_ITEMS_BOTTOM.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex items-center gap-3 hover-elevate rounded-xl px-3 py-2"
+                data-testid={`mobile-menu-${item.label.toLowerCase()}`}
+                onClick={() => setMenuOpen(false)}
+              >
+                <span className="text-base font-medium">{item.label}</span>
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted/60">
+                  <HugeiconsIcon icon={item.icon} className="size-5" />
                 </div>
               </Link>
             ))}
@@ -120,63 +134,34 @@ export function MobileNav({ user }: { user: User | null }) {
                 onClick={() => {
                   setTheme(theme === "dark" ? "light" : "dark");
                 }}
-                className="flex items-center gap-4 hover-elevate rounded-xl px-4 py-3"
+                className="flex items-center gap-3 hover-elevate rounded-xl px-3 py-2"
                 data-testid="mobile-menu-theme"
               >
-                <span className="text-lg font-medium">
+                <span className="text-base font-medium">
                   {theme === "dark" ? "Light Mode" : "Dark Mode"}
                 </span>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted/60">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted/60">
                   <HugeiconsIcon
                     icon={theme === "dark" ? Sun03Icon : Moon02Icon}
-                    className="size-6"
+                    className="size-5"
                   />
                 </div>
               </button>
             )}
 
-            {user && (
-              <a
-                href="/api/logout"
-                className="flex items-center gap-4 hover-elevate rounded-xl px-4 py-3"
-                data-testid="mobile-menu-logout"
-                onClick={() => setMenuOpen(false)}
-              >
-                <span className="text-lg font-medium">Log out</span>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted/60">
-                  <HugeiconsIcon icon={Logout02Icon} className="size-6" />
-                </div>
-              </a>
-            )}
-
             {!user && (
               <a
                 href="/api/login"
-                className="flex items-center gap-4 hover-elevate rounded-xl px-4 py-3"
+                className="flex items-center gap-3 hover-elevate rounded-xl px-3 py-2"
                 data-testid="mobile-menu-login"
                 onClick={() => setMenuOpen(false)}
               >
-                <span className="text-lg font-medium">Sign In</span>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted/60">
-                  <HugeiconsIcon icon={CheckmarkBadge01Icon} className="size-6" />
+                <span className="text-base font-medium">Sign In</span>
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted/60">
+                  <HugeiconsIcon icon={CheckmarkBadge01Icon} className="size-5" />
                 </div>
               </a>
             )}
-
-            {MENU_ITEMS_BOTTOM.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center gap-4 hover-elevate rounded-xl px-4 py-3"
-                data-testid={`mobile-menu-${item.label.toLowerCase()}`}
-                onClick={() => setMenuOpen(false)}
-              >
-                <span className="text-lg font-medium">{item.label}</span>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted/60">
-                  <HugeiconsIcon icon={item.icon} className="size-6" />
-                </div>
-              </Link>
-            ))}
           </div>
         </div>
       )}
@@ -222,7 +207,7 @@ export function MobileNav({ user }: { user: User | null }) {
               )}
               data-testid="mobile-nav-menu"
             >
-              <HugeiconsIcon icon={menuOpen ? Cancel01Icon : Menu01Icon} className="size-6" />
+              <HugeiconsIcon icon={menuOpen ? Cancel01Icon : LayoutAlignRightIcon} className="size-6" />
             </button>
           </div>
         </nav>
