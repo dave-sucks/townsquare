@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import {
   Drawer,
   DrawerContent,
+  DrawerTitle,
 } from "@/components/ui/drawer";
 import { EmojiPickerPopover } from "@/components/shared/emoji-picker-popover";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -206,6 +207,7 @@ export function FloatingSearch() {
       {isMobile && (
         <Drawer open={!!savedPlace} onOpenChange={(open) => { if (!open) handleCloseSavePanel(); }}>
           <DrawerContent data-testid="save-drawer">
+            <DrawerTitle className="sr-only">Save Place</DrawerTitle>
             <SavePanelContent
               drawerPlace={savedPlace}
               onClose={handleCloseSavePanel}
