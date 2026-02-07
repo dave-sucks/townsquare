@@ -21,8 +21,19 @@ import {
   Loading03Icon,
   ArrowTurnBackwardIcon,
   CheckmarkBadge01Icon,
+  Bookmark01Icon,
+  Tick01Icon,
 } from "@hugeicons/core-free-icons";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { SaveToListDropdown } from "@/components/shared/save-to-list-dropdown";
@@ -622,17 +633,29 @@ function MessageBubble({
 import { forwardRef } from "react";
 
 function SaveAllToListButton({ places }: { places: PlaceResult[] }) {
+  const [open, setOpen] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedListName, setSavedListName] = useState("");
+  const [showCreateInput, setShowCreateInput] = useState(false);
+  const [newListName, setNewListName] = useState("");
 
-  const handleSave = async () => {
-    if (saved || saving) return;
+  const { data: listsData } = useQuery<{ lists: { id: string; name: string; _count?: { listPlaces: number } }[] }>({
+    queryKey: ["lists"],
+    queryFn: () => apiRequest("/api/lists"),
+    enabled: open,
+  });
+
+  const lists = listsData?.lists || [];
+
+  const handleSaveToList = async (listName: string, existingListId?: string) => {
+    if (saving) return;
     setSaving(true);
+    setOpen(false);
     try {
       const response = await apiRequest("/api/chat/save-all-to-list", {
         method: "POST",
-        body: JSON.stringify({ places }),
+        body: JSON.stringify({ listName, listId: existingListId, places }),
       }) as { savedCount: number; list: { id: string; name: string } };
       setSaved(true);
       setSavedListName(response.list.name);
@@ -646,32 +669,111 @@ function SaveAllToListButton({ places }: { places: PlaceResult[] }) {
     }
   };
 
+  const handleCreateAndSave = () => {
+    if (!newListName.trim()) return;
+    handleSaveToList(newListName.trim());
+    setNewListName("");
+    setShowCreateInput(false);
+  };
+
+  if (saved) {
+    return (
+      <Button
+        variant="secondary"
+        size="sm"
+        className="mt-1 gap-1.5 text-xs"
+        disabled
+        data-testid="button-save-all-to-list"
+      >
+        <HugeiconsIcon icon={CheckmarkBadge01Icon} className="h-3 w-3" />
+        {savedListName ? `Saved to "${savedListName}"` : "Saved"}
+      </Button>
+    );
+  }
+
   return (
-    <Button
-      variant={saved ? "secondary" : "outline"}
-      size="sm"
-      className="mt-1 gap-1.5 text-xs"
-      onClick={handleSave}
-      disabled={saving || saved}
-      data-testid="button-save-all-to-list"
-    >
-      {saving ? (
-        <>
-          <HugeiconsIcon icon={Loading03Icon} className="h-3 w-3 animate-spin" />
-          Saving...
-        </>
-      ) : saved ? (
-        <>
-          <HugeiconsIcon icon={CheckmarkBadge01Icon} className="h-3 w-3" />
-          {savedListName ? `Saved to "${savedListName}"` : "Saved"}
-        </>
-      ) : (
-        <>
-          <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
-          Save all to list
-        </>
-      )}
-    </Button>
+    <DropdownMenu open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setShowCreateInput(false); setNewListName(""); } }}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-1 gap-1.5 text-xs"
+          disabled={saving}
+          data-testid="button-save-all-to-list"
+        >
+          {saving ? (
+            <>
+              <HugeiconsIcon icon={Loading03Icon} className="h-3 w-3 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <HugeiconsIcon icon={Bookmark01Icon} className="h-3 w-3" />
+              Save all to list
+            </>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-56">
+        <DropdownMenuLabel className="text-xs text-muted-foreground">
+          Save {places.length} places to...
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {!listsData && open && (
+          <div className="px-2 py-3 flex items-center justify-center">
+            <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        )}
+        {listsData && lists.length === 0 && !showCreateInput && (
+          <div className="px-2 py-2 text-xs text-muted-foreground text-center">
+            No lists yet
+          </div>
+        )}
+        {lists.map((list) => (
+          <DropdownMenuItem
+            key={list.id}
+            onClick={() => handleSaveToList(list.name, list.id)}
+            data-testid={`menu-item-list-${list.id}`}
+          >
+            <HugeiconsIcon icon={Bookmark01Icon} className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+            <span className="truncate">{list.name}</span>
+          </DropdownMenuItem>
+        ))}
+        {(lists.length > 0 || (listsData && lists.length === 0)) && <DropdownMenuSeparator />}
+        {showCreateInput ? (
+          <div className="px-2 py-1.5 flex gap-1.5" onPointerDown={(e) => e.stopPropagation()}>
+            <Input
+              value={newListName}
+              onChange={(e) => setNewListName(e.target.value)}
+              placeholder="List name..."
+              autoFocus
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === "Enter") handleCreateAndSave();
+                if (e.key === "Escape") { setShowCreateInput(false); setNewListName(""); }
+              }}
+              data-testid="input-new-list-name"
+            />
+            <Button
+              size="sm"
+              onClick={handleCreateAndSave}
+              disabled={!newListName.trim()}
+              data-testid="button-create-list-confirm"
+            >
+              Save
+            </Button>
+          </div>
+        ) : (
+          <DropdownMenuItem
+            onSelect={(e) => { e.preventDefault(); setShowCreateInput(true); }}
+            data-testid="button-create-new-list"
+          >
+            <HugeiconsIcon icon={PlusSignIcon} className="h-3.5 w-3.5 mr-2" />
+            New list
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

@@ -135,7 +135,7 @@ ${listsContext || "None yet."}
 
 Rules:
 - Use the search_places tool when users ask for recommendations.
-- After results, write a brief friendly summary (2-3 sentences) explaining WHY these places are good picks — mention what stands out about the area or cuisine, share a quick tip, or highlight what makes the selection interesting. Don't list individual place names, addresses, or ratings — the place cards handle that.
+- You MUST ALWAYS write text after finding places. Write 2-3 sentences providing context: why this area is great for what they're looking for, what style of food or vibe to expect, a local tip, or what makes these spots stand out. This context is important — the place cards only show names and ratings, so your text provides the color and personality. Don't repeat individual place names, addresses, or ratings — just provide the narrative.
 - If asked about a social media account or influencer, say you can't access social media and ask for a specific neighborhood or cuisine instead.
 - Never output JSON, code, or technical data in your text.`;
 }
@@ -207,10 +207,16 @@ export async function POST(
             const args = JSON.parse(fn.arguments);
             places = await searchPlaces(args.query, args.location);
             places = await assignEmojis(places, args.query);
+            const typeSummary = [...new Set(places.map(p => p.primaryType).filter(Boolean))].slice(0, 3).join(", ");
             finalMessages.push({
               role: "tool",
               tool_call_id: toolCall.id,
-              content: JSON.stringify({ found: places.length }),
+              content: JSON.stringify({ 
+                found: places.length, 
+                query: args.query,
+                location: args.location || "nearby",
+                types: typeSummary || "various",
+              }),
             });
           } catch (error) {
             console.error("search_places error:", error);
@@ -247,6 +253,12 @@ export async function POST(
               fullResponse += text;
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: text })}\n\n`));
             }
+          }
+
+          if (!fullResponse.trim() && places.length > 0) {
+            const fallback = `Here are ${places.length} spots I found for you. Tap any to see more details!`;
+            fullResponse = fallback;
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: fallback })}\n\n`));
           }
 
           await prisma.chatMessage.create({
