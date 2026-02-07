@@ -59,7 +59,7 @@ interface SocialPostData {
   likes?: number | null;
   postedAt?: string | null;
   permalink?: string | null;
-  source?: 'instagram' | 'tiktok' | 'manual';
+  source?: 'instagram' | 'tiktok' | 'manual' | string | null;
 }
 
 interface ActivityData {

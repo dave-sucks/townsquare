@@ -398,7 +398,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
         />
       </PageHeader>
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto pb-20 md:pb-0">
         <div className="p-4 max-w-3xl mx-auto w-full pt-0">
         {/* Hero Photo - inline with padding and rounded */}
         {place.photoRefs && (place.photoRefs as string[]).length > 0 ? (

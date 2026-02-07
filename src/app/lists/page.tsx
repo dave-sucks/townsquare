@@ -104,7 +104,7 @@ export default function ListsPage() {
     return (
       <AppShell user={user}>
         <PageHeader title="Lists" />
-        <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full">
+        <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full pb-20 md:pb-4">
           <div className="flex flex-col items-center justify-center py-16">
             <HugeiconsIcon icon={LeftToRightListBulletIcon} className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="font-medium">Sign in to view your lists</p>
@@ -149,7 +149,7 @@ export default function ListsPage() {
         </Dialog>
       </PageHeader>
 
-      <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full">
+      <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full pb-20 md:pb-4">
         {/* Search */}
         <div className="relative mb-4">
           <HugeiconsIcon icon={Search01Icon} className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

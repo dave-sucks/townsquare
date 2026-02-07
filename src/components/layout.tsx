@@ -36,6 +36,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { UserMultiple02Icon, LeftToRightListBulletIcon, Logout02Icon, ArrowDown01Icon, Activity01Icon, Comment01Icon, Location01Icon, SparklesIcon, CheckmarkBadge01Icon, CreditCardIcon, Notification02Icon, Moon02Icon, Sun03Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
+import { MobileNav } from "@/components/mobile-nav";
 
 interface User {
   id: string;
@@ -65,9 +66,10 @@ export function AppShell({
     <SidebarProvider>
       <div className="flex h-dvh w-full">
         <SidebarNav user={user} />
-        <SidebarInset className="flex flex-col flex-1 overflow-hidden">
+        <SidebarInset className="flex flex-col flex-1 overflow-hidden min-h-[100dvh]">
           {children}
         </SidebarInset>
+        <MobileNav user={user} />
       </div>
     </SidebarProvider>
   );
@@ -305,7 +307,7 @@ interface PageHeaderProps extends VariantProps<typeof pageHeaderVariants> {
 export function PageHeader({ title, children, size, showTrigger = true, backHref, className }: PageHeaderProps) {
   return (
     <header className={cn(pageHeaderVariants({ size }), className)}>
-      {showTrigger && <SidebarTrigger data-testid="button-sidebar-toggle" />}
+      {showTrigger && <SidebarTrigger className="hidden md:flex" data-testid="button-sidebar-toggle" />}
       {title && <h1 className="font-semibold text-sm font-brand">{title}</h1>}
       <div className="ml-auto flex items-center gap-2">
         {children}

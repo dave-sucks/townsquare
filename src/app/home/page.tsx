@@ -39,14 +39,14 @@ interface ActivityList {
 
 interface SocialPost {
   author: string;
-  authorImage: string | null;
-  caption: string | null;
-  mediaUrl: string | null;
-  mediaType: string | null;
-  likes: number | null;
-  postedAt: string | null;
-  permalink: string;
-  source: string | null;
+  authorImage?: string | null;
+  caption?: string | null;
+  mediaUrl?: string | null;
+  mediaType?: string | null;
+  likes?: number | null;
+  postedAt?: string | null;
+  permalink?: string | null;
+  source?: 'instagram' | 'tiktok' | 'manual' | string | null;
 }
 
 interface Activity {
@@ -198,7 +198,7 @@ export default function HomePage() {
   return (
     <AppShell user={user}>
       <PageHeader title="Feed" />
-      <div className="flex-1 overflow-auto max-w-xl mx-auto w-full">
+      <div className="flex-1 overflow-auto max-w-xl mx-auto w-full pb-20 md:pb-0">
         <div className="px-4 pt-2">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="justify-start flex-wrap gap-1" data-testid="feed-tabs">

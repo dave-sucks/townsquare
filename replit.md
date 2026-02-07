@@ -26,6 +26,7 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 - **AI Chat**: New `/chat` page with conversation-based AI assistant for place discovery using OpenAI Function Calling and displaying place cards. Home state shows input field ready to type; creates conversation on first message. AI tools include `search_places` (find places via Google) and `suggest_save_to_list` (offer a "Save all to [list]" button). The AI also assigns contextual emojis to each place result using a separate AI call. Chat message interface supports `action` field for rendering interactive buttons like "Save All to List".
 - **Activity Feed**: Supports "All" and "Following" tabs with filter API parameter. Following tab shows contextual empty state for users not following anyone.
 - **Bottom Sheet**: Accepts `requestedSnapPoint` prop to programmatically snap (e.g., snap to mid when a place is selected on mobile).
+- **Mobile Navigation**: Floating bottom navigation bar (`src/components/mobile-nav.tsx`) visible only on mobile (<768px). Features a pill-shaped bar with icon-only buttons for Map, Feed, and Chat, plus a separate menu toggle button. The menu opens an overlay with additional navigation items (People, Lists, Notifications, theme toggle, etc.). The desktop sidebar trigger is hidden on mobile.
 
 ### Backend Architecture
 - **Framework**: Next.js API Routes (App Router).

@@ -91,7 +91,7 @@ export default function PeoplePage() {
     return (
       <AppShell user={user}>
         <PageHeader title="People" />
-        <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full">
+        <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full pb-20 md:pb-4">
           <div className="flex flex-col items-center justify-center py-16">
             <HugeiconsIcon icon={UserMultiple02Icon} className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="font-medium">Please sign in</p>
@@ -121,7 +121,7 @@ export default function PeoplePage() {
           onOpenChange={setInstagramImportOpen}
         />
       </PageHeader>
-      <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full">
+      <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full pb-20 md:pb-4">
         {/* Search and View Toggle */}
         <div className="flex items-center gap-2 mb-4">
           <div className="relative flex-1">
