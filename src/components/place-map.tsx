@@ -501,7 +501,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
         </div>
       )}
       <div ref={mapRef} className="h-full w-full" data-testid="map-container" />
-      {showSearch && !isLoading && (
+      {showSearch && (
         <FloatingSearch />
       )}
     </div>
