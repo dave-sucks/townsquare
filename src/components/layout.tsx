@@ -63,7 +63,7 @@ export function AppShell({
 }) {
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full">
+      <div className="flex h-dvh w-full">
         <SidebarNav user={user} />
         <SidebarInset className="flex flex-col flex-1 overflow-hidden">
           {children}

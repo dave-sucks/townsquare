@@ -18,7 +18,7 @@ export function LandingPage() {
   }, [mapReady]);
 
   return (
-    <div className="relative h-screen w-full overflow-hidden">
+    <div className="relative h-dvh w-full overflow-hidden">
       <div className="absolute inset-0 bg-[#212121]" />
 
       <LandingMap onReady={() => setMapReady(true)} />
