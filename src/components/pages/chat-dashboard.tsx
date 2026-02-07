@@ -480,7 +480,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
             </div>
           </div>
 
-          <div className="absolute bottom-1 left-0 right-0 p-3">
+          <div className="absolute bottom-0 left-0 right-0 p-3 bg-black/[0.03] dark:bg-white/[0.03] backdrop-blur-xl">
             <div className="relative group">
               <Textarea
                 ref={inputRef}
@@ -488,7 +488,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask about places..."
-                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-base bg-background/80 backdrop-blur-lg border-0 rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
+                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-base bg-background/60 backdrop-blur-lg border border-border/40 rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
                 style={{ fontSize: "16px" }}
                 disabled={isStreaming}
                 data-testid="input-chat-message"
