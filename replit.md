@@ -23,7 +23,7 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 - **Social Features**: User profiles, a people directory, and an activity feed displaying actions from the user and followed accounts, including social post embeds in reviews.
 - **Profile Pages**: Map-based dashboard layout with floating sidebar containing profile header and tabbed content for Places and Feed.
 - **Tagging System**: Robust tagging system for places with categories like Vibe, Food Type, Occasion, Features, Dietary, Drinks. Tags have search weights for ranking.
-- **AI Chat**: New `/chat` page with conversation-based AI assistant for place discovery using OpenAI Function Calling and displaying place cards. Home state shows input field ready to type; creates conversation on first message.
+- **AI Chat**: New `/chat` page with conversation-based AI assistant for place discovery using OpenAI Function Calling and displaying place cards. Home state shows input field ready to type; creates conversation on first message. AI tools include `search_places` (find places via Google) and `suggest_save_to_list` (offer a "Save all to [list]" button). The AI also assigns contextual emojis to each place result using a separate AI call. Chat message interface supports `action` field for rendering interactive buttons like "Save All to List".
 - **Activity Feed**: Supports "All" and "Following" tabs with filter API parameter. Following tab shows contextual empty state for users not following anyone.
 - **Bottom Sheet**: Accepts `requestedSnapPoint` prop to programmatically snap (e.g., snap to mid when a place is selected on mobile).
 

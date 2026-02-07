@@ -16,6 +16,7 @@ interface PlaceResult {
   rating: number | null;
   userRatingsTotal: number | null;
   photoRef: string | null;
+  emoji: string | null;
 }
 
 const tools: ChatCompletionTool[] = [
@@ -37,6 +38,23 @@ const tools: ChatCompletionTool[] = [
           },
         },
         required: ["query"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "suggest_save_to_list",
+      description: "Offer the user a button to save all currently found places to a new list. Call this after presenting search results to the user, suggesting a creative and descriptive list name based on the search context.",
+      parameters: {
+        type: "object",
+        properties: {
+          listName: {
+            type: "string",
+            description: "A creative, descriptive name for the list, e.g., 'West Village Tacos', 'Brooklyn Coffee Crawl', 'Date Night Spots'",
+          },
+        },
+        required: ["listName"],
       },
     },
   },
@@ -73,7 +91,41 @@ async function searchPlaces(query: string, location?: string): Promise<PlaceResu
     rating: result.rating || null,
     userRatingsTotal: result.user_ratings_total || null,
     photoRef: result.photos?.[0]?.photo_reference || null,
+    emoji: null,
   }));
+}
+
+async function assignEmojis(places: PlaceResult[], query: string): Promise<PlaceResult[]> {
+  try {
+    const placeNames = places.map((p, i) => `${i}: ${p.name} (${p.primaryType || p.types[0] || "place"})`).join("\n");
+    const response = await openai.chat.completions.create({
+      model: "gpt-5-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You assign a single contextual emoji to each place. Respond with a JSON object: {"emojis": ["emoji1", "emoji2", ...]}. One emoji per place, in order. Choose emojis that match the cuisine, vibe, or type of each place based on the search query and place names. Examples: tacos place -> "🌮", pizza -> "🍕", coffee -> "☕", bar -> "🍸", sushi -> "🍣", burger -> "🍔".`,
+        },
+        {
+          role: "user",
+          content: `Search query: "${query}"\n\nPlaces:\n${placeNames}`,
+        },
+      ],
+      max_completion_tokens: 100,
+      response_format: { type: "json_object" },
+    });
+    const content = response.choices[0]?.message?.content;
+    if (content) {
+      const parsed = JSON.parse(content);
+      const emojis: string[] = Array.isArray(parsed.emojis) ? parsed.emojis : [];
+      return places.map((p, i) => ({
+        ...p,
+        emoji: emojis[i] || null,
+      }));
+    }
+  } catch (e) {
+    console.error("Emoji assignment failed:", e);
+  }
+  return places;
 }
 
 async function buildSystemPrompt(userId: string): Promise<string> {
@@ -129,7 +181,7 @@ IMPORTANT: When users ask for place recommendations, you MUST use the search_pla
 - "recommend restaurants near [location]"
 - "find bars in [neighborhood]"
 
-After searching, present the results naturally and offer to help them save any places they like.
+After searching, present the results naturally. ALWAYS also call the suggest_save_to_list tool with a creative list name based on the search context (e.g., "West Village Tacos", "Brooklyn Coffee Crawl"). This gives the user a one-click option to save all found places.
 
 Be conversational, helpful, and concise. Focus on helping users discover and manage places they love.`;
 }
@@ -185,6 +237,7 @@ export async function POST(
     ];
 
     let places: PlaceResult[] = [];
+    let suggestedListName: string | null = null;
     let finalMessages = [...chatMessages];
 
     const initialResponse = await openai.chat.completions.create({
@@ -206,6 +259,7 @@ export async function POST(
           try {
             const args = JSON.parse(fn.arguments);
             places = await searchPlaces(args.query, args.location);
+            places = await assignEmojis(places, args.query);
             
             finalMessages.push({
               role: "tool",
@@ -218,6 +272,23 @@ export async function POST(
               role: "tool",
               tool_call_id: toolCall.id,
               content: JSON.stringify({ error: "Failed to search places" }),
+            });
+          }
+        } else if (fn.name === "suggest_save_to_list") {
+          try {
+            const args = JSON.parse(fn.arguments);
+            suggestedListName = args.listName;
+            finalMessages.push({
+              role: "tool",
+              tool_call_id: toolCall.id,
+              content: JSON.stringify({ success: true, listName: suggestedListName }),
+            });
+          } catch (error) {
+            console.error("suggest_save_to_list error:", error);
+            finalMessages.push({
+              role: "tool",
+              tool_call_id: toolCall.id,
+              content: JSON.stringify({ error: "Failed to suggest list" }),
             });
           }
         }
@@ -238,6 +309,12 @@ export async function POST(
       async start(controller) {
         try {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ places })}\n\n`));
+
+          if (suggestedListName && places.length > 0) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+              action: { type: "save_to_list", listName: suggestedListName } 
+            })}\n\n`));
+          }
 
           for await (const chunk of stream) {
             const chunkContent = chunk.choices[0]?.delta?.content || "";

@@ -19,7 +19,8 @@ import {
   Location01Icon,
   AiChat02Icon,
   Loading03Icon,
-  ArrowTurnBackwardIcon
+  ArrowTurnBackwardIcon,
+  CheckmarkBadge01Icon,
 } from "@hugeicons/core-free-icons";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,7 @@ interface PlaceResult {
   rating: number | null;
   userRatingsTotal: number | null;
   photoRef: string | null;
+  emoji: string | null;
 }
 
 interface UserData {
@@ -49,12 +51,18 @@ interface UserData {
   profileImageUrl: string | null;
 }
 
+interface ChatAction {
+  type: "save_to_list";
+  listName: string;
+}
+
 interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
   createdAt: string;
   places?: PlaceResult[];
+  action?: ChatAction;
 }
 
 interface Conversation {
@@ -92,6 +100,8 @@ export function ChatDashboard({ user }: { user: UserData }) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [streamingPlaces, setStreamingPlaces] = useState<PlaceResult[]>([]);
+  const [streamingAction, setStreamingAction] = useState<ChatAction | null>(null);
+  const streamingActionRef = useRef<ChatAction | null>(null);
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
@@ -215,9 +225,11 @@ export function ChatDashboard({ user }: { user: UserData }) {
     setLocalMessages(prev => [...prev, userMessage]);
     setInputValue("");
     isStreamingRef.current = true;
+    streamingActionRef.current = null;
     setIsStreaming(true);
     setStreamingContent("");
     setStreamingPlaces([]);
+    setStreamingAction(null);
 
     try {
       const response = await fetch(`/api/conversations/${activeConversationId}/messages`, {
@@ -252,6 +264,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
               toast.error("Failed to get response. Please try again.");
               setStreamingContent("");
               setStreamingPlaces([]);
+              setStreamingAction(null);
               isStreamingRef.current = false;
               setIsStreaming(false);
               queryClient.invalidateQueries({ queryKey: ["conversation", activeConversationId] });
@@ -260,6 +273,10 @@ export function ChatDashboard({ user }: { user: UserData }) {
             if (data.places !== undefined) {
               receivedPlaces = data.places;
               setStreamingPlaces(receivedPlaces);
+            }
+            if (data.action) {
+              streamingActionRef.current = data.action;
+              setStreamingAction(data.action);
             }
             if (data.content) {
               fullContent += data.content;
@@ -272,10 +289,13 @@ export function ChatDashboard({ user }: { user: UserData }) {
                 content: fullContent,
                 createdAt: new Date().toISOString(),
                 places: receivedPlaces.length > 0 ? receivedPlaces : undefined,
+                action: streamingActionRef.current || undefined,
               };
               setLocalMessages(prev => [...prev, assistantMessage]);
               setStreamingContent("");
               setStreamingPlaces([]);
+              setStreamingAction(null);
+              streamingActionRef.current = null;
               queryClient.invalidateQueries({ queryKey: ["conversations"] });
               queryClient.invalidateQueries({ queryKey: ["conversation", activeConversationId] });
             }
@@ -469,6 +489,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
                     content: streamingContent,
                     createdAt: new Date().toISOString(),
                     places: streamingPlaces,
+                    action: streamingAction || undefined,
                   }}
                   user={user}
                   isStreaming
@@ -572,7 +593,7 @@ function MessageBubble({
 
   return (
     <div className={cn("flex flex-col gap-1", isUser ? "items-end" : "items-start")}>
-      <div className={cn("flex flex-col", isUser ? "items-end" : "items-start", "max-w-[90%]")}>
+      <div className={cn("flex flex-col", isUser ? "items-end max-w-[90%]" : "items-start w-full")}>
         <div className={cn(
           "text-sm whitespace-pre-wrap break-words",
           isUser 
@@ -585,7 +606,7 @@ function MessageBubble({
           )}
         </div>
         {message.places && message.places.length > 0 && (
-          <div className="mt-2 space-y-2 w-full">
+          <div className="mt-2 space-y-1.5 w-full">
             {message.places.map((place) => (
               <ChatPlaceCardInline
                 key={place.googlePlaceId}
@@ -599,6 +620,12 @@ function MessageBubble({
                 }}
               />
             ))}
+            {message.action?.type === "save_to_list" && message.places.length > 0 && (
+              <SaveAllToListButton 
+                listName={message.action.listName} 
+                places={message.places} 
+              />
+            )}
           </div>
         )}
       </div>
@@ -607,6 +634,58 @@ function MessageBubble({
 }
 
 import { forwardRef } from "react";
+
+function SaveAllToListButton({ listName, places }: { listName: string; places: PlaceResult[] }) {
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (saved || saving) return;
+    setSaving(true);
+    try {
+      const response = await apiRequest("/api/chat/save-all-to-list", {
+        method: "POST",
+        body: JSON.stringify({ listName, places }),
+      }) as { savedCount: number; list: { id: string; name: string } };
+      setSaved(true);
+      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
+      toast.success(`Saved ${response.savedCount} places to "${listName}"`);
+    } catch {
+      toast.error("Failed to save places. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Button
+      variant={saved ? "secondary" : "default"}
+      size="sm"
+      className="w-full mt-2 gap-2"
+      onClick={handleSave}
+      disabled={saving || saved}
+      data-testid="button-save-all-to-list"
+    >
+      {saving ? (
+        <>
+          <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+          Saving...
+        </>
+      ) : saved ? (
+        <>
+          <HugeiconsIcon icon={CheckmarkBadge01Icon} className="h-4 w-4" />
+          Saved to &ldquo;{listName}&rdquo;
+        </>
+      ) : (
+        <>
+          <HugeiconsIcon icon={PlusSignIcon} className="h-4 w-4" />
+          Save all to &ldquo;{listName}&rdquo;
+        </>
+      )}
+    </Button>
+  );
+}
 
 interface ChatPlaceCardInlineProps {
   place: PlaceResult;
@@ -626,6 +705,29 @@ interface SavedPlaceData {
   };
 }
 
+function formatCategoryName(type: string): string {
+  if (!type) return "";
+  return type
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (l) => l.toUpperCase());
+}
+
+function getChatCategory(primaryType: string | null, types: string[]): string {
+  const priority = ["restaurant", "cafe", "bar", "bakery", "night_club", "meal_takeaway", "meal_delivery"];
+  if (primaryType && priority.includes(primaryType)) return formatCategoryName(primaryType);
+  if (types.length > 0) {
+    for (const cat of priority) {
+      if (types.includes(cat)) return formatCategoryName(cat);
+    }
+    const nonGeneric = types.filter(t => !["establishment", "point_of_interest", "food", "store"].includes(t));
+    if (nonGeneric.length > 0) return formatCategoryName(nonGeneric[0]);
+  }
+  if (primaryType && !["establishment", "point_of_interest", "food"].includes(primaryType)) {
+    return formatCategoryName(primaryType);
+  }
+  return "";
+}
+
 const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>(
   function ChatPlaceCardInline({ place, isSelected, onClick }, ref) {
     const { data: savedPlacesData } = useQuery<{ savedPlaces: SavedPlaceData[] }>({
@@ -637,12 +739,7 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
       sp => sp.place.googlePlaceId === place.googlePlaceId
     );
 
-    const formatType = (type: string | null) => {
-      if (!type) return "";
-      return type.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
-    };
-
-    const placeType = formatType(place.primaryType);
+    const category = getChatCategory(place.primaryType, place.types);
     const locationDisplay = place.formattedAddress.split(",")[0];
 
     const placeForDropdown = {
@@ -658,7 +755,7 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
       photoRefs: place.photoRef ? [place.photoRef] : null,
     };
 
-    const isSaved = !!savedPlace;
+    const ratingStars = place.rating ? place.rating.toFixed(1) : null;
 
     return (
       <div
@@ -673,26 +770,40 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
           }
         }}
         className={cn(
-          "group flex items-center gap-3 p-1 rounded-md transition-colors cursor-pointer",
-          isSelected ? "bg-accent" : "hover:bg-accent"
+          "group flex items-center gap-3 p-1.5 rounded-lg transition-colors cursor-pointer",
+          isSelected ? "bg-accent" : "hover-elevate"
         )}
+        data-testid={`chat-place-card-${place.googlePlaceId}`}
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
-            <HugeiconsIcon icon={Location01Icon} className="h-5 w-5 text-muted-foreground" />
+          <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {place.emoji ? (
+              <span className="text-xl">{place.emoji}</span>
+            ) : (
+              <HugeiconsIcon icon={Location01Icon} className="h-5 w-5 text-muted-foreground" />
+            )}
           </div>
 
           <div className="flex-1 min-w-0 overflow-hidden">
-            <h3 className="font-medium text-sm truncate font-brand">
+            <h3 className="font-semibold text-sm truncate font-brand">
               {place.name}
             </h3>
             
-            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+            {category && (
+              <div className="flex items-center gap-1 text-sm text-foreground truncate">
+                <span>{category}</span>
+                {ratingStars && (
+                  <>
+                    <span className="text-muted-foreground">·</span>
+                    <span className="text-muted-foreground">{ratingStars}</span>
+                  </>
+                )}
+              </div>
+            )}
+            
+            <div className="flex items-center gap-1 text-xs text-muted-foreground truncate">
               <HugeiconsIcon icon={Location01Icon} className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">
-                {locationDisplay}
-                {placeType && <> — {placeType}</>}
-              </span>
+              <span className="truncate">{locationDisplay}</span>
             </div>
           </div>
         </div>
