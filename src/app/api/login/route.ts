@@ -6,7 +6,10 @@ export async function GET() {
     const authUrl = await getAuthorizationUrl();
     return NextResponse.redirect(authUrl);
   } catch (error: any) {
-    console.error("Login error:", error);
-    return NextResponse.json({ error: "Login failed" }, { status: 500 });
+    console.error("Login error:", error?.message, error?.stack);
+    return NextResponse.json(
+      { error: "Login failed", detail: error?.message || "Unknown error" },
+      { status: 500 }
+    );
   }
 }
