@@ -40,7 +40,7 @@ export function ListCard({
   user,
 }: ListCardProps) {
   const firstPhoto = places.find(p => p.photoRefs?.length)?.photoRefs?.[0];
-  const photoUrl = firstPhoto ? `/api/places/photo?ref=${encodeURIComponent(firstPhoto)}` : null;
+  const photoUrl = firstPhoto ? `/api/places/photo?photoRef=${encodeURIComponent(firstPhoto)}` : null;
 
   const userName = user?.firstName && user?.lastName
     ? `${user.firstName} ${user.lastName}`
