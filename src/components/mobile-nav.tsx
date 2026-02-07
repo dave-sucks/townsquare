@@ -185,40 +185,46 @@ export function MobileNav({ user }: { user: User | null }) {
         className="fixed bottom-0 left-0 right-0 z-[99] md:hidden border-t border-border/40 bg-background/80 backdrop-blur-2xl pb-[env(safe-area-inset-bottom,0px)]"
         data-testid="mobile-bottom-nav"
       >
-        <nav className="flex items-center justify-around px-2 py-1.5">
-          {BOTTOM_NAV_ITEMS.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/" && pathname.startsWith(item.href));
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center justify-center min-w-[2.5rem] p-2 rounded-lg transition-colors",
-                  isActive
-                    ? "text-foreground"
-                    : "text-muted-foreground"
-                )}
-                data-testid={`mobile-nav-${item.label.toLowerCase()}`}
-              >
-                <HugeiconsIcon icon={item.icon} className="size-5" />
-              </Link>
-            );
-          })}
+        <nav className="grid grid-cols-[1fr_auto_1fr] items-center px-2 py-1.5">
+          <div />
 
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className={cn(
-              "flex items-center justify-center min-w-[2.5rem] p-2 rounded-lg transition-colors",
-              menuOpen
-                ? "text-foreground"
-                : "text-muted-foreground"
-            )}
-            data-testid="mobile-nav-menu"
-          >
-            <HugeiconsIcon icon={menuOpen ? Cancel01Icon : Menu01Icon} className="size-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            {BOTTOM_NAV_ITEMS.map((item) => {
+              const isActive =
+                pathname === item.href ||
+                (item.href !== "/" && pathname.startsWith(item.href));
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center justify-center p-2 rounded-lg transition-colors",
+                    isActive
+                      ? "text-foreground"
+                      : "text-muted-foreground"
+                  )}
+                  data-testid={`mobile-nav-${item.label.toLowerCase()}`}
+                >
+                  <HugeiconsIcon icon={item.icon} className="size-5" />
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className={cn(
+                "flex items-center justify-center p-2 rounded-lg transition-colors",
+                menuOpen
+                  ? "text-foreground"
+                  : "text-muted-foreground"
+              )}
+              data-testid="mobile-nav-menu"
+            >
+              <HugeiconsIcon icon={menuOpen ? Cancel01Icon : Menu01Icon} className="size-5" />
+            </button>
+          </div>
         </nav>
       </div>
     </>

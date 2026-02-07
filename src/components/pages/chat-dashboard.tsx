@@ -379,7 +379,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
       </div>
 
       {!activeConversationId ? (
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 relative">
           {conversationsLoading ? (
             <div className="flex-1 flex items-center justify-center">
               <HugeiconsIcon icon={Loading03Icon} className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -394,7 +394,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
             </div>
           ) : (
             <ScrollArea className="flex-1">
-              <div className="p-2 space-y-1">
+              <div className="p-2 pb-20 space-y-1">
                 {conversations.map((conv) => (
                   <div
                     key={conv.id}
@@ -426,7 +426,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
             </ScrollArea>
           )}
 
-          <div className="p-4 pt-2">
+          <div className="absolute bottom-0 left-0 right-0 p-3">
             <div className="relative group">
               <Textarea
                 ref={!activeConversationId ? inputRef : undefined}
@@ -441,13 +441,13 @@ export function ChatDashboard({ user }: { user: UserData }) {
                   }
                 }}
                 placeholder="Ask about places..."
-                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-base bg-background/80 backdrop-blur-md border shadow-xl rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
+                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-base bg-muted/50 backdrop-blur-xl border-0 rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
                 disabled={createConversationMutation.isPending}
                 data-testid="input-chat-message-home"
               />
               <Button
                 size="sm"
-                className="absolute right-2 bottom-2 h-8 w-8 rounded-xl shadow-sm transition-transform active:scale-95"
+                className="absolute right-2 bottom-2 h-8 w-8 rounded-xl transition-transform active:scale-95"
                 onClick={startNewChat}
                 disabled={!inputValue.trim() || createConversationMutation.isPending}
                 data-testid="button-send-message-home"
@@ -458,9 +458,9 @@ export function ChatDashboard({ user }: { user: UserData }) {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 relative">
           <ScrollArea className="flex-1 min-h-0" ref={scrollRef}>
-            <div className="p-3 space-y-4">
+            <div className="p-3 pb-20 space-y-4">
               {messagesLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <HugeiconsIcon icon={Loading03Icon} className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -514,22 +514,21 @@ export function ChatDashboard({ user }: { user: UserData }) {
             </div>
           </ScrollArea>
 
-          <div className="p-4 pt-0">
+          <div className="absolute bottom-0 left-0 right-0 p-3">
             <div className="relative group">
-              <div className="absolute -inset-2 bg-gradient-to-b from-transparent to-background/20 rounded-2xl pointer-events-none" />
               <Textarea
                 ref={inputRef}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask about places..."
-                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-base bg-background/80 backdrop-blur-md border shadow-xl rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
+                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-base bg-muted/50 backdrop-blur-xl border-0 rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
                 disabled={isStreaming}
                 data-testid="input-chat-message"
               />
               <Button
                 size="sm"
-                className="absolute right-2 bottom-2 h-8 w-8 rounded-xl shadow-sm transition-transform active:scale-95"
+                className="absolute right-2 bottom-2 h-8 w-8 rounded-xl transition-transform active:scale-95"
                 onClick={() => sendMessage()}
                 disabled={!inputValue.trim() || isStreaming}
                 data-testid="button-send-message"
