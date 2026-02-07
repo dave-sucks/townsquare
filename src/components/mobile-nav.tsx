@@ -8,7 +8,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Comment01Icon,
   Location01Icon,
-  Activity01Icon,
+  Image02Icon,
   Menu01Icon,
   Cancel01Icon,
   UserMultiple02Icon,
@@ -33,15 +33,18 @@ interface User {
 
 const BOTTOM_NAV_ITEMS = [
   { href: "/", label: "Map", icon: Location01Icon },
-  { href: "/home", label: "Feed", icon: Activity01Icon },
   { href: "/chat", label: "Chat", icon: Comment01Icon },
+  { href: "/home", label: "Feed", icon: Image02Icon },
 ] as const;
 
-const MENU_ITEMS = [
+const MENU_ITEMS_TOP = [
   { href: "/people", label: "People", icon: UserMultiple02Icon },
-  { href: "/lists", label: "Lists", icon: LeftToRightListBulletIcon },
   { href: "/notifications", label: "Notifications", icon: Notification02Icon },
   { href: "/upgrade", label: "Upgrade", icon: SparklesIcon },
+] as const;
+
+const MENU_ITEMS_BOTTOM = [
+  { href: "/lists", label: "Lists", icon: LeftToRightListBulletIcon },
 ] as const;
 
 export function MobileNav({ user }: { user: User | null }) {
@@ -75,12 +78,12 @@ export function MobileNav({ user }: { user: User | null }) {
     <>
       {menuOpen && (
         <div
-          className="fixed inset-0 z-[98] bg-background/80 backdrop-blur-md md:hidden"
+          className="fixed inset-0 z-[98] bg-background/70 backdrop-blur-xl md:hidden"
           onClick={() => setMenuOpen(false)}
           data-testid="mobile-menu-backdrop"
         >
           <div
-            className="absolute inset-0 flex flex-col items-end justify-end p-6 pb-24 gap-5"
+            className="absolute inset-0 flex flex-col items-end justify-end p-6 pb-24 gap-4"
             onClick={(e) => e.stopPropagation()}
           >
             {user && (
@@ -91,13 +94,13 @@ export function MobileNav({ user }: { user: User | null }) {
                 onClick={() => setMenuOpen(false)}
               >
                 <span className="text-lg font-medium">{userName}</span>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted/60">
                   <HugeiconsIcon icon={CheckmarkBadge01Icon} className="size-6" />
                 </div>
               </Link>
             )}
 
-            {MENU_ITEMS.map((item) => (
+            {MENU_ITEMS_TOP.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -106,7 +109,7 @@ export function MobileNav({ user }: { user: User | null }) {
                 onClick={() => setMenuOpen(false)}
               >
                 <span className="text-lg font-medium">{item.label}</span>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted/60">
                   <HugeiconsIcon icon={item.icon} className="size-6" />
                 </div>
               </Link>
@@ -123,7 +126,7 @@ export function MobileNav({ user }: { user: User | null }) {
                 <span className="text-lg font-medium">
                   {theme === "dark" ? "Light Mode" : "Dark Mode"}
                 </span>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted/60">
                   <HugeiconsIcon
                     icon={theme === "dark" ? Sun03Icon : Moon02Icon}
                     className="size-6"
@@ -140,7 +143,7 @@ export function MobileNav({ user }: { user: User | null }) {
                 onClick={() => setMenuOpen(false)}
               >
                 <span className="text-lg font-medium">Log out</span>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted/60">
                   <HugeiconsIcon icon={Logout02Icon} className="size-6" />
                 </div>
               </a>
@@ -154,17 +157,37 @@ export function MobileNav({ user }: { user: User | null }) {
                 onClick={() => setMenuOpen(false)}
               >
                 <span className="text-lg font-medium">Sign In</span>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted/60">
                   <HugeiconsIcon icon={CheckmarkBadge01Icon} className="size-6" />
                 </div>
               </a>
             )}
+
+            {MENU_ITEMS_BOTTOM.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex items-center gap-4 hover-elevate rounded-xl px-4 py-3"
+                data-testid={`mobile-menu-${item.label.toLowerCase()}`}
+                onClick={() => setMenuOpen(false)}
+              >
+                <span className="text-lg font-medium">{item.label}</span>
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted/60">
+                  <HugeiconsIcon icon={item.icon} className="size-6" />
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       )}
 
-      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[99] flex items-center gap-3 md:hidden" data-testid="mobile-bottom-nav">
-        <nav className="flex items-center gap-1 bg-background/90 backdrop-blur-lg border rounded-full px-2 py-1.5 shadow-lg">
+      <div
+        className="fixed bottom-5 inset-x-4 z-[99] grid grid-cols-[1fr_auto_1fr] items-center md:hidden"
+        data-testid="mobile-bottom-nav"
+      >
+        <div />
+
+        <nav className="flex items-center gap-1.5 bg-white/60 dark:bg-black/50 backdrop-blur-2xl border border-white/30 dark:border-white/10 rounded-full px-2 py-1.5 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
           {BOTTOM_NAV_ITEMS.map((item) => {
             const isActive =
               pathname === item.href ||
@@ -176,8 +199,8 @@ export function MobileNav({ user }: { user: User | null }) {
                 className={cn(
                   "flex items-center justify-center w-11 h-11 rounded-full transition-colors",
                   isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover-elevate"
+                    ? "bg-white dark:bg-neutral-900 text-foreground shadow-sm"
+                    : "text-muted-foreground"
                 )}
                 data-testid={`mobile-nav-${item.label.toLowerCase()}`}
               >
@@ -187,18 +210,20 @@ export function MobileNav({ user }: { user: User | null }) {
           })}
         </nav>
 
-        <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className={cn(
-            "flex items-center justify-center w-11 h-11 rounded-full shadow-lg border transition-colors",
-            menuOpen
-              ? "bg-primary text-primary-foreground"
-              : "bg-background/90 backdrop-blur-lg text-muted-foreground hover-elevate"
-          )}
-          data-testid="mobile-nav-menu"
-        >
-          <HugeiconsIcon icon={menuOpen ? Cancel01Icon : Menu01Icon} className="size-5" />
-        </button>
+        <div className="flex justify-end">
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className={cn(
+              "flex items-center justify-center w-11 h-11 rounded-full backdrop-blur-2xl border transition-colors shadow-[0_4px_30px_rgba(0,0,0,0.1)]",
+              menuOpen
+                ? "bg-white dark:bg-neutral-900 text-foreground border-white/30 dark:border-white/10"
+                : "bg-white/60 dark:bg-black/50 text-muted-foreground border-white/30 dark:border-white/10"
+            )}
+            data-testid="mobile-nav-menu"
+          >
+            <HugeiconsIcon icon={menuOpen ? Cancel01Icon : Menu01Icon} className="size-5" />
+          </button>
+        </div>
       </div>
     </>
   );
