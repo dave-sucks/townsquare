@@ -283,7 +283,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
   const { id: placeId } = use(params);
   const { user, isAuthenticated } = useAuth();
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
-  const [feedFilter, setFeedFilter] = useState<"following" | "all">("following");
+  const [feedFilter, setFeedFilter] = useState<"following" | "all">("all");
 
   const { data, isLoading, refetch } = useQuery<PlaceDetailData>({
     queryKey: ["place-detail", placeId],

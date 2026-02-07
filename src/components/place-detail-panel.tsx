@@ -230,8 +230,8 @@ export function PlaceDetailPanel({
     enabled: !!savedPlace?.place?.googlePlaceId,
   });
 
-  // Use following activities only in the panel (show reviews from people user follows)
-  const activities = placeDetails?.followingActivities || passedActivities;
+  // Use all activities for the place (not just following) so visitors from any profile can see them
+  const activities = placeDetails?.activities || passedActivities;
   const fetchedPhotos = placeDetails?.photos || photos;
   const fetchedFriends = placeDetails?.friendsWhoSaved || friendsWhoSaved;
   const fetchedLists = placeDetails?.listsContainingPlace || listsData;
