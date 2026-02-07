@@ -134,7 +134,7 @@ export default function PeoplePage() {
               data-testid="input-search-users"
             />
           </div>
-          <div className="flex rounded-md border">
+          <div className="flex rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg border">
             <Button
               variant={viewMode === "grid" ? "secondary" : "ghost"}
               size="icon"
