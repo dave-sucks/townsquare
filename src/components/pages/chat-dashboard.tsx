@@ -415,7 +415,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
                   }
                 }}
                 placeholder="Ask about places..."
-                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-sm bg-background/80 backdrop-blur-md border shadow-xl rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
+                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-base bg-background/80 backdrop-blur-md border shadow-xl rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
                 disabled={createConversationMutation.isPending}
                 data-testid="input-chat-message-home"
               />
@@ -496,14 +496,14 @@ export function ChatDashboard({ user }: { user: UserData }) {
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask about places..."
-                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-sm bg-background/80 backdrop-blur-md border shadow-xl rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
+                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-base bg-background/80 backdrop-blur-md border shadow-xl rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
                 disabled={isStreaming}
                 data-testid="input-chat-message"
               />
               <Button
                 size="sm"
                 className="absolute right-2 bottom-2 h-8 w-8 rounded-xl shadow-sm transition-transform active:scale-95"
-                onClick={sendMessage}
+                onClick={() => sendMessage()}
                 disabled={!inputValue.trim() || isStreaming}
                 data-testid="button-send-message"
               >
@@ -538,7 +538,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
         </div>
 
         <div className="md:hidden">
-          <BottomSheet defaultSnapPoint="mid">
+          <BottomSheet defaultSnapPoint="expanded">
             {sidebar}
           </BottomSheet>
         </div>
