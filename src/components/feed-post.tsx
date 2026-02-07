@@ -112,7 +112,7 @@ export function FeedPost({ activity }: FeedPostProps) {
           likes={activity.socialPost!.likes}
           postedAt={activity.socialPost!.postedAt}
           permalink={activity.socialPost!.permalink}
-          source={activity.socialPost!.source}
+          source={activity.socialPost!.source as 'instagram' | 'tiktok' | 'manual' | undefined}
         />
         
         {/* Location banner - minimal spacing above, tight to embed */}
