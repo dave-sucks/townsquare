@@ -173,7 +173,7 @@ export function MobileNav({ user }: { user: User | null }) {
         <nav className="grid grid-cols-[1fr_auto_1fr] items-center px-2 py-1.5">
           <div />
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 bg-muted/60 rounded-full p-1">
             {BOTTOM_NAV_ITEMS.map((item) => {
               const isActive =
                 pathname === item.href ||
@@ -183,9 +183,9 @@ export function MobileNav({ user }: { user: User | null }) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center justify-center p-2 rounded-lg transition-colors",
+                    "flex items-center justify-center p-2 rounded-full transition-colors",
                     isActive
-                      ? "text-foreground"
+                      ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground"
                   )}
                   data-testid={`mobile-nav-${item.label.toLowerCase()}`}
