@@ -76,80 +76,78 @@ export function MobileMenuOverlay({ open, onClose, user }: MobileMenuOverlayProp
           }}
           data-testid="mobile-menu-overlay"
         >
-          <div className="flex-1 flex flex-col justify-center px-6">
-            <nav className="flex flex-col gap-1">
-              {MENU_ITEMS.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== "/" && pathname.startsWith(item.href));
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center justify-between py-4 px-4 rounded-lg transition-colors",
-                      isActive
-                        ? "bg-accent text-accent-foreground"
-                        : "text-foreground"
-                    )}
-                    data-testid={`mobile-menu-${item.label.toLowerCase()}`}
-                    onClick={onClose}
-                  >
-                    <span className="text-lg font-medium">{item.label}</span>
-                    <HugeiconsIcon icon={item.icon} className="size-5 text-muted-foreground" />
-                  </Link>
-                );
-              })}
-
-              <div className="my-2 border-t" />
-
-              {user && (
+          <div className="flex-1 flex flex-col items-center justify-center gap-6">
+            {MENU_ITEMS.map((item) => {
+              const isActive =
+                pathname === item.href ||
+                (item.href !== "/" && pathname.startsWith(item.href));
+              return (
                 <Link
-                  href="/upgrade"
-                  className="flex items-center justify-between py-4 px-4 rounded-lg text-foreground transition-colors"
-                  data-testid="mobile-menu-upgrade"
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-3 transition-colors",
+                    isActive
+                      ? "text-foreground"
+                      : "text-muted-foreground"
+                  )}
+                  data-testid={`mobile-menu-${item.label.toLowerCase()}`}
                   onClick={onClose}
                 >
-                  <span className="text-lg font-medium">Upgrade</span>
-                  <HugeiconsIcon icon={SparklesIcon} className="size-5 text-muted-foreground" />
+                  <span className="text-xl font-medium">{item.label}</span>
+                  <HugeiconsIcon icon={item.icon} className="size-5" />
                 </Link>
-              )}
+              );
+            })}
 
-              {mounted && (
-                <button
-                  onClick={handleThemeToggle}
-                  className="flex items-center justify-between py-4 px-4 rounded-lg text-foreground transition-colors text-left"
-                  data-testid="mobile-menu-theme"
-                >
-                  <span className="text-lg font-medium">
-                    {theme === "dark" ? "Light Mode" : "Dark Mode"}
-                  </span>
-                  <HugeiconsIcon
-                    icon={theme === "dark" ? Sun03Icon : Moon02Icon}
-                    className="size-5 text-muted-foreground"
-                  />
-                </button>
-              )}
+            <div className="w-16 border-t my-1" />
 
-              {user ? (
-                <a
-                  href="/api/logout"
-                  className="flex items-center justify-between py-4 px-4 rounded-lg text-foreground transition-colors"
-                  data-testid="mobile-menu-logout"
-                >
-                  <span className="text-lg font-medium">Log out</span>
-                  <HugeiconsIcon icon={Logout02Icon} className="size-5 text-muted-foreground" />
-                </a>
-              ) : (
-                <a
-                  href="/api/login"
-                  className="flex items-center justify-between py-4 px-4 rounded-lg text-foreground transition-colors"
-                  data-testid="mobile-menu-login"
-                >
-                  <span className="text-lg font-medium">Sign In</span>
-                </a>
-              )}
-            </nav>
+            {user && (
+              <Link
+                href="/upgrade"
+                className="flex items-center gap-3 text-muted-foreground transition-colors"
+                data-testid="mobile-menu-upgrade"
+                onClick={onClose}
+              >
+                <span className="text-xl font-medium">Upgrade</span>
+                <HugeiconsIcon icon={SparklesIcon} className="size-5" />
+              </Link>
+            )}
+
+            {mounted && (
+              <button
+                onClick={handleThemeToggle}
+                className="flex items-center gap-3 text-muted-foreground transition-colors"
+                data-testid="mobile-menu-theme"
+              >
+                <span className="text-xl font-medium">
+                  {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                </span>
+                <HugeiconsIcon
+                  icon={theme === "dark" ? Sun03Icon : Moon02Icon}
+                  className="size-5"
+                />
+              </button>
+            )}
+
+            {user ? (
+              <a
+                href="/api/logout"
+                className="flex items-center gap-3 text-muted-foreground transition-colors"
+                data-testid="mobile-menu-logout"
+              >
+                <span className="text-xl font-medium">Log out</span>
+                <HugeiconsIcon icon={Logout02Icon} className="size-5" />
+              </a>
+            ) : (
+              <a
+                href="/api/login"
+                className="flex items-center gap-3 text-muted-foreground transition-colors"
+                data-testid="mobile-menu-login"
+              >
+                <span className="text-xl font-medium">Sign In</span>
+              </a>
+            )}
           </div>
         </motion.div>
       )}
