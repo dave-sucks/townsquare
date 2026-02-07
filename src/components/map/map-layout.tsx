@@ -146,7 +146,7 @@ export function MapLayout({
         />
 
         {showSearch && (
-          <div className="absolute top-3 left-3 right-3 md:left-[26.5rem] z-[55]">
+          <div className="fixed top-3 left-3 right-3 md:absolute md:left-[26.5rem] z-[55]">
             <FloatingSearch />
           </div>
         )}
