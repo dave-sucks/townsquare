@@ -69,7 +69,7 @@ export async function GET(
     // If not found locally, fetch from Google Places API and cache it
     if (!place) {
       place = await fetchAndCachePlaceFromGoogle(placeId);
-    } else if (!place.photoRefs || place.photoRefs.length === 0) {
+    } else if (!place.photoRefs || (place.photoRefs as any[]).length === 0) {
       // If place exists but has no photos, try to fetch them from Google
       const refreshedPlace = await fetchAndCachePlaceFromGoogle(placeId);
       if (refreshedPlace) {

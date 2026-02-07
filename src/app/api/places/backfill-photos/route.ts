@@ -17,8 +17,8 @@ export async function POST(request: NextRequest) {
     const placesWithoutPhotos = await prisma.place.findMany({
       where: {
         OR: [
-          { photoRefs: { equals: [] } },
-          { photoRefs: null },
+          { photoRefs: { equals: [] as any } },
+          { photoRefs: { equals: null as any } },
         ],
       },
       take: 20,
@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
     const remaining = await prisma.place.count({
       where: {
         OR: [
-          { photoRefs: { equals: [] } },
-          { photoRefs: null },
+          { photoRefs: { equals: [] as any } },
+          { photoRefs: { equals: null as any } },
         ],
       },
     });
@@ -97,7 +97,7 @@ export async function GET() {
     const total = await prisma.place.count();
     const withPhotos = await prisma.place.count({
       where: {
-        photoRefs: { isEmpty: false },
+        NOT: { photoRefs: { equals: [] as any } },
       },
     });
     const withoutPhotos = total - withPhotos;

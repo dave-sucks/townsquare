@@ -3,7 +3,7 @@
 import * as React from "react"
 import * as MenubarPrimitive from "@radix-ui/react-menubar"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Tick01Icon, ArrowRight01Icon, Circle01Icon } from "@hugeicons/core-free-icons"
+import { Tick01Icon, ArrowRight01Icon, CircleIcon } from "@hugeicons/core-free-icons"
 
 import { cn } from "@/lib/utils"
 
@@ -154,7 +154,7 @@ function MenubarRadioItem({
     >
       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
         <MenubarPrimitive.ItemIndicator>
-          <HugeiconsIcon icon={Circle01Icon} className="size-2 fill-current" />
+          <HugeiconsIcon icon={CircleIcon} className="size-2 fill-current" />
         </MenubarPrimitive.ItemIndicator>
       </span>
       {children}

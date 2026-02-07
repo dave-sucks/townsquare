@@ -201,9 +201,10 @@ export async function POST(
       finalMessages.push(assistantMessage);
       
       for (const toolCall of assistantMessage.tool_calls) {
-        if (toolCall.function.name === "search_places") {
+        const fn = (toolCall as any).function;
+        if (fn.name === "search_places") {
           try {
-            const args = JSON.parse(toolCall.function.arguments);
+            const args = JSON.parse(fn.arguments);
             places = await searchPlaces(args.query, args.location);
             
             finalMessages.push({
@@ -251,7 +252,7 @@ export async function POST(
               conversationId,
               role: "assistant",
               content: fullResponse,
-              places: places.length > 0 ? places : undefined,
+              places: places.length > 0 ? (places as any) : undefined,
             },
           });
 
