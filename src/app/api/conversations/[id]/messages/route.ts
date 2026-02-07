@@ -135,7 +135,7 @@ ${listsContext || "None yet."}
 
 Rules:
 - Use the search_places tool when users ask for recommendations.
-- You MUST ALWAYS write text after finding places. Write 2-3 sentences providing context: why this area is great for what they're looking for, what style of food or vibe to expect, a local tip, or what makes these spots stand out. This context is important — the place cards only show names and ratings, so your text provides the color and personality. Don't repeat individual place names, addresses, or ratings — just provide the narrative.
+- Keep conversational responses brief and helpful.
 - If asked about a social media account or influencer, say you can't access social media and ask for a specific neighborhood or cuisine instead.
 - Never output JSON, code, or technical data in your text.`;
 }
@@ -221,11 +221,19 @@ export async function POST(
     let descriptionText = "";
 
     if (places.length > 0) {
-      const placeNames = places.map(p => p.name).join(", ");
-      const descPrompt = `The user asked for "${searchQuery}"${searchLocation ? ` in ${searchLocation}` : ""}. I found these places: ${placeNames}. Write 2-3 casual sentences giving context about the area, cuisine style, or what makes these spots great. Don't repeat place names or ratings.`;
+      const placeDetails = places.map(p => {
+        const parts = [p.name];
+        if (p.primaryType) parts.push(`(${p.primaryType})`);
+        if (p.rating) parts.push(`${p.rating} stars`);
+        if (p.priceLevel) parts.push(`price level ${p.priceLevel}`);
+        return parts.join(" ");
+      }).join("; ");
+      const descPrompt = `The user searched for "${searchQuery}"${searchLocation ? ` in ${searchLocation}` : ""}. Here are the results: ${placeDetails}.
+
+Write 2-3 sentences that enrich the list. Call out specific places by name — mention if one is a local favorite, a newer spot, particularly well-known for something, a good pick for the occasion, or stands out from the rest. Give the user a reason to be excited about these results. Be conversational and specific, not generic.`;
 
       try {
-        console.log("[Chat] Generating description for:", placeNames);
+        console.log("[Chat] Generating description for:", placeDetails);
         const descResponse = await openai.chat.completions.create({
           model: "gpt-5-mini",
           messages: [

@@ -607,6 +607,19 @@ function MessageBubble({
         )}
         {hasPlaces && (
           <div className="mt-1 space-y-1.5 w-full">
+            {message.content && (
+              <div className="text-sm whitespace-pre-wrap break-words text-foreground pb-1" style={{ overflowWrap: "anywhere" }}>
+                {message.content}
+                {isStreaming && (
+                  <span className="inline-block w-1 h-3.5 bg-current ml-0.5 animate-pulse" />
+                )}
+              </div>
+            )}
+            {!message.content && isStreaming && (
+              <div className="text-sm text-foreground pb-1">
+                <span className="inline-block w-1 h-3.5 bg-current ml-0.5 animate-pulse" />
+              </div>
+            )}
             {message.places!.map((place) => (
               <ChatPlaceCardInline
                 key={place.googlePlaceId}
@@ -620,19 +633,6 @@ function MessageBubble({
                 }}
               />
             ))}
-            {message.content && (
-              <div className="text-sm whitespace-pre-wrap break-words text-muted-foreground pt-1" style={{ overflowWrap: "anywhere" }}>
-                {message.content}
-                {isStreaming && (
-                  <span className="inline-block w-1 h-3.5 bg-current ml-0.5 animate-pulse" />
-                )}
-              </div>
-            )}
-            {!message.content && isStreaming && (
-              <div className="text-sm text-muted-foreground pt-1">
-                <span className="inline-block w-1 h-3.5 bg-current ml-0.5 animate-pulse" />
-              </div>
-            )}
             {!isStreaming && (
               <SaveAllToListButton 
                 places={message.places!} 
