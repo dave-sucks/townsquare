@@ -114,10 +114,10 @@ export function ChatDashboard({ user }: { user: UserData }) {
   });
 
   useEffect(() => {
-    if (activeConversationData?.conversation?.messages) {
+    if (activeConversationData?.conversation?.messages && !isStreaming) {
       setLocalMessages(activeConversationData.conversation.messages);
     }
-  }, [activeConversationData]);
+  }, [activeConversationData, isStreaming]);
 
   useEffect(() => {
     if (pendingMessage && activeConversationId && !isStreaming) {
@@ -624,6 +624,7 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
   function ChatPlaceCardInline({ place, isSelected, onClick }, ref) {
     const { data: savedPlacesData } = useQuery<{ savedPlaces: SavedPlaceData[] }>({
       queryKey: ["saved-places"],
+      queryFn: () => apiRequest("/api/saved-places"),
     });
 
     const savedPlace = savedPlacesData?.savedPlaces?.find(
