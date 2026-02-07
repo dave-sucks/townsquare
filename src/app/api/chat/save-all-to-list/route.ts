@@ -26,20 +26,18 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { listName, places } = body as { listName: string; places: PlaceData[] };
-
-    if (!listName?.trim()) {
-      return NextResponse.json({ error: "List name is required" }, { status: 400 });
-    }
+    const { listName, places } = body as { listName?: string; places: PlaceData[] };
 
     if (!places || places.length === 0) {
       return NextResponse.json({ error: "At least one place is required" }, { status: 400 });
     }
 
+    const autoName = listName?.trim() || `Saved Places (${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })})`;
+
     const list = await prisma.list.create({
       data: {
         userId: user.id,
-        name: listName.trim(),
+        name: autoName,
         visibility: "PRIVATE",
       },
     });

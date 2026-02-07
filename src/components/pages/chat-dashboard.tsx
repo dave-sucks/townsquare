@@ -51,18 +51,12 @@ interface UserData {
   profileImageUrl: string | null;
 }
 
-interface ChatAction {
-  type: "save_to_list";
-  listName: string;
-}
-
 interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
   createdAt: string;
   places?: PlaceResult[];
-  action?: ChatAction;
 }
 
 interface Conversation {
@@ -100,8 +94,6 @@ export function ChatDashboard({ user }: { user: UserData }) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [streamingPlaces, setStreamingPlaces] = useState<PlaceResult[]>([]);
-  const [streamingAction, setStreamingAction] = useState<ChatAction | null>(null);
-  const streamingActionRef = useRef<ChatAction | null>(null);
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
@@ -225,11 +217,9 @@ export function ChatDashboard({ user }: { user: UserData }) {
     setLocalMessages(prev => [...prev, userMessage]);
     setInputValue("");
     isStreamingRef.current = true;
-    streamingActionRef.current = null;
     setIsStreaming(true);
     setStreamingContent("");
     setStreamingPlaces([]);
-    setStreamingAction(null);
 
     try {
       const response = await fetch(`/api/conversations/${activeConversationId}/messages`, {
@@ -264,7 +254,6 @@ export function ChatDashboard({ user }: { user: UserData }) {
               toast.error("Failed to get response. Please try again.");
               setStreamingContent("");
               setStreamingPlaces([]);
-              setStreamingAction(null);
               isStreamingRef.current = false;
               setIsStreaming(false);
               queryClient.invalidateQueries({ queryKey: ["conversation", activeConversationId] });
@@ -273,10 +262,6 @@ export function ChatDashboard({ user }: { user: UserData }) {
             if (data.places !== undefined) {
               receivedPlaces = data.places;
               setStreamingPlaces(receivedPlaces);
-            }
-            if (data.action) {
-              streamingActionRef.current = data.action;
-              setStreamingAction(data.action);
             }
             if (data.content) {
               fullContent += data.content;
@@ -289,13 +274,10 @@ export function ChatDashboard({ user }: { user: UserData }) {
                 content: fullContent,
                 createdAt: new Date().toISOString(),
                 places: receivedPlaces.length > 0 ? receivedPlaces : undefined,
-                action: streamingActionRef.current || undefined,
               };
               setLocalMessages(prev => [...prev, assistantMessage]);
               setStreamingContent("");
               setStreamingPlaces([]);
-              setStreamingAction(null);
-              streamingActionRef.current = null;
               queryClient.invalidateQueries({ queryKey: ["conversations"] });
               queryClient.invalidateQueries({ queryKey: ["conversation", activeConversationId] });
             }
@@ -489,7 +471,6 @@ export function ChatDashboard({ user }: { user: UserData }) {
                     content: streamingContent,
                     createdAt: new Date().toISOString(),
                     places: streamingPlaces,
-                    action: streamingAction || undefined,
                   }}
                   user={user}
                   isStreaming
@@ -573,13 +554,6 @@ export function ChatDashboard({ user }: { user: UserData }) {
   );
 }
 
-function sanitizeContent(text: string): string {
-  return text
-    .replace(/\{[^{}]*"(?:name|placeIds?|googlePlaceId|listName)"[^{}]*\}/g, "")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-
 function MessageBubble({ 
   message, 
   user,
@@ -596,22 +570,28 @@ function MessageBubble({
   placeCardRefs?: React.MutableRefObject<Map<string, HTMLDivElement>>;
 }) {
   const isUser = message.role === "user";
-  const displayContent = isUser ? message.content : sanitizeContent(message.content);
 
   return (
     <div className={cn("flex flex-col gap-1", isUser ? "items-end" : "items-start")}>
-      <div className={cn("flex flex-col", isUser ? "items-end max-w-[90%]" : "items-start w-full overflow-hidden")}>
-        <div className={cn(
-          "text-sm whitespace-pre-wrap break-words w-full",
-          isUser 
-            ? "bg-primary text-primary-foreground px-3 py-2 rounded-lg rounded-br-none" 
-            : "text-foreground py-1"
-        )} style={{ overflowWrap: "anywhere" }}>
-          {displayContent}
-          {isStreaming && (
+      <div className={cn("flex flex-col", isUser ? "items-end max-w-[90%]" : "items-start w-full")}>
+        {message.content && (
+          <div className={cn(
+            "text-sm whitespace-pre-wrap break-words",
+            isUser 
+              ? "bg-primary text-primary-foreground px-3 py-2 rounded-lg rounded-br-none" 
+              : "text-foreground py-1"
+          )} style={{ overflowWrap: "anywhere" }}>
+            {message.content}
+            {isStreaming && (
+              <span className="inline-block w-1 h-3.5 bg-current ml-0.5 animate-pulse" />
+            )}
+          </div>
+        )}
+        {!message.content && isStreaming && (
+          <div className="text-sm text-foreground py-1">
             <span className="inline-block w-1 h-3.5 bg-current ml-0.5 animate-pulse" />
-          )}
-        </div>
+          </div>
+        )}
         {message.places && message.places.length > 0 && (
           <div className="mt-2 space-y-1.5 w-full">
             {message.places.map((place) => (
@@ -627,9 +607,8 @@ function MessageBubble({
                 }}
               />
             ))}
-            {message.action?.type === "save_to_list" && message.places.length > 0 && (
+            {!isStreaming && (
               <SaveAllToListButton 
-                listName={message.action.listName} 
                 places={message.places} 
               />
             )}
@@ -642,9 +621,10 @@ function MessageBubble({
 
 import { forwardRef } from "react";
 
-function SaveAllToListButton({ listName, places }: { listName: string; places: PlaceResult[] }) {
+function SaveAllToListButton({ places }: { places: PlaceResult[] }) {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [savedListName, setSavedListName] = useState("");
 
   const handleSave = async () => {
     if (saved || saving) return;
@@ -652,12 +632,13 @@ function SaveAllToListButton({ listName, places }: { listName: string; places: P
     try {
       const response = await apiRequest("/api/chat/save-all-to-list", {
         method: "POST",
-        body: JSON.stringify({ listName, places }),
+        body: JSON.stringify({ places }),
       }) as { savedCount: number; list: { id: string; name: string } };
       setSaved(true);
+      setSavedListName(response.list.name);
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
-      toast.success(`Saved ${response.savedCount} places to "${listName}"`);
+      toast.success(`Saved ${response.savedCount} places to "${response.list.name}"`);
     } catch {
       toast.error("Failed to save places. Please try again.");
     } finally {
@@ -682,12 +663,12 @@ function SaveAllToListButton({ listName, places }: { listName: string; places: P
       ) : saved ? (
         <>
           <HugeiconsIcon icon={CheckmarkBadge01Icon} className="h-4 w-4" />
-          Saved to &ldquo;{listName}&rdquo;
+          {savedListName ? `Saved to "${savedListName}"` : "Saved to list"}
         </>
       ) : (
         <>
           <HugeiconsIcon icon={PlusSignIcon} className="h-4 w-4" />
-          Save all to &ldquo;{listName}&rdquo;
+          Save all to a list
         </>
       )}
     </Button>
