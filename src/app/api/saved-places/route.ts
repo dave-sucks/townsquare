@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createActivity } from "@/lib/activity";
+import { getDefaultEmoji } from "@/lib/default-emoji";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -125,6 +126,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const defaultEmoji = getDefaultEmoji(place.primaryType, place.types as string[] | null);
+
     const savedPlace = await prisma.savedPlace.upsert({
       where: {
         userId_placeId: {
@@ -143,6 +146,7 @@ export async function POST(request: NextRequest) {
         hasBeen: hasBeen ?? false,
         rating: hasBeen && rating ? rating : null,
         visitedAt: hasBeen ? new Date() : null,
+        emoji: defaultEmoji,
       },
       include: { place: true },
     });

@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Bookmark01Icon, Tick01Icon, PlusSignIcon, Loading03Icon, InformationCircleIcon, Delete02Icon, ThumbsDownIcon, ThumbsUpIcon, FavouriteIcon } from "@hugeicons/core-free-icons";
+import { Bookmark01Icon, Tick01Icon, PlusSignIcon, Loading03Icon, InformationCircleIcon, Delete02Icon } from "@hugeicons/core-free-icons";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -66,9 +66,9 @@ interface SaveToListDropdownProps {
 }
 
 const RATING_OPTIONS = [
-  { value: 1, icon: ThumbsDownIcon, label: "ehh" },
-  { value: 3, icon: ThumbsUpIcon, label: "liked" },
-  { value: 5, icon: FavouriteIcon, label: "loved" },
+  { value: 1, emoji: "👎", label: "ehh" },
+  { value: 3, emoji: "👍", label: "liked" },
+  { value: 5, emoji: "🔥", label: "loved" },
 ];
 
 export function SaveToListDropdown({
@@ -228,8 +228,7 @@ export function SaveToListDropdown({
 
   const handleButtonClick = () => {
     if (!isSaved) {
-      // Instantly save with hasBeen=true (as "Been")
-      savePlaceMutation.mutate({ hasBeen: true });
+      savePlaceMutation.mutate({ hasBeen: false });
     }
   };
 
@@ -353,7 +352,7 @@ export function SaveToListDropdown({
                   data-testid={`rating-button-${option.value}`}
                   className="flex-1 gap-1"
                 >
-                  <HugeiconsIcon icon={option.icon} className="h-4 w-4" />
+                  <span className="text-base">{option.emoji}</span>
                   <span className="text-xs">{option.label}</span>
                 </ToggleGroupItem>
               ))}

@@ -5,15 +5,17 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Search01Icon, Bookmark01Icon, StarIcon, LeftToRightListBulletIcon, Cancel01Icon, Loading03Icon, PlusSignIcon, Tick01Icon, InformationCircleIcon, ThumbsDownIcon, ThumbsUpIcon, FavouriteIcon } from "@hugeicons/core-free-icons";
+import { Search01Icon, Bookmark01Icon, Cancel01Icon, Loading03Icon, PlusSignIcon, Tick01Icon, InformationCircleIcon } from "@hugeicons/core-free-icons";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 
@@ -43,9 +45,9 @@ interface SavedPlaceResult {
 }
 
 const RATING_OPTIONS = [
-  { value: 1, icon: ThumbsDownIcon, label: "ehh" },
-  { value: 3, icon: ThumbsUpIcon, label: "liked" },
-  { value: 5, icon: FavouriteIcon, label: "loved" },
+  { value: 1, emoji: "👎", label: "ehh" },
+  { value: 3, emoji: "👍", label: "liked" },
+  { value: 5, emoji: "🔥", label: "loved" },
 ];
 
 export function FloatingSearch() {
@@ -53,6 +55,10 @@ export function FloatingSearch() {
   const [searchResults, setSearchResults] = useState<PlacePrediction[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [drawerPlace, setDrawerPlace] = useState<{
+    prediction: PlacePrediction;
+    savedData: { id: string; placeId: string; hasBeen: boolean; rating: number | null };
+  } | null>(null);
 
   const searchPlaces = useCallback(async (query: string) => {
     if (!query.trim()) {
@@ -121,10 +127,8 @@ export function FloatingSearch() {
                 <SearchResultRow
                   key={result.place_id}
                   result={result}
-                  onSaveSuccess={() => {
-                    setSearchQuery("");
-                    setSearchResults([]);
-                    setIsFocused(false);
+                  onSaved={(savedData) => {
+                    setDrawerPlace({ prediction: result, savedData });
                   }}
                 />
               ))}
@@ -135,64 +139,126 @@ export function FloatingSearch() {
           )}
         </div>
       )}
+
+      <SaveDrawer
+        drawerPlace={drawerPlace}
+        onClose={() => setDrawerPlace(null)}
+      />
     </div>
   );
 }
 
 function SearchResultRow({ 
   result, 
-  onSaveSuccess 
+  onSaved,
 }: { 
   result: PlacePrediction;
-  onSaveSuccess: () => void;
+  onSaved: (savedData: { id: string; placeId: string; hasBeen: boolean; rating: number | null }) => void;
 }) {
-  const [savedPlaceData, setSavedPlaceData] = useState<{
-    id: string;
-    placeId: string;
-    hasBeen: boolean;
-    rating: number | null;
-  } | null>(null);
-  const [listsPopoverOpen, setListsPopoverOpen] = useState(false);
-  const [reviewPopoverOpen, setReviewPopoverOpen] = useState(false);
-  const [showCreateInput, setShowCreateInput] = useState(false);
-  const [newListName, setNewListName] = useState("");
-  const [optimisticLists, setOptimisticLists] = useState<string[]>([]);
-
-  const isSaved = !!savedPlaceData;
-  const currentRating = savedPlaceData?.rating ?? null;
-  const hasBeen = savedPlaceData?.hasBeen ?? false;
-
-  const { data: listsData, isLoading: listsLoading } = useQuery<{ lists: ListData[] }>({
-    queryKey: ["lists"],
-    queryFn: () => apiRequest("/api/lists"),
-    enabled: listsPopoverOpen,
-  });
-
-  const lists = listsData?.lists || [];
+  const [isSaved, setIsSaved] = useState(false);
 
   const savePlaceMutation = useMutation({
-    mutationFn: async ({ hasBeen, rating }: { hasBeen: boolean; rating?: number }) => {
+    mutationFn: async () => {
       const detailsResponse = await fetch(`/api/places/details?place_id=${result.place_id}`);
       const detailsData = await detailsResponse.json();
       if (!detailsData.place) throw new Error("Failed to get place details");
       const response = await apiRequest("/api/saved-places", {
         method: "POST",
-        body: JSON.stringify({ ...detailsData.place, hasBeen, rating }),
+        body: JSON.stringify({ ...detailsData.place, hasBeen: false }),
       }) as SavedPlaceResult;
       return response;
     },
     onSuccess: (data) => {
-      setSavedPlaceData(data.savedPlace);
+      setIsSaved(true);
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       toast.success("Saved!");
+      onSaved(data.savedPlace);
     },
     onError: (error: Error) => toast.error(error.message || "Failed to save place"),
   });
 
+  const handleSaveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isSaved && !savePlaceMutation.isPending) {
+      savePlaceMutation.mutate();
+    }
+  };
+
+  return (
+    <div
+      className="flex items-center gap-2 px-3 py-2 hover:bg-accent"
+      data-testid={`search-result-${result.place_id}`}
+    >
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-sm truncate">{result.structured_formatting.main_text}</p>
+        <p className="text-xs text-muted-foreground truncate">{result.structured_formatting.secondary_text}</p>
+      </div>
+      
+      <div className="flex items-center flex-shrink-0">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size="icon"
+              variant={isSaved ? "default" : "ghost"}
+              onClick={handleSaveClick}
+              disabled={savePlaceMutation.isPending}
+              data-testid={`button-save-${result.place_id}`}
+            >
+              {savePlaceMutation.isPending ? (
+                <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+              ) : (
+                <HugeiconsIcon icon={Bookmark01Icon} className={isSaved ? "h-4 w-4 fill-current" : "h-4 w-4"} />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            {isSaved ? "Saved" : "Save"}
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    </div>
+  );
+}
+
+function SaveDrawer({
+  drawerPlace,
+  onClose,
+}: {
+  drawerPlace: {
+    prediction: PlacePrediction;
+    savedData: { id: string; placeId: string; hasBeen: boolean; rating: number | null };
+  } | null;
+  onClose: () => void;
+}) {
+  const [savedData, setSavedData] = useState(drawerPlace?.savedData || null);
+  const [showCreateInput, setShowCreateInput] = useState(false);
+  const [newListName, setNewListName] = useState("");
+  const [optimisticLists, setOptimisticLists] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (drawerPlace) {
+      setSavedData(drawerPlace.savedData);
+      setOptimisticLists([]);
+      setShowCreateInput(false);
+      setNewListName("");
+    }
+  }, [drawerPlace]);
+
+  const currentRating = savedData?.rating ?? null;
+  const hasBeen = savedData?.hasBeen ?? false;
+
+  const { data: listsData, isLoading: listsLoading } = useQuery<{ lists: ListData[] }>({
+    queryKey: ["lists"],
+    queryFn: () => apiRequest("/api/lists"),
+    enabled: !!drawerPlace,
+  });
+
+  const lists = listsData?.lists || [];
+
   const updateSavedPlaceMutation = useMutation({
     mutationFn: async ({ hasBeen, rating }: { hasBeen?: boolean; rating?: number }) => {
-      if (!savedPlaceData) return;
-      return apiRequest(`/api/saved-places/${savedPlaceData.id}`, {
+      if (!savedData) return;
+      return apiRequest(`/api/saved-places/${savedData.id}`, {
         method: "PATCH",
         body: JSON.stringify({ hasBeen, rating }),
       });
@@ -207,7 +273,7 @@ function SearchResultRow({
 
   const addToListMutation = useMutation({
     mutationFn: async (listId: string) => {
-      const placeId = savedPlaceData?.placeId;
+      const placeId = savedData?.placeId;
       if (!placeId) throw new Error("Place must be saved first");
       return apiRequest(`/api/lists/${listId}/places`, {
         method: "POST",
@@ -230,7 +296,7 @@ function SearchResultRow({
 
   const removeFromListMutation = useMutation({
     mutationFn: async (listId: string) => {
-      const placeId = savedPlaceData?.placeId;
+      const placeId = savedData?.placeId;
       return apiRequest(`/api/lists/${listId}/places`, {
         method: "DELETE",
         body: JSON.stringify({ placeId }),
@@ -269,24 +335,15 @@ function SearchResultRow({
     },
   });
 
-  const handleSaveClick = () => {
-    if (!isSaved) {
-      savePlaceMutation.mutate({ hasBeen: true });
-    }
-  };
-
   const handleRatingSelect = (rating: number) => {
-    if (!isSaved) {
-      savePlaceMutation.mutate({ hasBeen: true, rating });
+    if (!savedData) return;
+    const newRating = currentRating === rating ? undefined : rating;
+    const newHasBeen = newRating !== undefined;
+    updateSavedPlaceMutation.mutate({ hasBeen: newHasBeen, rating: newRating });
+    if (newRating !== undefined) {
+      setSavedData(prev => prev ? { ...prev, rating: newRating, hasBeen: true } : null);
     } else {
-      const newRating = currentRating === rating ? undefined : rating;
-      const newHasBeen = newRating !== undefined;
-      updateSavedPlaceMutation.mutate({ hasBeen: newHasBeen, rating: newRating });
-      if (newRating !== undefined) {
-        setSavedPlaceData(prev => prev ? { ...prev, rating: newRating, hasBeen: true } : null);
-      } else {
-        setSavedPlaceData(prev => prev ? { ...prev, rating: null, hasBeen: false } : null);
-      }
+      setSavedData(prev => prev ? { ...prev, rating: null, hasBeen: false } : null);
     }
   };
 
@@ -307,212 +364,148 @@ function SearchResultRow({
     createListMutation.mutate(newListName.trim());
   };
 
-  const isPending = savePlaceMutation.isPending || updateSavedPlaceMutation.isPending;
-
   return (
-    <div
-      className="flex items-center gap-2 px-3 py-2 hover:bg-accent"
-      data-testid={`search-result-${result.place_id}`}
-    >
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm truncate">{result.structured_formatting.main_text}</p>
-        <p className="text-xs text-muted-foreground truncate">{result.structured_formatting.secondary_text}</p>
-      </div>
-      
-      <div className="flex items-center gap-1 flex-shrink-0">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              size="sm"
-              variant={isSaved ? "default" : "outline"}
-              onClick={handleSaveClick}
-              disabled={isPending}
-              data-testid={`button-save-${result.place_id}`}
-              className="px-2"
+    <Drawer open={!!drawerPlace} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DrawerContent data-testid="save-drawer">
+        <DrawerHeader className="text-left">
+          <DrawerTitle data-testid="drawer-place-name">
+            {drawerPlace?.prediction.structured_formatting.main_text}
+          </DrawerTitle>
+          <DrawerDescription>
+            {drawerPlace?.prediction.structured_formatting.secondary_text}
+          </DrawerDescription>
+        </DrawerHeader>
+
+        <div className="px-4 pb-6 space-y-5">
+          <div className="space-y-2">
+            <div className="flex items-center gap-1 text-sm font-medium">
+              Been here?
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HugeiconsIcon icon={InformationCircleIcon} className="h-3 w-3 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[200px]">
+                  Rate places you've been to help drive recommendations
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <ToggleGroup
+              type="single"
+              value={hasBeen && currentRating ? String(currentRating) : ""}
+              onValueChange={(value) => {
+                if (value) {
+                  handleRatingSelect(Number(value));
+                } else if (hasBeen) {
+                  handleRatingSelect(currentRating!);
+                }
+              }}
+              variant="outline"
+              className="w-full"
             >
-              {isPending ? (
-                <HugeiconsIcon icon={Loading03Icon} className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <HugeiconsIcon icon={Bookmark01Icon} className={isSaved ? "h-3.5 w-3.5 fill-current" : "h-3.5 w-3.5"} />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            {isSaved ? "Saved" : "Save"}
-          </TooltipContent>
-        </Tooltip>
-
-        <Popover open={reviewPopoverOpen} onOpenChange={setReviewPopoverOpen}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <PopoverTrigger asChild>
-                <Button
-                  size="sm"
-                  variant={hasBeen && currentRating ? "default" : "outline"}
-                  data-testid={`button-review-${result.place_id}`}
-                  className="px-2"
+              {RATING_OPTIONS.map((option) => (
+                <ToggleGroupItem
+                  key={option.value}
+                  value={String(option.value)}
+                  disabled={updateSavedPlaceMutation.isPending}
+                  data-testid={`drawer-rating-${option.value}`}
+                  className="flex-1 gap-1"
                 >
-                  <HugeiconsIcon icon={StarIcon} className={hasBeen && currentRating ? "h-3.5 w-3.5 fill-current" : "h-3.5 w-3.5"} />
-                </Button>
-              </PopoverTrigger>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              Rate
-            </TooltipContent>
-          </Tooltip>
-          <PopoverContent align="end" className="w-48 p-2">
-            <div className="space-y-2">
-              <div className="flex items-center gap-1 text-sm font-medium">
-                Been here?
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HugeiconsIcon icon={InformationCircleIcon} className="h-3 w-3 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-[200px]">
-                    Rate places you've been to help drive recommendations
-                  </TooltipContent>
-                </Tooltip>
+                  <span className="text-base">{option.emoji}</span>
+                  <span className="text-xs">{option.label}</span>
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Lists</p>
+            {listsLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+                Loading...
               </div>
-              <ToggleGroup
-                type="single"
-                value={hasBeen && currentRating ? String(currentRating) : ""}
-                onValueChange={(value) => {
-                  if (value) {
-                    handleRatingSelect(Number(value));
-                  } else if (hasBeen) {
-                    handleRatingSelect(currentRating!);
-                  }
-                }}
-                variant="outline"
-                className="w-full"
-              >
-                {RATING_OPTIONS.map((option) => (
-                  <ToggleGroupItem
-                    key={option.value}
-                    value={String(option.value)}
-                    disabled={isPending}
-                    data-testid={`search-rating-${option.value}-${result.place_id}`}
-                    className="flex-1 gap-0.5"
-                  >
-                    <HugeiconsIcon icon={option.icon} className="h-3.5 w-3.5" />
-                    <span className="text-xs hidden sm:inline">{option.label}</span>
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        <Popover open={listsPopoverOpen} onOpenChange={setListsPopoverOpen}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <PopoverTrigger asChild>
-                <Button
-                  size="sm"
-                  variant={optimisticLists.length > 0 ? "default" : "outline"}
-                  disabled={!isSaved}
-                  data-testid={`button-list-${result.place_id}`}
-                  className="px-2"
-                >
-                  <HugeiconsIcon icon={LeftToRightListBulletIcon} className="h-3.5 w-3.5" />
-                </Button>
-              </PopoverTrigger>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              {isSaved ? "Add to list" : "Save first to add to list"}
-            </TooltipContent>
-          </Tooltip>
-          <PopoverContent align="end" className="w-56 p-2">
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Lists</p>
-              {listsLoading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
-                  Loading...
-                </div>
-              ) : lists.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No lists yet</p>
-              ) : (
-                <div className="space-y-1 max-h-40 overflow-y-auto">
-                  {lists.map((list) => {
-                    const isInList = optimisticLists.includes(list.id);
-                    return (
-                      <Button
-                        key={list.id}
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-start gap-2"
-                        onClick={() => handleListToggle(list.id)}
-                        disabled={addToListMutation.isPending || removeFromListMutation.isPending}
-                        data-testid={`search-list-${list.id}-${result.place_id}`}
-                      >
-                        <span className="flex-1 truncate text-left">{list.name}</span>
-                        {isInList && <HugeiconsIcon icon={Tick01Icon} className="h-4 w-4" />}
-                      </Button>
-                    );
-                  })}
-                </div>
-              )}
-              
-              {showCreateInput ? (
-                <div className="space-y-2 pt-2 border-t">
-                  <Input
-                    placeholder="List name"
-                    value={newListName}
-                    onChange={(e) => setNewListName(e.target.value)}
-                    onKeyDown={(e) => {
-                      e.stopPropagation();
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleCreateList();
-                      }
-                      if (e.key === "Escape") {
-                        setShowCreateInput(false);
-                        setNewListName("");
-                      }
-                    }}
-                    autoFocus
-                    data-testid={`input-new-list-${result.place_id}`}
-                  />
-                  <div className="flex gap-2">
+            ) : lists.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No lists yet</p>
+            ) : (
+              <div className="space-y-1">
+                {lists.map((list) => {
+                  const isInList = optimisticLists.includes(list.id);
+                  return (
                     <Button
-                      size="sm"
+                      key={list.id}
                       variant="ghost"
-                      className="flex-1"
-                      onClick={() => {
-                        setShowCreateInput(false);
-                        setNewListName("");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
                       size="sm"
-                      className="flex-1"
-                      onClick={handleCreateList}
-                      disabled={createListMutation.isPending || !newListName.trim()}
-                      data-testid={`button-create-list-${result.place_id}`}
+                      className="w-full justify-start gap-2"
+                      onClick={() => handleListToggle(list.id)}
+                      disabled={addToListMutation.isPending || removeFromListMutation.isPending}
+                      data-testid={`drawer-list-${list.id}`}
                     >
-                      Create
+                      <span className="flex-1 truncate text-left">{list.name}</span>
+                      {isInList && <HugeiconsIcon icon={Tick01Icon} className="h-4 w-4" />}
                     </Button>
-                  </div>
+                  );
+                })}
+              </div>
+            )}
+            
+            {showCreateInput ? (
+              <div className="space-y-2 pt-2 border-t">
+                <Input
+                  placeholder="List name"
+                  value={newListName}
+                  onChange={(e) => setNewListName(e.target.value)}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleCreateList();
+                    }
+                    if (e.key === "Escape") {
+                      setShowCreateInput(false);
+                      setNewListName("");
+                    }
+                  }}
+                  autoFocus
+                  data-testid="drawer-input-new-list"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="flex-1"
+                    onClick={() => {
+                      setShowCreateInput(false);
+                      setNewListName("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    onClick={handleCreateList}
+                    disabled={createListMutation.isPending || !newListName.trim()}
+                    data-testid="drawer-button-create-list"
+                  >
+                    Create
+                  </Button>
                 </div>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start gap-2"
-                  onClick={() => setShowCreateInput(true)}
-                  data-testid={`button-new-list-${result.place_id}`}
-                >
-                  <HugeiconsIcon icon={PlusSignIcon} className="h-4 w-4" />
-                  Create new list
-                </Button>
-              )}
-            </div>
-          </PopoverContent>
-        </Popover>
-      </div>
-    </div>
+              </div>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start gap-2"
+                onClick={() => setShowCreateInput(true)}
+                data-testid="drawer-button-new-list"
+              >
+                <HugeiconsIcon icon={PlusSignIcon} className="h-4 w-4" />
+                Create new list
+              </Button>
+            )}
+          </div>
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }
