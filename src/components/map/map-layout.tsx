@@ -136,7 +136,7 @@ export function MapLayout({
 
   return (
     <AppShell user={user}>
-      <div className="relative flex-1 overflow-hidden">
+      <div className="relative flex-1">
         <PlaceMap
           ref={mapRef}
           places={places}
