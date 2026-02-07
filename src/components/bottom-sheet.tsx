@@ -68,11 +68,8 @@ export function BottomSheet({
   const lastTime = useRef(0);
   const velocityY = useRef(0);
 
-  // Track drag state
+  // Track drag state - ONLY the grabber can initiate drag
   const isDraggingSheet = useRef(false);
-  const canStartDrag = useRef(false);
-  // Track if we've determined this touch should be scrolling (not dragging)
-  const isScrolling = useRef(false);
 
   // Calculate snap point heights in pixels
   const getSnapHeight = useCallback(
@@ -193,21 +190,10 @@ export function BottomSheet({
     }
   }, [requestedSnapPoint, viewportHeight, getSnapHeight, sheetHeight, snapTo]);
 
-  // Check if content is scrolled to top (also checks nested scroll containers like ScrollArea)
-  const isContentAtTop = useCallback(() => {
-    if (!contentRef.current) return true;
-    if (contentRef.current.scrollTop > 1) return false;
-    const nestedScrollable = contentRef.current.querySelector('[data-radix-scroll-area-viewport], [data-scroll-container]');
-    if (nestedScrollable && nestedScrollable.scrollTop > 1) return false;
-    return true;
-  }, []);
-
-  // Handle pointer start on grabber (always initiates drag)
+  // Handle pointer start on grabber (only the grabber can initiate drag)
   const handleGrabberStart = useCallback(
     (clientY: number) => {
       isDraggingSheet.current = true;
-      canStartDrag.current = true;
-      isScrolling.current = false;
       dragStartY.current = clientY;
       dragStartSheetY.current = sheetHeight.get();
       lastClientY.current = clientY;
@@ -218,85 +204,26 @@ export function BottomSheet({
     [sheetHeight]
   );
 
-  // Handle pointer start on content area
-  const handleContentStart = useCallback(
-    (clientY: number) => {
-      dragStartY.current = clientY;
-      dragStartSheetY.current = sheetHeight.get();
-      lastClientY.current = clientY;
-      lastTime.current = Date.now();
-      velocityY.current = 0;
-      isDraggingSheet.current = false;
-
-      const atTop = isContentAtTop();
-      canStartDrag.current = atTop;
-      isScrolling.current = !atTop;
-    },
-    [sheetHeight, isContentAtTop]
-  );
-
-  // Handle pointer move
+  // Handle pointer move (only fires when grabber-initiated drag is active)
   const handlePointerMove = useCallback(
     (clientY: number) => {
-      // Calculate velocity
+      if (!isDraggingSheet.current) return false;
+
       const currentTime = Date.now();
       const dt = currentTime - lastTime.current;
       if (dt > 0) {
-        // Positive velocity = moving down (finger moving down screen)
         velocityY.current = ((clientY - lastClientY.current) / dt) * 1000;
       }
       lastClientY.current = clientY;
       lastTime.current = currentTime;
 
-      // Delta from start: negative = finger moved up, positive = finger moved down
       const deltaFromStart = clientY - dragStartY.current;
-
-      // If already dragging sheet, continue dragging
-      if (isDraggingSheet.current) {
-        // Calculate new height (dragging up = increasing height)
-        const newHeight = Math.max(
-          SNAP_POINTS.COLLAPSED,
-          Math.min(viewportHeight * SNAP_POINTS.EXPANDED, dragStartSheetY.current - deltaFromStart)
-        );
-        sheetHeight.set(newHeight);
-        return true; // Indicate we handled the event
-      }
-
-      if (isScrolling.current) {
-        return false;
-      }
-
-      if (!canStartDrag.current) {
-        isScrolling.current = true;
-        return false;
-      }
-
-      const directScrollTop = contentRef.current?.scrollTop ?? 0;
-      const nestedScrollable = contentRef.current?.querySelector('[data-radix-scroll-area-viewport], [data-scroll-container]');
-      const nestedScrollTop = nestedScrollable?.scrollTop ?? 0;
-      const effectiveScrollTop = Math.max(directScrollTop, nestedScrollTop);
-
-      if (effectiveScrollTop > 1) {
-        isScrolling.current = true;
-        canStartDrag.current = false;
-        return false;
-      }
-
-      if (deltaFromStart < -5) {
-        isScrolling.current = true;
-        canStartDrag.current = false;
-        return false;
-      }
-
-      if (effectiveScrollTop <= 1 && deltaFromStart > 20) {
-        isDraggingSheet.current = true;
-        dragStartY.current = clientY;
-        dragStartSheetY.current = sheetHeight.get();
-        setIsDragging(true);
-        return true;
-      }
-
-      return false;
+      const newHeight = Math.max(
+        SNAP_POINTS.COLLAPSED,
+        Math.min(viewportHeight * SNAP_POINTS.EXPANDED, dragStartSheetY.current - deltaFromStart)
+      );
+      sheetHeight.set(newHeight);
+      return true;
     },
     [viewportHeight, sheetHeight]
   );
@@ -305,13 +232,10 @@ export function BottomSheet({
   const handlePointerEnd = useCallback(() => {
     if (isDraggingSheet.current) {
       const currentHeight = sheetHeight.get();
-      // velocityY is positive when moving down, which should collapse
       const nearest = findNearestSnapPoint(currentHeight, velocityY.current);
       snapTo(nearest);
     }
     isDraggingSheet.current = false;
-    canStartDrag.current = false;
-    isScrolling.current = false;
     setIsDragging(false);
   }, [findNearestSnapPoint, sheetHeight, snapTo]);
 
@@ -331,14 +255,6 @@ export function BottomSheet({
       handleGrabberStart(e.clientY);
     },
     [handleGrabberStart]
-  );
-
-  // Touch event handlers for content
-  const onContentTouchStart = useCallback(
-    (e: ReactTouchEvent) => {
-      handleContentStart(e.touches[0].clientY);
-    },
-    [handleContentStart]
   );
 
   // Global move/end handlers
@@ -445,14 +361,21 @@ export function BottomSheet({
           <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
         </div>
 
-        {/* Optional header */}
-        {header && <div className="shrink-0 px-4 pb-2 border-b">{header}</div>}
+        {/* Optional header - also draggable like the grabber */}
+        {header && (
+          <div
+            className="shrink-0 px-4 pb-2 border-b select-none touch-none cursor-grab active:cursor-grabbing"
+            onTouchStart={onGrabberTouchStart}
+            onMouseDown={onGrabberMouseDown}
+          >
+            {header}
+          </div>
+        )}
 
-        {/* Content area */}
+        {/* Content area - pure scroll, no drag handling */}
         <div
           ref={contentRef}
-          className="flex-1 min-h-0 relative"
-          onTouchStart={onContentTouchStart}
+          className="flex-1 min-h-0 relative overflow-y-auto"
           style={{
             touchAction: "pan-y",
           }}
