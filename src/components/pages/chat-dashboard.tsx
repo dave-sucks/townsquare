@@ -648,27 +648,27 @@ function SaveAllToListButton({ places }: { places: PlaceResult[] }) {
 
   return (
     <Button
-      variant={saved ? "secondary" : "default"}
+      variant={saved ? "secondary" : "outline"}
       size="sm"
-      className="w-full mt-2 gap-2"
+      className="mt-1 gap-1.5 text-xs"
       onClick={handleSave}
       disabled={saving || saved}
       data-testid="button-save-all-to-list"
     >
       {saving ? (
         <>
-          <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+          <HugeiconsIcon icon={Loading03Icon} className="h-3 w-3 animate-spin" />
           Saving...
         </>
       ) : saved ? (
         <>
-          <HugeiconsIcon icon={CheckmarkBadge01Icon} className="h-4 w-4" />
-          {savedListName ? `Saved to "${savedListName}"` : "Saved to list"}
+          <HugeiconsIcon icon={CheckmarkBadge01Icon} className="h-3 w-3" />
+          {savedListName ? `Saved to "${savedListName}"` : "Saved"}
         </>
       ) : (
         <>
-          <HugeiconsIcon icon={PlusSignIcon} className="h-4 w-4" />
-          Save all to a list
+          <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
+          Save all to list
         </>
       )}
     </Button>

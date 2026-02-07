@@ -135,7 +135,7 @@ ${listsContext || "None yet."}
 
 Rules:
 - Use the search_places tool when users ask for recommendations.
-- After results, write a SHORT friendly note (1-2 sentences max). The place cards are shown separately — don't list names, addresses, or ratings in your text.
+- After results, write a brief friendly summary (2-3 sentences) explaining WHY these places are good picks — mention what stands out about the area or cuisine, share a quick tip, or highlight what makes the selection interesting. Don't list individual place names, addresses, or ratings — the place cards handle that.
 - If asked about a social media account or influencer, say you can't access social media and ask for a specific neighborhood or cuisine instead.
 - Never output JSON, code, or technical data in your text.`;
 }
