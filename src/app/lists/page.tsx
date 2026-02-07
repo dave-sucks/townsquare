@@ -163,7 +163,7 @@ export default function ListsPage() {
         </div>
 
         {authLoading || isLoading ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="rounded-lg border overflow-hidden">
                 <Skeleton className="aspect-[3/2] w-full" />
@@ -187,7 +187,7 @@ export default function ListsPage() {
             {filteredMyLists.length > 0 && (
               <section>
                 <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">My Lists</h2>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {filteredMyLists.map((list) => (
                     <ListCard
                       key={list.id}
@@ -212,7 +212,7 @@ export default function ListsPage() {
             {filteredDiscoverLists.length > 0 && (
               <section>
                 <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Discover</h2>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {filteredDiscoverLists.map((list) => (
                     <ListCard
                       key={list.id}

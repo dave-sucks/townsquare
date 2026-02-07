@@ -57,7 +57,7 @@ export function ListCard({
       data-testid={`list-card-${id}`}
     >
       {/* Image */}
-      <div className="relative aspect-[3/2] bg-muted">
+      <div className="relative aspect-[3/2]">
         {photoUrl ? (
           <Image
             src={photoUrl}
@@ -68,8 +68,8 @@ export function ListCard({
             unoptimized
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <HugeiconsIcon icon={Location01Icon} className="h-8 w-8 text-muted-foreground/30" />
+          <div className="absolute inset-0 flex items-center justify-center bg-primary">
+            <HugeiconsIcon icon={Location01Icon} className="h-8 w-8 text-primary-foreground/40" />
           </div>
         )}
         {visibility === "PRIVATE" && (
