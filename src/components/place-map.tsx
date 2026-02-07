@@ -13,7 +13,6 @@ import {
   RETRO_STYLE,
   DEFAULT_LABEL_DENSITY,
 } from "@/lib/map-styles";
-import { FloatingSearch } from "@/components/map/floating-search";
 
 interface Place {
   id: string;
@@ -37,7 +36,6 @@ interface PlaceMapProps {
   selectedPlaceId: string | null;
   onMarkerClick: (savedPlaceId: string) => void;
   showSettings?: boolean;
-  showSearch?: boolean;
   isSettingsOpen?: boolean;
   onSettingsOpenChange?: (open: boolean) => void;
 }
@@ -200,7 +198,7 @@ const RADIUS_TO_ZOOM: Record<number, number> = {
 };
 
 export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function PlaceMap(
-  { places, selectedPlaceId, onMarkerClick, showSettings = true, showSearch = false, isSettingsOpen, onSettingsOpenChange },
+  { places, selectedPlaceId, onMarkerClick, showSettings = true, isSettingsOpen, onSettingsOpenChange },
   ref
 ) {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -501,9 +499,6 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
         </div>
       )}
       <div ref={mapRef} className="h-full w-full relative z-0" data-testid="map-container" />
-      {showSearch && (
-        <FloatingSearch />
-      )}
     </div>
   );
 });

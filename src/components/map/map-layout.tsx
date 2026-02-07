@@ -13,6 +13,7 @@ import {
 import type { SnapPoint } from "@/components/bottom-sheet";
 import { PlaceMap, type PlaceMapHandle } from "@/components/place-map";
 import { BottomSheet } from "@/components/bottom-sheet";
+import { FloatingSearch } from "@/components/map/floating-search";
 import { AppShell } from "@/components/layout";
 
 interface Place {
@@ -142,8 +143,13 @@ export function MapLayout({
           selectedPlaceId={selectedPlaceId}
           onMarkerClick={handleMarkerClick}
           showSettings={showMapSettings}
-          showSearch={showSearch}
         />
+
+        {showSearch && (
+          <div className="absolute top-3 left-3 right-3 md:left-[26.5rem] z-[55]">
+            <FloatingSearch />
+          </div>
+        )}
 
         <div className="absolute top-0 left-0 bottom-0 z-10 w-[25rem] p-3 hidden md:block">
           <div className="h-full bg-background rounded-lg border shadow-lg overflow-hidden">

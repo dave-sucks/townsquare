@@ -143,7 +143,7 @@ export function FloatingSearch() {
   const showDesktopSavePanel = !isMobile && !!savedPlace;
 
   return (
-    <div className="absolute top-3 left-3 right-3 md:left-auto md:right-3 z-40 md:w-96">
+    <div className="md:w-96 md:ml-auto">
       <div className="relative">
         <HugeiconsIcon icon={Search01Icon} className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
