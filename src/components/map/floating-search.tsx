@@ -136,11 +136,10 @@ export function FloatingSearch() {
 
   const handleCloseSavePanel = () => {
     setSavedPlace(null);
-    setIsFocused(true);
+    setIsFocused(false);
   };
 
-  const hasActiveSearch = searchQuery.trim().length > 0 && searchResults.length > 0;
-  const showResults = !savedPlace && (isFocused || hasActiveSearch) && (isSearching || searchResults.length > 0 || (searchQuery && searchResults.length === 0));
+  const showResults = !savedPlace && isFocused && (isSearching || searchResults.length > 0 || searchQuery.trim().length > 0);
   const showDesktopSavePanel = !isMobile && !!savedPlace;
 
   return (
