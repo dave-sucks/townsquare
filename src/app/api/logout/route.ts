@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { logout } from "@/lib/auth";
+import { logout, getCallbackUrl } from "@/lib/auth";
 
 export async function GET() {
   try {
     await logout();
-    return NextResponse.redirect(new URL("/", process.env.REPLIT_DEPLOYMENT 
-      ? `https://${process.env.REPLIT_DEPLOYMENT_URL}` 
-      : `https://${process.env.REPLIT_DEV_DOMAIN}`));
+    const origin = new URL(getCallbackUrl()).origin;
+    return NextResponse.redirect(new URL("/", origin));
   } catch (error: any) {
     console.error("Logout error:", error);
     return NextResponse.json({ error: "Logout failed" }, { status: 500 });

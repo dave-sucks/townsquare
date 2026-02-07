@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { handleCallback } from "@/lib/auth";
+import { handleCallback, getCallbackUrl } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const fullUrl = new URL(request.url);
-    const result = await handleCallback(fullUrl);
+    const incomingUrl = new URL(request.url);
+    const callbackBase = new URL(getCallbackUrl());
+    callbackBase.search = incomingUrl.search;
+    
+    const result = await handleCallback(callbackBase);
     
     if (result.success) {
-      const baseUrl = process.env.REPLIT_DEPLOYMENT 
-        ? `https://${process.env.REPLIT_DEPLOYMENT_URL}` 
-        : `https://${process.env.REPLIT_DEV_DOMAIN}`;
-      return NextResponse.redirect(new URL("/", baseUrl));
+      const origin = callbackBase.origin;
+      return NextResponse.redirect(new URL("/", origin));
     } else {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }

@@ -60,9 +60,14 @@ export async function getCurrentUser() {
 }
 
 function getExternalUrl(): string {
-  return process.env.REPLIT_DEPLOYMENT
-    ? `https://${process.env.REPLIT_DEPLOYMENT_URL}`
-    : `https://${process.env.REPLIT_DEV_DOMAIN}`;
+  if (process.env.REPLIT_DOMAINS) {
+    const primaryDomain = process.env.REPLIT_DOMAINS.split(",")[0];
+    return `https://${primaryDomain}`;
+  }
+  if (process.env.REPLIT_DEV_DOMAIN) {
+    return `https://${process.env.REPLIT_DEV_DOMAIN}`;
+  }
+  return `https://${process.env.REPLIT_DEPLOYMENT_URL || "localhost:5000"}`;
 }
 
 export function getCallbackUrl(): string {
