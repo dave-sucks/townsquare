@@ -20,7 +20,6 @@ import {
   SidebarInset,
   SidebarRail,
   SidebarTrigger,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
@@ -38,6 +37,7 @@ import { UserMultiple02Icon, LeftToRightListBulletIcon, Logout02Icon, ArrowDown0
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { MobileNav } from "@/components/mobile-nav";
+import { MobileMenuOverlay } from "@/components/mobile-menu-overlay";
 
 interface User {
   id: string;
@@ -63,6 +63,8 @@ export function AppShell({
   user: User | null;
   children: React.ReactNode;
 }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+
   return (
     <SidebarProvider>
       <div className="flex h-dvh w-full">
@@ -70,7 +72,15 @@ export function AppShell({
         <SidebarInset className="flex flex-col flex-1 overflow-hidden min-h-[100dvh]">
           {children}
         </SidebarInset>
-        <MobileNav />
+        <MobileMenuOverlay
+          open={mobileMenuOpen}
+          onClose={() => setMobileMenuOpen(false)}
+          user={user}
+        />
+        <MobileNav
+          menuOpen={mobileMenuOpen}
+          onMenuToggle={() => setMobileMenuOpen((v) => !v)}
+        />
       </div>
     </SidebarProvider>
   );
@@ -115,15 +125,8 @@ function ThemeToggleButton() {
 
 function SidebarNav({ user }: { user: User | null }) {
   const pathname = usePathname();
-  const { setOpenMobile, isMobile } = useSidebar();
   const userName = user?.username || user?.firstName || user?.email?.split("@")[0] || "User";
   const userEmail = user?.email || "";
-
-  React.useEffect(() => {
-    if (isMobile) {
-      setOpenMobile(false);
-    }
-  }, [pathname, isMobile, setOpenMobile]);
 
   return (
     <Sidebar collapsible="icon">
@@ -169,11 +172,10 @@ function SidebarNav({ user }: { user: User | null }) {
                       asChild
                       isActive={isActive}
                       tooltip={item.label}
-                      size="lg"
                     >
                       <Link href={item.href} data-testid={`nav-${item.label.toLowerCase()}`}>
-                        <HugeiconsIcon icon={item.icon} className="size-5" />
-                        <span className="text-base">{item.label}</span>
+                        <HugeiconsIcon icon={item.icon} className="size-4" />
+                        <span>{item.label}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

@@ -10,8 +10,8 @@ import {
   Location01Icon,
   Image02Icon,
   Menu01Icon,
+  Cancel01Icon,
 } from "@hugeicons/core-free-icons";
-import { useSidebar } from "@/components/ui/sidebar";
 
 export const MOBILE_NAV_HEIGHT = 56;
 
@@ -21,13 +21,17 @@ const BOTTOM_NAV_ITEMS = [
   { href: "/home", label: "Feed", icon: Image02Icon },
 ] as const;
 
-export function MobileNav() {
+interface MobileNavProps {
+  menuOpen: boolean;
+  onMenuToggle: () => void;
+}
+
+export function MobileNav({ menuOpen, onMenuToggle }: MobileNavProps) {
   const pathname = usePathname();
-  const { toggleSidebar } = useSidebar();
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-[99] md:hidden border-t bg-background/80 backdrop-blur-xl"
+      className="fixed bottom-0 left-0 right-0 z-[101] md:hidden border-t bg-background/80 backdrop-blur-xl"
       style={{
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
@@ -36,8 +40,8 @@ export function MobileNav() {
       <div className="flex items-center justify-around" style={{ height: `${MOBILE_NAV_HEIGHT}px` }}>
         {BOTTOM_NAV_ITEMS.map((item) => {
           const isActive =
-            pathname === item.href ||
-            (item.href !== "/" && pathname.startsWith(item.href));
+            !menuOpen && (pathname === item.href ||
+            (item.href !== "/" && pathname.startsWith(item.href)));
           return (
             <Link
               key={item.href}
@@ -56,12 +60,15 @@ export function MobileNav() {
           );
         })}
         <button
-          onClick={toggleSidebar}
-          className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full text-muted-foreground transition-colors"
+          onClick={onMenuToggle}
+          className={cn(
+            "flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors",
+            menuOpen ? "text-primary" : "text-muted-foreground"
+          )}
           data-testid="mobile-nav-menu"
         >
-          <HugeiconsIcon icon={Menu01Icon} className="size-5" />
-          <span className="text-[10px] font-medium">Menu</span>
+          <HugeiconsIcon icon={menuOpen ? Cancel01Icon : Menu01Icon} className="size-5" />
+          <span className="text-[10px] font-medium">{menuOpen ? "Close" : "Menu"}</span>
         </button>
       </div>
     </nav>
