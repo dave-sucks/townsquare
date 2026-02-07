@@ -10,13 +10,20 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import {
   Drawer,
   DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
 } from "@/components/ui/drawer";
+import { EmojiPickerPopover } from "@/components/shared/emoji-picker-popover";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Search01Icon, Bookmark01Icon, Cancel01Icon, Loading03Icon, PlusSignIcon, Tick01Icon, InformationCircleIcon } from "@hugeicons/core-free-icons";
+import {
+  Search01Icon,
+  Bookmark01Icon,
+  Cancel01Icon,
+  Loading03Icon,
+  PlusSignIcon,
+  Tick01Icon,
+  ArrowLeft01Icon,
+} from "@hugeicons/core-free-icons";
 import { queryClient, apiRequest } from "@/lib/query-client";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 
 interface PlacePrediction {
@@ -41,24 +48,36 @@ interface SavedPlaceResult {
     placeId: string;
     hasBeen: boolean;
     rating: number | null;
+    emoji: string | null;
   };
 }
 
 const RATING_OPTIONS = [
-  { value: 1, emoji: "👎", label: "ehh" },
-  { value: 3, emoji: "👍", label: "liked" },
-  { value: 5, emoji: "🔥", label: "loved" },
+  { value: 1, emoji: "\u{1F44E}", label: "ehh" },
+  { value: 3, emoji: "\u{1F44D}", label: "liked" },
+  { value: 5, emoji: "\u{1F525}", label: "loved" },
 ];
+
+type SavedData = {
+  id: string;
+  placeId: string;
+  hasBeen: boolean;
+  rating: number | null;
+  emoji: string | null;
+};
+
+type DrawerPlaceData = {
+  prediction: PlacePrediction;
+  savedData: SavedData;
+};
 
 export function FloatingSearch() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<PlacePrediction[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [drawerPlace, setDrawerPlace] = useState<{
-    prediction: PlacePrediction;
-    savedData: { id: string; placeId: string; hasBeen: boolean; rating: number | null };
-  } | null>(null);
+  const [savedPlace, setSavedPlace] = useState<DrawerPlaceData | null>(null);
+  const isMobile = useIsMobile();
 
   const searchPlaces = useCallback(async (query: string) => {
     if (!query.trim()) {
@@ -85,9 +104,21 @@ export function FloatingSearch() {
   const handleClear = () => {
     setSearchQuery("");
     setSearchResults([]);
+    setSavedPlace(null);
   };
 
-  const showResults = isFocused && (isSearching || searchResults.length > 0 || (searchQuery && searchResults.length === 0));
+  const handleSaved = (data: DrawerPlaceData) => {
+    setSavedPlace(data);
+  };
+
+  const handleCloseSavePanel = () => {
+    setSavedPlace(null);
+    setIsFocused(true);
+  };
+
+  const hasActiveSearch = searchQuery.trim().length > 0 && searchResults.length > 0;
+  const showResults = !savedPlace && (isFocused || hasActiveSearch) && (isSearching || searchResults.length > 0 || (searchQuery && searchResults.length === 0));
+  const showDesktopSavePanel = !isMobile && !!savedPlace;
 
   return (
     <div className="absolute top-3 left-3 right-3 md:left-auto md:right-3 z-20 md:w-96">
@@ -96,7 +127,10 @@ export function FloatingSearch() {
         <Input
           placeholder="Search for a place..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            if (savedPlace) setSavedPlace(null);
+          }}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setTimeout(() => setIsFocused(false), 300)}
           className="pl-10 pr-8 bg-background shadow-lg border"
@@ -127,9 +161,7 @@ export function FloatingSearch() {
                 <SearchResultRow
                   key={result.place_id}
                   result={result}
-                  onSaved={(savedData) => {
-                    setDrawerPlace({ prediction: result, savedData });
-                  }}
+                  onSaved={handleSaved}
                 />
               ))}
             </div>
@@ -140,20 +172,36 @@ export function FloatingSearch() {
         </div>
       )}
 
-      <SaveDrawer
-        drawerPlace={drawerPlace}
-        onClose={() => setDrawerPlace(null)}
-      />
+      {showDesktopSavePanel && (
+        <div className="mt-2 bg-background border rounded-lg shadow-lg overflow-hidden">
+          <SavePanelContent
+            drawerPlace={savedPlace}
+            onClose={handleCloseSavePanel}
+          />
+        </div>
+      )}
+
+      {isMobile && (
+        <Drawer open={!!savedPlace} onOpenChange={(open) => { if (!open) handleCloseSavePanel(); }}>
+          <DrawerContent data-testid="save-drawer">
+            <SavePanelContent
+              drawerPlace={savedPlace}
+              onClose={handleCloseSavePanel}
+              isMobileDrawer
+            />
+          </DrawerContent>
+        </Drawer>
+      )}
     </div>
   );
 }
 
-function SearchResultRow({ 
-  result, 
+function SearchResultRow({
+  result,
   onSaved,
-}: { 
+}: {
   result: PlacePrediction;
-  onSaved: (savedData: { id: string; placeId: string; hasBeen: boolean; rating: number | null }) => void;
+  onSaved: (data: DrawerPlaceData) => void;
 }) {
   const [isSaved, setIsSaved] = useState(false);
 
@@ -172,7 +220,7 @@ function SearchResultRow({
       setIsSaved(true);
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       toast.success("Saved!");
-      onSaved(data.savedPlace);
+      onSaved({ prediction: result, savedData: data.savedPlace });
     },
     onError: (error: Error) => toast.error(error.message || "Failed to save place"),
   });
@@ -186,14 +234,14 @@ function SearchResultRow({
 
   return (
     <div
-      className="flex items-center gap-2 px-3 py-2 hover:bg-accent"
+      className="flex items-center gap-2 px-3 py-2 hover-elevate"
       data-testid={`search-result-${result.place_id}`}
     >
       <div className="flex-1 min-w-0">
         <p className="font-medium text-sm truncate">{result.structured_formatting.main_text}</p>
         <p className="text-xs text-muted-foreground truncate">{result.structured_formatting.secondary_text}</p>
       </div>
-      
+
       <div className="flex items-center flex-shrink-0">
         <Tooltip>
           <TooltipTrigger asChild>
@@ -220,17 +268,16 @@ function SearchResultRow({
   );
 }
 
-function SaveDrawer({
+function SavePanelContent({
   drawerPlace,
   onClose,
+  isMobileDrawer = false,
 }: {
-  drawerPlace: {
-    prediction: PlacePrediction;
-    savedData: { id: string; placeId: string; hasBeen: boolean; rating: number | null };
-  } | null;
+  drawerPlace: DrawerPlaceData | null;
   onClose: () => void;
+  isMobileDrawer?: boolean;
 }) {
-  const [savedData, setSavedData] = useState(drawerPlace?.savedData || null);
+  const [savedData, setSavedData] = useState<SavedData | null>(drawerPlace?.savedData || null);
   const [showCreateInput, setShowCreateInput] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [optimisticLists, setOptimisticLists] = useState<string[]>([]);
@@ -246,6 +293,7 @@ function SaveDrawer({
 
   const currentRating = savedData?.rating ?? null;
   const hasBeen = savedData?.hasBeen ?? false;
+  const currentEmoji = savedData?.emoji ?? null;
 
   const { data: listsData, isLoading: listsLoading } = useQuery<{ lists: ListData[] }>({
     queryKey: ["lists"],
@@ -256,11 +304,11 @@ function SaveDrawer({
   const lists = listsData?.lists || [];
 
   const updateSavedPlaceMutation = useMutation({
-    mutationFn: async ({ hasBeen, rating }: { hasBeen?: boolean; rating?: number }) => {
+    mutationFn: async (updates: { hasBeen?: boolean; rating?: number; emoji?: string | null }) => {
       if (!savedData) return;
       return apiRequest(`/api/saved-places/${savedData.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ hasBeen, rating }),
+        body: JSON.stringify(updates),
       });
     },
     onSuccess: () => {
@@ -347,6 +395,12 @@ function SaveDrawer({
     }
   };
 
+  const handleEmojiSelect = (emoji: string | null) => {
+    if (!savedData) return;
+    updateSavedPlaceMutation.mutate({ emoji });
+    setSavedData(prev => prev ? { ...prev, emoji } : null);
+  };
+
   const handleListToggle = (listId: string) => {
     const isInList = optimisticLists.includes(listId);
     if (isInList) {
@@ -364,148 +418,156 @@ function SaveDrawer({
     createListMutation.mutate(newListName.trim());
   };
 
+  if (!drawerPlace) return null;
+
+  const placeName = drawerPlace.prediction.structured_formatting.main_text;
+  const placeAddress = drawerPlace.prediction.structured_formatting.secondary_text;
+
   return (
-    <Drawer open={!!drawerPlace} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DrawerContent data-testid="save-drawer">
-        <DrawerHeader className="text-left">
-          <DrawerTitle data-testid="drawer-place-name">
-            {drawerPlace?.prediction.structured_formatting.main_text}
-          </DrawerTitle>
-          <DrawerDescription>
-            {drawerPlace?.prediction.structured_formatting.secondary_text}
-          </DrawerDescription>
-        </DrawerHeader>
+    <div data-testid="save-panel">
+      <div className="flex items-start gap-3 p-4 pb-3">
+        {!isMobileDrawer && (
+          <button
+            onClick={onClose}
+            className="mt-1 flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+            data-testid="button-back-to-search"
+          >
+            <HugeiconsIcon icon={ArrowLeft01Icon} className="h-5 w-5" />
+          </button>
+        )}
 
-        <div className="px-4 pb-6 space-y-5">
-          <div className="space-y-2">
-            <div className="flex items-center gap-1 text-sm font-medium">
-              Been here?
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <HugeiconsIcon icon={InformationCircleIcon} className="h-3 w-3 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[200px]">
-                  Rate places you've been to help drive recommendations
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <ToggleGroup
-              type="single"
-              value={hasBeen && currentRating ? String(currentRating) : ""}
-              onValueChange={(value) => {
-                if (value) {
-                  handleRatingSelect(Number(value));
-                } else if (hasBeen) {
-                  handleRatingSelect(currentRating!);
-                }
-              }}
-              variant="outline"
-              className="w-full"
-            >
-              {RATING_OPTIONS.map((option) => (
-                <ToggleGroupItem
-                  key={option.value}
-                  value={String(option.value)}
-                  disabled={updateSavedPlaceMutation.isPending}
-                  data-testid={`drawer-rating-${option.value}`}
-                  className="flex-1 gap-1"
-                >
-                  <span className="text-base">{option.emoji}</span>
-                  <span className="text-xs">{option.label}</span>
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
+        <EmojiPickerPopover
+          emoji={currentEmoji}
+          onEmojiSelect={handleEmojiSelect}
+          variant="area"
+          testId="save-panel-emoji-picker"
+        />
 
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Lists</p>
-            {listsLoading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
-                Loading...
-              </div>
-            ) : lists.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No lists yet</p>
-            ) : (
-              <div className="space-y-1">
-                {lists.map((list) => {
-                  const isInList = optimisticLists.includes(list.id);
-                  return (
-                    <Button
-                      key={list.id}
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-start gap-2"
-                      onClick={() => handleListToggle(list.id)}
-                      disabled={addToListMutation.isPending || removeFromListMutation.isPending}
-                      data-testid={`drawer-list-${list.id}`}
-                    >
-                      <span className="flex-1 truncate text-left">{list.name}</span>
-                      {isInList && <HugeiconsIcon icon={Tick01Icon} className="h-4 w-4" />}
-                    </Button>
-                  );
-                })}
-              </div>
-            )}
-            
-            {showCreateInput ? (
-              <div className="space-y-2 pt-2 border-t">
-                <Input
-                  placeholder="List name"
-                  value={newListName}
-                  onChange={(e) => setNewListName(e.target.value)}
-                  onKeyDown={(e) => {
-                    e.stopPropagation();
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleCreateList();
-                    }
-                    if (e.key === "Escape") {
-                      setShowCreateInput(false);
-                      setNewListName("");
-                    }
-                  }}
-                  autoFocus
-                  data-testid="drawer-input-new-list"
-                />
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="flex-1"
-                    onClick={() => {
-                      setShowCreateInput(false);
-                      setNewListName("");
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="flex-1"
-                    onClick={handleCreateList}
-                    disabled={createListMutation.isPending || !newListName.trim()}
-                    data-testid="drawer-button-create-list"
-                  >
-                    Create
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start gap-2"
-                onClick={() => setShowCreateInput(true)}
-                data-testid="drawer-button-new-list"
-              >
-                <HugeiconsIcon icon={PlusSignIcon} className="h-4 w-4" />
-                Create new list
-              </Button>
-            )}
-          </div>
+        <div className="flex-1 min-w-0 text-left">
+          <p className="font-semibold text-lg leading-tight truncate" data-testid="text-save-panel-name">
+            {placeName}
+          </p>
+          <p className="text-sm text-muted-foreground truncate mt-0.5">
+            {placeAddress}
+          </p>
         </div>
-      </DrawerContent>
-    </Drawer>
+      </div>
+
+      <div className="px-4 pb-4 space-y-4">
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Been here?</p>
+          <ToggleGroup
+            type="single"
+            value={hasBeen && currentRating ? String(currentRating) : ""}
+            onValueChange={(value) => {
+              if (value) {
+                handleRatingSelect(Number(value));
+              } else if (hasBeen) {
+                handleRatingSelect(currentRating!);
+              }
+            }}
+            variant="outline"
+            className="w-full"
+          >
+            {RATING_OPTIONS.map((option) => (
+              <ToggleGroupItem
+                key={option.value}
+                value={String(option.value)}
+                disabled={updateSavedPlaceMutation.isPending}
+                data-testid={`save-panel-rating-${option.value}`}
+                className="flex-1 gap-1.5"
+              >
+                <span className="text-lg">{option.emoji}</span>
+                <span className="text-sm">{option.label}</span>
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Lists</p>
+          {listsLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+              <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+              Loading...
+            </div>
+          ) : lists.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-1">No lists yet</p>
+          ) : (
+            <div className="space-y-0.5">
+              {lists.map((list) => {
+                const isInList = optimisticLists.includes(list.id);
+                return (
+                  <button
+                    key={list.id}
+                    className="flex items-center gap-3 w-full text-left py-2.5 px-1 rounded-md hover-elevate transition-colors"
+                    onClick={() => handleListToggle(list.id)}
+                    disabled={addToListMutation.isPending || removeFromListMutation.isPending}
+                    data-testid={`save-panel-list-${list.id}`}
+                  >
+                    <span className="flex-1 text-sm font-medium truncate">{list.name}</span>
+                    {isInList && <HugeiconsIcon icon={Tick01Icon} className="h-4 w-4 flex-shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {showCreateInput ? (
+            <div className="space-y-2 pt-2 border-t">
+              <Input
+                placeholder="List name"
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleCreateList();
+                  }
+                  if (e.key === "Escape") {
+                    setShowCreateInput(false);
+                    setNewListName("");
+                  }
+                }}
+                autoFocus
+                data-testid="save-panel-input-new-list"
+              />
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowCreateInput(false);
+                    setNewListName("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  className="flex-1"
+                  onClick={handleCreateList}
+                  disabled={createListMutation.isPending || !newListName.trim()}
+                  data-testid="save-panel-button-create-list"
+                >
+                  Create
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <button
+              className="flex items-center gap-3 w-full text-left py-2.5 px-1 rounded-md hover-elevate text-muted-foreground transition-colors"
+              onClick={() => setShowCreateInput(true)}
+              data-testid="save-panel-button-new-list"
+            >
+              <HugeiconsIcon icon={PlusSignIcon} className="h-4 w-4" />
+              <span className="text-sm font-medium">Create new list</span>
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
