@@ -185,67 +185,74 @@ export async function POST(
     ];
 
     let places: PlaceResult[] = [];
-    let finalMessages = [...chatMessages];
+    let searchQuery = "";
+    let searchLocation = "";
 
     const initialResponse = await openai.chat.completions.create({
       model: "gpt-5-mini",
       messages: chatMessages,
       tools,
       tool_choice: "auto",
-      max_completion_tokens: 512,
+      max_completion_tokens: 1024,
     });
 
     const assistantMsg = initialResponse.choices[0].message;
 
     if (assistantMsg.tool_calls && assistantMsg.tool_calls.length > 0) {
-      finalMessages.push(assistantMsg);
-
       for (const toolCall of assistantMsg.tool_calls) {
         const fn = (toolCall as any).function;
         if (fn.name === "search_places") {
           try {
             const args = JSON.parse(fn.arguments);
+            searchQuery = args.query || "";
+            searchLocation = args.location || "";
             places = await searchPlaces(args.query, args.location);
             places = await assignEmojis(places, args.query);
-            const typeSummary = [...new Set(places.map(p => p.primaryType).filter(Boolean))].slice(0, 3).join(", ");
-            finalMessages.push({
-              role: "tool",
-              tool_call_id: toolCall.id,
-              content: JSON.stringify({ 
-                found: places.length, 
-                query: args.query,
-                location: args.location || "nearby",
-                types: typeSummary || "various",
-              }),
-            });
           } catch (error) {
             console.error("search_places error:", error);
-            finalMessages.push({
-              role: "tool",
-              tool_call_id: toolCall.id,
-              content: JSON.stringify({ error: "Search failed" }),
-            });
           }
         }
       }
     }
 
-    const streamOptions: any = {
-      model: "gpt-5-mini",
-      messages: finalMessages,
-      stream: true,
-      max_completion_tokens: 300,
-    };
-
-    if (places.length > 0) {
-      streamOptions.tools = tools;
-      streamOptions.tool_choice = "none";
-    }
-
-    const stream = await openai.chat.completions.create(streamOptions);
-
     const encoder = new TextEncoder();
     let fullResponse = "";
+
+    let descriptionText = "";
+
+    if (places.length > 0) {
+      const placeNames = places.map(p => p.name).join(", ");
+      const descPrompt = `The user asked for "${searchQuery}"${searchLocation ? ` in ${searchLocation}` : ""}. I found these places: ${placeNames}. Write 2-3 casual sentences giving context about the area, cuisine style, or what makes these spots great. Don't repeat place names or ratings.`;
+
+      try {
+        console.log("[Chat] Generating description for:", placeNames);
+        const descResponse = await openai.chat.completions.create({
+          model: "gpt-5-mini",
+          messages: [
+            { role: "user", content: descPrompt },
+          ],
+          max_completion_tokens: 1024,
+        });
+        descriptionText = descResponse.choices[0]?.message?.content || "";
+        console.log("[Chat] Description result:", descriptionText.substring(0, 100));
+      } catch (err: any) {
+        console.error("[Chat] Description generation error:", err?.message || err);
+      }
+    }
+
+    let conversationalStream: any = null;
+    if (!places.length) {
+      if (assistantMsg.content) {
+        fullResponse = assistantMsg.content;
+      } else {
+        conversationalStream = await openai.chat.completions.create({
+          model: "gpt-5-mini",
+          messages: chatMessages,
+          stream: true,
+          max_completion_tokens: 1024,
+        });
+      }
+    }
 
     const readable = new ReadableStream({
       async start(controller) {
@@ -254,15 +261,25 @@ export async function POST(
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ places })}\n\n`));
           }
 
-          for await (const chunk of stream) {
-            const text = chunk.choices[0]?.delta?.content || "";
-            if (text) {
-              fullResponse += text;
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: text })}\n\n`));
+          if (descriptionText) {
+            fullResponse = descriptionText;
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: descriptionText })}\n\n`));
+          } else if (fullResponse) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: fullResponse })}\n\n`));
+          }
+
+          if (conversationalStream) {
+            for await (const chunk of conversationalStream) {
+              const text = chunk.choices[0]?.delta?.content || "";
+              if (text) {
+                fullResponse += text;
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: text })}\n\n`));
+              }
             }
           }
 
           if (!fullResponse.trim() && places.length > 0) {
+            console.log("[Chat] WARNING: No description generated, using fallback");
             const fallback = `Here are ${places.length} spots I found for you. Tap any to see more details!`;
             fullResponse = fallback;
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: fallback })}\n\n`));
