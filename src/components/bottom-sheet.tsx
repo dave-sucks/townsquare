@@ -227,9 +227,10 @@ export function BottomSheet({
       lastTime.current = Date.now();
       velocityY.current = 0;
       isDraggingSheet.current = false;
-      isScrolling.current = false;
-      // Can potentially start drag if at top - but we'll verify during move
-      canStartDrag.current = isContentAtTop();
+
+      const atTop = isContentAtTop();
+      canStartDrag.current = atTop;
+      isScrolling.current = !atTop;
     },
     [sheetHeight, isContentAtTop]
   );
@@ -261,37 +262,35 @@ export function BottomSheet({
         return true; // Indicate we handled the event
       }
 
-      // If we've already determined this is a scroll gesture, let it scroll
       if (isScrolling.current) {
         return false;
       }
 
-      // Check current scroll position (including nested scroll containers)
+      if (!canStartDrag.current) {
+        isScrolling.current = true;
+        return false;
+      }
+
       const directScrollTop = contentRef.current?.scrollTop ?? 0;
       const nestedScrollable = contentRef.current?.querySelector('[data-radix-scroll-area-viewport], [data-scroll-container]');
       const nestedScrollTop = nestedScrollable?.scrollTop ?? 0;
       const effectiveScrollTop = Math.max(directScrollTop, nestedScrollTop);
-      
-      // If content has scrolled away from top, this is definitely a scroll gesture
-      // Don't try to start sheet drag
+
       if (effectiveScrollTop > 1) {
         isScrolling.current = true;
+        canStartDrag.current = false;
         return false;
       }
 
-      // Finger moving UP (negative delta) = user wants to scroll down to see more content
-      // This should always be handled by native scroll
       if (deltaFromStart < -5) {
         isScrolling.current = true;
+        canStartDrag.current = false;
         return false;
       }
 
-      // Check if we should start dragging the sheet
-      // Only when: at top, finger moving DOWN significantly, and we started at top
-      // Use a larger threshold (20px) to avoid accidental triggers
-      if (canStartDrag.current && effectiveScrollTop <= 1 && deltaFromStart > 20) {
+      if (effectiveScrollTop <= 1 && deltaFromStart > 20) {
         isDraggingSheet.current = true;
-        dragStartY.current = clientY; // Reset start position
+        dragStartY.current = clientY;
         dragStartSheetY.current = sheetHeight.get();
         setIsDragging(true);
         return true;
