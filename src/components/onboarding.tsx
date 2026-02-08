@@ -165,7 +165,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         {step === 1 && (
           <>
             <div
-              className="w-[240px] aspect-[3/4] bg-black/20 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/10 flex flex-col items-center overflow-hidden"
+              className="w-[280px] sm:w-[300px] aspect-[3/4] bg-black/20 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/10 flex flex-col items-center overflow-hidden"
               data-testid="onboarding-card"
             >
               <div className="pt-5 pb-2 flex flex-col items-center">
@@ -238,7 +238,8 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               onClick={handleSubmitProfile}
               disabled={isSubmitting}
               size="lg"
-              className="w-[240px] bg-white text-black border-white no-default-hover-elevate no-default-active-elevate hover:bg-white/85 active:bg-white/75"
+              className="w-[280px] sm:w-[300px] bg-white text-black"
+              variant="secondary"
               data-testid="button-complete-onboarding"
             >
               {isSubmitting ? "Setting up..." : "Next"}
@@ -247,67 +248,68 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         )}
 
         {step === 2 && (
-          <>
-            <div
-              className="w-[280px] max-h-[70vh] bg-black/20 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/10 flex flex-col overflow-hidden"
-              data-testid="onboarding-follow-card"
-            >
-              <div className="px-5 pt-5 pb-3">
-                <h2 className="text-lg font-semibold text-white text-center">
-                  Start following
-                </h2>
-                <p className="text-xs text-white/50 text-center mt-1">
-                  See their favorite spots on your map
-                </p>
-              </div>
-
-              <div className="flex-1 overflow-y-auto px-3 pb-3" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-                {usersLoading ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i} className="rounded-2xl bg-white/10 p-3 flex flex-col items-center gap-2">
-                        <Skeleton className="h-12 w-12 rounded-full bg-white/10" />
-                        <Skeleton className="h-3 w-16 bg-white/10" />
-                        <Skeleton className="h-2 w-12 bg-white/10" />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2" data-testid="onboarding-users-grid">
-                    {onboardingUsers.map((u) => (
-                      <PersonCard
-                        key={u.id}
-                        id={u.id}
-                        username={u.username}
-                        firstName={u.firstName}
-                        lastName={u.lastName}
-                        profileImageUrl={u.profileImageUrl}
-                        isFollowing={selectedUsers.has(u.id)}
-                        savedPlacesCount={u.savedPlacesCount}
-                        listsCount={u.listsCount}
-                        onFollow={() => toggleUser(u.id)}
-                        variant="onboarding"
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
+          <div
+            className="w-[320px] sm:w-[340px] max-h-[80vh] bg-black/20 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/10 flex flex-col overflow-hidden"
+            data-testid="onboarding-follow-card"
+          >
+            <div className="px-5 pt-5 pb-3 shrink-0">
+              <h2 className="text-lg font-semibold text-white text-center">
+                Start following
+              </h2>
+              <p className="text-xs text-white/50 text-center mt-1">
+                See their favorite spots on your map
+              </p>
             </div>
 
-            <Button
-              onClick={handleSubmitFollows}
-              disabled={isSubmitting}
-              size="lg"
-              className="w-[280px] bg-white text-black border-white no-default-hover-elevate no-default-active-elevate hover:bg-white/85 active:bg-white/75"
-              data-testid="button-complete-follows"
-            >
-              {isSubmitting
-                ? "Setting up..."
-                : selectedUsers.size > 0
-                  ? `Follow ${selectedUsers.size} & continue`
-                  : "Skip"}
-            </Button>
-          </>
+            <div className="flex-1 min-h-0 overflow-y-auto px-3" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+              {usersLoading ? (
+                <div className="grid grid-cols-2 gap-2 pb-3">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="rounded-2xl bg-white/10 p-3 flex flex-col items-center gap-2">
+                      <Skeleton className="h-12 w-12 rounded-full bg-white/10" />
+                      <Skeleton className="h-3 w-16 bg-white/10" />
+                      <Skeleton className="h-2 w-12 bg-white/10" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 pb-3" data-testid="onboarding-users-grid">
+                  {onboardingUsers.map((u) => (
+                    <PersonCard
+                      key={u.id}
+                      id={u.id}
+                      username={u.username}
+                      firstName={u.firstName}
+                      lastName={u.lastName}
+                      profileImageUrl={u.profileImageUrl}
+                      isFollowing={selectedUsers.has(u.id)}
+                      savedPlacesCount={u.savedPlacesCount}
+                      listsCount={u.listsCount}
+                      onFollow={() => toggleUser(u.id)}
+                      variant="onboarding"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="shrink-0 p-4">
+              <Button
+                onClick={handleSubmitFollows}
+                disabled={isSubmitting}
+                size="lg"
+                variant="secondary"
+                className="w-full bg-white text-black"
+                data-testid="button-complete-follows"
+              >
+                {isSubmitting
+                  ? "Setting up..."
+                  : selectedUsers.size > 0
+                    ? `Follow ${selectedUsers.size} & continue`
+                    : "Skip"}
+              </Button>
+            </div>
+          </div>
         )}
       </div>
     </div>

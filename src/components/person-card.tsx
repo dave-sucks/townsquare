@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Location01Icon, LeftToRightListBulletIcon, UserAdd01Icon, UserRemove01Icon, Loading03Icon, Tick01Icon } from "@hugeicons/core-free-icons";
+import { Location01Icon, LeftToRightListBulletIcon, PlusSignIcon, CheckmarkCircle01Icon, Loading03Icon } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 
 interface PersonCardProps {
@@ -19,6 +19,45 @@ interface PersonCardProps {
   onFollow: (e: React.MouseEvent) => void;
   isLoading?: boolean;
   variant?: "grid" | "list" | "onboarding";
+}
+
+function FollowButton({
+  isFollowing,
+  isLoading,
+  onClick,
+  id,
+  className,
+}: {
+  isFollowing: boolean;
+  isLoading: boolean;
+  onClick: (e: React.MouseEvent) => void;
+  id: string;
+  className?: string;
+}) {
+  return (
+    <Button
+      variant={isFollowing ? "ghost" : "default"}
+      size="sm"
+      className={cn("w-full", className)}
+      onClick={onClick}
+      disabled={isLoading}
+      data-testid={`button-follow-${id}`}
+    >
+      {isLoading ? (
+        <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+      ) : isFollowing ? (
+        <>
+          <HugeiconsIcon icon={CheckmarkCircle01Icon} className="mr-1 h-3.5 w-3.5" />
+          Following
+        </>
+      ) : (
+        <>
+          <HugeiconsIcon icon={PlusSignIcon} className="mr-1 h-3.5 w-3.5" />
+          Follow
+        </>
+      )}
+    </Button>
+  );
 }
 
 export function PersonCard({
@@ -53,40 +92,23 @@ export function PersonCard({
 
   if (variant === "onboarding") {
     return (
-      <button
-        type="button"
-        onClick={handleFollowClick}
-        disabled={isLoading}
+      <div
         className={cn(
-          "relative rounded-2xl p-3 flex flex-col items-center text-center transition-all",
+          "rounded-2xl p-3 flex flex-col items-center text-center transition-all",
           "bg-white/10 backdrop-blur-md border",
           isFollowing
-            ? "border-white/40"
+            ? "border-white/30"
             : "border-white/10"
         )}
         data-testid={`person-card-${id}`}
       >
-        <div
-          className={cn(
-            "absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all",
-            isFollowing
-              ? "bg-white"
-              : "border border-white/30 bg-white/5"
-          )}
-          data-testid={`toggle-follow-${id}`}
-        >
-          {isFollowing && (
-            <HugeiconsIcon icon={Tick01Icon} className="h-3 w-3 text-black" />
-          )}
-        </div>
-
         <Avatar className="h-12 w-12 mb-2">
           <AvatarImage src={profileImageUrl || undefined} alt={displayName} />
           <AvatarFallback className="text-base bg-white/10 text-white">{initials}</AvatarFallback>
         </Avatar>
         <p className="text-xs font-medium truncate w-full text-white">{displayName}</p>
         <p className="text-[10px] text-white/50 truncate w-full">@{handle}</p>
-        <div className="flex items-center justify-center gap-2 mt-1 text-[10px] text-white/40">
+        <div className="flex items-center justify-center gap-2 mt-1 mb-2 text-[10px] text-white/40">
           <span className="flex items-center gap-0.5">
             <HugeiconsIcon icon={Location01Icon} className="h-2.5 w-2.5" />
             {savedPlacesCount}
@@ -96,7 +118,13 @@ export function PersonCard({
             {listsCount}
           </span>
         </div>
-      </button>
+        <FollowButton
+          isFollowing={isFollowing}
+          isLoading={isLoading}
+          onClick={handleFollowClick}
+          id={id}
+        />
+      </div>
     );
   }
 
@@ -124,28 +152,14 @@ export function PersonCard({
               {listsCount}
             </span>
           </div>
-          <Button
-            variant={isFollowing ? "outline" : "default"}
-            size="sm"
-            className="w-full mt-3"
-            onClick={handleFollowClick}
-            disabled={isLoading}
-            data-testid={`button-follow-${id}`}
-          >
-            {isLoading ? (
-              <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
-            ) : isFollowing ? (
-              <>
-                <HugeiconsIcon icon={UserRemove01Icon} className="mr-1 h-3.5 w-3.5" />
-                Unfollow
-              </>
-            ) : (
-              <>
-                <HugeiconsIcon icon={UserAdd01Icon} className="mr-1 h-3.5 w-3.5" />
-                Follow
-              </>
-            )}
-          </Button>
+          <div className="mt-3 w-full">
+            <FollowButton
+              isFollowing={isFollowing}
+              isLoading={isLoading}
+              onClick={handleFollowClick}
+              id={id}
+            />
+          </div>
         </div>
       </Link>
     );
@@ -178,7 +192,7 @@ export function PersonCard({
       </div>
 
       <Button
-        variant={isFollowing ? "outline" : "default"}
+        variant={isFollowing ? "ghost" : "default"}
         size="sm"
         onClick={handleFollowClick}
         disabled={isLoading}
@@ -187,9 +201,9 @@ export function PersonCard({
         {isLoading ? (
           <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
         ) : isFollowing ? (
-          <HugeiconsIcon icon={UserRemove01Icon} className="h-4 w-4" />
+          <HugeiconsIcon icon={CheckmarkCircle01Icon} className="h-4 w-4" />
         ) : (
-          <HugeiconsIcon icon={UserAdd01Icon} className="h-4 w-4" />
+          <HugeiconsIcon icon={PlusSignIcon} className="h-4 w-4" />
         )}
       </Button>
     </Link>
