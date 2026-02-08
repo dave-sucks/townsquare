@@ -59,6 +59,8 @@ const RATING_NAMES: Record<number, string> = {
   5: "loved",
 };
 
+type DisplayMode = "list-editable" | "list-readonly" | "my-places" | "photo";
+
 interface PlaceCardProps {
   savedPlace: SavedPlace;
   isSelected: boolean;
@@ -68,11 +70,10 @@ interface PlaceCardProps {
   listsContainingPlace?: string[];
   actionButton?: React.ReactNode;
   onClick?: () => void;
-  isOwnProfile?: boolean;
+  displayMode?: DisplayMode;
   currentUserData?: CurrentUserPlaceData | null;
 }
 
-// Priority order for determining primary category from types array
 const CATEGORY_PRIORITY = [
   "restaurant",
   "bar", 
@@ -86,19 +87,16 @@ const CATEGORY_PRIORITY = [
 ];
 
 function getBestCategory(primaryType: string | null, types: string[] | null): string {
-  // If primaryType is a priority type, use it immediately
   if (primaryType && CATEGORY_PRIORITY.includes(primaryType)) {
     return formatCategoryName(primaryType);
   }
 
-  // Check types array for a better category than generic "establishment"
   if (types && types.length > 0) {
     for (const category of CATEGORY_PRIORITY) {
       if (types.includes(category)) {
         return formatCategoryName(category);
       }
     }
-    // If no priority category found, use first non-generic type
     const nonGenericTypes = types.filter(t => 
       !["establishment", "point_of_interest", "food", "store"].includes(t)
     );
@@ -107,13 +105,10 @@ function getBestCategory(primaryType: string | null, types: string[] | null): st
     }
   }
   
-  // Fall back to primaryType if it's not generic
   if (primaryType && !["establishment", "point_of_interest", "food"].includes(primaryType)) {
     return formatCategoryName(primaryType);
   }
   
-  // If everything is generic but "restaurant" is in types, we already checked that in priority.
-  // Last resort: if "restaurant" is anywhere, use it.
   if (types?.includes("restaurant")) return "Restaurant";
   
   return "";
@@ -127,22 +122,26 @@ function formatCategoryName(type: string): string {
 }
 
 export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
-  ({ savedPlace, isSelected, showStatus = true, showSaveDropdown = false, hideDropdownUntilHover = false, listsContainingPlace = [], actionButton, onClick, isOwnProfile = true, currentUserData }, ref) => {
+  ({ savedPlace, isSelected, showStatus = true, showSaveDropdown = false, hideDropdownUntilHover = false, listsContainingPlace = [], actionButton, onClick, displayMode = "my-places", currentUserData }, ref) => {
     const queryClient = useQueryClient();
     const category = getBestCategory(savedPlace.place.primaryType, savedPlace.place.types);
     const locationDisplay = savedPlace.place.neighborhood 
       || savedPlace.place.locality 
       || savedPlace.place.formattedAddress.split(",")[0];
     
-    const currentUserLists = isOwnProfile 
+    const isOwnMode = displayMode === "list-editable" || displayMode === "my-places";
+    
+    const currentUserLists = isOwnMode 
       ? (savedPlace.lists?.map(l => l.id) || listsContainingPlace)
       : (currentUserData?.lists?.map(l => l.id) || []);
     
-    const currentUserSavedPlace = isOwnProfile 
+    const currentUserSavedPlace = isOwnMode 
       ? { id: savedPlace.id, placeId: savedPlace.placeId, hasBeen: savedPlace.hasBeen, rating: savedPlace.rating }
       : currentUserData?.savedPlaceId 
         ? { id: currentUserData.savedPlaceId, placeId: savedPlace.placeId, hasBeen: currentUserData.hasBeen, rating: currentUserData.rating }
         : null;
+
+    const isEmojiEditable = displayMode === "list-editable" || displayMode === "my-places";
 
     const updateEmojiMutation = useMutation({
       mutationFn: async (emoji: string | null) => {
@@ -158,21 +157,79 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
     });
 
     const handleEmojiSelect = (emoji: string | null) => {
-      if (isOwnProfile) {
+      if (isEmojiEditable) {
         updateEmojiMutation.mutate(emoji);
       }
     };
 
-    // Get up to 2 tags for display in the category row
     const displayTags = savedPlace.place.topTags?.slice(0, 2) || [];
     
-    // Build list display text
     const lists = savedPlace.lists || [];
     const listDisplayText = lists.length === 1 
       ? lists[0].name 
       : lists.length > 1 
         ? `${lists.length} lists` 
         : null;
+
+    function renderThumbnail() {
+      const photoElement = savedPlace.place.photoRefs && savedPlace.place.photoRefs.length > 0 ? (
+        <img 
+          src={`/api/places/photo?photoRef=${savedPlace.place.photoRefs[0]}&maxWidth=96`}
+          alt={savedPlace.place.name}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <HugeiconsIcon icon={Location01Icon} className="h-5 w-5 text-muted-foreground" />
+      );
+
+      switch (displayMode) {
+        case "list-editable":
+          return (
+            <EmojiPickerPopover
+              emoji={savedPlace.emoji || null}
+              onEmojiSelect={handleEmojiSelect}
+              disabled={updateEmojiMutation.isPending}
+              variant="area"
+              testId={`button-emoji-picker-${savedPlace.id}`}
+            />
+          );
+        case "list-readonly":
+          if (savedPlace.emoji) {
+            return (
+              <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+                <span className="text-2xl">{savedPlace.emoji}</span>
+              </div>
+            );
+          }
+          return (
+            <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+              {photoElement}
+            </div>
+          );
+        case "my-places":
+          return (
+            <div className="relative flex-shrink-0">
+              <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center overflow-hidden">
+                {photoElement}
+              </div>
+              {savedPlace.emoji && (
+                <span className="absolute -bottom-1 -right-1 text-xs bg-background rounded-full w-5 h-5 flex items-center justify-center border shadow-sm" data-testid={`emoji-badge-${savedPlace.id}`}>
+                  {savedPlace.emoji}
+                </span>
+              )}
+            </div>
+          );
+        case "photo":
+        default:
+          return (
+            <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+              {photoElement}
+            </div>
+          );
+      }
+    }
+
+    const beenHereText = isOwnMode ? "You've been here" : "Been here";
 
     return (
       <div
@@ -197,29 +254,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
           data-testid={`place-row-${savedPlace.id}`}
           className="flex items-center gap-3 flex-1 min-w-0"
         >
-          {isOwnProfile ? (
-            <EmojiPickerPopover
-              emoji={savedPlace.emoji || null}
-              onEmojiSelect={handleEmojiSelect}
-              disabled={updateEmojiMutation.isPending}
-              variant="area"
-              testId={`button-emoji-picker-${savedPlace.id}`}
-            />
-          ) : (
-            <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
-              {savedPlace.emoji ? (
-                <span className="text-2xl">{savedPlace.emoji}</span>
-              ) : savedPlace.place.photoRefs && savedPlace.place.photoRefs.length > 0 ? (
-                <img 
-                  src={`/api/places/photo?photoRef=${savedPlace.place.photoRefs[0]}&maxWidth=96`}
-                  alt={savedPlace.place.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <HugeiconsIcon icon={Location01Icon} className="h-5 w-5 text-muted-foreground" />
-              )}
-            </div>
-          )}
+          {renderThumbnail()}
 
           <div className="flex-1 min-w-0 overflow-hidden">
             <h3 className="font-semibold text-sm truncate flex items-center gap-1 font-brand">
@@ -230,13 +265,12 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
                     <HugeiconsIcon icon={CheckmarkBadge01Icon} className="w-4 h-4 flex-shrink-0 fill-foreground text-background" />
                   </TooltipTrigger>
                   <TooltipContent side="top">
-                    {isOwnProfile ? "You've been here" : "Been here"}: {savedPlace.rating ? RATING_NAMES[savedPlace.rating] : "rated"}
+                    {beenHereText}: {savedPlace.rating ? RATING_NAMES[savedPlace.rating] : "rated"}
                   </TooltipContent>
                 </Tooltip>
               )}
             </h3>
             
-            {/* Row 1: Category — Tags (black text, slightly larger) */}
             {(category || displayTags.length > 0) && (
               <div className="flex items-center gap-1 text-sm text-foreground truncate" data-testid="place-card-category-row">
                 {category && <span>{category}</span>}
@@ -250,7 +284,6 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
               </div>
             )}
             
-            {/* Row 2: Location + list info (gray text) */}
             <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1 truncate" data-testid="place-card-location-row">
               <HugeiconsIcon icon={Location01Icon} className="h-3 w-3 flex-shrink-0" />
               <span className="truncate">{locationDisplay}</span>
@@ -264,6 +297,17 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
           </div>
         </div>
         
+        {displayMode === "my-places" && (
+          <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+            <EmojiPickerPopover
+              emoji={savedPlace.emoji || null}
+              onEmojiSelect={handleEmojiSelect}
+              disabled={updateEmojiMutation.isPending}
+              variant="inline"
+              testId={`button-emoji-picker-${savedPlace.id}`}
+            />
+          </div>
+        )}
         {showSaveDropdown && (
           <div 
             className={cn(
@@ -302,7 +346,7 @@ interface PlacesListProps {
   showSaveDropdown?: boolean;
   hideDropdownUntilHover?: boolean;
   renderAction?: (savedPlace: SavedPlace) => React.ReactNode;
-  isOwnProfile?: boolean;
+  displayMode?: DisplayMode;
   currentUserPlaceData?: Record<string, CurrentUserPlaceData> | null;
 }
 
@@ -318,7 +362,7 @@ export function PlacesList({
   showSaveDropdown = false,
   hideDropdownUntilHover = false,
   renderAction,
-  isOwnProfile = true,
+  displayMode = "my-places",
   currentUserPlaceData,
 }: PlacesListProps) {
   if (isLoading) {
@@ -359,7 +403,7 @@ export function PlacesList({
           hideDropdownUntilHover={hideDropdownUntilHover}
           actionButton={renderAction?.(savedPlace)}
           onClick={onPlaceSelect ? () => onPlaceSelect(savedPlace.id) : undefined}
-          isOwnProfile={isOwnProfile}
+          displayMode={displayMode}
           currentUserData={currentUserPlaceData?.[savedPlace.placeId] || null}
         />
       ))}

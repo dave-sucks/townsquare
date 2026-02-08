@@ -358,7 +358,7 @@ export function UserSidebar({
               showSaveDropdown={true}
               emptyMessage="No places saved"
               emptySubMessage={isOwnProfile ? "Start saving places to see them here" : "This user hasn't saved any places yet"}
-              isOwnProfile={isOwnProfile}
+              displayMode={isOwnProfile ? "my-places" : "photo"}
               currentUserPlaceData={currentUserPlaceData}
             />
           </div>

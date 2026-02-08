@@ -116,14 +116,21 @@ export async function POST(request: NextRequest) {
           photoRefs: photoRefs || null,
         },
       });
-    } else if (!place.neighborhood && (neighborhood || locality)) {
-      place = await prisma.place.update({
-        where: { id: place.id },
-        data: {
-          neighborhood: neighborhood || null,
-          locality: locality || null,
-        },
-      });
+    } else {
+      const needsUpdate: Record<string, any> = {};
+      if (!place.neighborhood && (neighborhood || locality)) {
+        needsUpdate.neighborhood = neighborhood || null;
+        needsUpdate.locality = locality || null;
+      }
+      if ((!place.photoRefs || (Array.isArray(place.photoRefs) && (place.photoRefs as string[]).length === 0)) && photoRefs && photoRefs.length > 0) {
+        needsUpdate.photoRefs = photoRefs;
+      }
+      if (Object.keys(needsUpdate).length > 0) {
+        place = await prisma.place.update({
+          where: { id: place.id },
+          data: needsUpdate,
+        });
+      }
     }
 
     const defaultEmoji = getDefaultEmoji(place.primaryType, place.types as string[] | null);

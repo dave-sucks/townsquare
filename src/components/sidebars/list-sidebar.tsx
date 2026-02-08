@@ -173,7 +173,7 @@ export function ListSidebar({
           showStatus={false}
           showSaveDropdown={true}
           hideDropdownUntilHover={true}
-          isOwnProfile={false}
+          displayMode={isOwner ? "list-editable" : "list-readonly"}
           currentUserPlaceData={currentUserPlaceData || undefined}
           emptyMessage="No places in this list"
           emptySubMessage={isOwner ? "Add places from your saved places" : "This list is empty"}
