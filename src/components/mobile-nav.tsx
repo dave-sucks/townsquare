@@ -18,6 +18,7 @@ import {
   Notification02Icon,
   Moon02Icon,
   Sun03Icon,
+  PinLocation01Icon,
 } from "@hugeicons/core-free-icons";
 import { useTheme } from "next-themes";
 
@@ -37,6 +38,7 @@ const BOTTOM_NAV_ITEMS = [
 ] as const;
 
 const MENU_ITEMS_TOP = [
+  { href: "/my-places", label: "My Places", icon: PinLocation01Icon },
   { href: "/people", label: "People", icon: UserMultiple02Icon },
   { href: "/notifications", label: "Notifications", icon: Notification02Icon },
   { href: "/upgrade", label: "Upgrade", icon: SparklesIcon },

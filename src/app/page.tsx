@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { LandingPage } from "@/components/landing-page";
 import { Onboarding } from "@/components/onboarding";
-import { DiscoverPage } from "@/components/pages/discover-page";
+import { ExplorePage } from "@/components/pages/explore-page";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
@@ -36,5 +36,5 @@ export default function Home() {
     return <Onboarding onComplete={handleOnboardingComplete} />;
   }
 
-  return <DiscoverPage user={user} />;
+  return <ExplorePage user={user} />;
 }

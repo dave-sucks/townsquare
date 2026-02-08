@@ -4,7 +4,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Location01Icon, LeftToRightListBulletIcon, UserAdd01Icon, UserRemove01Icon, Loading03Icon } from "@hugeicons/core-free-icons";
+import { Location01Icon, LeftToRightListBulletIcon, UserAdd01Icon, UserRemove01Icon, Loading03Icon, Tick01Icon } from "@hugeicons/core-free-icons";
+import { cn } from "@/lib/utils";
 
 interface PersonCardProps {
   id: string;
@@ -17,7 +18,7 @@ interface PersonCardProps {
   listsCount: number;
   onFollow: (e: React.MouseEvent) => void;
   isLoading?: boolean;
-  variant?: "grid" | "list";
+  variant?: "grid" | "list" | "onboarding";
 }
 
 export function PersonCard({
@@ -49,6 +50,55 @@ export function PersonCard({
     e.stopPropagation();
     onFollow(e);
   };
+
+  if (variant === "onboarding") {
+    return (
+      <button
+        type="button"
+        onClick={handleFollowClick}
+        disabled={isLoading}
+        className={cn(
+          "relative rounded-2xl p-3 flex flex-col items-center text-center transition-all",
+          "bg-white/10 backdrop-blur-md border",
+          isFollowing
+            ? "border-white/40"
+            : "border-white/10"
+        )}
+        data-testid={`person-card-${id}`}
+      >
+        <div
+          className={cn(
+            "absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all",
+            isFollowing
+              ? "bg-white"
+              : "border border-white/30 bg-white/5"
+          )}
+          data-testid={`toggle-follow-${id}`}
+        >
+          {isFollowing && (
+            <HugeiconsIcon icon={Tick01Icon} className="h-3 w-3 text-black" />
+          )}
+        </div>
+
+        <Avatar className="h-12 w-12 mb-2">
+          <AvatarImage src={profileImageUrl || undefined} alt={displayName} />
+          <AvatarFallback className="text-base bg-white/10 text-white">{initials}</AvatarFallback>
+        </Avatar>
+        <p className="text-xs font-medium truncate w-full text-white">{displayName}</p>
+        <p className="text-[10px] text-white/50 truncate w-full">@{handle}</p>
+        <div className="flex items-center justify-center gap-2 mt-1 text-[10px] text-white/40">
+          <span className="flex items-center gap-0.5">
+            <HugeiconsIcon icon={Location01Icon} className="h-2.5 w-2.5" />
+            {savedPlacesCount}
+          </span>
+          <span className="flex items-center gap-0.5">
+            <HugeiconsIcon icon={LeftToRightListBulletIcon} className="h-2.5 w-2.5" />
+            {listsCount}
+          </span>
+        </div>
+      </button>
+    );
+  }
 
   if (variant === "grid") {
     return (

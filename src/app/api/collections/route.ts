@@ -1,0 +1,191 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
+
+export async function GET(request: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const collection = searchParams.get("collection");
+
+    if (collection === "following") {
+      const followedUserIds = await prisma.follow.findMany({
+        where: { followerId: user.id },
+        select: { followingId: true },
+      });
+
+      const ids = followedUserIds.map((f) => f.followingId);
+
+      if (ids.length === 0) {
+        return NextResponse.json({ places: [] });
+      }
+
+      const savedPlaces = await prisma.savedPlace.findMany({
+        where: { userId: { in: ids } },
+        include: {
+          place: true,
+          user: {
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              profileImageUrl: true,
+            },
+          },
+        },
+        take: 10,
+        orderBy: { createdAt: "desc" },
+      });
+
+      const mapped = savedPlaces.map((sp) => ({
+        id: sp.id,
+        userId: sp.userId,
+        placeId: sp.placeId,
+        hasBeen: sp.hasBeen,
+        rating: sp.rating,
+        visitedAt: sp.visitedAt?.toISOString() ?? null,
+        createdAt: sp.createdAt.toISOString(),
+        place: {
+          id: sp.place.id,
+          googlePlaceId: sp.place.googlePlaceId,
+          name: sp.place.name,
+          formattedAddress: sp.place.formattedAddress,
+          lat: sp.place.lat,
+          lng: sp.place.lng,
+          primaryType: sp.place.primaryType,
+          types: sp.place.types,
+          priceLevel: sp.place.priceLevel,
+          photoRefs: sp.place.photoRefs,
+          neighborhood: sp.place.neighborhood,
+          locality: sp.place.locality,
+        },
+        savedBy: sp.user,
+      }));
+
+      return NextResponse.json({ places: mapped });
+    }
+
+    if (collection === "burgers") {
+      const burgerTags = await prisma.tag.findMany({
+        where: {
+          slug: { in: ["burgers", "smashburger"] },
+        },
+        select: { id: true },
+      });
+
+      const tagIds = burgerTags.map((t) => t.id);
+
+      let placeIds: string[] = [];
+      if (tagIds.length > 0) {
+        const taggedPlaces = await prisma.placeTag.findMany({
+          where: { tagId: { in: tagIds } },
+          select: { placeId: true },
+          distinct: ["placeId"],
+        });
+        placeIds = taggedPlaces.map((tp) => tp.placeId);
+      }
+
+      const burgerPlacesByName = await prisma.place.findMany({
+        where: {
+          OR: [
+            ...(placeIds.length > 0 ? [{ id: { in: placeIds } }] : []),
+            { name: { contains: "burger", mode: "insensitive" as const } },
+            { name: { contains: "smash", mode: "insensitive" as const } },
+          ],
+        },
+        take: 20,
+      });
+
+      const allPlaceIds = burgerPlacesByName.map((p) => p.id);
+
+      const savedPlaces = await prisma.savedPlace.findMany({
+        where: { placeId: { in: allPlaceIds } },
+        include: {
+          place: true,
+          user: {
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              profileImageUrl: true,
+            },
+          },
+        },
+        distinct: ["placeId"],
+        take: 20,
+        orderBy: { createdAt: "desc" },
+      });
+
+      const uniquePlaceIds = new Set(savedPlaces.map((sp) => sp.placeId));
+      const unsavedPlaces = burgerPlacesByName.filter(
+        (p) => !uniquePlaceIds.has(p.id)
+      );
+
+      const mapped = savedPlaces.map((sp) => ({
+        id: sp.id,
+        userId: sp.userId,
+        placeId: sp.placeId,
+        hasBeen: sp.hasBeen,
+        rating: sp.rating,
+        visitedAt: sp.visitedAt?.toISOString() ?? null,
+        createdAt: sp.createdAt.toISOString(),
+        place: {
+          id: sp.place.id,
+          googlePlaceId: sp.place.googlePlaceId,
+          name: sp.place.name,
+          formattedAddress: sp.place.formattedAddress,
+          lat: sp.place.lat,
+          lng: sp.place.lng,
+          primaryType: sp.place.primaryType,
+          types: sp.place.types,
+          priceLevel: sp.place.priceLevel,
+          photoRefs: sp.place.photoRefs,
+          neighborhood: sp.place.neighborhood,
+          locality: sp.place.locality,
+        },
+        savedBy: sp.user,
+      }));
+
+      const unsavedMapped = unsavedPlaces.map((p) => ({
+        id: `unsaved-${p.id}`,
+        userId: null,
+        placeId: p.id,
+        hasBeen: false,
+        rating: null,
+        visitedAt: null,
+        createdAt: new Date().toISOString(),
+        place: {
+          id: p.id,
+          googlePlaceId: p.googlePlaceId,
+          name: p.name,
+          formattedAddress: p.formattedAddress,
+          lat: p.lat,
+          lng: p.lng,
+          primaryType: p.primaryType,
+          types: p.types,
+          priceLevel: p.priceLevel,
+          photoRefs: p.photoRefs,
+          neighborhood: p.neighborhood,
+          locality: p.locality,
+        },
+        savedBy: null,
+      }));
+
+      return NextResponse.json({ places: [...mapped, ...unsavedMapped] });
+    }
+
+    return NextResponse.json({ error: "Invalid collection" }, { status: 400 });
+  } catch (error) {
+    console.error("Collections API error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch collection" },
+      { status: 500 }
+    );
+  }
+}
