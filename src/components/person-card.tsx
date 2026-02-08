@@ -27,18 +27,25 @@ function FollowButton({
   onClick,
   id,
   className,
+  dark = false,
 }: {
   isFollowing: boolean;
   isLoading: boolean;
   onClick: (e: React.MouseEvent) => void;
   id: string;
   className?: string;
+  dark?: boolean;
 }) {
   return (
     <Button
-      variant={isFollowing ? "ghost" : "default"}
+      variant={isFollowing ? "outline" : "default"}
       size="sm"
-      className={cn("w-full", className)}
+      className={cn(
+        "w-full",
+        dark && isFollowing && "border-white/30 text-white bg-transparent",
+        dark && !isFollowing && "bg-white text-black",
+        className,
+      )}
       onClick={onClick}
       disabled={isLoading}
       data-testid={`button-follow-${id}`}
@@ -47,7 +54,7 @@ function FollowButton({
         <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
       ) : isFollowing ? (
         <>
-          <HugeiconsIcon icon={CheckmarkCircle01Icon} className="mr-1 h-3.5 w-3.5" />
+          <HugeiconsIcon icon={CheckmarkCircle01Icon} className={cn("mr-1 h-3.5 w-3.5", dark && "fill-white")} />
           Following
         </>
       ) : (
@@ -123,6 +130,7 @@ export function PersonCard({
           isLoading={isLoading}
           onClick={handleFollowClick}
           id={id}
+          dark
         />
       </div>
     );
@@ -192,7 +200,7 @@ export function PersonCard({
       </div>
 
       <Button
-        variant={isFollowing ? "ghost" : "default"}
+        variant={isFollowing ? "outline" : "default"}
         size="sm"
         onClick={handleFollowClick}
         disabled={isLoading}
