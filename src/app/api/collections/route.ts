@@ -59,6 +59,7 @@ export async function GET(request: NextRequest) {
         placeId: sp.placeId,
         hasBeen: sp.hasBeen,
         rating: sp.rating,
+        emoji: sp.emoji,
         visitedAt: sp.visitedAt?.toISOString() ?? null,
         createdAt: sp.createdAt.toISOString(),
         place: {
@@ -161,6 +162,7 @@ export async function GET(request: NextRequest) {
         placeId: sp.placeId,
         hasBeen: sp.hasBeen,
         rating: sp.rating,
+        emoji: sp.emoji,
         visitedAt: sp.visitedAt?.toISOString() ?? null,
         createdAt: sp.createdAt.toISOString(),
         place: {
@@ -192,6 +194,7 @@ export async function GET(request: NextRequest) {
         placeId: p.id,
         hasBeen: false,
         rating: null,
+        emoji: null,
         visitedAt: null,
         createdAt: new Date().toISOString(),
         place: {
