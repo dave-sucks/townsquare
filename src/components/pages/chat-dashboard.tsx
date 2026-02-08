@@ -480,7 +480,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
             </div>
           </div>
 
-          <div className="absolute bottom-0 left-0 right-0 p-3 pb-4">
+          <div className="absolute bottom-0 left-0 right-0 px-3 pt-3 pb-5">
             <div className="relative group">
               <Textarea
                 ref={inputRef}
