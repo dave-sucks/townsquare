@@ -17,6 +17,10 @@ interface PlaceResult {
   userRatingsTotal: number | null;
   photoRef: string | null;
   emoji: string | null;
+  dbId: string | null;
+  neighborhood: string | null;
+  photoRefs: string[] | null;
+  tags: { slug: string; displayName: string; categorySlug: string }[] | null;
 }
 
 const tools: ChatCompletionTool[] = [
@@ -71,6 +75,10 @@ async function searchPlaces(query: string, location?: string): Promise<PlaceResu
     userRatingsTotal: result.user_ratings_total || null,
     photoRef: result.photos?.[0]?.photo_reference || null,
     emoji: null,
+    dbId: null,
+    neighborhood: null,
+    photoRefs: result.photos?.slice(0, 5).map((p: any) => p.photo_reference) || null,
+    tags: null,
   }));
 }
 
@@ -98,6 +106,218 @@ async function assignEmojis(places: PlaceResult[], query: string): Promise<Place
   } catch (e) {
     console.error("Emoji assignment failed:", e);
   }
+  return places;
+}
+
+function extractNeighborhood(formattedAddress: string): string | null {
+  const parts = formattedAddress.split(",").map(p => p.trim());
+  if (parts.length >= 3) {
+    return parts[1];
+  }
+  return null;
+}
+
+function extractLocality(formattedAddress: string): string | null {
+  const parts = formattedAddress.split(",").map(p => p.trim());
+  if (parts.length >= 3) {
+    const cityState = parts[parts.length - 2];
+    return cityState?.replace(/\s+\d{5}(-\d{4})?$/, "").trim() || null;
+  }
+  if (parts.length >= 2) {
+    return parts[parts.length - 1]?.trim() || null;
+  }
+  return null;
+}
+
+async function persistPlaces(places: PlaceResult[]): Promise<PlaceResult[]> {
+  const results: PlaceResult[] = [];
+
+  for (const place of places) {
+    try {
+      const priceLevelMap: Record<string, string> = {
+        "0": "PRICE_LEVEL_FREE",
+        "1": "PRICE_LEVEL_INEXPENSIVE",
+        "2": "PRICE_LEVEL_MODERATE",
+        "3": "PRICE_LEVEL_EXPENSIVE",
+        "4": "PRICE_LEVEL_VERY_EXPENSIVE",
+      };
+      const mappedPriceLevel = place.priceLevel ? (priceLevelMap[place.priceLevel] || null) : null;
+
+      const neighborhood = extractNeighborhood(place.formattedAddress);
+      const locality = extractLocality(place.formattedAddress);
+
+      const photoRefsData = place.photoRefs || (place.photoRef ? [place.photoRef] : []);
+
+      const dbPlace = await prisma.place.upsert({
+        where: { googlePlaceId: place.googlePlaceId },
+        create: {
+          googlePlaceId: place.googlePlaceId,
+          name: place.name,
+          formattedAddress: place.formattedAddress,
+          neighborhood,
+          locality,
+          lat: place.lat,
+          lng: place.lng,
+          types: place.types || [],
+          primaryType: place.primaryType,
+          priceLevel: mappedPriceLevel,
+          photoRefs: photoRefsData,
+        },
+        update: {
+          name: place.name,
+          formattedAddress: place.formattedAddress,
+          neighborhood,
+          locality,
+          lat: place.lat,
+          lng: place.lng,
+          types: place.types || [],
+          primaryType: place.primaryType,
+          priceLevel: mappedPriceLevel,
+          photoRefs: photoRefsData.length > 0 ? photoRefsData : undefined,
+        },
+      });
+
+      const existingTags = await prisma.placeTag.findMany({
+        where: { placeId: dbPlace.id },
+        include: { tag: { include: { category: true } } },
+      });
+
+      const topTags = existingTags
+        .filter(pt => pt.tag?.category)
+        .sort((a, b) => (b.tag.category!.searchWeight || 1) - (a.tag.category!.searchWeight || 1))
+        .slice(0, 5)
+        .map(pt => ({
+          slug: pt.tag.slug,
+          displayName: pt.tag.displayName,
+          categorySlug: pt.tag.category!.slug,
+        }));
+
+      results.push({
+        ...place,
+        dbId: dbPlace.id,
+        neighborhood: dbPlace.neighborhood,
+        photoRefs: dbPlace.photoRefs as string[] | null,
+        tags: topTags.length > 0 ? topTags : null,
+      });
+    } catch (error) {
+      console.error(`Failed to persist place ${place.name}:`, error);
+      results.push(place);
+    }
+  }
+
+  return results;
+}
+
+async function autoTagPlaces(places: PlaceResult[]): Promise<PlaceResult[]> {
+  const placesToTag = places.filter(p => p.dbId && (!p.tags || p.tags.length === 0));
+  if (placesToTag.length === 0) return places;
+
+  try {
+    const allTags = await prisma.tag.findMany({
+      include: { category: true },
+    });
+
+    const tagsByCategory: Record<string, { slug: string; displayName: string; categorySlug: string }[]> = {};
+    for (const tag of allTags) {
+      if (!tag.category) continue;
+      const catSlug = tag.category.slug;
+      if (!tagsByCategory[catSlug]) tagsByCategory[catSlug] = [];
+      tagsByCategory[catSlug].push({
+        slug: tag.slug,
+        displayName: tag.displayName,
+        categorySlug: catSlug,
+      });
+    }
+
+    const categoryList = Object.entries(tagsByCategory)
+      .map(([cat, tags]) => `${cat}: ${tags.map(t => t.slug).join(", ")}`)
+      .join("\n");
+
+    const placeDescriptions = placesToTag.map((p, i) => {
+      const parts = [`${i}: ${p.name}`];
+      if (p.primaryType) parts.push(`(${p.primaryType})`);
+      if (p.types.length > 0) parts.push(`[${p.types.slice(0, 3).join(", ")}]`);
+      if (p.priceLevel) parts.push(`price:${p.priceLevel}`);
+      if (p.neighborhood) parts.push(`in ${p.neighborhood}`);
+      return parts.join(" ");
+    }).join("\n");
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-5-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You are a place tagging assistant. Given places and available tag categories with their tags, assign the most relevant tags to each place. Only use tags from the provided list.
+
+Available tags by category:
+${categoryList}
+
+Respond as JSON: {"places": [{"index": 0, "tags": ["tag-slug-1", "tag-slug-2"]}, ...]}
+Assign 1-4 tags per place. Only use existing tag slugs from the list above.`,
+        },
+        { role: "user", content: placeDescriptions },
+      ],
+      max_completion_tokens: 500,
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) return places;
+
+    const parsed = JSON.parse(content);
+    const tagAssignments: { index: number; tags: string[] }[] = parsed.places || [];
+
+    const tagMap = new Map(allTags.map(t => [t.slug, t]));
+
+    for (const assignment of tagAssignments) {
+      if (typeof assignment.index !== "number" || assignment.index < 0 || assignment.index >= placesToTag.length) continue;
+      if (!Array.isArray(assignment.tags)) continue;
+
+      const place = placesToTag[assignment.index];
+      if (!place?.dbId) continue;
+
+      const assignedTags: { slug: string; displayName: string; categorySlug: string }[] = [];
+
+      for (const tagSlug of assignment.tags) {
+        if (typeof tagSlug !== "string") continue;
+        const tag = tagMap.get(tagSlug);
+        if (!tag?.category) continue;
+
+        try {
+          await prisma.placeTag.upsert({
+            where: {
+              placeId_tagId: {
+                placeId: place.dbId,
+                tagId: tag.id,
+              },
+            },
+            create: {
+              placeId: place.dbId,
+              tagId: tag.id,
+              source: "ai",
+              confidence: 0.8,
+            },
+            update: {},
+          });
+
+          assignedTags.push({
+            slug: tag.slug,
+            displayName: tag.displayName,
+            categorySlug: tag.category.slug,
+          });
+        } catch (e) {
+          console.error(`Failed to assign tag ${tagSlug} to place ${place.name}:`, e);
+        }
+      }
+
+      if (assignedTags.length > 0) {
+        place.tags = assignedTags;
+      }
+    }
+  } catch (e) {
+    console.error("Auto-tagging failed:", e);
+  }
+
   return places;
 }
 
@@ -208,6 +428,8 @@ export async function POST(
             searchLocation = args.location || "";
             places = await searchPlaces(args.query, args.location);
             places = await assignEmojis(places, args.query);
+            places = await persistPlaces(places);
+            places = await autoTagPlaces(places);
           } catch (error) {
             console.error("search_places error:", error);
           }

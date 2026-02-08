@@ -6,6 +6,7 @@ import { queryClient, apiRequest } from "@/lib/query-client";
 import { PlaceMap, type PlaceMapHandle } from "@/components/place-map";
 import { AppShell } from "@/components/layout";
 import { BottomSheet } from "@/components/bottom-sheet";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -58,6 +59,10 @@ interface PlaceResult {
   userRatingsTotal: number | null;
   photoRef: string | null;
   emoji: string | null;
+  dbId: string | null;
+  neighborhood: string | null;
+  photoRefs: string[] | null;
+  tags: { slug: string; displayName: string; categorySlug: string }[] | null;
 }
 
 interface UserData {
@@ -166,12 +171,12 @@ export function ChatDashboard({ user }: { user: UserData }) {
 
   const mapPlaces: SavedPlaceLike[] = useMemo(() => {
     return allPlacesFromChat.map((p) => ({
-      id: p.googlePlaceId,
-      placeId: p.googlePlaceId,
+      id: p.dbId || p.googlePlaceId,
+      placeId: p.dbId || p.googlePlaceId,
       hasBeen: false,
       rating: null,
       place: {
-        id: p.googlePlaceId,
+        id: p.dbId || p.googlePlaceId,
         googlePlaceId: p.googlePlaceId,
         name: p.name,
         formattedAddress: p.formattedAddress,
@@ -180,7 +185,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
         primaryType: p.primaryType,
         types: p.types,
         priceLevel: p.priceLevel,
-        photoRefs: p.photoRef ? [p.photoRef] : null,
+        photoRefs: p.photoRefs || (p.photoRef ? [p.photoRef] : null),
       },
     }));
   }, [allPlacesFromChat]);
@@ -846,10 +851,10 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
     );
 
     const category = getChatCategory(place.primaryType, place.types);
-    const locationDisplay = place.formattedAddress.split(",")[0];
+    const locationDisplay = place.neighborhood || place.formattedAddress.split(",")[0];
 
     const placeForDropdown = {
-      id: savedPlace?.place.id,
+      id: savedPlace?.place.id || place.dbId || undefined,
       googlePlaceId: place.googlePlaceId,
       name: place.name,
       formattedAddress: place.formattedAddress,
@@ -858,32 +863,44 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
       primaryType: place.primaryType,
       types: place.types as string[] | null,
       priceLevel: place.priceLevel,
-      photoRefs: place.photoRef ? [place.photoRef] : null,
+      photoRefs: place.photoRefs || (place.photoRef ? [place.photoRef] : null),
     };
 
     const ratingStars = place.rating ? place.rating.toFixed(1) : null;
 
+    const firstPhotoRef = place.photoRefs?.[0] || place.photoRef;
+    const photoUrl = firstPhotoRef
+      ? `/api/places/photo?photoRef=${encodeURIComponent(firstPhotoRef)}&maxWidth=80`
+      : null;
+
+    const placeDetailHref = `/places/${place.googlePlaceId}`;
+
     return (
       <div
         ref={ref}
-        role="button"
-        tabIndex={0}
-        onClick={onClick}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onClick();
-          }
-        }}
         className={cn(
-          "group flex items-center gap-3 p-1.5 rounded-lg transition-colors cursor-pointer",
+          "group flex items-center gap-3 p-1.5 rounded-lg transition-colors",
           isSelected ? "bg-accent" : "hover-elevate"
         )}
         data-testid={`chat-place-card-${place.googlePlaceId}`}
       >
-        <div className="flex items-center gap-3 flex-1 min-w-0">
+        <Link
+          href={placeDetailHref}
+          className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+          onClick={(e) => {
+            onClick();
+          }}
+          data-testid={`link-place-detail-${place.googlePlaceId}`}
+        >
           <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
-            {place.emoji ? (
+            {photoUrl ? (
+              <img
+                src={photoUrl}
+                alt={place.name}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            ) : place.emoji ? (
               <span className="text-xl">{place.emoji}</span>
             ) : (
               <HugeiconsIcon icon={Location01Icon} className="h-5 w-5 text-muted-foreground" />
@@ -891,9 +908,12 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
           </div>
 
           <div className="flex-1 min-w-0 overflow-hidden">
-            <h3 className="font-semibold text-sm truncate font-brand">
-              {place.name}
-            </h3>
+            <div className="flex items-center gap-1.5">
+              <h3 className="font-semibold text-sm truncate font-brand">
+                {place.emoji && <span className="mr-1">{place.emoji}</span>}
+                {place.name}
+              </h3>
+            </div>
             
             {category && (
               <div className="flex items-center gap-1 text-sm text-foreground truncate">
@@ -911,8 +931,22 @@ const ChatPlaceCardInline = forwardRef<HTMLDivElement, ChatPlaceCardInlineProps>
               <HugeiconsIcon icon={Location01Icon} className="h-3 w-3 flex-shrink-0" />
               <span className="truncate">{locationDisplay}</span>
             </div>
+
+            {place.tags && place.tags.length > 0 && (
+              <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                {place.tags.slice(0, 3).map((tag) => (
+                  <span
+                    key={tag.slug}
+                    className="text-[10px] px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground"
+                    data-testid={`tag-${tag.slug}`}
+                  >
+                    {tag.displayName}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
+        </Link>
         
         <div 
           onClick={(e) => e.stopPropagation()}
