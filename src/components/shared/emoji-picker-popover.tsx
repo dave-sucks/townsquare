@@ -63,6 +63,7 @@ export function EmojiPickerPopover({
               placeholder="Search emoji..."
               className="flex-1 h-9 bg-transparent pl-8 pr-8 text-[16px] placeholder:text-muted-foreground focus:outline-none touch-manipulation [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
               data-testid="input-emoji-search"
+              autoFocus={false}
               autoComplete="off"
               autoCorrect="off"
               autoCapitalize="off"
@@ -143,7 +144,7 @@ export function EmojiPickerPopover({
 
   if (variant === "area") {
     return (
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={setOpen} modal={false}>
         <PopoverTrigger asChild>
           <div
             className={cn(
@@ -168,6 +169,7 @@ export function EmojiPickerPopover({
           className="w-auto p-0 border shadow-lg rounded-lg overflow-hidden"
           align="start"
           side="right"
+          onOpenAutoFocus={(e) => e.preventDefault()}
           onClick={(e) => e.stopPropagation()}
         >
           {emojiPickerContent}
@@ -177,7 +179,7 @@ export function EmojiPickerPopover({
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
@@ -202,6 +204,7 @@ export function EmojiPickerPopover({
         className="w-auto p-0 border shadow-lg rounded-lg overflow-hidden"
         align="start"
         side="right"
+        onOpenAutoFocus={(e) => e.preventDefault()}
         onClick={(e) => e.stopPropagation()}
       >
         {emojiPickerContent}

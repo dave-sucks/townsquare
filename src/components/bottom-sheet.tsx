@@ -101,14 +101,41 @@ export function BottomSheet({
   // Lock body scroll when sheet is above collapsed
   useBodyScrollLock(snapPoint !== "collapsed");
 
-  // Update viewport height on mount and resize
+  // Update viewport height on mount and resize.
+  // Use window.innerHeight as baseline (not affected by virtual keyboard).
+  // Only update from visualViewport for real layout changes (orientation, browser chrome),
+  // ignoring keyboard-induced resizes that would collapse the sheet.
+  const baselineHeight = useRef(0);
+
   useEffect(() => {
-    const updateViewportHeight = () => {
-      const vh = window.visualViewport?.height ?? window.innerHeight;
-      setViewportHeight(vh);
+    const getStableHeight = () => {
+      return window.innerHeight;
     };
 
-    updateViewportHeight();
+    const updateViewportHeight = () => {
+      const newHeight = getStableHeight();
+      // Only update if change is significant (orientation change, not keyboard)
+      // Keyboard typically changes viewport by 200-400px on mobile
+      if (baselineHeight.current === 0 || Math.abs(newHeight - baselineHeight.current) > 100) {
+        // Check if an input is focused — if so, this is likely a keyboard resize, skip it
+        const activeEl = document.activeElement;
+        const isInputFocused = activeEl && (
+          activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          activeEl.tagName === "SELECT"
+        );
+        if (isInputFocused && baselineHeight.current > 0) {
+          return;
+        }
+        baselineHeight.current = newHeight;
+        setViewportHeight(newHeight);
+      }
+    };
+
+    const initHeight = getStableHeight();
+    baselineHeight.current = initHeight;
+    setViewportHeight(initHeight);
+
     window.addEventListener("resize", updateViewportHeight);
     window.visualViewport?.addEventListener("resize", updateViewportHeight);
 
