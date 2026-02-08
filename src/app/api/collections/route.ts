@@ -27,7 +27,18 @@ export async function GET(request: NextRequest) {
       const savedPlaces = await prisma.savedPlace.findMany({
         where: { userId: { in: ids } },
         include: {
-          place: true,
+          place: {
+            include: {
+              placeTags: {
+                include: { tag: { include: { category: true } } },
+                orderBy: [
+                  { tag: { category: { searchWeight: "desc" } } },
+                  { tag: { sortOrder: "asc" } },
+                ],
+                take: 5,
+              },
+            },
+          },
           user: {
             select: {
               id: true,
@@ -63,6 +74,12 @@ export async function GET(request: NextRequest) {
           photoRefs: sp.place.photoRefs,
           neighborhood: sp.place.neighborhood,
           locality: sp.place.locality,
+          topTags: sp.place.placeTags.map((pt) => ({
+            id: pt.tag.id,
+            slug: pt.tag.slug,
+            displayName: pt.tag.displayName,
+            categorySlug: pt.tag.category.slug,
+          })),
         },
         savedBy: sp.user,
       }));
@@ -106,7 +123,18 @@ export async function GET(request: NextRequest) {
       const savedPlaces = await prisma.savedPlace.findMany({
         where: { placeId: { in: allPlaceIds } },
         include: {
-          place: true,
+          place: {
+            include: {
+              placeTags: {
+                include: { tag: { include: { category: true } } },
+                orderBy: [
+                  { tag: { category: { searchWeight: "desc" } } },
+                  { tag: { sortOrder: "asc" } },
+                ],
+                take: 5,
+              },
+            },
+          },
           user: {
             select: {
               id: true,
@@ -148,6 +176,12 @@ export async function GET(request: NextRequest) {
           photoRefs: sp.place.photoRefs,
           neighborhood: sp.place.neighborhood,
           locality: sp.place.locality,
+          topTags: sp.place.placeTags.map((pt) => ({
+            id: pt.tag.id,
+            slug: pt.tag.slug,
+            displayName: pt.tag.displayName,
+            categorySlug: pt.tag.category.slug,
+          })),
         },
         savedBy: sp.user,
       }));
@@ -173,6 +207,7 @@ export async function GET(request: NextRequest) {
           photoRefs: p.photoRefs,
           neighborhood: p.neighborhood,
           locality: p.locality,
+          topTags: [],
         },
         savedBy: null,
       }));
