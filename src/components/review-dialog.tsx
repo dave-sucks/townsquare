@@ -26,7 +26,7 @@ type ReviewFormData = z.infer<typeof reviewSchema>;
 
 interface Review {
   id: string;
-  userId: string;
+  userId: string | null;
   placeId: string;
   rating: number;
   note: string | null;

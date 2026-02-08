@@ -34,7 +34,7 @@ interface Place {
 
 interface SavedPlace {
   id: string;
-  userId: string;
+  userId: string | null;
   placeId: string;
   hasBeen: boolean;
   rating: number | null;

@@ -31,13 +31,20 @@ interface Place {
 
 interface SavedPlace {
   id: string;
-  userId?: string;
+  userId?: string | null;
   placeId: string;
   hasBeen: boolean;
   rating: number | null;
   visitedAt?: string | null;
   createdAt?: string;
   place: Place;
+  savedBy?: {
+    id: string;
+    username: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    profileImageUrl: string | null;
+  } | null;
 }
 
 interface UserData {

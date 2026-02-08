@@ -47,7 +47,7 @@ interface Place {
 
 interface SavedPlace {
   id: string;
-  userId: string;
+  userId: string | null;
   placeId: string;
   hasBeen: boolean;
   rating: number | null;
@@ -87,7 +87,7 @@ interface Photo {
 
 interface Review {
   id: string;
-  userId: string;
+  userId: string | null;
   placeId: string;
   rating: number;
   note: string | null;
@@ -129,7 +129,7 @@ interface Activity {
     id: string;
     name: string;
     visibility: string;
-    userId: string;
+    userId: string | null;
   } | null;
   metadata: { placeName?: string; listName?: string; rating?: number; note?: string; review_preview?: string } | null;
 }

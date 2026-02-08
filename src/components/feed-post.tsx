@@ -28,7 +28,7 @@ interface ActivityList {
   id: string;
   name: string;
   visibility: string;
-  userId: string;
+  userId: string | null;
 }
 
 interface SocialPostData {

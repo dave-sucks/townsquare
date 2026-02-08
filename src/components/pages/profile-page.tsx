@@ -88,7 +88,7 @@ interface ActivityData {
     id: string;
     name: string;
     visibility: string;
-    userId: string;
+    userId: string | null;
   } | null;
   socialPost?: SocialPostData | null;
 }
