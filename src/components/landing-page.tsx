@@ -47,8 +47,9 @@ export function LandingPage() {
           <div className="w-full flex flex-col gap-3">
             <Button
               asChild
+              variant="secondary"
               size="lg"
-              className="w-full bg-white text-black border-white no-default-hover-elevate no-default-active-elevate hover:bg-white/85 active:bg-white/75"
+              className="w-full bg-white text-black hover-elevate active-elevate-2"
               data-testid="button-signup"
             >
               <a href="/api/login">Sign Up</a>
@@ -58,7 +59,7 @@ export function LandingPage() {
               asChild
               variant="outline"
               size="lg"
-              className="w-full border-white/20 bg-white/10 text-white no-default-hover-elevate no-default-active-elevate hover:bg-white/20 active:bg-white/25"
+              className="w-full border-white/20 bg-white/10 text-white hover-elevate active-elevate-2"
               data-testid="button-login"
             >
               <a href="/api/login">Log In</a>
