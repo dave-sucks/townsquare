@@ -42,8 +42,8 @@ export async function handleEnrichReview(payload: EnrichReviewPayload) {
     )
     .join("\n");
 
-  const openaiKey = process.env.OPENAI_API_KEY;
-  if (!openaiKey) throw new Error("OPENAI_API_KEY not configured");
+  const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+  if (!openaiKey) throw new Error("OpenAI API key not configured");
 
   const prompt = `You are a food/restaurant tag extractor. Given a social media post caption about a restaurant/bar/cafe, extract relevant tags from the controlled vocabulary below.
 
@@ -64,7 +64,8 @@ Example response format:
 
 Return ONLY the JSON object, no other text.`;
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const baseUrl = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || "https://api.openai.com/v1";
+  const response = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

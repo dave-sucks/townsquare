@@ -260,11 +260,12 @@ function extractTaggedAccounts(caption: string): string[] {
 async function aiExtractVenue(caption: string): Promise<string | null> {
   if (!caption || caption.length < 10) return null;
 
-  const openaiKey = process.env.OPENAI_API_KEY;
+  const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
   if (!openaiKey) return null;
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const baseUrl = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || "https://api.openai.com/v1";
+    const response = await fetch(`${baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

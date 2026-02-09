@@ -29,7 +29,7 @@ export async function handleRefreshPlaceSummary(
   if (!place) return;
   if (place.reviews.length < 2) return;
 
-  const openaiKey = process.env.OPENAI_API_KEY;
+  const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
   if (!openaiKey) return;
 
   const tagsByCategory: Record<string, string[]> = {};
@@ -55,7 +55,8 @@ ${captions.map((c, i) => `${i + 1}. ${c.substring(0, 200)}`).join("\n")}
 Write a concise, engaging summary suitable for a place discovery app. Focus on what makes this place special. Do NOT use emojis.`;
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const baseUrl = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || "https://api.openai.com/v1";
+    const response = await fetch(`${baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
