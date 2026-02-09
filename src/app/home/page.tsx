@@ -72,7 +72,7 @@ interface FeedResponse {
 
 function FeedList({ filter }: { filter: "all" | "following" }) {
   const [cursor, setCursor] = useState<string | null>(null);
-  const [allActivities, setAllActivities] = useState<Activity[]>([]);
+  const [pages, setPages] = useState<Activity[][]>([]);
 
   const { data, isLoading, isFetching } = useQuery<FeedResponse>({
     queryKey: ["feed", filter, cursor],
@@ -82,19 +82,23 @@ function FeedList({ filter }: { filter: "all" | "following" }) {
   useEffect(() => {
     if (data?.activities) {
       if (cursor) {
-        setAllActivities((prev) => [...prev, ...data.activities]);
+        setPages((prev) => [...prev, data.activities]);
       } else {
-        setAllActivities(data.activities);
+        setPages([data.activities]);
       }
     }
   }, [data, cursor]);
 
   useEffect(() => {
     setCursor(null);
-    setAllActivities([]);
+    setPages([]);
   }, [filter]);
 
-  if (isLoading && !allActivities.length) {
+  const allActivities = pages.length > 0
+    ? pages.flat()
+    : (data?.activities ?? []);
+
+  if (isLoading && allActivities.length === 0) {
     return (
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
@@ -113,7 +117,7 @@ function FeedList({ filter }: { filter: "all" | "following" }) {
     );
   }
 
-  if (allActivities.length === 0) {
+  if (allActivities.length === 0 && !isLoading) {
     if (filter === "following") {
       return (
         <div className="flex flex-col items-center justify-center py-16">
