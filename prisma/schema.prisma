@@ -30,7 +30,6 @@ model User {
   conversations      Conversation[]
   following          Follow[]          @relation("follower")
   followers          Follow[]          @relation("following")
-  instagramImports   InstagramImport[]
   lists              List[]
   photos             Photo[]
   reviews            Review[]
@@ -49,24 +48,28 @@ model Session {
 }
 
 model Place {
-  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
-  googlePlaceId    String       @unique(map: "places_google_place_id_unique") @map("google_place_id")
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  googlePlaceId    String             @unique(map: "places_google_place_id_unique") @map("google_place_id")
   name             String
-  formattedAddress String       @map("formatted_address")
+  formattedAddress String             @map("formatted_address")
   neighborhood     String?
   locality         String?
-  lat              Float        @db.Real
-  lng              Float        @db.Real
-  primaryType      String?      @map("primary_type")
+  lat              Float              @db.Real
+  lng              Float              @db.Real
+  primaryType      String?            @map("primary_type")
   types            Json?
-  priceLevel       String?      @map("price_level")
-  photoRefs        Json?        @map("photo_refs")
-  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt        DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  priceLevel       String?            @map("price_level")
+  photoRefs        Json?              @map("photo_refs")
+  aiSummary        String?            @map("ai_summary")
+  aiSummaryUpdatedAt DateTime?        @map("ai_summary_updated_at") @db.Timestamp(6)
+  topChips         Json?              @map("top_chips")
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt        DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
   activities       Activity[]
   listPlaces       ListPlace[]
   photos           Photo[]
   placeTags        PlaceTag[]
+  placeTagAggregates PlaceTagAggregate[]
   reviews          Review[]
   savedPlaces      SavedPlace[]
 
@@ -166,16 +169,14 @@ model Review {
   instagramShortcode String?       @map("instagram_shortcode")
   instagramUrl       String?       @map("instagram_url")
   source             review_source @default(manual)
-  
-  // Social post content (for rendering preview without API calls)
-  // Author info comes from the user relationship - no need to duplicate
   socialPostCaption     String?    @map("social_post_caption")
   socialPostMediaUrl    String?    @map("social_post_media_url")
-  socialPostMediaType   String?    @map("social_post_media_type") // image, video, carousel
+  socialPostMediaType   String?    @map("social_post_media_type")
   socialPostLikes       Int?       @map("social_post_likes")
   socialPostPostedAt    DateTime?  @map("social_post_posted_at") @db.Timestamp(6)
-  
   photos             Photo[]
+  reviewTags         ReviewTag[]
+  ingestedPosts      IngestedPost[]
   place              Place         @relation(fields: [placeId], references: [id], onDelete: Cascade)
   user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -205,51 +206,108 @@ model Photo {
   @@map("photos")
 }
 
-model InstagramImport {
-  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
-  instagramPostId    String        @unique @map("instagram_post_id")
-  instagramUrl       String        @map("instagram_url")
-  instagramShortcode String        @map("instagram_shortcode")
-  userId             String?       @map("user_id") @db.VarChar(36)
-  placeId            String?       @map("place_id") @db.VarChar(36)
-  reviewId           String?       @map("review_id") @db.VarChar(36)
-  status             import_status @default(pending)
-  errorMessage       String?       @map("error_message")
-  importedBy         String        @map("imported_by") @db.VarChar(36)
-  rawData            Json?         @map("raw_data")
-  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt          DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  importedByUser     User          @relation(fields: [importedBy], references: [id], onDelete: Cascade)
+model ImportJob {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  platform        import_platform
+  type            import_type
+  input           String
+  maxPosts        Int             @default(100) @map("max_posts")
+  status          job_status      @default(pending)
+  postsFetched    Int             @default(0) @map("posts_fetched")
+  postsProcessed  Int             @default(0) @map("posts_processed")
+  reviewsCreated  Int             @default(0) @map("reviews_created")
+  postsUnresolved Int             @default(0) @map("posts_unresolved")
+  postsFailed     Int             @default(0) @map("posts_failed")
+  error           String?
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
+  startedAt       DateTime?       @map("started_at") @db.Timestamp(6)
+  completedAt     DateTime?       @map("completed_at") @db.Timestamp(6)
+  ingestedPosts   IngestedPost[]
 
+  @@index([platform, status, createdAt])
+  @@map("import_jobs")
+}
+
+model IngestedPost {
+  id                   String          @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  platform             import_platform
+  importJobId          String          @map("import_job_id") @db.VarChar(36)
+  canonicalPostId      String          @map("canonical_post_id")
+  url                  String
+  authorHandle         String          @map("author_handle")
+  authorPlatformId     String?         @map("author_platform_id")
+  caption              String?
+  postedAt             DateTime?       @map("posted_at") @db.Timestamp(6)
+  likeCount            Int?            @map("like_count")
+  media                Json?
+  rawPayload           Json?           @map("raw_payload")
+  resolvedGooglePlaceId String?        @map("resolved_google_place_id")
+  resolveMethod        resolve_method? @map("resolve_method")
+  resolveConfidence    Float?          @map("resolve_confidence")
+  resolveCandidates    Json?           @map("resolve_candidates")
+  reviewId             String?         @map("review_id") @db.VarChar(36)
+  status               post_status     @default(new)
+  error                String?
+  createdAt            DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt            DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  importJob            ImportJob       @relation(fields: [importJobId], references: [id], onDelete: Cascade)
+  review               Review?         @relation(fields: [reviewId], references: [id])
+
+  @@unique([platform, canonicalPostId])
   @@index([status])
-  @@index([importedBy])
-  @@map("instagram_imports")
+  @@index([authorHandle])
+  @@index([resolvedGooglePlaceId])
+  @@map("ingested_posts")
 }
 
-enum list_visibility {
-  PRIVATE
-  PUBLIC
+model Job {
+  id        String     @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  type      job_type
+  payload   Json
+  status    job_status @default(queued)
+  attempts  Int        @default(0)
+  runAfter  DateTime   @default(now()) @map("run_after") @db.Timestamp(6)
+  error     String?
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  @@index([status, runAfter])
+  @@index([type, status])
+  @@map("jobs")
 }
 
-enum activity_type {
-  PLACE_SAVED
-  PLACE_MARKED_BEEN
-  PLACE_ADDED_TO_LIST
-  LIST_CREATED
-  REVIEW_CREATED
+model ReviewTag {
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  reviewId   String     @map("review_id") @db.VarChar(36)
+  tagId      String     @map("tag_id") @db.VarChar(36)
+  source     tag_source @default(ai)
+  confidence Float
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
+  review     Review     @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  tag        Tag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, tagId])
+  @@index([reviewId])
+  @@index([tagId])
+  @@map("review_tags")
 }
 
-enum review_source {
-  manual
-  instagram
-  tiktok
-}
+model PlaceTagAggregate {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  placeId         String   @map("place_id") @db.VarChar(36)
+  tagId           String   @map("tag_id") @db.VarChar(36)
+  confidence      Float
+  evidenceCount   Int      @default(0) @map("evidence_count")
+  evidenceScore   Float    @default(0) @map("evidence_score")
+  lastComputedAt  DateTime @default(now()) @map("last_computed_at") @db.Timestamp(6)
+  isSuppressed    Boolean  @default(false) @map("is_suppressed")
+  sourceBreakdown Json?    @map("source_breakdown")
+  place           Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  tag             Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
-enum import_status {
-  pending
-  processing
-  completed
-  failed
+  @@unique([placeId, tagId])
+  @@index([placeId, confidence])
+  @@map("place_tag_aggregates")
 }
 
 model Conversation {
@@ -292,15 +350,17 @@ model TagCategory {
 }
 
 model Tag {
-  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
-  categoryId  String      @map("category_id") @db.VarChar(36)
-  slug        String      @unique
-  displayName String      @map("display_name")
-  description String?
-  iconName    String?     @map("icon_name")
-  sortOrder   Int         @default(0) @map("sort_order")
-  category    TagCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  placeTags   PlaceTag[]
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  categoryId        String              @map("category_id") @db.VarChar(36)
+  slug              String              @unique
+  displayName       String              @map("display_name")
+  description       String?
+  iconName          String?             @map("icon_name")
+  sortOrder         Int                 @default(0) @map("sort_order")
+  category          TagCategory         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  placeTags         PlaceTag[]
+  reviewTags        ReviewTag[]
+  placeTagAggregates PlaceTagAggregate[]
 
   @@index([categoryId])
   @@map("tags")
@@ -323,9 +383,79 @@ model PlaceTag {
   @@map("place_tags")
 }
 
+enum list_visibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum activity_type {
+  PLACE_SAVED
+  PLACE_MARKED_BEEN
+  PLACE_ADDED_TO_LIST
+  LIST_CREATED
+  REVIEW_CREATED
+}
+
+enum review_source {
+  manual
+  instagram
+  tiktok
+}
+
+enum import_platform {
+  instagram
+  tiktok
+}
+
+enum import_type {
+  profile
+  post_url
+  place_seed
+}
+
+enum job_status {
+  pending
+  queued
+  running
+  completed
+  failed
+  cancelled
+}
+
+enum post_status {
+  new
+  processed
+  unresolved
+  failed
+}
+
+enum resolve_method {
+  geotag
+  caption
+  hashtag
+  ai
+  manual
+  none
+}
+
+enum job_type {
+  IMPORT_PROFILE
+  PROCESS_POST
+  ENRICH_REVIEW
+  UPDATE_PLACE_AGGREGATES
+  REFRESH_PLACE_SUMMARY
+}
+
 enum tag_source {
   manual
   ai
   google
   user
+}
+
+enum import_status {
+  pending
+  processing
+  completed
+  failed
 }

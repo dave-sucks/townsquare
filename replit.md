@@ -68,6 +68,18 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 - `lucide-react`: Icon library.
 - `frimousse`: Headless emoji picker library.
 
+### Social Import & Place Knowledge Engine
+- **Admin UI**: `/admin/import` page for managing Instagram profile imports.
+- **Worker System**: Background job worker in `src/lib/worker/runner.ts` polls every 5s. Handlers in `src/lib/worker/handlers/`.
+  - `IMPORT_PROFILE`: Fetches Instagram posts via Apify API, creates IngestedPost records.
+  - `PROCESS_POST`: Resolves posts to Google Places using confidence-based matching ladder (geotag > caption > hashtag > tagged accounts > AI). Auto-resolves at 0.85+ confidence.
+  - `ENRICH_REVIEW`: Uses OpenAI to extract tags from captions/content with 0.55+ confidence threshold.
+  - `UPDATE_PLACE_AGGREGATES`: Aggregates tags at place level with source weights (manual: 1.2, user: 1.0, ai: 0.8, google: 0.6).
+  - `REFRESH_PLACE_SUMMARY`: Generates AI summaries and top chips for places.
+- **Manual Resolve**: Admin can manually match unresolved posts to places via Google Places search in the admin UI.
+- **Prisma Models**: ImportJob, IngestedPost, Job (queue), ReviewTag, PlaceTagAggregate added to schema.
+- **Tag Taxonomy**: 50+ tags seeded across Style, Vibe, Price, Food Type, Features, Occasion categories.
+
 ### Environment Variables Required
 - `DATABASE_URL`: Connection string for the PostgreSQL database.
 - `SESSION_SECRET`: Secret key for encrypting session cookies.

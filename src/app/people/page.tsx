@@ -7,12 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Search01Icon, UserMultiple02Icon, GridViewIcon, LeftToRightListBulletIcon, InstagramIcon } from "@hugeicons/core-free-icons";
+import { Search01Icon, UserMultiple02Icon, GridViewIcon, LeftToRightListBulletIcon } from "@hugeicons/core-free-icons";
 import { apiRequest } from "@/lib/query-client";
 import { useAuth } from "@/hooks/use-auth";
 import { AppShell, PageHeader } from "@/components/layout";
 import { PersonCard } from "@/components/person-card";
-import { InstagramImportDialog } from "@/components/instagram-import-dialog";
 
 interface UserData {
   id: string;
@@ -36,7 +35,6 @@ export default function PeoplePage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [instagramImportOpen, setInstagramImportOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
@@ -106,21 +104,7 @@ export default function PeoplePage() {
 
   return (
     <AppShell user={user}>
-      <PageHeader title="People">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setInstagramImportOpen(true)}
-          title="Import from Instagram"
-          data-testid="button-instagram-import"
-        >
-          <HugeiconsIcon icon={InstagramIcon} className="h-4 w-4" />
-        </Button>
-        <InstagramImportDialog
-          open={instagramImportOpen}
-          onOpenChange={setInstagramImportOpen}
-        />
-      </PageHeader>
+      <PageHeader title="People" />
       <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full pb-20 md:pb-4">
         {/* Search and View Toggle */}
         <div className="flex items-center gap-2 mb-4">
