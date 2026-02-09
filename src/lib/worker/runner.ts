@@ -22,29 +22,35 @@ async function tick() {
   isRunning = true;
 
   try {
-    const job = await claimNextJob();
-    if (!job) {
-      isRunning = false;
-      return;
+    const maxJobsPerTick = 5;
+    let processed = 0;
+
+    while (processed < maxJobsPerTick) {
+      const job = await claimNextJob();
+      if (!job) break;
+
+      processed++;
+      console.log(`[Worker] Processing job ${job.id} (${job.type}), attempt ${job.attempts}`);
+
+      const handler = handlers[job.type];
+      if (!handler) {
+        await failJob(job.id, `Unknown job type: ${job.type}`, 1);
+        console.error(`[Worker] Unknown job type: ${job.type}`);
+        continue;
+      }
+
+      try {
+        await handler(job.payload);
+        await completeJob(job.id);
+        console.log(`[Worker] Job ${job.id} (${job.type}) completed`);
+      } catch (err: any) {
+        console.error(`[Worker] Job ${job.id} (${job.type}) failed:`, err.message);
+        await failJob(job.id, err.message || "Unknown error");
+      }
     }
 
-    console.log(`[Worker] Processing job ${job.id} (${job.type}), attempt ${job.attempts}`);
-
-    const handler = handlers[job.type];
-    if (!handler) {
-      await failJob(job.id, `Unknown job type: ${job.type}`, 1);
-      console.error(`[Worker] Unknown job type: ${job.type}`);
-      isRunning = false;
-      return;
-    }
-
-    try {
-      await handler(job.payload);
-      await completeJob(job.id);
-      console.log(`[Worker] Job ${job.id} (${job.type}) completed`);
-    } catch (err: any) {
-      console.error(`[Worker] Job ${job.id} (${job.type}) failed:`, err.message);
-      await failJob(job.id, err.message || "Unknown error");
+    if (processed > 0) {
+      console.log(`[Worker] Processed ${processed} jobs this tick`);
     }
   } catch (err: any) {
     console.error("[Worker] Tick error:", err.message);

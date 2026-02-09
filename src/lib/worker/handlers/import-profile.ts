@@ -117,10 +117,10 @@ async function fetchProfilePosts(
   const apifyToken = process.env.APIFY_TOKEN;
   if (!apifyToken) throw new Error("APIFY_TOKEN not configured");
 
-  console.log(`[Apify] Starting Instagram profile scrape for @${handle}, max ${maxPosts} posts`);
+  console.log(`[Apify] Starting Instagram scrape for @${handle}, max ${maxPosts} posts`);
 
   const runResponse = await fetch(
-    "https://api.apify.com/v2/acts/apify~instagram-profile-scraper/runs?waitForFinish=300",
+    "https://api.apify.com/v2/acts/apify~instagram-scraper/runs?waitForFinish=300",
     {
       method: "POST",
       headers: {
@@ -131,7 +131,7 @@ async function fetchProfilePosts(
         directUrls: [`https://www.instagram.com/${handle}/`],
         resultsLimit: maxPosts,
         resultsType: "posts",
-        addParentData: true,
+        addParentData: false,
       }),
     }
   );

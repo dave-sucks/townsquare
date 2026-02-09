@@ -92,9 +92,12 @@ async function resolvePlace(post: any): Promise<ResolveResult | null> {
     const result = await searchGooglePlaces(locationName, apiKey);
     if (result && result.candidates.length > 0) {
       const best = result.candidates[0];
+      const geotagConfidence = best.name.toLowerCase().includes(locationName.toLowerCase().split(" ")[0])
+        ? 0.95
+        : Math.max(best.score, 0.85);
       return {
         googlePlaceId: best.googlePlaceId,
-        confidence: best.score,
+        confidence: geotagConfidence,
         method: "geotag",
         candidates: result.candidates,
       };
@@ -167,8 +170,7 @@ async function resolvePlace(post: any): Promise<ResolveResult | null> {
 
 async function searchGooglePlaces(
   query: string,
-  apiKey: string,
-  city = "New York"
+  apiKey: string
 ): Promise<{
   candidates: Array<{
     googlePlaceId: string;
@@ -180,10 +182,8 @@ async function searchGooglePlaces(
     score: number;
   }>;
 } | null> {
-  const searchQuery = query.includes(city) ? query : `${query} ${city}`;
-
   const response = await fetch(
-    `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&type=restaurant|bar|cafe|food|bakery&key=${apiKey}`
+    `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&type=restaurant|bar|cafe|food|bakery&key=${apiKey}`
   );
 
   if (!response.ok) return null;
