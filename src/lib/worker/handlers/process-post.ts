@@ -393,6 +393,39 @@ export async function createReviewFromPost(
     });
   }
 
+  await prisma.savedPlace.upsert({
+    where: {
+      userId_placeId: {
+        userId: user.id,
+        placeId: place.id,
+      },
+    },
+    update: {
+      hasBeen: true,
+    },
+    create: {
+      userId: user.id,
+      placeId: place.id,
+      hasBeen: true,
+    },
+  });
+
+  try {
+    await prisma.activity.create({
+      data: {
+        actorId: user.id,
+        type: "REVIEW_CREATED",
+        placeId: place.id,
+        dedupeKey: `review_import_${post.canonicalPostId}`,
+        createdAt: post.postedAt || new Date(),
+      },
+    });
+  } catch (e: any) {
+    if (!e.message?.includes("Unique constraint")) {
+      console.error("[ProcessPost] Activity creation error:", e.message);
+    }
+  }
+
   await prisma.ingestedPost.update({
     where: { id: post.id },
     data: {

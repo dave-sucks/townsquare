@@ -22,9 +22,11 @@ export async function handleImportProfile(payload: ImportProfilePayload) {
     const handle = extractHandle(importJob.input);
     if (!handle) throw new Error(`Invalid profile URL: ${importJob.input}`);
 
-    await upsertCreatorUser(handle);
-
     const posts = await fetchProfilePosts(handle, importJob.maxPosts);
+
+    const profilePicUrl = posts[0]?.ownerProfilePicUrl || posts[0]?.profilePicUrl || null;
+    const fullName = posts[0]?.ownerFullName || posts[0]?.fullName || null;
+    await upsertCreatorUser(handle, profilePicUrl, fullName);
 
     await prisma.importJob.update({
       where: { id: importJobId },
@@ -87,15 +89,24 @@ function extractHandle(input: string): string | null {
   return null;
 }
 
-async function upsertCreatorUser(handle: string) {
+async function upsertCreatorUser(handle: string, profilePicUrl?: string | null, fullName?: string | null) {
   const existing = await prisma.user.findUnique({
     where: { instagramHandle: handle },
   });
 
+  const nameParts = fullName?.trim().split(/\s+/) || [];
+  const firstName = nameParts[0] || null;
+  const lastName = nameParts.slice(1).join(" ") || null;
+
   if (existing) {
     await prisma.user.update({
       where: { id: existing.id },
-      data: { lastInstagramSync: new Date() },
+      data: {
+        lastInstagramSync: new Date(),
+        ...(profilePicUrl && !existing.profileImageUrl ? { profileImageUrl: profilePicUrl } : {}),
+        ...(firstName && !existing.firstName ? { firstName } : {}),
+        ...(lastName && !existing.lastName ? { lastName } : {}),
+      },
     });
     return existing;
   }
@@ -106,6 +117,9 @@ async function upsertCreatorUser(handle: string) {
       username: handle,
       isInstagramImport: true,
       lastInstagramSync: new Date(),
+      ...(profilePicUrl ? { profileImageUrl: profilePicUrl } : {}),
+      ...(firstName ? { firstName } : {}),
+      ...(lastName ? { lastName } : {}),
     },
   });
 }
