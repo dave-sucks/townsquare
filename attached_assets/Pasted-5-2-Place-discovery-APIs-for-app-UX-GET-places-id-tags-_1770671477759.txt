@@ -1,0 +1,581 @@
+5.2 Place discovery APIs (for app UX)
+GET /places/:id/tags
+
+Returns PlaceTagAggregate joined with TagCategory/Tag for UI chips.
+
+GET /search/places
+
+Query params:
+
+lat, lng, radius (optional)
+
+neighborhood (optional)
+
+tagSlugs (comma-separated; supports AND)
+
+q (free text, optional)
+
+sort (match|popular|new)
+
+Ranking:
+
+match score = sum(confidence) for requested tags
+
+tie-break by review count / saved count (if available)
+
+6) Import pipeline details
+6.1 Import profile job: IMPORT_PROFILE
+
+Steps:
+
+Validate profile URL (instagram.com/<handle>/)
+
+Create/update User:
+
+set instagramHandle
+
+set isInstagramImport=true
+
+Call Apify actor:
+
+input: profile URL, max posts
+
+Fetch dataset items
+
+For each post item:
+
+Create/Upsert IngestedPost with:
+
+canonicalPostId (shortcode/postId)
+
+url
+
+caption, postedAt, likeCount
+
+media array and rawPayload
+
+Enqueue PROCESS_POST job for that post
+
+Update ImportJob counters as posts arrive
+
+6.2 Process post job: PROCESS_POST
+
+Steps:
+
+Load IngestedPost
+
+Attempt place resolution (see Section 7)
+
+If cannot resolve with confidence >= threshold:
+
+set status = unresolved
+
+write candidates and method/confidence if available
+
+increment ImportJob.postsUnresolved
+
+STOP (no Review created yet)
+
+If resolved:
+
+Upsert Place by googlePlaceId
+
+if new: fetch Place Details from Google
+
+Upsert/create Review:
+
+userId = creator user
+
+placeId = resolved place
+
+source = instagram
+
+instagram fields set
+
+social cache fields set (caption, media thumb, likes, postedAt)
+
+Create Photo rows:
+
+one per media item, set carousel fields
+
+Link IngestedPost.reviewId = review.id
+
+set status = processed
+
+Enqueue:
+
+ENRICH_REVIEW(reviewId)
+
+UPDATE_PLACE_AGGREGATES(placeId)
+
+(Optionally) every 5 new reviews for a place enqueue REFRESH_PLACE_SUMMARY(placeId)
+
+7) Place resolution spec (Google matching)
+7.1 Inputs available per post
+
+From Apify payload, try to capture:
+
+Instagram location tag name (if present)
+
+location address fields (if present)
+
+caption text
+
+hashtags
+
+profile city (optional)
+
+7.2 Resolution ladder
+
+Try in this order:
+
+Geotag (best)
+
+If post includes a location tag:
+
+Google Places Text Search using location name + city context (NYC default)
+
+choose best candidate by:
+
+name similarity
+
+distance if lat/lng from post exists
+
+address match
+
+if confident: resolveMethod=geotag
+
+Caption name extraction
+
+Use a lightweight AI extraction prompt:
+
+“Return the most likely venue name and neighborhood/city from this caption”
+
+Then run Google Places Text Search on that extracted venue string
+
+Hashtag extraction
+
+If hashtags look like venue names (#rubirosa):
+
+try search
+
+Fallback AI
+
+Ask AI: “What place is this likely referring to?”
+
+Then search
+
+If still low confidence:
+
+unresolved
+
+7.3 Confidence thresholds
+
+>= 0.85 => auto-create Review
+
+0.60 - 0.85 => unresolved with candidates (manual resolve)
+
+< 0.60 => unresolved, no candidates or weak candidates
+
+7.4 Candidate storage
+
+Store top 3 candidates in resolveCandidates:
+
+[
+  { "googlePlaceId":"...", "name":"The Spaniard", "address":"...", "lat":..., "lng":..., "types":[...], "score":0.83 },
+  ...
+]
+
+8) AI Tagging Engine
+8.1 Taxonomy rules
+
+You MUST seed a controlled vocabulary in TagCategory + Tag.
+
+Categories suggested:
+
+Style (classic, trendy, modern, old_school)
+
+Vibe (dive_bar, classy, cocktail_bar, lively, quiet, romantic, group_friendly)
+
+Price (cheap, affordable, pricey, expensive)
+
+Food Type (smashburger, burger, birria_tacos, tacos, pizza, pasta, ramen, sushi, bbq, wings, etc.)
+
+Features (takeout, delivery, outdoor_seating, rooftop, reservations, walk_in, late_night)
+
+Occasion (date_night, casual_hang, work_lunch, celebration, solo)
+
+Important: Use slug as the canonical ID in prompts.
+
+8.2 Review-level extraction: ENRICH_REVIEW(reviewId)
+
+Inputs:
+
+review.note (if manual)
+
+review.socialPostCaption (if imported)
+
+place name + neighborhood (for context)
+
+optional: google types
+
+Output:
+
+JSON containing category → tag slugs with confidences
+
+optional: “new tag suggestions” list (not auto-created)
+
+Write:
+
+Insert ReviewTag rows for each predicted tag with confidence
+
+Keep only tags with confidence >= 0.55 at review level (tunable)
+
+8.3 Place aggregation: UPDATE_PLACE_AGGREGATES(placeId)
+
+Deterministic computation (no AI needed):
+
+Load all ReviewTag for reviews of that place
+
+Group by tagId
+
+Compute:
+
+evidenceCount = number of distinct reviews contributing
+
+evidenceScore = sum(confidence * sourceWeight)
+
+Convert to final place confidence:
+
+simplest: placeConfidence = min(1, evidenceScore / K) where K is scaling factor
+
+or use sigmoid if desired
+
+Write to PlaceTagAggregate upserting by (placeId, tagId)
+
+Recommended source weights:
+
+manual: 1.2
+
+user: 1.0
+
+ai: 0.8
+
+google: 0.6
+
+Promotion/display rules:
+
+Only show tag if:
+
+confidence >= 0.70 OR evidenceCount >= 2
+
+Some tags require higher confidence (e.g. rooftop, delivery) since they must be factual:
+
+rooftop/delivery/takeout: require confidence >= 0.80 OR evidenceCount >= 2
+
+8.4 Place summary refresh: REFRESH_PLACE_SUMMARY(placeId) (optional early, recommended later)
+
+Inputs:
+
+Place name, neighborhood, google types, top 10 tags + confidence
+
+A few representative captions/notes (top 3-5)
+Output:
+
+Place.aiSummary (2–3 sentences)
+
+Place.topChips (pick 1–2 from Style, 1–2 from Vibe, 1 from Price)
+
+Run:
+
+only when place has >= 2 reviews and every +5 new reviews
+
+or on demand in admin
+
+9) Admin UI requirements (minimum viable)
+9.1 Import panel
+
+Input: Instagram profile URL, maxPosts dropdown (20/50/100)
+
+Start Import
+
+Show progress:
+
+postsFetched, processed, unresolved, failed
+
+Tabs:
+
+Processed
+
+Unresolved (with manual resolve)
+
+Failed (retry)
+
+9.2 Unresolved resolver table
+
+For each unresolved post show:
+
+media thumbnail
+
+caption preview
+
+candidates list (top 3)
+
+dropdown search for Google place (calls your backend to Places Text Search)
+
+“Confirm” button
+
+9.3 Place tag inspector (admin-only)
+
+For a place:
+
+show aggregated tags with confidence and evidenceCount
+
+toggle “suppress” tag
+
+optionally add manual tag
+
+10) App UI / product behavior (to match screenshots)
+10.1 Place detail “chips”
+
+On the Place page:
+
+display chips grouped by category
+
+show only promoted tags
+
+categories in order:
+
+Style
+
+Vibe
+
+Price
+
+Food Type
+
+Features
+
+Occasion
+
+10.2 Recompute behavior
+
+Whenever a new review is created:
+
+run ENRICH_REVIEW
+
+run UPDATE_PLACE_AGGREGATES
+
+optionally refresh summary every 5 reviews
+
+This ensures the place “knowledge profile” gets smarter over time.
+
+11) Milestones (build plan)
+Milestone 1 — Foundations (1–2 days)
+
+Add new Prisma models: ImportJob, IngestedPost, Job, ReviewTag, PlaceTagAggregate
+
+Add worker loop skeleton
+
+Add admin route scaffolding + auth guard
+
+Acceptance:
+
+DB migrates cleanly
+
+Worker can process a dummy job
+
+Milestone 2 — Instagram profile import MVP (2–4 days)
+
+Implement POST /admin/import/instagram/profile
+
+Implement Apify actor run + dataset fetch
+
+Store posts in IngestedPost
+
+Process posts: create unresolved vs processed
+
+Upsert Place by googlePlaceId when resolvable
+
+Create Review + Photos
+
+Acceptance:
+
+One profile import creates:
+
+a User
+
+multiple Places
+
+multiple Reviews
+
+Photos
+
+unresolved posts list visible in admin
+
+Milestone 3 — Manual resolve workflow (1–2 days)
+
+GET unresolved posts
+
+POST resolve endpoint
+
+Re-process post after manual confirmation
+
+Acceptance:
+
+Admin can turn unresolved → processed and create Review
+
+Milestone 4 — AI review tagging (2–3 days)
+
+Seed TagCategory/Tag taxonomy
+
+Implement ENRICH_REVIEW job
+
+Write ReviewTag evidence rows
+
+Acceptance:
+
+New imported review generates ReviewTag rows reliably (JSON parsing hardened)
+
+Milestone 5 — Place aggregation + chips (2–3 days)
+
+Implement UPDATE_PLACE_AGGREGATES
+
+Write PlaceTagAggregate
+
+Update place detail endpoint/UI to render chips like screenshots
+
+Acceptance:
+
+Place shows stable chips (e.g. Classic / Dive Bar / Affordable) based on evidence
+
+Milestone 6 — Discovery search (2–4 days)
+
+Implement /search/places with tag filtering + rank by match score
+
+Add simple UI for discovery filters
+
+Acceptance:
+
+Query: “smashburger + west village” returns relevant places
+
+Milestone 7 — Place summary refresh (optional) (1–2 days)
+
+Implement REFRESH_PLACE_SUMMARY job
+
+Write Place.aiSummary + topChips
+
+Acceptance:
+
+Place has nice “About” text that improves as reviews accumulate
+
+Milestone 8 — TikTok parity (later)
+
+Add TikTok profile import using Apify TikTok actor
+
+Add tiktokHandle/tiktokId to User and tiktok fields to Review
+
+Reuse same pipeline and tagging engine
+
+12) Implementation notes (gotchas to avoid)
+
+Do not auto-resolve low confidence places
+
+Wrong place mappings poison everything.
+
+Dedup hard
+
+User: match by instagramId or instagramHandle
+
+Place: match by googlePlaceId
+
+Review: match by instagramShortcode (unique per platform) so you don’t import duplicates
+
+Store raw payloads
+
+You’ll need them when an actor changes output format.
+
+Keep tagging vocab constrained
+
+Prevent tag explosion; add “suggested new tags” as a manual review step.
+
+Separation of evidence vs truth
+
+ReviewTag = evidence
+
+PlaceTagAggregate = truth shown in UI
+
+Cost control
+
+Tag extraction per review is cheap
+
+Place summary refresh should be occasional
+
+13) Deliverables checklist (what Replit should ship)
+
+ Prisma migration with new tables
+
+ Worker loop processing DB-backed jobs
+
+ Admin import endpoints + basic UI
+
+ Apify integration for IG profile import
+
+ Google Places matching + candidate storage
+
+ Review/Place creation pipeline (Upserts)
+
+ ReviewTag extraction via AI (JSON schema enforced)
+
+ PlaceTagAggregate computation + promotion rules
+
+ Place detail chips grouped by category (matching screenshots)
+
+ Discovery search endpoint (tags + geo + ranking)
+
+ Manual override tools (resolve post, suppress tag)
+
+14) Optional: starter tag list (seed)
+Style
+
+classic, trendy, modern, old_school
+
+Vibe
+
+dive_bar, cocktail_bar, classy, lively, chill, romantic, group_friendly, intimate
+
+Price
+
+cheap, affordable, pricey, expensive
+
+Food Type
+
+smashburger, burger, birria_tacos, tacos, pizza, pasta, ramen, sushi, wings, bbq, sandwich, bakery, bagels, coffee
+
+Features
+
+takeout, delivery, outdoor_seating, rooftop, reservations, walk_in, late_night
+
+Occasion
+
+date_night, casual_hang, work_lunch, celebration, solo
+
+Keep it small at first. You can add more once the system is stable.
+
+15) Definition of success
+
+Importing 5–10 NYC burger creators results in:
+
+200–500 place-linked reviews
+
+150–300 unique places
+
+robust tag coverage on popular places
+
+“Smashburger” query works and returns obvious correct results
+
+Place chips feel credible and stable, not random AI noise
+
+
+If you want, paste your actual Prisma schema next and I’ll rewrite the **exact Prisma model blocks** (copy/paste ready) to match your existing enums/relations so Replit doesn’t have to “interpret” anything.
+::contentReference[oaicite:0]{index=0}
