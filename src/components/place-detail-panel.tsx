@@ -313,13 +313,13 @@ export function PlaceDetailPanel({
               />
               <h1 className="text-xl font-bold flex items-center gap-2 font-brand" data-testid="panel-place-name">
                 {place.name}
-                {savedPlace.hasBeen && (
+                {savedPlace.hasBeen && savedPlace.rating && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <HugeiconsIcon icon={CheckmarkBadge01Icon} className="w-5 h-5 flex-shrink-0 fill-foreground text-background" />
                     </TooltipTrigger>
                     <TooltipContent side="top">
-                      {savedPlace.rating ? RATING_LABELS[savedPlace.rating] : "Been here"}
+                      Been here: {RATING_LABELS[savedPlace.rating] || "rated"}
                     </TooltipContent>
                   </Tooltip>
                 )}

@@ -400,13 +400,11 @@ export async function createReviewFromPost(
         placeId: place.id,
       },
     },
-    update: {
-      hasBeen: true,
-    },
+    update: {},
     create: {
       userId: user.id,
       placeId: place.id,
-      hasBeen: true,
+      hasBeen: false,
     },
   });
 
