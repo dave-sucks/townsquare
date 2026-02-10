@@ -137,8 +137,8 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
       ? { id: currentUserData.savedPlaceId, placeId: savedPlace.placeId, hasBeen: currentUserData.hasBeen, rating: currentUserData.rating }
       : null;
 
+    const myHasBeen = currentUserData?.hasBeen ?? false;
     const myRating = currentUserData?.rating ?? null;
-    const myHasReview = myRating != null;
 
     const isEmojiEditable = displayMode === "list-editable" || displayMode === "my-places";
 
@@ -259,13 +259,13 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
           <div className="flex-1 min-w-0 overflow-hidden">
             <h3 className="font-semibold text-sm truncate flex items-center gap-1 font-brand">
               {savedPlace.place.name}
-              {myHasReview && (
+              {myHasBeen && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <HugeiconsIcon icon={CheckmarkBadge01Icon} className="w-4 h-4 flex-shrink-0 fill-foreground text-background" />
                   </TooltipTrigger>
                   <TooltipContent side="top">
-                    Reviewed: {RATING_NAMES[myRating!] || "rated"}
+                    {myRating ? (RATING_NAMES[myRating] || "rated") : "Been here"}
                   </TooltipContent>
                 </Tooltip>
               )}
