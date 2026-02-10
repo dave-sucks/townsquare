@@ -61,7 +61,7 @@ const RATING_NAMES: Record<number, string> = {
   5: "loved",
 };
 
-type DisplayMode = "list-editable" | "list-readonly" | "my-places" | "photo";
+type ThumbnailMode = "emoji" | "my-places" | "photo";
 
 interface PlaceCardProps {
   savedPlace: SavedPlace;
@@ -72,7 +72,8 @@ interface PlaceCardProps {
   listsContainingPlace?: string[];
   actionButton?: React.ReactNode;
   onClick?: () => void;
-  displayMode?: DisplayMode;
+  thumbnailMode?: ThumbnailMode;
+  emojiEditable?: boolean;
   currentUserData?: CurrentUserPlaceData | null;
 }
 
@@ -124,7 +125,7 @@ function formatCategoryName(type: string): string {
 }
 
 export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
-  ({ savedPlace, isSelected, showStatus = true, showSaveDropdown = false, hideDropdownUntilHover = false, listsContainingPlace = [], actionButton, onClick, displayMode = "my-places", currentUserData }, ref) => {
+  ({ savedPlace, isSelected, showStatus = true, showSaveDropdown = false, hideDropdownUntilHover = false, listsContainingPlace = [], actionButton, onClick, thumbnailMode = "photo", emojiEditable = false, currentUserData }, ref) => {
     const queryClient = useQueryClient();
     const category = getBestCategory(savedPlace.place.primaryType, savedPlace.place.types);
     const locationDisplay = savedPlace.place.neighborhood 
@@ -139,8 +140,6 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
 
     const myHasBeen = currentUserData?.hasBeen ?? false;
     const myRating = currentUserData?.rating ?? null;
-
-    const isEmojiEditable = displayMode === "list-editable" || displayMode === "my-places";
 
     const updateEmojiMutation = useMutation({
       mutationFn: async (emoji: string | null) => {
@@ -158,7 +157,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
     });
 
     const handleEmojiSelect = (emoji: string | null) => {
-      if (isEmojiEditable) {
+      if (emojiEditable) {
         updateEmojiMutation.mutate(emoji);
       }
     };
@@ -183,28 +182,26 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
         <HugeiconsIcon icon={Location01Icon} className="h-5 w-5 text-muted-foreground" />
       );
 
-      switch (displayMode) {
-        case "list-editable":
-          return (
-            <EmojiPickerPopover
-              emoji={savedPlace.emoji || null}
-              onEmojiSelect={handleEmojiSelect}
-              disabled={updateEmojiMutation.isPending}
-              variant="area"
-              testId={`button-emoji-picker-${savedPlace.id}`}
-            />
-          );
-        case "list-readonly":
-          if (savedPlace.emoji) {
+      switch (thumbnailMode) {
+        case "emoji":
+          if (emojiEditable) {
             return (
-              <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
-                <span className="text-2xl">{savedPlace.emoji}</span>
-              </div>
+              <EmojiPickerPopover
+                emoji={savedPlace.emoji || null}
+                onEmojiSelect={handleEmojiSelect}
+                disabled={updateEmojiMutation.isPending}
+                variant="area"
+                testId={`button-emoji-picker-${savedPlace.id}`}
+              />
             );
           }
           return (
-            <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
-              {photoElement}
+            <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+              {savedPlace.emoji ? (
+                <span className="text-2xl">{savedPlace.emoji}</span>
+              ) : (
+                <HugeiconsIcon icon={Location01Icon} className="h-5 w-5 text-muted-foreground" />
+              )}
             </div>
           );
         case "my-places":
@@ -335,7 +332,8 @@ interface PlacesListProps {
   showSaveDropdown?: boolean;
   hideDropdownUntilHover?: boolean;
   renderAction?: (savedPlace: SavedPlace) => React.ReactNode;
-  displayMode?: DisplayMode;
+  thumbnailMode?: ThumbnailMode;
+  emojiEditable?: boolean;
   currentUserPlaceData?: Record<string, CurrentUserPlaceData> | null;
 }
 
@@ -351,7 +349,8 @@ export function PlacesList({
   showSaveDropdown = false,
   hideDropdownUntilHover = false,
   renderAction,
-  displayMode = "my-places",
+  thumbnailMode = "photo",
+  emojiEditable = false,
   currentUserPlaceData,
 }: PlacesListProps) {
   if (isLoading) {
@@ -392,7 +391,8 @@ export function PlacesList({
           hideDropdownUntilHover={hideDropdownUntilHover}
           actionButton={renderAction?.(savedPlace)}
           onClick={onPlaceSelect ? () => onPlaceSelect(savedPlace.id) : undefined}
-          displayMode={displayMode}
+          thumbnailMode={thumbnailMode}
+          emojiEditable={emojiEditable}
           currentUserData={currentUserPlaceData?.[savedPlace.placeId] || null}
         />
       ))}

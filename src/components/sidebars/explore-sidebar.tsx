@@ -149,7 +149,7 @@ export function ExploreSidebar({
             showStatus={false}
             showSaveDropdown={true}
             hideDropdownUntilHover={true}
-            displayMode="photo"
+            thumbnailMode="photo"
             currentUserPlaceData={currentUserPlaceData}
           />
         )}

@@ -174,6 +174,7 @@ export function PlaceListPanel({
           showStatus={true}
           showSaveDropdown={true}
           hideDropdownUntilHover={true}
+          thumbnailMode="my-places"
           currentUserPlaceData={currentUserPlaceData}
         />
       </div>
