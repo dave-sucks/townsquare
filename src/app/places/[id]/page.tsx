@@ -283,7 +283,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
   const { id: placeId } = use(params);
   const { user, isAuthenticated } = useAuth();
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
-  const [feedFilter, setFeedFilter] = useState<"following" | "all">("all");
+  
 
   const { data, isLoading, refetch } = useQuery<PlaceDetailData>({
     queryKey: ["place-detail", placeId],
@@ -298,9 +298,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
   const myReview = data?.myReview;
   const reviews = data?.reviews || [];
   const photos = data?.photos || [];
-  const allActivities = data?.activities || [];
-  const followingActivities = data?.followingActivities || [];
-  const activities = feedFilter === "following" ? followingActivities : allActivities;
+  const activities = data?.activities || [];
   const tags = data?.tags || [];
   const topTags = data?.topTags || [];
 
@@ -399,7 +397,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
       </PageHeader>
 
       <div className="flex-1 overflow-auto pb-20 md:pb-0">
-        <div className="p-4 max-w-3xl mx-auto w-full pt-0">
+        <div className="p-4 w-full pt-0">
         {/* Hero Photo - inline with padding and rounded */}
         {place.photoRefs && (place.photoRefs as string[]).length > 0 ? (
           <div className="w-full aspect-[16/9] max-h-[300px] bg-muted relative overflow-hidden rounded-lg mb-4 group">
@@ -496,7 +494,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
           )}
 
           {/* Two tabs: Overview and Feed */}
-          <Tabs defaultValue="overview" className="w-fit">
+          <Tabs defaultValue="overview" className="w-full">
             <TabsList className="justify-start">
               <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
               <TabsTrigger value="feed" data-testid="tab-feed">Feed</TabsTrigger>
@@ -548,39 +546,17 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
               </TabsContent>
 
             <TabsContent value="feed" className="pt-4">
-              <div className="flex gap-2 mb-4">
-                <Button
-                  variant={feedFilter === "following" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setFeedFilter("following")}
-                  data-testid="button-filter-following"
-                >
-                  Following ({followingActivities.length})
-                </Button>
-                <Button
-                  variant={feedFilter === "all" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setFeedFilter("all")}
-                  data-testid="button-filter-all"
-                >
-                  All ({allActivities.length})
-                </Button>
-              </div>
-              <div className="-mx-4">
-                {activities.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8 px-4" data-testid="text-no-activity">
-                    {feedFilter === "following" 
-                      ? "No reviews from people you follow yet."
-                      : "No activity for this place yet."}
-                  </p>
-                ) : (
-                  <div>
-                    {activities.map((activity) => (
-                      <FeedPost key={activity.id} activity={activity} />
-                    ))}
-                  </div>
-                )}
-              </div>
+              {activities.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8 px-4" data-testid="text-no-activity">
+                  No activity for this place yet.
+                </p>
+              ) : (
+                <div className="-mx-4">
+                  {activities.map((activity) => (
+                    <FeedPost key={activity.id} activity={activity} />
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>
