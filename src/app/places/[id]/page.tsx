@@ -145,7 +145,6 @@ interface PlaceDetailData {
   tags?: TagCategoryGroup[];
   topTags?: TagInfo[];
   activities?: Activity[];
-  followingActivities?: Activity[];
 }
 
 function formatPlaceType(type: string | null): string {
@@ -351,7 +350,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
   if (isLoading) {
     return (
       <AppShell user={user}>
-        <div className="max-w-3xl mx-auto p-4 space-y-4">
+        <div className="p-4 space-y-4">
           <Skeleton className="h-10 w-64" />
           <Skeleton className="h-4 w-48" />
           <Skeleton className="h-4 w-72" />
