@@ -266,13 +266,13 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
           <div className="flex-1 min-w-0 overflow-hidden">
             <h3 className="font-semibold text-sm truncate flex items-center gap-1 font-brand">
               {savedPlace.place.name}
-              {savedPlace.hasBeen && savedPlace.rating && (
+              {savedPlace.hasBeen && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <HugeiconsIcon icon={CheckmarkBadge01Icon} className="w-4 h-4 flex-shrink-0 fill-foreground text-background" />
                   </TooltipTrigger>
                   <TooltipContent side="top">
-                    {beenHereText}: {RATING_NAMES[savedPlace.rating] || "rated"}
+                    {beenHereText}: {savedPlace.rating ? RATING_NAMES[savedPlace.rating] : "rated"}
                   </TooltipContent>
                 </Tooltip>
               )}

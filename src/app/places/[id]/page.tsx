@@ -440,13 +440,13 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
               )}
               <h1 className="text-xl font-bold flex items-center gap-2 font-brand" data-testid="text-place-name">
                 {place.name}
-                {savedPlace?.hasBeen && savedPlace.rating && (
+                {savedPlace?.hasBeen && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <HugeiconsIcon icon={CheckmarkBadge01Icon} className="w-6 h-6 flex-shrink-0 fill-foreground text-background" />
                     </TooltipTrigger>
                     <TooltipContent side="top">
-                      Been here: {RATING_LABELS[savedPlace.rating] || "rated"}
+                      {savedPlace.rating ? RATING_LABELS[savedPlace.rating] : "Been here"}
                     </TooltipContent>
                   </Tooltip>
                 )}
