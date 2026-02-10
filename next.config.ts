@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const devOrigins: string[] = [];
 if (process.env.REPLIT_DEV_DOMAIN) {
-  devOrigins.push(`https://${process.env.REPLIT_DEV_DOMAIN}`);
+  devOrigins.push(process.env.REPLIT_DEV_DOMAIN);
 }
 
 const nextConfig: NextConfig = {
