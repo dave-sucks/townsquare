@@ -214,16 +214,17 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
           );
         case "my-places":
           return (
-            <div className="relative flex-shrink-0">
+            <EmojiPickerPopover
+              emoji={savedPlace.emoji || null}
+              onEmojiSelect={handleEmojiSelect}
+              disabled={updateEmojiMutation.isPending}
+              variant="photo-overlay"
+              testId={`button-emoji-picker-${savedPlace.id}`}
+            >
               <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center overflow-hidden">
                 {photoElement}
               </div>
-              {savedPlace.emoji && (
-                <span className="absolute -bottom-1 -right-1 text-xs bg-background rounded-full w-5 h-5 flex items-center justify-center border shadow-sm" data-testid={`emoji-badge-${savedPlace.id}`}>
-                  {savedPlace.emoji}
-                </span>
-              )}
-            </div>
+            </EmojiPickerPopover>
           );
         case "photo":
         default:
@@ -303,17 +304,6 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
           </div>
         </div>
         
-        {displayMode === "my-places" && (
-          <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-            <EmojiPickerPopover
-              emoji={savedPlace.emoji || null}
-              onEmojiSelect={handleEmojiSelect}
-              disabled={updateEmojiMutation.isPending}
-              variant="inline"
-              testId={`button-emoji-picker-${savedPlace.id}`}
-            />
-          </div>
-        )}
         {showSaveDropdown && (
           <div 
             className={cn(

@@ -25,7 +25,8 @@ interface EmojiPickerPopoverProps {
   onEmojiSelect: (emoji: string | null) => void;
   disabled?: boolean;
   className?: string;
-  variant?: "inline" | "area";
+  variant?: "inline" | "area" | "photo-overlay";
+  children?: React.ReactNode;
   testId?: string;
 }
 
@@ -35,6 +36,7 @@ export function EmojiPickerPopover({
   disabled = false,
   className,
   variant = "inline",
+  children,
   testId = "button-emoji-picker",
 }: EmojiPickerPopoverProps) {
   const [open, setOpen] = useState(false);
@@ -141,6 +143,43 @@ export function EmojiPickerPopover({
       </EmojiPicker.Root>
     </div>
   );
+
+  if (variant === "photo-overlay") {
+    return (
+      <Popover open={open} onOpenChange={setOpen} modal={false}>
+        <PopoverTrigger asChild>
+          <div
+            className={cn(
+              "relative flex-shrink-0 cursor-pointer",
+              disabled && "opacity-50 cursor-not-allowed pointer-events-none",
+              className
+            )}
+            data-testid={testId}
+            onClick={(e) => e.stopPropagation()}
+            role="button"
+            tabIndex={disabled ? -1 : 0}
+            aria-disabled={disabled}
+          >
+            {children}
+            {emoji && (
+              <span className="absolute -bottom-1 -right-1 text-xs bg-background rounded-full w-5 h-5 flex items-center justify-center border shadow-sm">
+                {emoji}
+              </span>
+            )}
+          </div>
+        </PopoverTrigger>
+        <PopoverContent
+          className="w-auto p-0 border shadow-lg rounded-lg overflow-hidden"
+          align="start"
+          side="right"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {emojiPickerContent}
+        </PopoverContent>
+      </Popover>
+    );
+  }
 
   if (variant === "area") {
     return (
