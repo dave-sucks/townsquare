@@ -308,7 +308,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
           <div 
             className={cn(
               "flex-shrink-0",
-              hideDropdownUntilHover && "opacity-0 group-hover:opacity-100 transition-opacity"
+              hideDropdownUntilHover && !currentUserSavedPlace && "max-md:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity"
             )} 
             onClick={(e) => e.stopPropagation()}
           >
