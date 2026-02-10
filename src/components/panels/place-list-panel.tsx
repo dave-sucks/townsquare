@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -83,6 +84,19 @@ export function PlaceListPanel({
 
   const lists = listsData?.lists || [];
 
+  const currentUserPlaceData = useMemo(() => {
+    const map: Record<string, { savedPlaceId: string | null; hasBeen: boolean; rating: number | null; lists: Array<{ id: string; name: string }> }> = {};
+    for (const sp of places) {
+      map[sp.placeId] = {
+        savedPlaceId: sp.id,
+        hasBeen: sp.hasBeen,
+        rating: sp.rating,
+        lists: [],
+      };
+    }
+    return map;
+  }, [places]);
+
   const selectedStatusLabel = statusOptions.find((o) => o.value === statusFilter)?.label || "All";
   const selectedListLabel = listFilter === "all" 
     ? "All Lists" 
@@ -160,6 +174,7 @@ export function PlaceListPanel({
           showStatus={true}
           showSaveDropdown={true}
           hideDropdownUntilHover={true}
+          currentUserPlaceData={currentUserPlaceData}
         />
       </div>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -181,6 +181,21 @@ export function UserSidebar({
   const [localIsFollowing, setLocalIsFollowing] = useState(isFollowing);
   const [localFollowerCount, setLocalFollowerCount] = useState(followerCount);
 
+  const resolvedCurrentUserPlaceData = useMemo(() => {
+    if (currentUserPlaceData) return currentUserPlaceData;
+    if (!isOwnProfile) return null;
+    const map: Record<string, CurrentUserPlaceData> = {};
+    for (const sp of places) {
+      map[sp.placeId] = {
+        savedPlaceId: sp.id,
+        hasBeen: sp.hasBeen,
+        rating: sp.rating,
+        lists: [],
+      };
+    }
+    return map;
+  }, [currentUserPlaceData, isOwnProfile, places]);
+
   const followMutation = useMutation({
     mutationFn: async (userId: string) => {
       return apiRequest("/api/follows", {
@@ -359,7 +374,7 @@ export function UserSidebar({
               emptyMessage="No places saved"
               emptySubMessage={isOwnProfile ? "Start saving places to see them here" : "This user hasn't saved any places yet"}
               displayMode={isOwnProfile ? "my-places" : "photo"}
-              currentUserPlaceData={currentUserPlaceData}
+              currentUserPlaceData={resolvedCurrentUserPlaceData}
             />
           </div>
         </TabsContent>

@@ -129,27 +129,20 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
       || savedPlace.place.locality 
       || savedPlace.place.formattedAddress.split(",")[0];
     
-    const isOwnMode = displayMode === "list-editable" || displayMode === "my-places";
+    const currentUserLists = currentUserData?.lists?.map(l => l.id) || listsContainingPlace || [];
     
-    const currentUserLists = isOwnMode 
-      ? (savedPlace.lists?.map(l => l.id) || listsContainingPlace)
-      : (currentUserData?.lists?.map(l => l.id) || []);
-    
-    const resolvedSavedPlaceId = currentUserData?.savedPlaceId || (displayMode === "my-places" ? savedPlace.id : null);
+    const currentUserSavedPlace = currentUserData?.savedPlaceId 
+      ? { id: currentUserData.savedPlaceId, placeId: savedPlace.placeId, hasBeen: currentUserData.hasBeen, rating: currentUserData.rating }
+      : null;
 
-    const currentUserSavedPlace = isOwnMode 
-      ? (resolvedSavedPlaceId 
-          ? { id: resolvedSavedPlaceId, placeId: savedPlace.placeId, hasBeen: currentUserData?.hasBeen ?? savedPlace.hasBeen, rating: currentUserData?.rating ?? savedPlace.rating }
-          : { id: savedPlace.id, placeId: savedPlace.placeId, hasBeen: savedPlace.hasBeen, rating: savedPlace.rating })
-      : currentUserData?.savedPlaceId 
-        ? { id: currentUserData.savedPlaceId, placeId: savedPlace.placeId, hasBeen: currentUserData.hasBeen, rating: currentUserData.rating }
-        : null;
+    const myRating = currentUserData?.rating ?? null;
+    const myHasReview = myRating != null;
 
     const isEmojiEditable = displayMode === "list-editable" || displayMode === "my-places";
 
     const updateEmojiMutation = useMutation({
       mutationFn: async (emoji: string | null) => {
-        const targetId = resolvedSavedPlaceId || savedPlace.id;
+        const targetId = currentUserData?.savedPlaceId || savedPlace.id;
         return apiRequest(`/api/saved-places/${targetId}`, {
           method: "PATCH",
           body: JSON.stringify({ emoji }),
@@ -236,8 +229,6 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
       }
     }
 
-    const beenHereText = isOwnMode ? "You've been here" : "Been here";
-
     return (
       <div
         ref={ref}
@@ -266,13 +257,13 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
           <div className="flex-1 min-w-0 overflow-hidden">
             <h3 className="font-semibold text-sm truncate flex items-center gap-1 font-brand">
               {savedPlace.place.name}
-              {savedPlace.hasBeen && (
+              {myHasReview && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <HugeiconsIcon icon={CheckmarkBadge01Icon} className="w-4 h-4 flex-shrink-0 fill-foreground text-background" />
                   </TooltipTrigger>
                   <TooltipContent side="top">
-                    {beenHereText}: {savedPlace.rating ? RATING_NAMES[savedPlace.rating] : "rated"}
+                    Reviewed: {RATING_NAMES[myRating!] || "rated"}
                   </TooltipContent>
                 </Tooltip>
               )}
