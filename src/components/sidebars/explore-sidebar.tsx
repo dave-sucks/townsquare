@@ -47,6 +47,13 @@ export interface CollectionTab {
 
 export type ExploreView = "list" | "detail";
 
+interface CurrentUserPlaceData {
+  savedPlaceId: string | null;
+  hasBeen: boolean;
+  rating: number | null;
+  lists: Array<{ id: string; name: string }>;
+}
+
 interface ExploreSidebarProps extends Partial<SidebarInjectedProps> {
   tabs: CollectionTab[];
   activeTab: string;
@@ -56,6 +63,7 @@ interface ExploreSidebarProps extends Partial<SidebarInjectedProps> {
   currentView: ExploreView;
   viewingPlaceId: string | null;
   onNavigate: (view: ExploreView, placeId?: string | null) => void;
+  currentUserPlaceData?: Record<string, CurrentUserPlaceData> | null;
 }
 
 export function ExploreSidebar({
@@ -70,6 +78,7 @@ export function ExploreSidebar({
   currentView,
   viewingPlaceId,
   onNavigate,
+  currentUserPlaceData,
 }: ExploreSidebarProps) {
   const viewingPlace = viewingPlaceId
     ? places.find((p) => p.id === viewingPlaceId)
@@ -141,6 +150,7 @@ export function ExploreSidebar({
             showSaveDropdown={true}
             hideDropdownUntilHover={true}
             displayMode="photo"
+            currentUserPlaceData={currentUserPlaceData}
           />
         )}
       </div>

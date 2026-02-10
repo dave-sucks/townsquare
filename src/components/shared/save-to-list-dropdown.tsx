@@ -132,6 +132,7 @@ export function SaveToListDropdown({
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       queryClient.invalidateQueries({ queryKey: ["place-detail"] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
       onSaveSuccess?.();
     },
     onError: (error: Error) => {
@@ -150,6 +151,7 @@ export function SaveToListDropdown({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       queryClient.invalidateQueries({ queryKey: ["place-detail"] });
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
       onSaveSuccess?.();
     },
     onError: (error: Error) => {
@@ -175,6 +177,7 @@ export function SaveToListDropdown({
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
       queryClient.invalidateQueries({ queryKey: ["place-detail"] });
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
       toast.success("Added to list!");
       onSaveSuccess?.();
     },
@@ -199,6 +202,7 @@ export function SaveToListDropdown({
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
       queryClient.invalidateQueries({ queryKey: ["place-detail"] });
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
       toast.success("Removed from list");
       onSaveSuccess?.();
     },
@@ -273,6 +277,7 @@ export function SaveToListDropdown({
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       queryClient.invalidateQueries({ queryKey: ["place-detail"] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
       toast.success("Removed from saved places");
       setOpen(false);
       onSaveSuccess?.();

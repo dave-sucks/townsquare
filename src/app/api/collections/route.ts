@@ -53,6 +53,30 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: "desc" },
       });
 
+      const placeIds = savedPlaces.map((sp) => sp.placeId);
+      const currentUserSavedPlaces = await prisma.savedPlace.findMany({
+        where: { userId: user.id, placeId: { in: placeIds } },
+      });
+      const currentUserListPlaces = await prisma.listPlace.findMany({
+        where: { placeId: { in: placeIds }, list: { userId: user.id } },
+        include: { list: { select: { id: true, name: true } } },
+      });
+      const placeToLists: Record<string, Array<{ id: string; name: string }>> = {};
+      for (const lp of currentUserListPlaces) {
+        if (!placeToLists[lp.placeId]) placeToLists[lp.placeId] = [];
+        placeToLists[lp.placeId].push({ id: lp.list.id, name: lp.list.name });
+      }
+      const currentUserPlaceData: Record<string, any> = {};
+      for (const pid of placeIds) {
+        const sp = currentUserSavedPlaces.find((s) => s.placeId === pid);
+        currentUserPlaceData[pid] = {
+          savedPlaceId: sp?.id || null,
+          hasBeen: sp?.hasBeen || false,
+          rating: sp?.rating || null,
+          lists: placeToLists[pid] || [],
+        };
+      }
+
       const mapped = savedPlaces.map((sp) => ({
         id: sp.id,
         userId: sp.userId,
@@ -85,7 +109,7 @@ export async function GET(request: NextRequest) {
         savedBy: sp.user,
       }));
 
-      return NextResponse.json({ places: mapped });
+      return NextResponse.json({ places: mapped, currentUserPlaceData });
     }
 
     if (collection === "burgers") {
@@ -156,6 +180,30 @@ export async function GET(request: NextRequest) {
         (p) => !uniquePlaceIds.has(p.id)
       );
 
+      const allBurgerPlaceIds = allPlaceIds;
+      const currentUserSavedPlaces2 = await prisma.savedPlace.findMany({
+        where: { userId: user.id, placeId: { in: allBurgerPlaceIds } },
+      });
+      const currentUserListPlaces2 = await prisma.listPlace.findMany({
+        where: { placeId: { in: allBurgerPlaceIds }, list: { userId: user.id } },
+        include: { list: { select: { id: true, name: true } } },
+      });
+      const placeToLists2: Record<string, Array<{ id: string; name: string }>> = {};
+      for (const lp of currentUserListPlaces2) {
+        if (!placeToLists2[lp.placeId]) placeToLists2[lp.placeId] = [];
+        placeToLists2[lp.placeId].push({ id: lp.list.id, name: lp.list.name });
+      }
+      const currentUserPlaceData2: Record<string, any> = {};
+      for (const pid of allBurgerPlaceIds) {
+        const sp = currentUserSavedPlaces2.find((s) => s.placeId === pid);
+        currentUserPlaceData2[pid] = {
+          savedPlaceId: sp?.id || null,
+          hasBeen: sp?.hasBeen || false,
+          rating: sp?.rating || null,
+          lists: placeToLists2[pid] || [],
+        };
+      }
+
       const mapped = savedPlaces.map((sp) => ({
         id: sp.id,
         userId: sp.userId,
@@ -215,7 +263,7 @@ export async function GET(request: NextRequest) {
         savedBy: null,
       }));
 
-      return NextResponse.json({ places: [...mapped, ...unsavedMapped] });
+      return NextResponse.json({ places: [...mapped, ...unsavedMapped], currentUserPlaceData: currentUserPlaceData2 });
     }
 
     return NextResponse.json({ error: "Invalid collection" }, { status: 400 });

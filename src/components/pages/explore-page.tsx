@@ -65,12 +65,14 @@ export function ExplorePage({ user }: { user: UserData }) {
 
   const { data: collectionData, isLoading } = useQuery<{
     places: SavedPlace[];
+    currentUserPlaceData?: Record<string, { savedPlaceId: string | null; hasBeen: boolean; rating: number | null; lists: Array<{ id: string; name: string }> }>;
   }>({
     queryKey: ["collections", activeTab],
     queryFn: () => apiRequest(`/api/collections?collection=${activeTab}`),
   });
 
   const places = collectionData?.places || [];
+  const currentUserPlaceData = collectionData?.currentUserPlaceData || null;
 
   const handleTabChange = useCallback(
     (tabId: string) => {
@@ -111,6 +113,7 @@ export function ExplorePage({ user }: { user: UserData }) {
       currentView={currentView}
       viewingPlaceId={viewingPlaceId}
       onNavigate={handleNavigate}
+      currentUserPlaceData={currentUserPlaceData}
     />
   );
 
