@@ -135,8 +135,12 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
       ? (savedPlace.lists?.map(l => l.id) || listsContainingPlace)
       : (currentUserData?.lists?.map(l => l.id) || []);
     
+    const resolvedSavedPlaceId = currentUserData?.savedPlaceId || (displayMode === "my-places" ? savedPlace.id : null);
+
     const currentUserSavedPlace = isOwnMode 
-      ? { id: savedPlace.id, placeId: savedPlace.placeId, hasBeen: savedPlace.hasBeen, rating: savedPlace.rating }
+      ? (resolvedSavedPlaceId 
+          ? { id: resolvedSavedPlaceId, placeId: savedPlace.placeId, hasBeen: currentUserData?.hasBeen ?? savedPlace.hasBeen, rating: currentUserData?.rating ?? savedPlace.rating }
+          : { id: savedPlace.id, placeId: savedPlace.placeId, hasBeen: savedPlace.hasBeen, rating: savedPlace.rating })
       : currentUserData?.savedPlaceId 
         ? { id: currentUserData.savedPlaceId, placeId: savedPlace.placeId, hasBeen: currentUserData.hasBeen, rating: currentUserData.rating }
         : null;
@@ -145,7 +149,8 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
 
     const updateEmojiMutation = useMutation({
       mutationFn: async (emoji: string | null) => {
-        return apiRequest(`/api/saved-places/${savedPlace.id}`, {
+        const targetId = resolvedSavedPlaceId || savedPlace.id;
+        return apiRequest(`/api/saved-places/${targetId}`, {
           method: "PATCH",
           body: JSON.stringify({ emoji }),
         });
@@ -153,6 +158,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["saved-places"] });
         queryClient.invalidateQueries({ queryKey: ["place-detail"] });
+        queryClient.invalidateQueries({ queryKey: ["list"] });
       },
     });
 
