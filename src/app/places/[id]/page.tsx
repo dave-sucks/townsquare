@@ -170,7 +170,9 @@ function formatPriceLevel(priceLevel: string | null): string {
 
 const RATING_LABELS: Record<number, string> = {
   1: "ehh",
+  2: "okay",
   3: "liked",
+  4: "great",
   5: "loved",
 };
 
@@ -396,7 +398,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
       </PageHeader>
 
       <div className="flex-1 overflow-auto pb-20 md:pb-0">
-        <div className="p-4 w-full pt-0">
+        <div className="p-4 w-full max-w-2xl mx-auto pt-0">
         {/* Hero Photo - inline with padding and rounded */}
         {place.photoRefs && (place.photoRefs as string[]).length > 0 ? (
           <div className="w-full aspect-[16/9] max-h-[300px] bg-muted relative overflow-hidden rounded-lg mb-4 group">
@@ -446,7 +448,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                       <HugeiconsIcon icon={CheckmarkBadge01Icon} className="w-6 h-6 flex-shrink-0 fill-foreground text-background" />
                     </TooltipTrigger>
                     <TooltipContent side="top">
-                      {savedPlace.rating ? RATING_LABELS[savedPlace.rating] : "Been here"}
+                      {savedPlace.rating ? (RATING_LABELS[savedPlace.rating] || "rated") : "Been here"}
                     </TooltipContent>
                   </Tooltip>
                 )}

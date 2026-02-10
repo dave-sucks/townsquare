@@ -55,7 +55,9 @@ interface CurrentUserPlaceData {
 
 const RATING_NAMES: Record<number, string> = {
   1: "ehh",
+  2: "okay",
   3: "liked",
+  4: "great",
   5: "loved",
 };
 

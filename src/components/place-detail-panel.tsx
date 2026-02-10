@@ -157,7 +157,9 @@ function formatPriceLevel(priceLevel: string | null): string {
 
 const RATING_LABELS: Record<number, string> = {
   1: "ehh",
+  2: "okay",
   3: "liked",
+  4: "great",
   5: "loved",
 };
 
@@ -319,7 +321,7 @@ export function PlaceDetailPanel({
                       <HugeiconsIcon icon={CheckmarkBadge01Icon} className="w-5 h-5 flex-shrink-0 fill-foreground text-background" />
                     </TooltipTrigger>
                     <TooltipContent side="top">
-                      {savedPlace.rating ? RATING_LABELS[savedPlace.rating] : "Been here"}
+                      {savedPlace.rating ? (RATING_LABELS[savedPlace.rating] || "rated") : "Been here"}
                     </TooltipContent>
                   </Tooltip>
                 )}
