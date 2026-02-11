@@ -93,6 +93,7 @@ export function SaveToListDropdown({
   const [newListName, setNewListName] = useState("");
   const [optimisticLists, setOptimisticLists] = useState<string[]>(listsContainingPlace);
   const [optimisticSave, setOptimisticSave] = useState<SavedPlace | null>(null);
+  const [optimisticUnsaved, setOptimisticUnsaved] = useState(false);
 
   useEffect(() => {
     setOptimisticLists(listsContainingPlace);
@@ -102,9 +103,10 @@ export function SaveToListDropdown({
     if (savedPlace) {
       setOptimisticSave(null);
     }
+    setOptimisticUnsaved(false);
   }, [savedPlace]);
 
-  const effectiveSavedPlace = savedPlace || optimisticSave;
+  const effectiveSavedPlace = optimisticUnsaved ? null : (savedPlace || optimisticSave);
   const isSaved = !!effectiveSavedPlace;
   const hasBeen = effectiveSavedPlace?.hasBeen ?? false;
   const currentRating = effectiveSavedPlace?.rating ?? null;
@@ -294,17 +296,21 @@ export function SaveToListDropdown({
         method: "DELETE",
       });
     },
+    onMutate: () => {
+      setOptimisticUnsaved(true);
+      setOptimisticSave(null);
+      setOpen(false);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       queryClient.invalidateQueries({ queryKey: ["place-detail"] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
       queryClient.invalidateQueries({ queryKey: ["collections"] });
       toast.success("Removed from saved places");
-      setOpen(false);
-      setOptimisticSave(null);
       onSaveSuccess?.();
     },
     onError: (error: Error) => {
+      setOptimisticUnsaved(false);
       toast.error(error.message || "Failed to remove");
     },
   });
