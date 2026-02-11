@@ -100,26 +100,33 @@ export function FeedPost({ activity }: FeedPostProps) {
 
   // For posts with social embeds, use different layout
   if (hasSocialPost) {
+    const igBorder = '#dbdbdb';
+
     return (
       <article className="bg-card border-0" data-testid={`feed-post-${activity.id}`}>
-        {/* Location banner - above the embed */}
+        {/* Tab-style location header with inverted corner radii */}
         {activity.place && (
-          <Link
-            href={`/places/${activity.place.googlePlaceId}`}
-            className="flex items-center gap-3 px-4 py-2 bg-muted/40 hover:bg-muted/60 transition-colors"
-            data-testid={`feed-place-${activity.id}`}
-          >
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm truncate">{activity.place.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{activity.place.formattedAddress}</p>
-            </div>
-            {rating && (
-              <div className="flex items-center gap-1">
-                <span className={`w-2.5 h-2.5 rounded-full ${RATING_COLORS[rating] || "bg-green-500"}`} />
-                <span className="text-sm text-muted-foreground">{rating}/10</span>
-              </div>
-            )}
-          </Link>
+          <div className="flex items-end pl-4" data-testid={`feed-place-${activity.id}`}>
+            <div
+              className="w-[10px] h-[10px] flex-shrink-0"
+              style={{ background: `radial-gradient(circle at 100% 0, transparent 10px, ${igBorder} 10px)` }}
+            />
+            <Link
+              href={`/places/${activity.place.googlePlaceId}`}
+              className="px-3 py-1 text-xs font-medium truncate max-w-[70%]"
+              style={{
+                background: igBorder,
+                borderRadius: '8px 8px 0 0',
+                color: '#262626',
+              }}
+            >
+              Visited {activity.place.name}
+            </Link>
+            <div
+              className="w-[10px] h-[10px] flex-shrink-0"
+              style={{ background: `radial-gradient(circle at 0% 0, transparent 10px, ${igBorder} 10px)` }}
+            />
+          </div>
         )}
 
         {/* Full-width Instagram embed */}
