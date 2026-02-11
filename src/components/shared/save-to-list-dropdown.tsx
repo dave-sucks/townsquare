@@ -92,14 +92,22 @@ export function SaveToListDropdown({
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [optimisticLists, setOptimisticLists] = useState<string[]>(listsContainingPlace);
+  const [optimisticSave, setOptimisticSave] = useState<SavedPlace | null>(null);
 
   useEffect(() => {
     setOptimisticLists(listsContainingPlace);
   }, [listsContainingPlace]);
 
-  const isSaved = !!savedPlace;
-  const hasBeen = savedPlace?.hasBeen ?? false;
-  const currentRating = savedPlace?.rating ?? null;
+  useEffect(() => {
+    if (savedPlace) {
+      setOptimisticSave(null);
+    }
+  }, [savedPlace]);
+
+  const effectiveSavedPlace = savedPlace || optimisticSave;
+  const isSaved = !!effectiveSavedPlace;
+  const hasBeen = effectiveSavedPlace?.hasBeen ?? false;
+  const currentRating = effectiveSavedPlace?.rating ?? null;
 
   const { data: listsData, isLoading: listsLoading } = useQuery<{ lists: ListData[] }>({
     queryKey: ["lists"],
@@ -130,7 +138,11 @@ export function SaveToListDropdown({
         }),
       });
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      const sp = data?.savedPlace;
+      if (sp) {
+        setOptimisticSave({ id: sp.id, placeId: sp.placeId, hasBeen: sp.hasBeen, rating: sp.rating });
+      }
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       queryClient.invalidateQueries({ queryKey: ["place-detail"] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
@@ -138,19 +150,20 @@ export function SaveToListDropdown({
       onSaveSuccess?.();
       if (openAfterSaveRef.current) {
         openAfterSaveRef.current = false;
-        setTimeout(() => setOpen(true), 50);
+        setOpen(true);
       }
     },
     onError: (error: Error) => {
       openAfterSaveRef.current = false;
+      setOptimisticSave(null);
       toast.error(error.message || "Failed to save place");
     },
   });
 
   const updateSavedPlaceMutation = useMutation({
     mutationFn: async ({ hasBeen, rating }: { hasBeen?: boolean; rating?: number }) => {
-      if (!savedPlace) return;
-      return apiRequest(`/api/saved-places/${savedPlace.id}`, {
+      if (!effectiveSavedPlace) return;
+      return apiRequest(`/api/saved-places/${effectiveSavedPlace.id}`, {
         method: "PATCH",
         body: JSON.stringify({ hasBeen, rating }),
       });
@@ -168,7 +181,7 @@ export function SaveToListDropdown({
 
   const addToListMutation = useMutation({
     mutationFn: async (listId: string) => {
-      const placeId = place.id || savedPlace?.placeId;
+      const placeId = place.id || effectiveSavedPlace?.placeId;
       if (!placeId) {
         throw new Error("Place must be saved first");
       }
@@ -196,7 +209,7 @@ export function SaveToListDropdown({
 
   const removeFromListMutation = useMutation({
     mutationFn: async (listId: string) => {
-      const placeId = place.id || savedPlace?.placeId;
+      const placeId = place.id || effectiveSavedPlace?.placeId;
       return apiRequest(`/api/lists/${listId}/places`, {
         method: "DELETE",
         body: JSON.stringify({ placeId }),
@@ -276,8 +289,8 @@ export function SaveToListDropdown({
 
   const unsavePlaceMutation = useMutation({
     mutationFn: async () => {
-      if (!savedPlace) return;
-      return apiRequest(`/api/saved-places/${savedPlace.id}`, {
+      if (!effectiveSavedPlace) return;
+      return apiRequest(`/api/saved-places/${effectiveSavedPlace.id}`, {
         method: "DELETE",
       });
     },
@@ -288,6 +301,7 @@ export function SaveToListDropdown({
       queryClient.invalidateQueries({ queryKey: ["collections"] });
       toast.success("Removed from saved places");
       setOpen(false);
+      setOptimisticSave(null);
       onSaveSuccess?.();
     },
     onError: (error: Error) => {
@@ -302,7 +316,7 @@ export function SaveToListDropdown({
   return (
     <>
       <DropdownMenu open={open} onOpenChange={(o) => {
-        if (!isSaved && !savePlaceMutation.isSuccess) {
+        if (!isSaved) {
           return;
         }
         setOpen(o);
