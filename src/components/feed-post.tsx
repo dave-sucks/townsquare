@@ -102,7 +102,27 @@ export function FeedPost({ activity }: FeedPostProps) {
   if (hasSocialPost) {
     return (
       <article className="bg-card border-0" data-testid={`feed-post-${activity.id}`}>
-        {/* Full-width Instagram embed - no padding, no extra border */}
+        {/* Location banner - above the embed */}
+        {activity.place && (
+          <Link
+            href={`/places/${activity.place.googlePlaceId}`}
+            className="flex items-center gap-3 px-4 py-2 bg-muted/40 hover:bg-muted/60 transition-colors"
+            data-testid={`feed-place-${activity.id}`}
+          >
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm truncate">{activity.place.name}</p>
+              <p className="text-xs text-muted-foreground truncate">{activity.place.formattedAddress}</p>
+            </div>
+            {rating && (
+              <div className="flex items-center gap-1">
+                <span className={`w-2.5 h-2.5 rounded-full ${RATING_COLORS[rating] || "bg-green-500"}`} />
+                <span className="text-sm text-muted-foreground">{rating}/10</span>
+              </div>
+            )}
+          </Link>
+        )}
+
+        {/* Full-width Instagram embed */}
         <SocialPostCard
           author={activity.socialPost!.author}
           authorImage={activity.socialPost!.authorImage}
@@ -114,43 +134,6 @@ export function FeedPost({ activity }: FeedPostProps) {
           permalink={activity.socialPost!.permalink}
           source={activity.socialPost!.source as 'instagram' | 'tiktok' | 'manual' | undefined}
         />
-        
-        {/* Location banner - minimal spacing above, tight to embed */}
-        {activity.place && (
-          <Link
-            href={`/places/${activity.place.googlePlaceId}`}
-            className="flex items-center gap-3 px-4 py-2 bg-muted/40 hover:bg-muted/60 transition-colors"
-            data-testid={`feed-place-${activity.id}`}
-          >
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm truncate">{activity.place.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{activity.place.formattedAddress}</p>
-            </div>
-            {/* Rating indicator */}
-            {rating && (
-              <div className="flex items-center gap-1">
-                <span className={`w-2.5 h-2.5 rounded-full ${RATING_COLORS[rating] || "bg-green-500"}`} />
-                <span className="text-sm text-muted-foreground">{rating}/10</span>
-              </div>
-            )}
-          </Link>
-        )}
-        
-        {/* Actions bar */}
-        <div className="flex items-center gap-1 px-2 py-1">
-          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" data-testid={`feed-like-${activity.id}`}>
-            <HugeiconsIcon icon={FavouriteIcon} className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" data-testid={`feed-comment-${activity.id}`}>
-            <HugeiconsIcon icon={Comment01Icon} className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" data-testid={`feed-save-${activity.id}`}>
-            <HugeiconsIcon icon={Bookmark01Icon} className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" data-testid={`feed-add-list-${activity.id}`}>
-            <HugeiconsIcon icon={AddToListIcon} className="h-5 w-5" />
-          </Button>
-        </div>
       </article>
     );
   }
