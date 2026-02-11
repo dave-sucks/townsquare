@@ -126,6 +126,10 @@ export function FeedPost({ activity }: FeedPostProps) {
               className="w-[10px] h-[10px] flex-shrink-0"
               style={{ background: `radial-gradient(circle at 100% 0, transparent 10px, ${igBorder} 10px)` }}
             />
+            <div className="flex-1" />
+            <Button variant="ghost" size="icon" className="mb-[-2px] mr-1 text-muted-foreground" data-testid={`feed-save-${activity.id}`}>
+              <HugeiconsIcon icon={Bookmark01Icon} className="h-5 w-5" />
+            </Button>
           </div>
         )}
 
