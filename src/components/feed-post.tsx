@@ -109,7 +109,7 @@ export function FeedPost({ activity }: FeedPostProps) {
           <div className="flex items-end pl-4" data-testid={`feed-place-${activity.id}`}>
             <div
               className="w-[10px] h-[10px] flex-shrink-0"
-              style={{ background: `radial-gradient(circle at 100% 0, transparent 10px, ${igBorder} 10px)` }}
+              style={{ background: `radial-gradient(circle at 0% 0, transparent 10px, ${igBorder} 10px)` }}
             />
             <Link
               href={`/places/${activity.place.googlePlaceId}`}
@@ -124,7 +124,7 @@ export function FeedPost({ activity }: FeedPostProps) {
             </Link>
             <div
               className="w-[10px] h-[10px] flex-shrink-0"
-              style={{ background: `radial-gradient(circle at 0% 0, transparent 10px, ${igBorder} 10px)` }}
+              style={{ background: `radial-gradient(circle at 100% 0, transparent 10px, ${igBorder} 10px)` }}
             />
           </div>
         )}
