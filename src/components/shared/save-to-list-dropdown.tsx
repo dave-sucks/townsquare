@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -109,6 +109,8 @@ export function SaveToListDropdown({
 
   const lists = listsData?.lists || [];
 
+  const openAfterSaveRef = useRef(false);
+
   const savePlaceMutation = useMutation({
     mutationFn: async ({ hasBeen, rating }: { hasBeen?: boolean; rating?: number } = {}) => {
       return apiRequest("/api/saved-places", {
@@ -134,8 +136,13 @@ export function SaveToListDropdown({
       queryClient.invalidateQueries({ queryKey: ["lists"] });
       queryClient.invalidateQueries({ queryKey: ["collections"] });
       onSaveSuccess?.();
+      if (openAfterSaveRef.current) {
+        openAfterSaveRef.current = false;
+        setTimeout(() => setOpen(true), 50);
+      }
     },
     onError: (error: Error) => {
+      openAfterSaveRef.current = false;
       toast.error(error.message || "Failed to save place");
     },
   });
@@ -233,6 +240,7 @@ export function SaveToListDropdown({
 
   const handleButtonClick = () => {
     if (!isSaved) {
+      openAfterSaveRef.current = true;
       savePlaceMutation.mutate({ hasBeen: false });
     }
   };
@@ -294,8 +302,9 @@ export function SaveToListDropdown({
   return (
     <>
       <DropdownMenu open={open} onOpenChange={(o) => {
-        if (!isSaved && !o) return;
-        if (!isSaved) return;
+        if (!isSaved && !savePlaceMutation.isSuccess) {
+          return;
+        }
         setOpen(o);
       }}>
         <DropdownMenuTrigger asChild>
