@@ -163,9 +163,8 @@ export function SaveToListDropdown({
   });
 
   const updateSavedPlaceMutation = useMutation({
-    mutationFn: async ({ hasBeen, rating }: { hasBeen?: boolean; rating?: number }) => {
-      if (!effectiveSavedPlace) return;
-      return apiRequest(`/api/saved-places/${effectiveSavedPlace.id}`, {
+    mutationFn: async ({ id, hasBeen, rating }: { id: string; hasBeen?: boolean; rating?: number }) => {
+      return apiRequest(`/api/saved-places/${id}`, {
         method: "PATCH",
         body: JSON.stringify({ hasBeen, rating }),
       });
@@ -264,9 +263,11 @@ export function SaveToListDropdown({
     if (!isSaved) {
       savePlaceMutation.mutate({ hasBeen: true, rating });
     } else {
+      const id = effectiveSavedPlace?.id;
+      if (!id) return;
       const newHasBeen = currentRating === rating && hasBeen ? false : true;
       const newRating = currentRating === rating && hasBeen ? undefined : rating;
-      updateSavedPlaceMutation.mutate({ hasBeen: newHasBeen, rating: newRating });
+      updateSavedPlaceMutation.mutate({ id, hasBeen: newHasBeen, rating: newRating });
     }
   };
 
@@ -290,9 +291,8 @@ export function SaveToListDropdown({
   const isPending = savePlaceMutation.isPending || updateSavedPlaceMutation.isPending;
 
   const unsavePlaceMutation = useMutation({
-    mutationFn: async () => {
-      if (!effectiveSavedPlace) return;
-      return apiRequest(`/api/saved-places/${effectiveSavedPlace.id}`, {
+    mutationFn: async (idToDelete: string) => {
+      return apiRequest(`/api/saved-places/${idToDelete}`, {
         method: "DELETE",
       });
     },
@@ -316,7 +316,9 @@ export function SaveToListDropdown({
   });
 
   const handleUnsave = () => {
-    unsavePlaceMutation.mutate();
+    const idToDelete = effectiveSavedPlace?.id;
+    if (!idToDelete) return;
+    unsavePlaceMutation.mutate(idToDelete);
   };
 
   return (
@@ -376,8 +378,8 @@ export function SaveToListDropdown({
                 onValueChange={(value) => {
                   if (value) {
                     handleRatingSelect(Number(value));
-                  } else if (hasBeen) {
-                    updateSavedPlaceMutation.mutate({ hasBeen: false, rating: undefined });
+                  } else if (hasBeen && effectiveSavedPlace?.id) {
+                    updateSavedPlaceMutation.mutate({ id: effectiveSavedPlace.id, hasBeen: false, rating: undefined });
                   }
                 }}
                 variant="outline"
