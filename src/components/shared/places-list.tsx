@@ -144,6 +144,9 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
     const updateEmojiMutation = useMutation({
       mutationFn: async (emoji: string | null) => {
         const targetId = currentUserData?.savedPlaceId || savedPlace.id;
+        if (!targetId) {
+          throw new Error("No saved place to update");
+        }
         return apiRequest(`/api/saved-places/${targetId}`, {
           method: "PATCH",
           body: JSON.stringify({ emoji }),
@@ -153,6 +156,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
         queryClient.invalidateQueries({ queryKey: ["saved-places"] });
         queryClient.invalidateQueries({ queryKey: ["place-detail"] });
         queryClient.invalidateQueries({ queryKey: ["list"] });
+        queryClient.invalidateQueries({ queryKey: ["lists"] });
       },
     });
 
