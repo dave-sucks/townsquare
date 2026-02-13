@@ -33,7 +33,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { UserMultiple02Icon, LeftToRightListBulletIcon, Logout02Icon, ArrowDown01Icon, Activity01Icon, Comment01Icon, Location01Icon, SparklesIcon, CheckmarkBadge01Icon, CreditCardIcon, Notification02Icon, Moon02Icon, Sun03Icon } from "@hugeicons/core-free-icons";
+import { UserMultiple02Icon, LeftToRightListBulletIcon, Logout02Icon, ArrowDown01Icon, Activity01Icon, Comment01Icon, Location01Icon, SparklesIcon, CheckmarkBadge01Icon, CreditCardIcon, Notification02Icon, Moon02Icon, Sun03Icon, PinLocation01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { MobileNav } from "@/components/mobile-nav";
@@ -51,6 +51,7 @@ const NAV_ITEMS = [
   { href: "/", label: "Map", icon: Location01Icon },
   { href: "/chat", label: "Chat", icon: Comment01Icon },
   { href: "/home", label: "Activity", icon: Activity01Icon },
+  { href: "/my-places", label: "My Places", icon: PinLocation01Icon },
   { href: "/people", label: "People", icon: UserMultiple02Icon },
   { href: "/lists", label: "Lists", icon: LeftToRightListBulletIcon },
 ] as const;
