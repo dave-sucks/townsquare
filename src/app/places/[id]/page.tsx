@@ -455,21 +455,14 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
               </h1>
             </div>
             
-            {/* Inline metadata: category — tags, view all | price · neighborhood */}
+            {/* Inline metadata: category — tags, view all | price */}
             <TagsWithPopover 
               category={placeType || "Place"} 
               tags={topTags} 
               tagGroups={tags}
               maxInlineTags={2}
+              priceLevel={priceLevel || undefined}
             />
-            
-            <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-              {priceLevel && (
-                <>
-                  <span>{priceLevel}</span>
-                </>
-              )}
-            </div>
           </div>
 
           {/* Friends context */}

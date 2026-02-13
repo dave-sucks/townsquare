@@ -328,21 +328,14 @@ export function PlaceDetailPanel({
               </h1>
             </div>
             
-            {/* Inline metadata: category — tags, view all | price · neighborhood */}
+            {/* Inline metadata: category — tags, view all | price */}
             <TagsWithPopover 
               category={placeType || "Place"} 
               tags={fetchedTopTags} 
               tagGroups={fetchedTags}
               maxInlineTags={2}
+              priceLevel={priceLevel || undefined}
             />
-            
-            <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-              {priceLevel && (
-                <>
-                  <span>{priceLevel}</span>
-                </>
-              )}
-            </div>
           </div>
 
           {/* Hero Photo - after title and tags */}
