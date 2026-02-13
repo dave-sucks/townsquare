@@ -157,7 +157,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
     });
 
     const handleEmojiSelect = (emoji: string | null) => {
-      if (emojiEditable) {
+      if (emojiEditable || thumbnailMode === "my-places") {
         updateEmojiMutation.mutate(emoji);
       }
     };
