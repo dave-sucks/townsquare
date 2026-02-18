@@ -25,8 +25,6 @@ interface Place {
 
 interface SavedPlace {
   id: string;
-  hasBeen: boolean;
-  rating: number | null;
   emoji?: string | null;
   place: Place;
 }
@@ -38,7 +36,6 @@ interface PlaceMapProps {
   showSettings?: boolean;
   isSettingsOpen?: boolean;
   onSettingsOpenChange?: (open: boolean) => void;
-  neutralMarkers?: boolean;
 }
 
 export interface PlaceMapHandle {
@@ -54,12 +51,8 @@ declare global {
   }
 }
 
-const MARKER_COLORS = {
-  want: "#ef4444",
-  been: "#22c55e",
-  selected: "#3b82f6",
-  neutral: "#8b8b8b",
-};
+const MARKER_COLOR = "#8b8b8b";
+const MARKER_COLOR_SELECTED = "#3b82f6";
 
 const MAP_STORAGE_KEY = "twnsq-map-view";
 const DEFAULT_CENTER = { lat: 40.7128, lng: -74.006 };
@@ -90,14 +83,11 @@ function saveMapView(center: { lat: number; lng: number }, zoom: number) {
   }
 }
 
-function createMarkerIcon(hasBeen: boolean, isSelected: boolean, neutral = false): google.maps.Symbol {
-  const color = isSelected ? MARKER_COLORS.selected : (neutral ? MARKER_COLORS.neutral : (hasBeen ? MARKER_COLORS.been : MARKER_COLORS.want));
-  const scale = isSelected ? 10 : 8;
-  
+function createMarkerIcon(isSelected: boolean): google.maps.Symbol {
   return {
     path: google.maps.SymbolPath.CIRCLE,
-    scale: scale,
-    fillColor: color,
+    scale: isSelected ? 10 : 8,
+    fillColor: isSelected ? MARKER_COLOR_SELECTED : MARKER_COLOR,
     fillOpacity: 1,
     strokeColor: "white",
     strokeWeight: isSelected ? 3 : 2,
@@ -200,7 +190,7 @@ const RADIUS_TO_ZOOM: Record<number, number> = {
 };
 
 export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function PlaceMap(
-  { places, selectedPlaceId, onMarkerClick, showSettings = true, isSettingsOpen, onSettingsOpenChange, neutralMarkers = false },
+  { places, selectedPlaceId, onMarkerClick, showSettings = true, isSettingsOpen, onSettingsOpenChange },
   ref
 ) {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -417,7 +407,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
     const bounds = new google.maps.LatLngBounds();
 
     places.forEach((savedPlace) => {
-      const { place, hasBeen, id, emoji } = savedPlace;
+      const { place, id, emoji } = savedPlace;
       const position = { lat: place.lat, lng: place.lng };
       const isSelected = id === selectedPlaceId;
 
@@ -433,7 +423,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
           map,
           position,
           title: place.name,
-          icon: createMarkerIcon(hasBeen, isSelected, neutralMarkers),
+          icon: createMarkerIcon(isSelected),
           zIndex: isSelected ? 1000 : 1,
         });
         marker.addListener("click", () => {
@@ -451,7 +441,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
     } else if (!selectedPlaceId) {
       map.fitBounds(bounds, { top: 50, right: 50, bottom: 50, left: 50 });
     }
-  }, [map, places, selectedPlaceId, onMarkerClick, neutralMarkers]);
+  }, [map, places, selectedPlaceId, onMarkerClick]);
 
   useEffect(() => {
     if (!map || !selectedPlaceId) return;
@@ -476,14 +466,14 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
         const isSelected = id === selectedPlaceId;
         
         if (marker instanceof google.maps.Marker) {
-          marker.setIcon(createMarkerIcon(savedPlace.hasBeen, isSelected, neutralMarkers));
+          marker.setIcon(createMarkerIcon(isSelected));
           marker.setZIndex(isSelected ? 1000 : 1);
         } else if ('updateSelection' in marker) {
           marker.updateSelection(isSelected);
         }
       }
     });
-  }, [selectedPlaceId, places, map, neutralMarkers]);
+  }, [selectedPlaceId, places, map]);
 
   if (error) {
     return (

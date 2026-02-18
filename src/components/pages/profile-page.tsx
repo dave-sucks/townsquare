@@ -216,7 +216,6 @@ export function ProfilePage({ username, currentUser, isAuthenticated }: ProfileP
       places={placesForMap}
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={handlePlaceSelect}
-      neutralMarkers={!data.isOwnProfile}
     >
       {sidebar}
     </MapLayout>
