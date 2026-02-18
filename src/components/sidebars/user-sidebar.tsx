@@ -325,7 +325,7 @@ export function UserSidebar({
                       <HugeiconsIcon icon={ArrowDown01Icon} className="h-3 w-3 text-muted-foreground" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="whitespace-nowrap">
                     <DropdownMenuItem
                       onSelect={() => { setSelectedStatusFilter("all"); setSelectedListId("all"); }}
                       data-active={combinedFilterValue === "all"}
