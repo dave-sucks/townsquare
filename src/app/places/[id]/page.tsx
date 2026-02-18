@@ -43,6 +43,7 @@ interface Place {
   types: string[] | null;
   priceLevel: string | null;
   photoRefs: string[] | null;
+  aiSummary?: string | null;
 }
 
 interface SavedPlace {
@@ -495,14 +496,14 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
             </TabsList>
 
             <TabsContent value="overview" className="pt-0 space-y-6">
-              {/* Static bio/description */}
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium">About</h3>
-                <p className="text-base text-muted-foreground">
-                  A popular {placeType?.toLowerCase() || "place"} in {locationDisplay || "the area"}. 
-                  Known for great ambiance and quality service. Perfect for dining with friends and family.
-                </p>
-              </div>
+              {place?.aiSummary && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium">About</h3>
+                  <p className="text-base text-muted-foreground">
+                    {place.aiSummary}
+                  </p>
+                </div>
+              )}
 
               {/* Lists in horizontal scrollable cards */}
               {listsContainingPlace.length > 0 && (

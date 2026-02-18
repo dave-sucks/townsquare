@@ -27,22 +27,8 @@ export async function autoTagPlace(placeId: string): Promise<void> {
       include: { category: true },
     });
 
-    const tagsByCategory: Record<string, Array<{ slug: string; displayName: string; id: string }>> = {};
-    for (const tag of allTags) {
-      const catSlug = tag.category.slug;
-      if (!tagsByCategory[catSlug]) tagsByCategory[catSlug] = [];
-      tagsByCategory[catSlug].push({
-        slug: tag.slug,
-        displayName: tag.displayName,
-        id: tag.id,
-      });
-    }
-
-    const taxonomyDescription = Object.entries(tagsByCategory)
-      .map(([cat, tags]) => `${cat}: ${tags.map((t) => t.slug).join(", ")}`)
-      .join("\n");
-
     const tagMap = new Map(allTags.map((t) => [t.slug, t]));
+    const allSlugs = allTags.map((t) => t.slug);
 
     const captions = place.reviews
       .map((r) => r.socialPostCaption || r.note || "")
@@ -50,22 +36,18 @@ export async function autoTagPlace(placeId: string): Promise<void> {
       .slice(0, 3)
       .join("\n---\n");
 
-    const prompt = `You are a food/restaurant tag extractor. Given a place name and context, assign the most relevant tags from the controlled vocabulary below.
+    const prompt = `You tag restaurants/bars/places. Pick 3-5 tags from ONLY this list:
 
-TAXONOMY:
-${taxonomyDescription}
+${allSlugs.join(", ")}
 
-PLACE:
-Name: ${place.name}
+Place: "${place.name}"
 ${place.neighborhood ? `Neighborhood: ${place.neighborhood}` : ""}
-Google types: ${JSON.stringify(place.types || [])}
-Primary type: ${place.primaryType || "unknown"}
-${place.priceLevel ? `Price level: ${place.priceLevel}` : ""}
-${captions ? `\nREVIEW CAPTIONS:\n${captions.substring(0, 800)}` : ""}
+Type: ${place.primaryType || "unknown"}
+Google types: ${(place.types as string[] || []).slice(0, 5).join(", ")}
+${place.priceLevel ? `Price: ${place.priceLevel}` : ""}
+${captions ? `Reviews: ${captions.substring(0, 500)}` : ""}
 
-Assign 2-4 tags that best describe this place. Focus on Style (e.g. classic, gourmet, smashburger), Vibe (e.g. casual, upscale, trendy), and Price (e.g. affordable, moderate, expensive) categories. Use the place name, type, and any captions to inform your choices.
-
-Return a JSON object where keys are tag slugs and values are confidence scores (0.6-1.0).`;
+Return ONLY a flat JSON object like {"tag_slug": 0.9, "another_slug": 0.8}. Keys must be exact slugs from the list above. Values are confidence 0.6-1.0.`;
 
     const baseUrl = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || "https://api.openai.com/v1";
     const response = await fetch(`${baseUrl}/chat/completions`, {
@@ -78,7 +60,7 @@ Return a JSON object where keys are tag slugs and values are confidence scores (
         model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.1,
-        max_tokens: 300,
+        max_tokens: 200,
         response_format: { type: "json_object" },
       }),
     });
@@ -92,12 +74,25 @@ Return a JSON object where keys are tag slugs and values are confidence scores (
     const content = data.choices?.[0]?.message?.content;
     if (!content) return;
 
-    let tagScores: Record<string, number>;
+    let parsed: Record<string, any>;
     try {
-      tagScores = JSON.parse(content);
+      parsed = JSON.parse(content);
     } catch {
       console.error(`[AutoTagPlace] Failed to parse response for ${place.name}: ${content}`);
       return;
+    }
+
+    const tagScores: Record<string, number> = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      if (typeof value === "number") {
+        tagScores[key] = value;
+      } else if (typeof value === "object" && value !== null) {
+        for (const [nestedKey, nestedValue] of Object.entries(value as Record<string, unknown>)) {
+          if (typeof nestedValue === "number") {
+            tagScores[nestedKey] = nestedValue;
+          }
+        }
+      }
     }
 
     let tagCount = 0;
@@ -129,6 +124,8 @@ Return a JSON object where keys are tag slugs and values are confidence scores (
 
     if (tagCount > 0) {
       console.log(`[AutoTagPlace] Tagged ${place.name} with ${tagCount} tags`);
+    } else {
+      console.warn(`[AutoTagPlace] No matching tags for ${place.name}. AI returned: ${content}`);
     }
   } catch (err: any) {
     console.error(`[AutoTagPlace] Error for place ${placeId}:`, err.message);

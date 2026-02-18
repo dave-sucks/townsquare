@@ -40,6 +40,7 @@ interface Place {
   types: string[] | null;
   priceLevel: string | null;
   photoRefs: string[] | null;
+  aiSummary?: string | null;
 }
 
 interface SavedPlace {
@@ -400,13 +401,14 @@ export function PlaceDetailPanel({
           </div>
 
           <TabsContent value="overview" className="p-4 pt-0 space-y-6">
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium">About</h3>
-              <p className="text-base text-muted-foreground">
-                A popular {placeType?.toLowerCase() || "place"} in {locationDisplay || "the area"}. 
-                Known for great ambiance and quality service. Perfect for dining with friends and family.
-              </p>
-            </div>
+            {(placeDetails?.place?.aiSummary || place.aiSummary) && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">About</h3>
+                <p className="text-base text-muted-foreground">
+                  {placeDetails?.place?.aiSummary || place.aiSummary}
+                </p>
+              </div>
+            )}
 
             {listsForThisPlace.length > 0 && (
               <div className="space-y-3">
