@@ -240,7 +240,7 @@ export function UserSidebar({
   const combinedFilterValue = selectedListId !== "all" ? `list:${selectedListId}` : selectedStatusFilter;
   const combinedFilterLabel = selectedListId !== "all"
     ? (lists.find(l => l.id === selectedListId)?.name || "All")
-    : selectedStatusLabel;
+    : selectedStatusFilter === "been" ? "Places they've been" : selectedStatusLabel;
 
   const displayName = user.firstName 
     ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ""}`
@@ -337,7 +337,7 @@ export function UserSidebar({
                       onSelect={() => { setSelectedStatusFilter("been"); setSelectedListId("all"); }}
                       data-active={combinedFilterValue === "been"}
                     >
-                      Been
+                      Places they've been
                       <HugeiconsIcon icon={Tick01Icon} className={`ml-auto h-4 w-4 ${combinedFilterValue === "been" ? "opacity-100" : "opacity-0"}`} />
                     </DropdownMenuItem>
                     {publicLists.length > 0 && <DropdownMenuSeparator />}
