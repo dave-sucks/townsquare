@@ -120,6 +120,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
   const isStreamingRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -209,7 +210,10 @@ export function ChatDashboard({ user }: { user: UserData }) {
       setLocalMessages([]);
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
     },
-    onError: () => toast.error("Failed to create conversation"),
+    onError: () => {
+      setPendingMessage(null);
+      toast.error("Failed to create conversation");
+    },
   });
 
   const deleteConversationMutation = useMutation({
@@ -228,7 +232,14 @@ export function ChatDashboard({ user }: { user: UserData }) {
 
   const sendMessage = async (overrideContent?: string) => {
     const content = overrideContent || inputValue.trim();
-    if (!content || !activeConversationId || isStreaming) return;
+    if (!content || isStreaming || createConversationMutation.isPending) return;
+
+    if (!activeConversationId) {
+      setPendingMessage(content);
+      setInputValue("");
+      createConversationMutation.mutate();
+      return;
+    }
 
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
@@ -325,10 +336,11 @@ export function ChatDashboard({ user }: { user: UserData }) {
   };
 
   const startNewChat = () => {
-    if (inputValue.trim() && !activeConversationId) {
-      setPendingMessage(inputValue.trim());
-    }
-    createConversationMutation.mutate();
+    setActiveConversationId(null);
+    setLocalMessages([]);
+    setSelectedPlaceId(null);
+    setShowHistory(false);
+    setInputValue("");
   };
 
   const selectConversation = (id: string) => {
@@ -336,6 +348,7 @@ export function ChatDashboard({ user }: { user: UserData }) {
     setStreamingContent("");
     setStreamingPlaces([]);
     setSelectedPlaceId(null);
+    setShowHistory(false);
   };
 
   const handleMarkerClick = useCallback((placeId: string) => {
@@ -353,44 +366,16 @@ export function ChatDashboard({ user }: { user: UserData }) {
     }
   }, []);
 
-  const sidebar = (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 p-3 border-b">
-        <SidebarTrigger data-testid="button-sidebar-toggle" />
-        <h1 className="font-semibold text-sm flex-1 font-brand">AI Chat</h1>
-        {activeConversationId && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              setActiveConversationId(null);
-              setLocalMessages([]);
-              setSelectedPlaceId(null);
-            }}
-            data-testid="button-all-chats"
-          >
-            <HugeiconsIcon icon={ArrowTurnBackwardIcon} className="h-4 w-4" />
-          </Button>
-        )}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={startNewChat}
-          disabled={createConversationMutation.isPending}
-          data-testid="button-new-chat"
-        >
-          <HugeiconsIcon icon={PlusSignIcon} className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {!activeConversationId ? (
-        <div className="flex-1 overflow-y-auto">
-          {conversationsLoading ? (
-            <div className="flex items-center justify-center h-full">
+  const chatView = (
+    <div className="flex-1 relative min-h-0">
+      <div className="absolute inset-0 overflow-y-auto" ref={scrollRef}>
+        <div className="p-3 pb-20 space-y-4">
+          {activeConversationId && messagesLoading ? (
+            <div className="flex items-center justify-center py-8">
               <HugeiconsIcon icon={Loading03Icon} className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
-          ) : conversations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full px-4 gap-3">
+          ) : localMessages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full px-4 gap-3 pt-16">
               <HugeiconsIcon icon={SparklesIcon} className="h-8 w-8 text-muted-foreground" />
               <div className="text-center">
                 <p className="text-sm font-medium">Discover places with AI</p>
@@ -398,123 +383,163 @@ export function ChatDashboard({ user }: { user: UserData }) {
               </div>
             </div>
           ) : (
-            <div className="p-2 space-y-1">
-              {conversations.map((conv) => (
-                <div
-                  key={conv.id}
-                  onClick={() => selectConversation(conv.id)}
-                  className={cn(
-                    "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors group flex items-center justify-between cursor-pointer hover-elevate",
-                    activeConversationId === conv.id
-                      ? "bg-primary/10 text-primary"
-                      : "text-foreground"
-                  )}
-                  data-testid={`button-conversation-${conv.id}`}
-                >
-                  <span className="truncate flex-1">{conv.title}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteConversationMutation.mutate(conv.id);
-                    }}
-                    data-testid={`button-delete-conversation-${conv.id}`}
-                  >
-                    <HugeiconsIcon icon={Delete02Icon} className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
+            localMessages.map((message) => (
+              <MessageBubble 
+                key={message.id} 
+                message={message} 
+                user={user}
+                selectedPlaceId={selectedPlaceId}
+                onPlaceClick={handlePlaceCardClick}
+                placeCardRefs={placeCardRefs}
+              />
+            ))
+          )}
+          {isStreaming && (streamingContent || streamingPlaces.length > 0) && (
+            <MessageBubble
+              message={{
+                id: "streaming",
+                role: "assistant",
+                content: streamingContent,
+                createdAt: new Date().toISOString(),
+                places: streamingPlaces,
+              }}
+              user={user}
+              isStreaming
+              selectedPlaceId={selectedPlaceId}
+              onPlaceClick={handlePlaceCardClick}
+              placeCardRefs={placeCardRefs}
+            />
+          )}
+          {isStreaming && !streamingContent && streamingPlaces.length === 0 && (
+            <div className="flex gap-2">
+              <Avatar className="h-6 w-6 shrink-0">
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  <HugeiconsIcon icon={AiChat02Icon} className="h-3 w-3" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+                <span className="text-sm">Searching...</span>
+              </div>
             </div>
           )}
         </div>
-      ) : (
-        <div className="flex-1 relative min-h-0">
-          <div className="absolute inset-0 overflow-y-auto" ref={scrollRef}>
-            <div className="p-3 pb-20 space-y-4">
-              {messagesLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <HugeiconsIcon icon={Loading03Icon} className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : localMessages.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-sm text-muted-foreground">Ask about places to visit...</p>
-                </div>
-              ) : (
-                localMessages.map((message) => (
-                  <MessageBubble 
-                    key={message.id} 
-                    message={message} 
-                    user={user}
-                    selectedPlaceId={selectedPlaceId}
-                    onPlaceClick={handlePlaceCardClick}
-                    placeCardRefs={placeCardRefs}
-                  />
-                ))
-              )}
-              {isStreaming && (streamingContent || streamingPlaces.length > 0) && (
-                <MessageBubble
-                  message={{
-                    id: "streaming",
-                    role: "assistant",
-                    content: streamingContent,
-                    createdAt: new Date().toISOString(),
-                    places: streamingPlaces,
-                  }}
-                  user={user}
-                  isStreaming
-                  selectedPlaceId={selectedPlaceId}
-                  onPlaceClick={handlePlaceCardClick}
-                  placeCardRefs={placeCardRefs}
-                />
-              )}
-              {isStreaming && !streamingContent && streamingPlaces.length === 0 && (
-                <div className="flex gap-2">
-                  <Avatar className="h-6 w-6 shrink-0">
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      <HugeiconsIcon icon={AiChat02Icon} className="h-3 w-3" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
-                    <span className="text-sm">Searching...</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+      </div>
 
-          <div className="absolute bottom-0 left-0 right-0 px-3 pt-3 pb-5">
-            <div className="relative group">
-              <Textarea
-                ref={inputRef}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask about places..."
-                className="min-h-[48px] max-h-[120px] resize-none pr-12 text-base bg-black/[0.05] dark:bg-white/[0.05] backdrop-blur-xl border border-border/40 rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
-                style={{ fontSize: "16px" }}
-                disabled={isStreaming}
-                data-testid="input-chat-message"
-              />
+      <div className="absolute bottom-0 left-0 right-0 px-3 pt-3 pb-5">
+        <div className="relative group">
+          <Textarea
+            ref={inputRef}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask about places..."
+            className="min-h-[48px] max-h-[120px] resize-none pr-12 text-base bg-black/[0.05] dark:bg-white/[0.05] backdrop-blur-xl border border-border/40 rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200"
+            style={{ fontSize: "16px" }}
+            disabled={isStreaming || createConversationMutation.isPending}
+            data-testid="input-chat-message"
+          />
+          <Button
+            size="sm"
+            className="absolute right-2 bottom-2 h-8 w-8 rounded-xl transition-transform active:scale-95"
+            onClick={() => sendMessage()}
+            disabled={!inputValue.trim() || isStreaming || createConversationMutation.isPending}
+            data-testid="button-send-message"
+          >
+            {isStreaming || createConversationMutation.isPending ? (
+              <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+            ) : (
+              <HugeiconsIcon icon={SentIcon} className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const historyView = (
+    <div className="flex-1 overflow-y-auto">
+      {conversationsLoading ? (
+        <div className="flex items-center justify-center h-full">
+          <HugeiconsIcon icon={Loading03Icon} className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : conversations.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-full px-4 gap-3">
+          <p className="text-sm text-muted-foreground">No past chats yet</p>
+        </div>
+      ) : (
+        <div className="p-2 space-y-1">
+          {conversations.map((conv) => (
+            <div
+              key={conv.id}
+              onClick={() => selectConversation(conv.id)}
+              className={cn(
+                "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors group flex items-center justify-between cursor-pointer hover-elevate",
+                "text-foreground"
+              )}
+              data-testid={`button-conversation-${conv.id}`}
+            >
+              <span className="truncate flex-1">{conv.title}</span>
               <Button
-                size="sm"
-                className="absolute right-2 bottom-2 h-8 w-8 rounded-xl transition-transform active:scale-95"
-                onClick={() => sendMessage()}
-                disabled={!inputValue.trim() || isStreaming}
-                data-testid="button-send-message"
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteConversationMutation.mutate(conv.id);
+                }}
+                data-testid={`button-delete-conversation-${conv.id}`}
               >
-                {isStreaming ? (
-                  <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
-                ) : (
-                  <HugeiconsIcon icon={SentIcon} className="h-4 w-4" />
-                )}
+                <HugeiconsIcon icon={Delete02Icon} className="h-3 w-3" />
               </Button>
             </div>
-          </div>
+          ))}
         </div>
       )}
+    </div>
+  );
+
+  const sidebar = (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-2 p-3 border-b">
+        <SidebarTrigger data-testid="button-sidebar-toggle" />
+        <h1 className="font-semibold text-sm flex-1 font-brand">AI Chat</h1>
+        {showHistory ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowHistory(false)}
+            data-testid="button-back-to-chat"
+          >
+            <HugeiconsIcon icon={ArrowTurnBackwardIcon} className="h-4 w-4" />
+          </Button>
+        ) : (
+          <>
+            {(activeConversationId || localMessages.length > 0) && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={startNewChat}
+                data-testid="button-new-chat"
+              >
+                <HugeiconsIcon icon={PlusSignIcon} className="h-4 w-4" />
+              </Button>
+            )}
+            {conversations.length > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowHistory(true)}
+                data-testid="button-all-chats"
+              >
+                <HugeiconsIcon icon={AiChat02Icon} className="h-4 w-4" />
+              </Button>
+            )}
+          </>
+        )}
+      </div>
+
+      {showHistory ? historyView : chatView}
     </div>
   );
 
