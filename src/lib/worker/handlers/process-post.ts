@@ -447,7 +447,9 @@ export async function createReviewFromPost(
   await enqueueJob("UPDATE_PLACE_AGGREGATES", { placeId: place.id });
 
   const { autoTagPlace } = await import("@/lib/auto-tag-place");
+  const { autoSummaryPlace } = await import("@/lib/auto-summary-place");
   autoTagPlace(place.id).catch(() => {});
+  autoSummaryPlace(place.id).catch(() => {});
 
   const reviewCount = await prisma.review.count({
     where: { placeId: place.id },

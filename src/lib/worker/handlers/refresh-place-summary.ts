@@ -27,7 +27,6 @@ export async function handleRefreshPlaceSummary(
   });
 
   if (!place) return;
-  if (place.reviews.length < 2) return;
 
   const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
   if (!openaiKey) return;
