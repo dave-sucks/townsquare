@@ -125,6 +125,7 @@ export function ExplorePage({ user }: { user: UserData }) {
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={handlePlaceSelect}
       showSearch={true}
+      neutralMarkers={true}
     >
       {sidebar}
     </MapLayout>

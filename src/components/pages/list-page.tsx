@@ -204,6 +204,7 @@ export function ListPage({ listId, currentUser, isAuthenticated }: ListPageProps
       places={savedPlaces}
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={handlePlaceSelect}
+      neutralMarkers={true}
     >
       {sidebar}
     </MapLayout>

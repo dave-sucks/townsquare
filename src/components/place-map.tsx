@@ -38,6 +38,7 @@ interface PlaceMapProps {
   showSettings?: boolean;
   isSettingsOpen?: boolean;
   onSettingsOpenChange?: (open: boolean) => void;
+  neutralMarkers?: boolean;
 }
 
 export interface PlaceMapHandle {
@@ -57,6 +58,7 @@ const MARKER_COLORS = {
   want: "#ef4444",
   been: "#22c55e",
   selected: "#3b82f6",
+  neutral: "#8b8b8b",
 };
 
 const MAP_STORAGE_KEY = "twnsq-map-view";
@@ -88,8 +90,8 @@ function saveMapView(center: { lat: number; lng: number }, zoom: number) {
   }
 }
 
-function createMarkerIcon(hasBeen: boolean, isSelected: boolean): google.maps.Symbol {
-  const color = isSelected ? MARKER_COLORS.selected : (hasBeen ? MARKER_COLORS.been : MARKER_COLORS.want);
+function createMarkerIcon(hasBeen: boolean, isSelected: boolean, neutral = false): google.maps.Symbol {
+  const color = isSelected ? MARKER_COLORS.selected : (neutral ? MARKER_COLORS.neutral : (hasBeen ? MARKER_COLORS.been : MARKER_COLORS.want));
   const scale = isSelected ? 10 : 8;
   
   return {
@@ -198,7 +200,7 @@ const RADIUS_TO_ZOOM: Record<number, number> = {
 };
 
 export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function PlaceMap(
-  { places, selectedPlaceId, onMarkerClick, showSettings = true, isSettingsOpen, onSettingsOpenChange },
+  { places, selectedPlaceId, onMarkerClick, showSettings = true, isSettingsOpen, onSettingsOpenChange, neutralMarkers = false },
   ref
 ) {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -431,7 +433,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
           map,
           position,
           title: place.name,
-          icon: createMarkerIcon(hasBeen, isSelected),
+          icon: createMarkerIcon(hasBeen, isSelected, neutralMarkers),
           zIndex: isSelected ? 1000 : 1,
         });
         marker.addListener("click", () => {
@@ -449,7 +451,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
     } else if (!selectedPlaceId) {
       map.fitBounds(bounds, { top: 50, right: 50, bottom: 50, left: 50 });
     }
-  }, [map, places, selectedPlaceId, onMarkerClick]);
+  }, [map, places, selectedPlaceId, onMarkerClick, neutralMarkers]);
 
   useEffect(() => {
     if (!map || !selectedPlaceId) return;
@@ -474,14 +476,14 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
         const isSelected = id === selectedPlaceId;
         
         if (marker instanceof google.maps.Marker) {
-          marker.setIcon(createMarkerIcon(savedPlace.hasBeen, isSelected));
+          marker.setIcon(createMarkerIcon(savedPlace.hasBeen, isSelected, neutralMarkers));
           marker.setZIndex(isSelected ? 1000 : 1);
         } else if ('updateSelection' in marker) {
           marker.updateSelection(isSelected);
         }
       }
     });
-  }, [selectedPlaceId, places, map]);
+  }, [selectedPlaceId, places, map, neutralMarkers]);
 
   if (error) {
     return (
