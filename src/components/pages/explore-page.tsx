@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MapLayout } from "@/components/map/map-layout";
 import {
@@ -40,6 +40,7 @@ interface SavedPlace {
   placeId: string;
   hasBeen: boolean;
   rating: number | null;
+  emoji?: string | null;
   visitedAt: string | null;
   createdAt: string;
   place: Place;
@@ -65,14 +66,25 @@ export function ExplorePage({ user }: { user: UserData }) {
 
   const { data: collectionData, isLoading } = useQuery<{
     places: SavedPlace[];
-    currentUserPlaceData?: Record<string, { savedPlaceId: string | null; hasBeen: boolean; rating: number | null; lists: Array<{ id: string; name: string }> }>;
+    currentUserPlaceData?: Record<string, { savedPlaceId: string | null; hasBeen: boolean; rating: number | null; emoji: string | null; lists: Array<{ id: string; name: string }> }>;
   }>({
     queryKey: ["collections", activeTab],
     queryFn: () => apiRequest(`/api/collections?collection=${activeTab}`),
   });
 
-  const places = collectionData?.places || [];
+  const rawPlaces = collectionData?.places || [];
   const currentUserPlaceData = collectionData?.currentUserPlaceData || null;
+
+  const places = useMemo(() => {
+    if (!currentUserPlaceData) return rawPlaces;
+    return rawPlaces.map((sp) => {
+      const myData = currentUserPlaceData[sp.placeId];
+      if (myData?.emoji) {
+        return { ...sp, emoji: myData.emoji };
+      }
+      return sp;
+    });
+  }, [rawPlaces, currentUserPlaceData]);
 
   const handleTabChange = useCallback(
     (tabId: string) => {

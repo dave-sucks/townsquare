@@ -73,6 +73,7 @@ export async function GET(request: NextRequest) {
           savedPlaceId: sp?.id || null,
           hasBeen: sp?.hasBeen || false,
           rating: sp?.rating || null,
+          emoji: sp?.emoji || null,
           lists: placeToLists[pid] || [],
         };
       }
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest) {
         placeId: sp.placeId,
         hasBeen: sp.hasBeen,
         rating: sp.rating,
-        emoji: sp.emoji,
+        emoji: null,
         visitedAt: sp.visitedAt?.toISOString() ?? null,
         createdAt: sp.createdAt.toISOString(),
         place: {
@@ -200,6 +201,7 @@ export async function GET(request: NextRequest) {
           savedPlaceId: sp?.id || null,
           hasBeen: sp?.hasBeen || false,
           rating: sp?.rating || null,
+          emoji: sp?.emoji || null,
           lists: placeToLists2[pid] || [],
         };
       }
@@ -210,7 +212,7 @@ export async function GET(request: NextRequest) {
         placeId: sp.placeId,
         hasBeen: sp.hasBeen,
         rating: sp.rating,
-        emoji: sp.emoji,
+        emoji: null,
         visitedAt: sp.visitedAt?.toISOString() ?? null,
         createdAt: sp.createdAt.toISOString(),
         place: {

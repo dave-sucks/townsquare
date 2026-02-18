@@ -35,6 +35,7 @@ interface SavedPlace {
   placeId: string;
   hasBeen: boolean;
   rating: number | null;
+  emoji?: string | null;
   visitedAt?: string | null;
   createdAt?: string;
   place: Place;

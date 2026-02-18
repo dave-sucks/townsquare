@@ -40,8 +40,15 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 - **Schema**: Defined in `prisma/schema.prisma` with models for users, sessions, places, saved places, lists, reviews, photos, follows, activities, and a comprehensive tagging system (`TagCategory`, `Tag`, `PlaceTag`).
 - **Place Saving Model**: `SavedPlace` now includes `hasBeen: boolean` and `rating: number | null` (1=bad, 2=okay, 3=great) instead of a status enum.
 - **Neighborhood/Locality Support**: Added `neighborhood` and `locality` fields to the Place model.
-- **Custom Emoji Markers**: Added `emoji` field to `SavedPlace` model.
+- **Custom Emoji Markers**: Added `emoji` field to `SavedPlace` model. Auto-assigned on save via `getDefaultEmoji()` based on place type.
 - **Social Post Embeds**: `Review` model includes fields for `socialPostCaption`, `socialPostMediaUrl`, `socialPostMediaType`, `socialPostLikes`, and `socialPostPostedAt`.
+
+### Emoji Display Rules
+- **My Places (DiscoverPage)**: Shows the logged-in user's own emoji from their `savedPlace.emoji` on map markers and over photos.
+- **Lists (ListPage)**: Shows the list owner's emoji (from the owner's `savedPlace.emoji` for each place).
+- **Following/Burgers collections (ExplorePage)**: Does NOT show other users' emojis. Only shows the current user's emoji IF they have saved that place. Otherwise shows colored dots.
+- **Profile pages**: Shows dots (no emoji data provided).
+- **AI Chat**: AI assigns its own contextual emojis to suggested places (separate system, not from savedPlace).
 
 ### Authentication Flow
 - Initiated via Replit Auth (OIDC provider: `https://replit.com/oidc`).
