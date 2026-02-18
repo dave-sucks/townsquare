@@ -11,6 +11,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -236,6 +237,11 @@ export function UserSidebar({
 
   const publicLists = lists.filter(l => l.visibility === "PUBLIC" || isOwnProfile);
 
+  const combinedFilterValue = selectedListId !== "all" ? `list:${selectedListId}` : selectedStatusFilter;
+  const combinedFilterLabel = selectedListId !== "all"
+    ? (lists.find(l => l.id === selectedListId)?.name || "All")
+    : selectedStatusLabel;
+
   const displayName = user.firstName 
     ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ""}`
     : user.username || "User";
@@ -293,7 +299,7 @@ export function UserSidebar({
       />
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "places" | "feed")} className="flex-1 flex flex-col min-h-0">
-        <div className="px-3 py-2 border-b">
+        <div className="flex items-center justify-between gap-2 px-3 py-2 border-b">
           <TabsList className="justify-start">
             <TabsTrigger 
               value="places" 
@@ -308,61 +314,103 @@ export function UserSidebar({
               Feed
             </TabsTrigger>
           </TabsList>
+
+          {activeTab === "places" && (
+            <div className="flex gap-2">
+              {!isOwnProfile ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" data-testid="select-combined-filter">
+                      {combinedFilterLabel}
+                      <HugeiconsIcon icon={ArrowDown01Icon} className="h-3 w-3 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onSelect={() => { setSelectedStatusFilter("all"); setSelectedListId("all"); }}
+                      data-active={combinedFilterValue === "all"}
+                    >
+                      All
+                      <HugeiconsIcon icon={Tick01Icon} className={`ml-auto h-4 w-4 ${combinedFilterValue === "all" ? "opacity-100" : "opacity-0"}`} />
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() => { setSelectedStatusFilter("been"); setSelectedListId("all"); }}
+                      data-active={combinedFilterValue === "been"}
+                    >
+                      Been
+                      <HugeiconsIcon icon={Tick01Icon} className={`ml-auto h-4 w-4 ${combinedFilterValue === "been" ? "opacity-100" : "opacity-0"}`} />
+                    </DropdownMenuItem>
+                    {publicLists.length > 0 && <DropdownMenuSeparator />}
+                    {publicLists.map((list) => (
+                      <DropdownMenuItem
+                        key={list.id}
+                        onSelect={() => { setSelectedStatusFilter("all"); setSelectedListId(list.id); }}
+                        data-active={combinedFilterValue === `list:${list.id}`}
+                      >
+                        {list.name}
+                        <HugeiconsIcon icon={Tick01Icon} className={`ml-auto h-4 w-4 ${combinedFilterValue === `list:${list.id}` ? "opacity-100" : "opacity-0"}`} />
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" data-testid="select-status-filter">
+                        {selectedStatusLabel}
+                        <HugeiconsIcon icon={ArrowDown01Icon} className="h-3 w-3 text-muted-foreground" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {statusOptions.map((option) => (
+                        <DropdownMenuItem
+                          key={option.value}
+                          onSelect={() => setSelectedStatusFilter(option.value)}
+                          data-active={selectedStatusFilter === option.value}
+                        >
+                          {option.label}
+                          <HugeiconsIcon icon={Tick01Icon} className={`ml-auto h-4 w-4 ${selectedStatusFilter === option.value ? "opacity-100" : "opacity-0"}`} />
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  {publicLists.length > 0 && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" data-testid="select-list-filter">
+                          {selectedListLabel}
+                          <HugeiconsIcon icon={ArrowDown01Icon} className="h-3 w-3 text-muted-foreground" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onSelect={() => setSelectedListId("all")}
+                          data-active={selectedListId === "all"}
+                        >
+                          All Lists
+                          <HugeiconsIcon icon={Tick01Icon} className={`ml-auto h-4 w-4 ${selectedListId === "all" ? "opacity-100" : "opacity-0"}`} />
+                        </DropdownMenuItem>
+                        {publicLists.map((list) => (
+                          <DropdownMenuItem
+                            key={list.id}
+                            onSelect={() => setSelectedListId(list.id)}
+                            data-active={selectedListId === list.id}
+                          >
+                            {list.name}
+                            <HugeiconsIcon icon={Tick01Icon} className={`ml-auto h-4 w-4 ${selectedListId === list.id ? "opacity-100" : "opacity-0"}`} />
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         <TabsContent value="places" className="flex-1 flex flex-col min-h-0 mt-0">
-          <div className="flex gap-2 p-3 border-b">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" data-testid="select-status-filter">
-                  {selectedStatusLabel}
-                  <HugeiconsIcon icon={ArrowDown01Icon} className="h-3 w-3 text-muted-foreground" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {statusOptions.map((option) => (
-                  <DropdownMenuItem
-                    key={option.value}
-                    onSelect={() => setSelectedStatusFilter(option.value)}
-                    data-active={selectedStatusFilter === option.value}
-                  >
-                    {option.label}
-                    <HugeiconsIcon icon={Tick01Icon} className={`ml-auto h-4 w-4 ${selectedStatusFilter === option.value ? "opacity-100" : "opacity-0"}`} />
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {publicLists.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" data-testid="select-list-filter">
-                    {selectedListLabel}
-                    <HugeiconsIcon icon={ArrowDown01Icon} className="h-3 w-3 text-muted-foreground" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuItem
-                    onSelect={() => setSelectedListId("all")}
-                    data-active={selectedListId === "all"}
-                  >
-                    All Lists
-                    <HugeiconsIcon icon={Tick01Icon} className={`ml-auto h-4 w-4 ${selectedListId === "all" ? "opacity-100" : "opacity-0"}`} />
-                  </DropdownMenuItem>
-                  {publicLists.map((list) => (
-                    <DropdownMenuItem
-                      key={list.id}
-                      onSelect={() => setSelectedListId(list.id)}
-                      data-active={selectedListId === list.id}
-                    >
-                      {list.name}
-                      <HugeiconsIcon icon={Tick01Icon} className={`ml-auto h-4 w-4 ${selectedListId === list.id ? "opacity-100" : "opacity-0"}`} />
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-
           <div className="flex-1 overflow-y-auto">
             <PlacesList
               places={filteredPlaces}
