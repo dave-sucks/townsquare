@@ -155,7 +155,6 @@ interface TagsWithPopoverProps {
   tags: TagInfo[];
   tagGroups?: TagCategoryGroup[];
   maxInlineTags?: number;
-  priceLevel?: string;
   className?: string;
 }
 
@@ -164,7 +163,6 @@ export function TagsWithPopover({
   tags, 
   tagGroups = [], 
   maxInlineTags = 2,
-  priceLevel,
   className 
 }: TagsWithPopoverProps) {
   const displayTags = tags.slice(0, maxInlineTags);
@@ -172,37 +170,28 @@ export function TagsWithPopover({
   const hasMoreTags = tagGroups.length > 0 && tagGroups.some(g => g.tags.length > 0);
 
   return (
-    <div className={cn("flex items-center gap-1 text-base flex-nowrap overflow-hidden", className)}>
+    <div className={cn("flex items-center gap-1 text-base flex-wrap", className)}>
       <span className="whitespace-nowrap font-medium">{category}</span>
-      {priceLevel && (
-        <>
-          <span className="text-muted-foreground mx-0.5">·</span>
-          <span className="whitespace-nowrap text-muted-foreground" data-testid="text-price-level">{priceLevel}</span>
-        </>
-      )}
       {tagNames && (
         <>
           <span className="text-muted-foreground mx-1">—</span>
-          <span className="truncate">{tagNames}</span>
+          <span className="whitespace-nowrap">{tagNames}</span>
         </>
       )}
       {hasMoreTags && (
-        <>
-          <span className="text-muted-foreground">,</span>
-          <Popover>
-            <PopoverTrigger asChild>
-              <span 
-                className="text-muted-foreground cursor-pointer underline decoration-dotted underline-offset-4 hover:text-foreground transition-colors"
-                data-testid="text-view-all-tags"
-              >
-                View all
-              </span>
-            </PopoverTrigger>
-            <PopoverContent className="w-72 p-3" align="start">
-              <GroupedTags tagGroups={tagGroups} />
-            </PopoverContent>
-          </Popover>
-        </>
+        <Popover>
+          <PopoverTrigger asChild>
+            <span 
+              className="whitespace-nowrap text-muted-foreground cursor-pointer underline decoration-dotted underline-offset-4 hover:text-foreground transition-colors"
+              data-testid="text-view-all-tags"
+            >
+              View all
+            </span>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 p-3" align="start">
+            <GroupedTags tagGroups={tagGroups} />
+          </PopoverContent>
+        </Popover>
       )}
     </div>
   );

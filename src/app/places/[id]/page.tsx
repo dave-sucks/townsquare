@@ -157,18 +157,6 @@ function formatPlaceType(type: string | null): string {
     .join(" ");
 }
 
-function formatPriceLevel(priceLevel: string | null): string {
-  if (!priceLevel) return "";
-  const levels: Record<string, string> = {
-    PRICE_LEVEL_FREE: "Free",
-    PRICE_LEVEL_INEXPENSIVE: "$",
-    PRICE_LEVEL_MODERATE: "$$",
-    PRICE_LEVEL_EXPENSIVE: "$$$",
-    PRICE_LEVEL_VERY_EXPENSIVE: "$$$$",
-  };
-  return levels[priceLevel] || "";
-}
-
 const RATING_LABELS: Record<number, string> = {
   1: "ehh",
   2: "okay",
@@ -305,7 +293,6 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
   const topTags = data?.topTags || [];
 
   const placeType = formatPlaceType(place?.primaryType || null);
-  const priceLevel = formatPriceLevel(place?.priceLevel || null);
   const locationDisplay = place?.neighborhood || place?.locality || "";
 
   const deleteReviewMutation = useMutation({
@@ -400,34 +387,6 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
 
       <div className="flex-1 overflow-auto pb-20 md:pb-0">
         <div className="p-4 w-full max-w-2xl mx-auto pt-0">
-        {/* Hero Photo - inline with padding and rounded */}
-        {place.photoRefs && (place.photoRefs as string[]).length > 0 ? (
-          <div className="w-full aspect-[16/9] max-h-[300px] bg-muted relative overflow-hidden rounded-lg mb-4 group">
-            <img
-              src={`/api/places/photo?photoRef=${encodeURIComponent((place.photoRefs as string[])[0])}&maxWidth=1200`}
-              alt={place.name}
-              className="w-full h-full object-cover"
-              data-testid="page-hero-photo"
-            />
-            {locationDisplay && (
-              <a 
-                href={`https://www.google.com/maps/place/?q=place_id:${place.googlePlaceId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="absolute bottom-3 left-3 no-default-hover-elevate no-default-active-elevate z-10"
-              >
-                <Badge variant="secondary" className="flex items-center gap-1.5 py-1 px-2.5 cursor-pointer bg-white/20 backdrop-blur-md border-none hover:bg-white/30 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-                  <span className="text-white font-medium">{locationDisplay}</span>
-                </Badge>
-              </a>
-            )}
-          </div>
-        ) : (
-          <div className="w-full aspect-[16/9] max-h-[300px] bg-muted flex items-center justify-center rounded-lg mb-4">
-            <HugeiconsIcon icon={Location01Icon} className="h-16 w-16 text-muted-foreground" />
-          </div>
-        )}
         <div className="space-y-6">
           {/* Header: Big title, inline metadata */}
           <div className="space-y-3">
@@ -456,15 +415,43 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
               </h1>
             </div>
             
-            {/* Inline metadata: category — tags, view all | price */}
+            {/* Inline metadata: category — tags, view all */}
             <TagsWithPopover 
               category={placeType || "Place"} 
               tags={topTags} 
               tagGroups={tags}
               maxInlineTags={2}
-              priceLevel={priceLevel || undefined}
             />
           </div>
+
+          {/* Hero Photo - after title and tags */}
+          {place.photoRefs && (place.photoRefs as string[]).length > 0 ? (
+            <div className="w-full aspect-[16/9] max-h-[300px] bg-muted relative overflow-hidden rounded-lg group">
+              <img
+                src={`/api/places/photo?photoRef=${encodeURIComponent((place.photoRefs as string[])[0])}&maxWidth=1200`}
+                alt={place.name}
+                className="w-full h-full object-cover"
+                data-testid="page-hero-photo"
+              />
+              {locationDisplay && (
+                <a 
+                  href={`https://www.google.com/maps/place/?q=place_id:${place.googlePlaceId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute bottom-3 left-3 no-default-hover-elevate no-default-active-elevate z-10"
+                >
+                  <Badge variant="secondary" className="flex items-center gap-1.5 py-1 px-2.5 cursor-pointer bg-white/20 backdrop-blur-md border-none hover:bg-white/30 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                    <span className="text-white font-medium">{locationDisplay}</span>
+                  </Badge>
+                </a>
+              )}
+            </div>
+          ) : (
+            <div className="w-full aspect-[16/9] max-h-[300px] bg-muted flex items-center justify-center rounded-lg">
+              <HugeiconsIcon icon={Location01Icon} className="h-16 w-16 text-muted-foreground" />
+            </div>
+          )}
 
           {/* Friends context */}
           {friendsWhoSaved.length > 0 && (

@@ -144,18 +144,6 @@ function formatPlaceType(type: string | null): string {
     .join(" ");
 }
 
-function formatPriceLevel(priceLevel: string | null): string {
-  if (!priceLevel) return "";
-  const levels: Record<string, string> = {
-    PRICE_LEVEL_FREE: "Free",
-    PRICE_LEVEL_INEXPENSIVE: "$",
-    PRICE_LEVEL_MODERATE: "$$",
-    PRICE_LEVEL_EXPENSIVE: "$$$",
-    PRICE_LEVEL_VERY_EXPENSIVE: "$$$$",
-  };
-  return levels[priceLevel] || "";
-}
-
 const RATING_LABELS: Record<number, string> = {
   1: "ehh",
   2: "okay",
@@ -262,8 +250,6 @@ export function PlaceDetailPanel({
 
   const place = savedPlace.place;
   const placeType = formatPlaceType(place.primaryType);
-  const priceLevel = formatPriceLevel(place.priceLevel);
-  
   const locationDisplay = place.neighborhood || place.locality || "";
   const listsForThisPlace = fetchedLists;
 
@@ -335,7 +321,6 @@ export function PlaceDetailPanel({
               tags={fetchedTopTags} 
               tagGroups={fetchedTags}
               maxInlineTags={2}
-              priceLevel={priceLevel || undefined}
             />
           </div>
 
