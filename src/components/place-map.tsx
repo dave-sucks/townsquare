@@ -51,8 +51,8 @@ declare global {
   }
 }
 
-const MARKER_COLOR = "#8b8b8b";
-const MARKER_COLOR_SELECTED = "#3b82f6";
+const MARKER_COLOR = "#0004EC";
+const MARKER_COLOR_SELECTED = "#0004EC";
 
 const MAP_STORAGE_KEY = "twnsq-map-view";
 const DEFAULT_CENTER = { lat: 40.7128, lng: -74.006 };
@@ -87,9 +87,9 @@ function createMarkerIcon(isSelected: boolean): google.maps.Symbol {
   return {
     path: google.maps.SymbolPath.CIRCLE,
     scale: isSelected ? 10 : 8,
-    fillColor: isSelected ? MARKER_COLOR_SELECTED : MARKER_COLOR,
+    fillColor: MARKER_COLOR,
     fillOpacity: 1,
-    strokeColor: "white",
+    strokeColor: isSelected ? MARKER_COLOR_SELECTED : "white",
     strokeWeight: isSelected ? 3 : 2,
   };
 }
