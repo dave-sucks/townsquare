@@ -24,8 +24,8 @@ export async function handleImportProfile(payload: ImportProfilePayload) {
 
     const posts = await fetchProfilePosts(handle, importJob.maxPosts);
 
-    const profilePicUrl = posts[0]?.ownerProfilePicUrl || posts[0]?.profilePicUrl || null;
     const fullName = posts[0]?.ownerFullName || posts[0]?.fullName || null;
+    const profilePicUrl = await fetchProfilePicUrl(handle);
     await upsertCreatorUser(handle, profilePicUrl, fullName);
 
     await prisma.importJob.update({
@@ -212,6 +212,56 @@ async function pollForResults(token: string, runId: string): Promise<any[]> {
   }
 
   throw new Error("Apify run timed out after 10 minutes");
+}
+
+async function fetchProfilePicUrl(handle: string): Promise<string | null> {
+  const apifyToken = process.env.APIFY_TOKEN;
+  if (!apifyToken) return null;
+
+  try {
+    console.log(`[Apify] Fetching profile info for @${handle}`);
+    const runResponse = await fetch(
+      "https://api.apify.com/v2/acts/apify~instagram-profile-scraper/runs?waitForFinish=120",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apifyToken}`,
+        },
+        body: JSON.stringify({
+          usernames: [handle],
+        }),
+      }
+    );
+
+    if (!runResponse.ok) {
+      console.error(`[Apify] Profile scraper failed: ${runResponse.status}`);
+      return null;
+    }
+
+    const runData = await runResponse.json();
+    const datasetId = runData.data?.defaultDatasetId;
+    if (!datasetId) return null;
+
+    const itemsRes = await fetch(
+      `https://api.apify.com/v2/datasets/${datasetId}/items?format=json`,
+      { headers: { Authorization: `Bearer ${apifyToken}` } }
+    );
+    if (!itemsRes.ok) return null;
+
+    const items = await itemsRes.json();
+    const profile = items[0];
+    const picUrl = profile?.profilePicUrlHD || profile?.profilePicUrl || null;
+    if (picUrl) {
+      console.log(`[Apify] Got profile pic for @${handle}`);
+    } else {
+      console.log(`[Apify] No profile pic found for @${handle}`);
+    }
+    return picUrl;
+  } catch (err: any) {
+    console.error(`[Apify] Error fetching profile pic for @${handle}:`, err.message);
+    return null;
+  }
 }
 
 function extractMedia(post: any): Array<{ url: string; type: string }> {
