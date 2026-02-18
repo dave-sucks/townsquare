@@ -12,7 +12,11 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { UserMultiple02Icon, Location01Icon } from "@hugeicons/core-free-icons";
 import { apiRequest } from "@/lib/query-client";
 import { AppShell, PageHeader } from "@/components/layout";
-import { FeedPost } from "@/components/feed-post";
+import dynamic from "next/dynamic";
+
+const FeedPost = dynamic(
+  () => import("@/components/feed-post").then(m => ({ default: m.FeedPost })),
+);
 
 interface ActivityActor {
   id: string;

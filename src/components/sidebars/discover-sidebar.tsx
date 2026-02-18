@@ -1,9 +1,23 @@
 "use client";
 
-import { PlaceListPanel } from "@/components/panels/place-list-panel";
-import { PlaceDetailPanel } from "@/components/place-detail-panel";
-import { MapSettingsPanel } from "@/components/panels/map-settings-panel";
+import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { SidebarInjectedProps } from "@/components/map/map-layout";
+
+const PlaceListPanel = dynamic(
+  () => import("@/components/panels/place-list-panel").then(m => ({ default: m.PlaceListPanel })),
+  { loading: () => <div className="p-4"><Skeleton className="h-8 w-full mb-2" /><Skeleton className="h-8 w-full mb-2" /><Skeleton className="h-8 w-3/4" /></div> }
+);
+
+const PlaceDetailPanel = dynamic(
+  () => import("@/components/place-detail-panel").then(m => ({ default: m.PlaceDetailPanel })),
+  { loading: () => <div className="p-4"><Skeleton className="h-6 w-48 mb-3" /><Skeleton className="h-4 w-32 mb-4" /><Skeleton className="h-48 w-full rounded-lg" /></div> }
+);
+
+const MapSettingsPanel = dynamic(
+  () => import("@/components/panels/map-settings-panel").then(m => ({ default: m.MapSettingsPanel })),
+  { loading: () => <div className="p-4"><Skeleton className="h-8 w-full mb-2" /><Skeleton className="h-8 w-full" /></div> }
+);
 
 interface Place {
   id: string;

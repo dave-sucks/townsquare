@@ -22,13 +22,23 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
-import { ReviewDialog } from "@/components/review-dialog";
 import { AppShell, PageHeader } from "@/components/layout";
-import { SaveToListDropdown } from "@/components/shared/save-to-list-dropdown";
-import { FeedPost } from "@/components/feed-post";
-import { EmojiPickerPopover } from "@/components/shared/emoji-picker-popover";
 import { GroupedTags, InlineTags, TagCategoryGroup, TagInfo, TagsWithPopover } from "@/components/shared/place-tags";
 import { SiGooglemaps } from "react-icons/si";
+import dynamic from "next/dynamic";
+
+const ReviewDialog = dynamic(
+  () => import("@/components/review-dialog").then(m => ({ default: m.ReviewDialog })),
+);
+const SaveToListDropdown = dynamic(
+  () => import("@/components/shared/save-to-list-dropdown").then(m => ({ default: m.SaveToListDropdown })),
+);
+const FeedPost = dynamic(
+  () => import("@/components/feed-post").then(m => ({ default: m.FeedPost })),
+);
+const EmojiPickerPopover = dynamic(
+  () => import("@/components/shared/emoji-picker-popover").then(m => ({ default: m.EmojiPickerPopover })),
+);
 
 interface Place {
   id: string;
