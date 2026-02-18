@@ -322,6 +322,27 @@ export function PlaceDetailPanel({
               tagGroups={fetchedTags}
               maxInlineTags={2}
             />
+
+            {fetchedFriends.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex -space-x-2 flex-wrap">
+                  {fetchedFriends.slice(0, 3).map((friend) => {
+                    const displayName = friend.user.firstName || friend.user.username || "User";
+                    return (
+                      <Avatar key={friend.id} className="h-6 w-6 border-2 border-background">
+                        <AvatarImage src={friend.user.profileImageUrl || undefined} alt={displayName} />
+                        <AvatarFallback className="text-xs">{displayName.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                    );
+                  })}
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  {fetchedFriends.length === 1 
+                    ? `${fetchedFriends[0].user.firstName || fetchedFriends[0].user.username} saved this`
+                    : `${fetchedFriends.length} friends saved this`}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Hero Photo - after title and tags */}
@@ -354,26 +375,6 @@ export function PlaceDetailPanel({
             </div>
           )}
 
-          {fetchedFriends.length > 0 && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex -space-x-2 flex-wrap">
-                {fetchedFriends.slice(0, 3).map((friend) => {
-                  const displayName = friend.user.firstName || friend.user.username || "User";
-                  return (
-                    <Avatar key={friend.id} className="h-6 w-6 border-2 border-background">
-                      <AvatarImage src={friend.user.profileImageUrl || undefined} alt={displayName} />
-                      <AvatarFallback className="text-xs">{displayName.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  );
-                })}
-              </div>
-              <span className="text-sm text-muted-foreground">
-                {fetchedFriends.length === 1 
-                  ? `${fetchedFriends[0].user.firstName || fetchedFriends[0].user.username} saved this`
-                  : `${fetchedFriends.length} friends saved this`}
-              </span>
-            </div>
-          )}
         </div>
 
         {/* Tabs section - manages its own padding per tab */}
