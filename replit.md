@@ -46,7 +46,7 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 ### Emoji Display Rules
 - **My Places (DiscoverPage)**: Shows the logged-in user's own emoji from their `savedPlace.emoji` on map markers and over photos.
 - **Lists (ListPage)**: Shows the list owner's emoji (from the owner's `savedPlace.emoji` for each place).
-- **Following/Burgers collections (ExplorePage)**: Does NOT show other users' emojis. Only shows the current user's emoji IF they have saved that place. Otherwise shows colored dots.
+- **Following/Burgers collections (ExplorePage)**: Does NOT show any emojis. Always shows colored dots.
 - **Profile pages**: Shows dots (no emoji data provided).
 - **AI Chat**: AI assigns its own contextual emojis to suggested places (separate system, not from savedPlace).
 

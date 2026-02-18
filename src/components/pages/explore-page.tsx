@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MapLayout } from "@/components/map/map-layout";
 import {
@@ -72,19 +72,8 @@ export function ExplorePage({ user }: { user: UserData }) {
     queryFn: () => apiRequest(`/api/collections?collection=${activeTab}`),
   });
 
-  const rawPlaces = collectionData?.places || [];
+  const places = collectionData?.places || [];
   const currentUserPlaceData = collectionData?.currentUserPlaceData || null;
-
-  const places = useMemo(() => {
-    if (!currentUserPlaceData) return rawPlaces;
-    return rawPlaces.map((sp) => {
-      const myData = currentUserPlaceData[sp.placeId];
-      if (myData?.emoji) {
-        return { ...sp, emoji: myData.emoji };
-      }
-      return sp;
-    });
-  }, [rawPlaces, currentUserPlaceData]);
 
   const handleTabChange = useCallback(
     (tabId: string) => {
