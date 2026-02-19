@@ -1,10 +1,7 @@
 "use client";
 
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Car01Icon, Train01Icon } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import {
   MAP_STYLES,
@@ -16,10 +13,10 @@ import {
 interface MapSettingsContentProps {
   currentStyle: MapStyleKey;
   onStyleChange: (style: MapStyleKey) => void;
-  showTraffic: boolean;
-  onTrafficChange: (show: boolean) => void;
-  showTransit: boolean;
-  onTransitChange: (show: boolean) => void;
+  showTraffic?: boolean;
+  onTrafficChange?: (show: boolean) => void;
+  showTransit?: boolean;
+  onTransitChange?: (show: boolean) => void;
   radius: number;
   onRadiusChange: (radius: number) => void;
   labelDensity: LabelDensity;
@@ -137,10 +134,6 @@ function MapStyleThumbnail({ styleId, isSelected }: { styleId: MapStyleKey; isSe
 export function MapSettingsContent({
   currentStyle,
   onStyleChange,
-  showTraffic,
-  onTrafficChange,
-  showTransit,
-  onTransitChange,
   radius,
   onRadiusChange,
   labelDensity,
@@ -219,31 +212,6 @@ export function MapSettingsContent({
         </div>
       </div>
 
-      <div className="space-y-3">
-        <Label className="text-xs text-muted-foreground uppercase tracking-wide">Overlays</Label>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <HugeiconsIcon icon={Car01Icon} className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">Traffic</span>
-          </div>
-          <Switch
-            checked={showTraffic}
-            onCheckedChange={onTrafficChange}
-            data-testid="switch-traffic"
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <HugeiconsIcon icon={Train01Icon} className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">Transit</span>
-          </div>
-          <Switch
-            checked={showTransit}
-            onCheckedChange={onTransitChange}
-            data-testid="switch-transit"
-          />
-        </div>
-      </div>
     </div>
   );
 }

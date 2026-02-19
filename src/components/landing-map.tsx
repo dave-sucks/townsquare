@@ -1,7 +1,22 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { DARK_STYLE, getLabelDensityStyles } from "@/lib/map-styles";
+
+const LANDING_DARK_STYLE: google.maps.MapTypeStyle[] = [
+  { elementType: "geometry", stylers: [{ color: "#212121" }] },
+  { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#212121" }] },
+  { featureType: "road", elementType: "geometry.fill", stylers: [{ color: "#2c2c2c" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#3c3c3c" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#000000" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#181818" }] },
+  { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
+  { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] },
+  { featureType: "road.local", elementType: "labels", stylers: [{ visibility: "off" }] },
+  { featureType: "administrative.neighborhood", elementType: "labels", stylers: [{ visibility: "off" }] },
+  { featureType: "road.highway", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+];
 
 const REACTION_EMOJIS = ["\u{1F525}", "\u{1F929}", "\u{1F60D}", "\u{2B50}", "\u{1F4AF}", "\u{1F44C}"];
 
@@ -237,8 +252,6 @@ export function LandingMap({ onReady, showSearch = true }: LandingMapProps) {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     if (!apiKey || !mapRef.current) return;
 
-    const darkMinimalStyles = [...DARK_STYLE, ...getLabelDensityStyles("minimal")];
-
     const initMap = () => {
       if (!mapRef.current || !window.google) return;
 
@@ -252,7 +265,7 @@ export function LandingMap({ onReady, showSearch = true }: LandingMapProps) {
         fullscreenControl: false,
         gestureHandling: "none",
         keyboardShortcuts: false,
-        styles: darkMinimalStyles,
+        styles: LANDING_DARK_STYLE,
       });
 
       mapInstanceRef.current = map;
