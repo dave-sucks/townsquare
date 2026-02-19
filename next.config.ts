@@ -10,6 +10,23 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY,
   },
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.watchOptions = {
+        poll: false,
+        aggregateTimeout: 1000,
+        ignored: [
+          "**/node_modules/**",
+          "**/.git/**",
+          "**/.next/**",
+          "**/.local/**",
+          "**/cache/**",
+          "**/.replit/**",
+        ],
+      };
+    }
+    return config;
+  },
   images: {
     remotePatterns: [
       {
