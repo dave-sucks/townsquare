@@ -152,7 +152,7 @@ export function FloatingSearch() {
 
   return (
     <div className="md:w-96 md:ml-auto">
-      <div className="relative bg-card rounded-md shadow-lg">
+      <div className="relative">
         <HugeiconsIcon icon={Search01Icon} className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search for a place..."
@@ -163,7 +163,7 @@ export function FloatingSearch() {
           }}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setTimeout(() => setIsFocused(false), 300)}
-          className="pl-10 pr-8 border"
+          className="pl-10 pr-8 bg-background shadow-lg border"
           data-testid="input-search-place"
         />
         {searchQuery && (
