@@ -4,7 +4,15 @@ import { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardR
 import MapLibreGL from "maplibre-gl";
 import { Map, MapMarker, MarkerContent, useMap, type MapRef } from "@/components/ui/map";
 import { cn } from "@/lib/utils";
-import { getStoredMapStyle, getMapStyleUrl, getStoredLabelDensity, getLabelStyleUrl, type MapStyleKey, type LabelDensity } from "@/lib/map-styles";
+import {
+  getStoredMapStyle,
+  getMapStyle,
+  getMapCssFilter,
+  getStoredLabelDensity,
+  getStyleForDensity,
+  type MapStyleKey,
+  type LabelDensity,
+} from "@/lib/map-styles";
 
 interface Place {
   id: string;
@@ -69,17 +77,17 @@ function saveMapView(center: [number, number], zoom: number) {
   } catch (e) {}
 }
 
-function BoundsController({ places, selectedPlaceId }: { places: SavedPlace[]; selectedPlaceId: string | null }) {
+function BoundsController({ places }: { places: SavedPlace[] }) {
   const { map, isLoaded } = useMap();
-  const prevPlaceIdsRef = useRef<string>("");
+  const prevSignatureRef = useRef<string>("");
   const hasFittedRef = useRef(false);
 
   useEffect(() => {
     if (!map || !isLoaded || places.length === 0) return;
 
     const currentSignature = places.map(p => `${p.id}:${p.place.lat},${p.place.lng}`).sort().join("|");
-    if (currentSignature === prevPlaceIdsRef.current && hasFittedRef.current) return;
-    prevPlaceIdsRef.current = currentSignature;
+    if (currentSignature === prevSignatureRef.current && hasFittedRef.current) return;
+    prevSignatureRef.current = currentSignature;
     hasFittedRef.current = true;
 
     if (places.length === 1) {
@@ -102,18 +110,6 @@ function BoundsController({ places, selectedPlaceId }: { places: SavedPlace[]; s
   }, [map, isLoaded, places]);
 
   useEffect(() => {
-    if (!map || !isLoaded || !selectedPlaceId) return;
-    const selectedPlace = places.find(p => p.id === selectedPlaceId);
-    if (selectedPlace) {
-      map.flyTo({
-        center: [selectedPlace.place.lng, selectedPlace.place.lat],
-        zoom: Math.max(map.getZoom(), 14),
-        duration: 600,
-      });
-    }
-  }, [map, isLoaded, selectedPlaceId, places]);
-
-  useEffect(() => {
     if (!map || !isLoaded) return;
     const handleMoveEnd = () => {
       const center = map.getCenter();
@@ -128,35 +124,50 @@ function BoundsController({ places, selectedPlaceId }: { places: SavedPlace[]; s
 
 function StyleController() {
   const { map, isLoaded } = useMap();
-  const currentStyleUrlRef = useRef<string>("");
 
   useEffect(() => {
     if (!map || !isLoaded) return;
 
-    const applyStyle = (url: string) => {
-      if (url === currentStyleUrlRef.current) return;
-      currentStyleUrlRef.current = url;
-      map.setStyle(url);
+    const applyCssFilter = (styleKey: MapStyleKey) => {
+      const filter = getMapCssFilter(styleKey);
+      const canvas = map.getCanvas();
+      if (canvas) {
+        canvas.style.filter = filter;
+      }
     };
+
+    const applyMapStyle = (styleKey: MapStyleKey, density: LabelDensity) => {
+      const style = getStyleForDensity(styleKey, density);
+      map.setStyle(style as any);
+      applyCssFilter(styleKey);
+    };
+
+    applyCssFilter(getStoredMapStyle());
 
     const handleStyleChange = (e: Event) => {
       const styleKey = (e as CustomEvent).detail as MapStyleKey;
       const density = getStoredLabelDensity();
-      applyStyle(getLabelStyleUrl(styleKey, density));
+      applyMapStyle(styleKey, density);
     };
 
     const handleLabelDensityChange = (e: Event) => {
       const density = (e as CustomEvent).detail as LabelDensity;
       const styleKey = getStoredMapStyle();
-      applyStyle(getLabelStyleUrl(styleKey, density));
+      applyMapStyle(styleKey, density);
+    };
+
+    const handleStyleData = () => {
+      applyCssFilter(getStoredMapStyle());
     };
 
     window.addEventListener("map-style-change", handleStyleChange);
     window.addEventListener("map-label-density-change", handleLabelDensityChange);
+    map.on("styledata", handleStyleData);
 
     return () => {
       window.removeEventListener("map-style-change", handleStyleChange);
       window.removeEventListener("map-label-density-change", handleLabelDensityChange);
+      map.off("styledata", handleStyleData);
     };
   }, [map, isLoaded]);
 
@@ -171,7 +182,13 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
 
   useImperativeHandle(ref, () => ({
     panTo: (lat: number, lng: number) => {
-      mapRef.current?.flyTo({ center: [lng, lat], duration: 600 });
+      const m = mapRef.current;
+      if (!m) return;
+      m.flyTo({
+        center: [lng, lat],
+        zoom: Math.max(m.getZoom(), 14),
+        duration: 600,
+      });
     },
     setZoom: (zoom: number) => {
       mapRef.current?.setZoom(zoom);
@@ -182,10 +199,12 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
   const initialCenter = storedView?.center || DEFAULT_CENTER;
   const initialZoom = storedView?.zoom || DEFAULT_ZOOM;
 
-  const initialStyle = useMemo(() => {
+  const initialStyleData = useMemo(() => {
     const styleKey = getStoredMapStyle();
     const density = getStoredLabelDensity();
-    return getLabelStyleUrl(styleKey, density);
+    const style = getStyleForDensity(styleKey, density);
+    const cssFilter = getMapCssFilter(styleKey);
+    return { style, cssFilter };
   }, []);
 
   const onMarkerClickRef = useRef(onMarkerClick);
@@ -198,9 +217,10 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
         center={initialCenter}
         zoom={initialZoom}
         className="h-full w-full"
-        styles={{ light: initialStyle, dark: initialStyle }}
+        theme="light"
+        styles={{ light: initialStyleData.style as any, dark: initialStyleData.style as any }}
       >
-        <BoundsController places={places} selectedPlaceId={selectedPlaceId} />
+        <BoundsController places={places} />
         <StyleController />
         {places.map((savedPlace) => (
           <PlaceMarker

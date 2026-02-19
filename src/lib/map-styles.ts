@@ -3,7 +3,8 @@ export type MapStyleKey = "standard" | "satellite" | "terrain" | "silver" | "ret
 export interface MapStyleConfig {
   id: MapStyleKey;
   name: string;
-  url: string;
+  style: string | object;
+  cssFilter?: string;
 }
 
 const CARTO_VOYAGER = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
@@ -13,15 +14,49 @@ const CARTO_POSITRON_NOLABELS = "https://basemaps.cartocdn.com/gl/positron-nolab
 const CARTO_DARK_NOLABELS = "https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json";
 const CARTO_VOYAGER_NOLABELS = "https://basemaps.cartocdn.com/gl/voyager-nolabels-gl-style/style.json";
 
+const SATELLITE_STYLE = {
+  version: 8 as const,
+  sources: {
+    satellite: {
+      type: "raster" as const,
+      tiles: [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      ],
+      tileSize: 256,
+      maxzoom: 19,
+      attribution: "Esri, Maxar, Earthstar Geographics",
+    },
+  },
+  layers: [
+    { id: "satellite", type: "raster" as const, source: "satellite" },
+  ],
+};
+
+const TERRAIN_STYLE = {
+  version: 8 as const,
+  sources: {
+    terrain: {
+      type: "raster" as const,
+      tiles: ["https://tile.opentopomap.org/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      maxzoom: 17,
+      attribution: "OpenTopoMap contributors",
+    },
+  },
+  layers: [
+    { id: "terrain", type: "raster" as const, source: "terrain" },
+  ],
+};
+
 export const MAP_STYLES: MapStyleConfig[] = [
-  { id: "standard", name: "Standard", url: CARTO_VOYAGER },
-  { id: "silver", name: "Silver", url: CARTO_POSITRON },
-  { id: "retro", name: "Retro", url: CARTO_VOYAGER },
-  { id: "dark", name: "Dark", url: CARTO_DARK },
-  { id: "night", name: "Night", url: CARTO_DARK },
-  { id: "aubergine", name: "Aubergine", url: CARTO_DARK },
-  { id: "satellite", name: "Satellite", url: CARTO_VOYAGER },
-  { id: "terrain", name: "Terrain", url: CARTO_POSITRON },
+  { id: "standard", name: "Standard", style: CARTO_VOYAGER },
+  { id: "satellite", name: "Satellite", style: SATELLITE_STYLE },
+  { id: "terrain", name: "Terrain", style: TERRAIN_STYLE },
+  { id: "silver", name: "Silver", style: CARTO_POSITRON },
+  { id: "retro", name: "Retro", style: CARTO_VOYAGER, cssFilter: "sepia(0.3) saturate(0.7) brightness(1.05)" },
+  { id: "dark", name: "Dark", style: CARTO_DARK },
+  { id: "night", name: "Night", style: CARTO_DARK, cssFilter: "brightness(0.85) saturate(0.9) hue-rotate(15deg)" },
+  { id: "aubergine", name: "Aubergine", style: CARTO_DARK, cssFilter: "hue-rotate(290deg) saturate(0.65) brightness(0.95)" },
 ];
 
 export const DEFAULT_MAP_STYLE: MapStyleKey = "standard";
@@ -30,8 +65,22 @@ export function getMapStyleConfig(styleKey: MapStyleKey): MapStyleConfig {
   return MAP_STYLES.find((s) => s.id === styleKey) || MAP_STYLES[0];
 }
 
-export function getMapStyleUrl(styleKey: MapStyleKey): string {
-  return getMapStyleConfig(styleKey).url;
+export function getMapStyle(styleKey: MapStyleKey): string | object {
+  return getMapStyleConfig(styleKey).style;
+}
+
+export function getMapCssFilter(styleKey: MapStyleKey): string {
+  return getMapStyleConfig(styleKey).cssFilter || "none";
+}
+
+export function getStyleForDensity(styleKey: MapStyleKey, density: LabelDensity): string | object {
+  const config = getMapStyleConfig(styleKey);
+  if (density === "minimal" && typeof config.style === "string") {
+    if (config.style === CARTO_DARK) return CARTO_DARK_NOLABELS;
+    if (config.style === CARTO_POSITRON) return CARTO_POSITRON_NOLABELS;
+    if (config.style === CARTO_VOYAGER) return CARTO_VOYAGER_NOLABELS;
+  }
+  return config.style;
 }
 
 export const MAP_STYLE_STORAGE_KEY = "twnsq-map-style";
@@ -47,14 +96,6 @@ export const LABEL_DENSITY_OPTIONS: { id: LabelDensity; name: string; descriptio
 ];
 
 export const DEFAULT_LABEL_DENSITY: LabelDensity = "normal";
-
-export function getLabelStyleUrl(styleKey: MapStyleKey, density: LabelDensity): string {
-  if (density === "minimal") {
-    const darkStyles: MapStyleKey[] = ["dark", "night", "aubergine"];
-    return darkStyles.includes(styleKey) ? CARTO_DARK_NOLABELS : CARTO_POSITRON_NOLABELS;
-  }
-  return getMapStyleUrl(styleKey);
-}
 
 export function getStoredMapStyle(): MapStyleKey {
   if (typeof window === "undefined") return DEFAULT_MAP_STYLE;

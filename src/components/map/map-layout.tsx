@@ -105,11 +105,15 @@ export function MapLayout({
   const handleMarkerClick = useCallback((savedPlaceId: string) => {
     onPlaceSelect(savedPlaceId);
     triggerSnapRequest("mid");
+    const selectedPlace = places.find(p => p.id === savedPlaceId);
+    if (selectedPlace && mapRef.current) {
+      mapRef.current.panTo(selectedPlace.place.lat, selectedPlace.place.lng);
+    }
     const rowElement = placeRowRefs.current.get(savedPlaceId);
     if (rowElement) {
       rowElement.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-  }, [onPlaceSelect, triggerSnapRequest]);
+  }, [onPlaceSelect, triggerSnapRequest, places]);
 
   const handleSidebarPlaceSelect = useCallback((savedPlaceId: string) => {
     onPlaceSelect(savedPlaceId);
