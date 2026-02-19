@@ -221,19 +221,24 @@ function createAvatarMarkerOverlay(
       cursor: pointer;
       transition: all 0.15s ease;
       transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: ${MARKER_COLOR};
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      border: ${borderWidth}px solid ${this.isSelected ? MARKER_COLOR : "white"};
+      overflow: hidden;
       ${this.isSelected ? "z-index: 1000;" : "z-index: 1;"}
     `;
 
     const img = document.createElement("img");
     img.src = this.imageUrl;
     img.alt = "";
+    img.crossOrigin = "anonymous";
+    img.referrerPolicy = "no-referrer";
     img.style.cssText = `
       width: 100%;
       height: 100%;
-      border-radius: 50%;
       object-fit: cover;
-      border: ${borderWidth}px solid ${this.isSelected ? MARKER_COLOR : "white"};
-      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      display: block;
     `;
     img.onerror = () => {
       img.style.display = "none";
@@ -249,7 +254,9 @@ function createAvatarMarkerOverlay(
     }
 
     const panes = this.getPanes();
-    panes?.overlayMouseTarget.appendChild(this.div);
+    if (panes) {
+      panes.overlayMouseTarget.appendChild(this.div);
+    }
   };
 
   overlay.draw = function() {
@@ -277,10 +284,7 @@ function createAvatarMarkerOverlay(
       this.div.style.width = size + "px";
       this.div.style.height = size + "px";
       this.div.style.zIndex = selected ? "1000" : "1";
-      const img = this.div.querySelector("img");
-      if (img) {
-        img.style.border = `${borderWidth}px solid ${selected ? MARKER_COLOR : "white"}`;
-      }
+      this.div.style.border = `${borderWidth}px solid ${selected ? MARKER_COLOR : "white"}`;
     }
   };
 
