@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
   webpack: (config, { dev }) => {
     if (dev) {
       config.watchOptions = {
+        poll: false,
+        aggregateTimeout: 2000,
         ignored: [
           "**/node_modules/**",
           "**/.git/**",
@@ -20,6 +22,7 @@ const nextConfig: NextConfig = {
           "**/.local/**",
           "**/cache/**",
           "**/.replit/**",
+          "**/generated/**",
         ],
       };
     }
