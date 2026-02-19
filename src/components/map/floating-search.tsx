@@ -163,7 +163,7 @@ export function FloatingSearch() {
           }}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setTimeout(() => setIsFocused(false), 300)}
-          className="pl-10 pr-8 bg-background shadow-lg border"
+          className="pl-10 pr-8 bg-card shadow-lg border"
           data-testid="input-search-place"
         />
         {searchQuery && (
