@@ -7,6 +7,9 @@ Twn Sq is a web-first application designed to enable users to discover, save, an
 Preferred communication style: Simple, everyday language.
 UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tailwind or custom components.
 
+### Key Rule: Failed Fix Protocol
+**Anytime the user asks for a fix and it doesn't work, do NOT just try again.** First: (1) explain why the previous attempt didn't work and what was done wrong, (2) undo the failed change, and (3) only then attempt a new fix with a proper understanding of the root cause.
+
 ## System Architecture
 
 ### Frontend Architecture
