@@ -212,7 +212,7 @@ function createAvatarMarkerOverlay(
 
   overlay.onAdd = function() {
     this.div = document.createElement("div");
-    const size = this.isSelected ? 40 : 32;
+    const size = this.isSelected ? 24 : 20;
     const borderWidth = this.isSelected ? 3 : 2;
     this.div.style.cssText = `
       position: absolute;
@@ -222,18 +222,19 @@ function createAvatarMarkerOverlay(
       transition: all 0.15s ease;
       transform: translate(-50%, -50%);
       border-radius: 50%;
-      background: ${MARKER_COLOR};
-      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
       border: ${borderWidth}px solid ${this.isSelected ? MARKER_COLOR : "white"};
       overflow: hidden;
       ${this.isSelected ? "z-index: 1000;" : "z-index: 1;"}
     `;
 
+    const imgUrl = this.imageUrl.startsWith("http")
+      ? `/api/proxy-image?url=${encodeURIComponent(this.imageUrl)}`
+      : this.imageUrl;
+
     const img = document.createElement("img");
-    img.src = this.imageUrl;
+    img.src = imgUrl;
     img.alt = "";
-    img.crossOrigin = "anonymous";
-    img.referrerPolicy = "no-referrer";
     img.style.cssText = `
       width: 100%;
       height: 100%;
@@ -242,6 +243,9 @@ function createAvatarMarkerOverlay(
     `;
     img.onerror = () => {
       img.style.display = "none";
+      if (this.div) {
+        this.div.style.background = MARKER_COLOR;
+      }
     };
     this.div.appendChild(img);
 
@@ -279,7 +283,7 @@ function createAvatarMarkerOverlay(
   overlay.updateSelection = function(selected: boolean) {
     this.isSelected = selected;
     if (this.div) {
-      const size = selected ? 40 : 32;
+      const size = selected ? 24 : 20;
       const borderWidth = selected ? 3 : 2;
       this.div.style.width = size + "px";
       this.div.style.height = size + "px";
