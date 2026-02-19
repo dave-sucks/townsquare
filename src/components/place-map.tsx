@@ -76,7 +76,6 @@ function getStoredMapView(): { center: { lat: number; lng: number }; zoom: numbe
       }
     }
   } catch (e) {
-    // Ignore parse errors
   }
   return null;
 }
@@ -86,7 +85,6 @@ function saveMapView(center: { lat: number; lng: number }, zoom: number) {
   try {
     localStorage.setItem(MAP_STORAGE_KEY, JSON.stringify({ center, zoom }));
   } catch (e) {
-    // Ignore storage errors
   }
 }
 
@@ -99,200 +97,6 @@ function createMarkerIcon(isSelected: boolean): google.maps.Symbol {
     strokeColor: isSelected ? MARKER_COLOR_SELECTED : "white",
     strokeWeight: isSelected ? 3 : 2,
   };
-}
-
-interface EmojiOverlay extends google.maps.OverlayView {
-  setClickHandler: (handler: () => void) => void;
-  updateSelection: (isSelected: boolean) => void;
-}
-
-function createEmojiMarkerOverlay(
-  position: google.maps.LatLngLiteral,
-  emoji: string,
-  isSelected: boolean
-): EmojiOverlay {
-  const overlay = new google.maps.OverlayView() as EmojiOverlay & {
-    position: google.maps.LatLng;
-    emoji: string;
-    isSelected: boolean;
-    div: HTMLDivElement | null;
-    clickHandler: (() => void) | null;
-  };
-  
-  overlay.position = new google.maps.LatLng(position.lat, position.lng);
-  overlay.emoji = emoji;
-  overlay.isSelected = isSelected;
-  overlay.div = null;
-  overlay.clickHandler = null;
-
-  overlay.setClickHandler = function(handler: () => void) {
-    this.clickHandler = handler;
-  };
-
-  overlay.onAdd = function() {
-    this.div = document.createElement("div");
-    this.div.style.cssText = `
-      position: absolute;
-      font-size: ${this.isSelected ? "32px" : "24px"};
-      cursor: pointer;
-      transition: transform 0.15s ease;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-      transform: translate(-50%, -100%);
-      ${this.isSelected ? "z-index: 1000;" : "z-index: 1;"}
-    `;
-    this.div.textContent = this.emoji;
-    
-    if (this.clickHandler) {
-      const handler = this.clickHandler;
-      this.div.addEventListener("click", (e) => {
-        e.stopPropagation();
-        handler();
-      });
-    }
-
-    const panes = this.getPanes();
-    panes?.overlayMouseTarget.appendChild(this.div);
-  };
-
-  overlay.draw = function() {
-    if (!this.div) return;
-    const overlayProjection = this.getProjection();
-    const pos = overlayProjection.fromLatLngToDivPixel(this.position);
-    if (pos) {
-      this.div.style.left = pos.x + "px";
-      this.div.style.top = pos.y + "px";
-    }
-  };
-
-  overlay.onRemove = function() {
-    if (this.div) {
-      this.div.parentNode?.removeChild(this.div);
-      this.div = null;
-    }
-  };
-
-  overlay.updateSelection = function(selected: boolean) {
-    this.isSelected = selected;
-    if (this.div) {
-      this.div.style.fontSize = selected ? "32px" : "24px";
-      this.div.style.zIndex = selected ? "1000" : "1";
-    }
-  };
-
-  return overlay;
-}
-
-interface AvatarOverlay extends google.maps.OverlayView {
-  setClickHandler: (handler: () => void) => void;
-  updateSelection: (isSelected: boolean) => void;
-}
-
-function createAvatarMarkerOverlay(
-  position: google.maps.LatLngLiteral,
-  imageUrl: string,
-  isSelected: boolean
-): AvatarOverlay {
-  const overlay = new google.maps.OverlayView() as AvatarOverlay & {
-    position: google.maps.LatLng;
-    imageUrl: string;
-    isSelected: boolean;
-    div: HTMLDivElement | null;
-    clickHandler: (() => void) | null;
-  };
-
-  overlay.position = new google.maps.LatLng(position.lat, position.lng);
-  overlay.imageUrl = imageUrl;
-  overlay.isSelected = isSelected;
-  overlay.div = null;
-  overlay.clickHandler = null;
-
-  overlay.setClickHandler = function(handler: () => void) {
-    this.clickHandler = handler;
-  };
-
-  overlay.onAdd = function() {
-    this.div = document.createElement("div");
-    const size = this.isSelected ? 24 : 20;
-    const borderWidth = this.isSelected ? 3 : 2;
-    this.div.style.cssText = `
-      position: absolute;
-      width: ${size}px;
-      height: ${size}px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-      border: ${borderWidth}px solid ${this.isSelected ? MARKER_COLOR : "white"};
-      overflow: hidden;
-      ${this.isSelected ? "z-index: 1000;" : "z-index: 1;"}
-    `;
-
-    const imgUrl = this.imageUrl.startsWith("http")
-      ? `/api/proxy-image?url=${encodeURIComponent(this.imageUrl)}`
-      : this.imageUrl;
-
-    const img = document.createElement("img");
-    img.src = imgUrl;
-    img.alt = "";
-    img.style.cssText = `
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    `;
-    img.onerror = () => {
-      img.style.display = "none";
-      if (this.div) {
-        this.div.style.background = MARKER_COLOR;
-      }
-    };
-    this.div.appendChild(img);
-
-    if (this.clickHandler) {
-      const handler = this.clickHandler;
-      this.div.addEventListener("click", (e) => {
-        e.stopPropagation();
-        handler();
-      });
-    }
-
-    const panes = this.getPanes();
-    if (panes) {
-      panes.overlayMouseTarget.appendChild(this.div);
-    }
-  };
-
-  overlay.draw = function() {
-    if (!this.div) return;
-    const overlayProjection = this.getProjection();
-    const pos = overlayProjection.fromLatLngToDivPixel(this.position);
-    if (pos) {
-      this.div.style.left = pos.x + "px";
-      this.div.style.top = pos.y + "px";
-    }
-  };
-
-  overlay.onRemove = function() {
-    if (this.div) {
-      this.div.parentNode?.removeChild(this.div);
-      this.div = null;
-    }
-  };
-
-  overlay.updateSelection = function(selected: boolean) {
-    this.isSelected = selected;
-    if (this.div) {
-      const size = selected ? 24 : 20;
-      const borderWidth = selected ? 3 : 2;
-      this.div.style.width = size + "px";
-      this.div.style.height = size + "px";
-      this.div.style.zIndex = selected ? "1000" : "1";
-      this.div.style.border = `${borderWidth}px solid ${selected ? MARKER_COLOR : "white"}`;
-    }
-  };
-
-  return overlay;
 }
 
 const RADIUS_TO_ZOOM: Record<number, number> = {
@@ -317,7 +121,8 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const markersRef = useRef<Map<string, google.maps.Marker | EmojiOverlay | AvatarOverlay>>(new Map());
+  const markersRef = useRef<Map<string, google.maps.Marker>>(new Map());
+  const prevPlaceIdsRef = useRef<string>("");
   
   const [currentStyle, setCurrentStyle] = useState<MapStyleKey>("retro");
   const [showTraffic, setShowTraffic] = useState(false);
@@ -373,7 +178,6 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
     setLabelDensity(storedDensity);
     setIsLoading(false);
 
-    // Apply the stored style and label density
     applyMapStyle(mapInstance, storedStyle, storedDensity);
   }, []);
 
@@ -415,13 +219,6 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
     };
     document.head.appendChild(script);
   }, [initMapCallback]);
-
-  const handleStyleChange = useCallback((style: MapStyleKey) => {
-    if (!map) return;
-    setCurrentStyle(style);
-    saveMapStyle(style);
-    applyMapStyle(map, style, labelDensity);
-  }, [map, labelDensity]);
 
   useEffect(() => {
     const handleExternalStyleChange = (event: Event) => {
@@ -485,37 +282,15 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
     };
   }, [map, labelDensity, currentStyle]);
 
-  const handleLabelDensityChange = useCallback((density: LabelDensity) => {
-    if (!map) return;
-    setLabelDensity(density);
-    saveLabelDensity(density);
-    applyMapStyle(map, currentStyle, density);
-  }, [map, currentStyle]);
-
-  const handleTrafficChange = useCallback((show: boolean) => {
-    setShowTraffic(show);
-    if (trafficLayerRef.current) {
-      trafficLayerRef.current.setMap(show ? map : null);
-    }
-  }, [map]);
-
-  const handleTransitChange = useCallback((show: boolean) => {
-    setShowTransit(show);
-    if (transitLayerRef.current) {
-      transitLayerRef.current.setMap(show ? map : null);
-    }
-  }, [map]);
-
-  const handleRadiusChange = useCallback((newRadius: number) => {
-    setRadius(newRadius);
-    if (map) {
-      const zoom = RADIUS_TO_ZOOM[newRadius] || 12;
-      map.setZoom(zoom);
-    }
-  }, [map]);
+  const onMarkerClickRef = useRef(onMarkerClick);
+  onMarkerClickRef.current = onMarkerClick;
 
   useEffect(() => {
     if (!map || !window.google) return;
+
+    const currentPlaceIds = places.map(p => p.id).sort().join(",");
+    if (currentPlaceIds === prevPlaceIdsRef.current) return;
+    prevPlaceIdsRef.current = currentPlaceIds;
 
     markersRef.current.forEach((marker) => {
       marker.setMap(null);
@@ -524,49 +299,24 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
 
     if (places.length === 0) return;
 
-    const bounds = new google.maps.LatLngBounds();
-
     places.forEach((savedPlace) => {
-      const { place, id, emoji } = savedPlace;
+      const { place, id } = savedPlace;
       const position = { lat: place.lat, lng: place.lng };
-      const isSelected = id === selectedPlaceId;
 
-      let marker: google.maps.Marker | EmojiOverlay | AvatarOverlay;
-
-      if (savedPlace.savedBy?.profileImageUrl) {
-        const overlay = createAvatarMarkerOverlay(position, savedPlace.savedBy.profileImageUrl, isSelected);
-        overlay.setClickHandler(() => onMarkerClick(id));
-        overlay.setMap(map);
-        marker = overlay;
-      } else if (emoji) {
-        const overlay = createEmojiMarkerOverlay(position, emoji, isSelected);
-        overlay.setClickHandler(() => onMarkerClick(id));
-        overlay.setMap(map);
-        marker = overlay;
-      } else {
-        marker = new google.maps.Marker({
-          map,
-          position,
-          title: place.name,
-          icon: createMarkerIcon(isSelected),
-          zIndex: isSelected ? 1000 : 1,
-        });
-        marker.addListener("click", () => {
-          onMarkerClick(id);
-        });
-      }
+      const marker = new google.maps.Marker({
+        map,
+        position,
+        title: place.name,
+        icon: createMarkerIcon(id === selectedPlaceId),
+        zIndex: id === selectedPlaceId ? 1000 : 1,
+      });
+      marker.addListener("click", () => {
+        onMarkerClickRef.current(id);
+      });
 
       markersRef.current.set(id, marker);
-      bounds.extend(position);
     });
-
-    if (places.length === 1) {
-      map.setCenter(bounds.getCenter());
-      map.setZoom(14);
-    } else if (!selectedPlaceId) {
-      map.fitBounds(bounds, { top: 50, right: 50, bottom: 50, left: 50 });
-    }
-  }, [map, places, selectedPlaceId, onMarkerClick]);
+  }, [map, places, selectedPlaceId]);
 
   useEffect(() => {
     if (!map || !selectedPlaceId) return;
@@ -586,19 +336,11 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
     if (!map || !window.google) return;
 
     markersRef.current.forEach((marker, id) => {
-      const savedPlace = places.find(p => p.id === id);
-      if (savedPlace) {
-        const isSelected = id === selectedPlaceId;
-        
-        if (marker instanceof google.maps.Marker) {
-          marker.setIcon(createMarkerIcon(isSelected));
-          marker.setZIndex(isSelected ? 1000 : 1);
-        } else if ('updateSelection' in marker) {
-          marker.updateSelection(isSelected);
-        }
-      }
+      const isSelected = id === selectedPlaceId;
+      marker.setIcon(createMarkerIcon(isSelected));
+      marker.setZIndex(isSelected ? 1000 : 1);
     });
-  }, [selectedPlaceId, places, map]);
+  }, [selectedPlaceId, map]);
 
   if (error) {
     return (
