@@ -299,6 +299,8 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
 
     if (places.length === 0) return;
 
+    const bounds = new google.maps.LatLngBounds();
+
     places.forEach((savedPlace) => {
       const { place, id } = savedPlace;
       const position = { lat: place.lat, lng: place.lng };
@@ -307,16 +309,24 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
         map,
         position,
         title: place.name,
-        icon: createMarkerIcon(id === selectedPlaceId),
-        zIndex: id === selectedPlaceId ? 1000 : 1,
+        icon: createMarkerIcon(false),
+        zIndex: 1,
       });
       marker.addListener("click", () => {
         onMarkerClickRef.current(id);
       });
 
       markersRef.current.set(id, marker);
+      bounds.extend(position);
     });
-  }, [map, places, selectedPlaceId]);
+
+    if (places.length === 1) {
+      map.setCenter(bounds.getCenter());
+      map.setZoom(14);
+    } else {
+      map.fitBounds(bounds, { top: 50, right: 50, bottom: 200, left: 50 });
+    }
+  }, [map, places]);
 
   useEffect(() => {
     if (!map || !selectedPlaceId) return;
