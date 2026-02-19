@@ -325,6 +325,12 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
       map.setZoom(14);
     } else {
       map.fitBounds(bounds, { top: 50, right: 50, bottom: 200, left: 50 });
+      const listener = google.maps.event.addListenerOnce(map, "idle", () => {
+        const z = map.getZoom();
+        if (z !== undefined && z < 4) {
+          map.setZoom(4);
+        }
+      });
     }
   }, [map, places]);
 
