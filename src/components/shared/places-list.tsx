@@ -33,6 +33,14 @@ interface ListInfo {
   name: string;
 }
 
+interface SavedByUser {
+  id: string;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  profileImageUrl: string | null;
+}
+
 interface SavedPlace {
   id: string;
   userId?: string | null;
@@ -44,6 +52,7 @@ interface SavedPlace {
   createdAt?: string;
   place: Place;
   lists?: ListInfo[];
+  savedBy?: SavedByUser | null;
 }
 
 interface CurrentUserPlaceData {
@@ -75,6 +84,7 @@ interface PlaceCardProps {
   thumbnailMode?: ThumbnailMode;
   emojiEditable?: boolean;
   currentUserData?: CurrentUserPlaceData | null;
+  showSavedBy?: boolean;
 }
 
 const CATEGORY_PRIORITY = [
@@ -125,7 +135,7 @@ function formatCategoryName(type: string): string {
 }
 
 export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
-  ({ savedPlace, isSelected, showStatus = true, showSaveDropdown = false, hideDropdownUntilHover = false, listsContainingPlace = [], actionButton, onClick, thumbnailMode = "photo", emojiEditable = false, currentUserData }, ref) => {
+  ({ savedPlace, isSelected, showStatus = true, showSaveDropdown = false, hideDropdownUntilHover = false, listsContainingPlace = [], actionButton, onClick, thumbnailMode = "photo", emojiEditable = false, currentUserData, showSavedBy = false }, ref) => {
     const queryClient = useQueryClient();
     const category = getBestCategory(savedPlace.place.primaryType, savedPlace.place.types);
     const locationDisplay = savedPlace.place.neighborhood 
@@ -288,6 +298,12 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
             <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1 truncate" data-testid="place-card-location-row">
               <HugeiconsIcon icon={Location01Icon} className="h-3 w-3 flex-shrink-0" />
               <span className="truncate">{locationDisplay}</span>
+              {showSavedBy && savedPlace.savedBy?.username && (
+                <>
+                  <span className="flex-shrink-0">·</span>
+                  <span className="flex-shrink-0" data-testid={`text-saved-by-${savedPlace.id}`}>@{savedPlace.savedBy.username}</span>
+                </>
+              )}
               {showStatus && listDisplayText && (
                 <>
                   <span className="flex-shrink-0">·</span>
@@ -339,6 +355,7 @@ interface PlacesListProps {
   thumbnailMode?: ThumbnailMode;
   emojiEditable?: boolean;
   currentUserPlaceData?: Record<string, CurrentUserPlaceData> | null;
+  showSavedBy?: boolean;
 }
 
 export function PlacesList({
@@ -356,6 +373,7 @@ export function PlacesList({
   thumbnailMode = "photo",
   emojiEditable = false,
   currentUserPlaceData,
+  showSavedBy = false,
 }: PlacesListProps) {
   if (isLoading) {
     return (
@@ -398,6 +416,7 @@ export function PlacesList({
           thumbnailMode={thumbnailMode}
           emojiEditable={emojiEditable}
           currentUserData={currentUserPlaceData?.[savedPlace.placeId] || null}
+          showSavedBy={showSavedBy}
         />
       ))}
     </div>

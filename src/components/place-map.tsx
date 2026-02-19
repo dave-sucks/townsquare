@@ -27,6 +27,13 @@ interface SavedPlace {
   id: string;
   emoji?: string | null;
   place: Place;
+  savedBy?: {
+    id: string;
+    username: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    profileImageUrl: string | null;
+  } | null;
 }
 
 interface PlaceMapProps {
@@ -175,6 +182,111 @@ function createEmojiMarkerOverlay(
   return overlay;
 }
 
+interface AvatarOverlay extends google.maps.OverlayView {
+  setClickHandler: (handler: () => void) => void;
+  updateSelection: (isSelected: boolean) => void;
+}
+
+function createAvatarMarkerOverlay(
+  position: google.maps.LatLngLiteral,
+  imageUrl: string,
+  isSelected: boolean
+): AvatarOverlay {
+  const overlay = new google.maps.OverlayView() as AvatarOverlay & {
+    position: google.maps.LatLng;
+    imageUrl: string;
+    isSelected: boolean;
+    div: HTMLDivElement | null;
+    clickHandler: (() => void) | null;
+  };
+
+  overlay.position = new google.maps.LatLng(position.lat, position.lng);
+  overlay.imageUrl = imageUrl;
+  overlay.isSelected = isSelected;
+  overlay.div = null;
+  overlay.clickHandler = null;
+
+  overlay.setClickHandler = function(handler: () => void) {
+    this.clickHandler = handler;
+  };
+
+  overlay.onAdd = function() {
+    this.div = document.createElement("div");
+    const size = this.isSelected ? 40 : 32;
+    const borderWidth = this.isSelected ? 3 : 2;
+    this.div.style.cssText = `
+      position: absolute;
+      width: ${size}px;
+      height: ${size}px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      transform: translate(-50%, -50%);
+      ${this.isSelected ? "z-index: 1000;" : "z-index: 1;"}
+    `;
+
+    const img = document.createElement("img");
+    img.src = this.imageUrl;
+    img.alt = "";
+    img.style.cssText = `
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      border: ${borderWidth}px solid ${this.isSelected ? MARKER_COLOR : "white"};
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+    `;
+    img.onerror = () => {
+      img.style.display = "none";
+    };
+    this.div.appendChild(img);
+
+    if (this.clickHandler) {
+      const handler = this.clickHandler;
+      this.div.addEventListener("click", (e) => {
+        e.stopPropagation();
+        handler();
+      });
+    }
+
+    const panes = this.getPanes();
+    panes?.overlayMouseTarget.appendChild(this.div);
+  };
+
+  overlay.draw = function() {
+    if (!this.div) return;
+    const overlayProjection = this.getProjection();
+    const pos = overlayProjection.fromLatLngToDivPixel(this.position);
+    if (pos) {
+      this.div.style.left = pos.x + "px";
+      this.div.style.top = pos.y + "px";
+    }
+  };
+
+  overlay.onRemove = function() {
+    if (this.div) {
+      this.div.parentNode?.removeChild(this.div);
+      this.div = null;
+    }
+  };
+
+  overlay.updateSelection = function(selected: boolean) {
+    this.isSelected = selected;
+    if (this.div) {
+      const size = selected ? 40 : 32;
+      const borderWidth = selected ? 3 : 2;
+      this.div.style.width = size + "px";
+      this.div.style.height = size + "px";
+      this.div.style.zIndex = selected ? "1000" : "1";
+      const img = this.div.querySelector("img");
+      if (img) {
+        img.style.border = `${borderWidth}px solid ${selected ? MARKER_COLOR : "white"}`;
+      }
+    }
+  };
+
+  return overlay;
+}
+
 const RADIUS_TO_ZOOM: Record<number, number> = {
   0.25: 15.5,
   0.5: 14.5,
@@ -197,7 +309,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const markersRef = useRef<Map<string, google.maps.Marker | EmojiOverlay>>(new Map());
+  const markersRef = useRef<Map<string, google.maps.Marker | EmojiOverlay | AvatarOverlay>>(new Map());
   
   const [currentStyle, setCurrentStyle] = useState<MapStyleKey>("retro");
   const [showTraffic, setShowTraffic] = useState(false);
@@ -411,9 +523,14 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
       const position = { lat: place.lat, lng: place.lng };
       const isSelected = id === selectedPlaceId;
 
-      let marker: google.maps.Marker | EmojiOverlay;
+      let marker: google.maps.Marker | EmojiOverlay | AvatarOverlay;
 
-      if (emoji) {
+      if (savedPlace.savedBy?.profileImageUrl) {
+        const overlay = createAvatarMarkerOverlay(position, savedPlace.savedBy.profileImageUrl, isSelected);
+        overlay.setClickHandler(() => onMarkerClick(id));
+        overlay.setMap(map);
+        marker = overlay;
+      } else if (emoji) {
         const overlay = createEmojiMarkerOverlay(position, emoji, isSelected);
         overlay.setClickHandler(() => onMarkerClick(id));
         overlay.setMap(map);

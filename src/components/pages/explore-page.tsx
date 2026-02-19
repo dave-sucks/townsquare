@@ -72,8 +72,13 @@ export function ExplorePage({ user }: { user: UserData }) {
     queryFn: () => apiRequest(`/api/collections?collection=${activeTab}`),
   });
 
-  const places = collectionData?.places || [];
+  const rawPlaces = collectionData?.places || [];
   const currentUserPlaceData = collectionData?.currentUserPlaceData || null;
+
+  const places = rawPlaces;
+  const mapPlaces = activeTab === "following"
+    ? rawPlaces
+    : rawPlaces.map(({ savedBy, ...rest }) => rest);
 
   const handleTabChange = useCallback(
     (tabId: string) => {
@@ -121,7 +126,7 @@ export function ExplorePage({ user }: { user: UserData }) {
   return (
     <MapLayout
       user={user}
-      places={places}
+      places={mapPlaces}
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={handlePlaceSelect}
       showSearch={true}

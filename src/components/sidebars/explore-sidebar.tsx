@@ -151,6 +151,7 @@ export function ExploreSidebar({
             hideDropdownUntilHover={true}
             thumbnailMode="photo"
             currentUserPlaceData={currentUserPlaceData}
+            showSavedBy={activeTab === "following"}
           />
         )}
       </div>
