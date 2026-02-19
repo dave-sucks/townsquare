@@ -77,9 +77,9 @@ function BoundsController({ places, selectedPlaceId }: { places: SavedPlace[]; s
   useEffect(() => {
     if (!map || !isLoaded || places.length === 0) return;
 
-    const currentPlaceIds = places.map(p => p.id).sort().join(",");
-    if (currentPlaceIds === prevPlaceIdsRef.current && hasFittedRef.current) return;
-    prevPlaceIdsRef.current = currentPlaceIds;
+    const currentSignature = places.map(p => `${p.id}:${p.place.lat},${p.place.lng}`).sort().join("|");
+    if (currentSignature === prevPlaceIdsRef.current && hasFittedRef.current) return;
+    prevPlaceIdsRef.current = currentSignature;
     hasFittedRef.current = true;
 
     if (places.length === 1) {
@@ -128,22 +128,27 @@ function BoundsController({ places, selectedPlaceId }: { places: SavedPlace[]; s
 
 function StyleController() {
   const { map, isLoaded } = useMap();
+  const currentStyleUrlRef = useRef<string>("");
 
   useEffect(() => {
     if (!map || !isLoaded) return;
 
+    const applyStyle = (url: string) => {
+      if (url === currentStyleUrlRef.current) return;
+      currentStyleUrlRef.current = url;
+      map.setStyle(url);
+    };
+
     const handleStyleChange = (e: Event) => {
       const styleKey = (e as CustomEvent).detail as MapStyleKey;
       const density = getStoredLabelDensity();
-      const url = density === "minimal" ? getLabelStyleUrl(styleKey, density) : getMapStyleUrl(styleKey);
-      map.setStyle(url);
+      applyStyle(getLabelStyleUrl(styleKey, density));
     };
 
     const handleLabelDensityChange = (e: Event) => {
       const density = (e as CustomEvent).detail as LabelDensity;
       const styleKey = getStoredMapStyle();
-      const url = getLabelStyleUrl(styleKey, density);
-      map.setStyle(url);
+      applyStyle(getLabelStyleUrl(styleKey, density));
     };
 
     window.addEventListener("map-style-change", handleStyleChange);

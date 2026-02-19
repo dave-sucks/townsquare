@@ -17,9 +17,10 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 - **State Management**: TanStack React Query for server-side state.
 - **UI Components**: shadcn/ui component library, built on Radix UI primitives (nova style, stone theme).
 - **Styling**: Tailwind CSS, utilizing CSS variables for theming.
-- **Layout**: Full-width Google Map as the primary content area, with floating UI elements for search, settings, and place lists. Responsive design includes a floating sidebar for desktop and an interactive draggable bottom sheet for mobile with three snap points. **IMPORTANT**: Always use `h-dvh` (not `h-screen`) for full-viewport containers — `100vh` is broken on mobile browsers where the URL bar makes the viewport shorter than `100vh`.
-- **Search Bar**: FloatingSearch renders at the MapLayout level (not inside PlaceMap) with `z-[55]`, independent of Google Maps lifecycle.
-- **Map Features**: Dynamic map styling with multiple themes, map settings popover for radius, traffic, and transit layers, and custom emoji markers.
+- **Layout**: Full-width MapLibre GL map as the primary content area, with floating UI elements for search, settings, and place lists. Responsive design includes a floating sidebar for desktop and an interactive draggable bottom sheet for mobile with three snap points. **IMPORTANT**: Always use `h-dvh` (not `h-screen`) for full-viewport containers — `100vh` is broken on mobile browsers where the URL bar makes the viewport shorter than `100vh`.
+- **Search Bar**: FloatingSearch renders at the MapLayout level (not inside PlaceMap) with `z-[55]`, independent of map lifecycle.
+- **Map Rendering**: MapLibre GL (via mapcn/shadcn-compatible components in `src/components/ui/map.tsx`) with CARTO basemap tiles (no API key needed). Custom emoji markers render as React components via DOM portals. Map styles switchable between Standard/Silver/Dark/Night/Aubergine via settings panel. BoundsController auto-fits to places when the set of places changes (tracked by ID+coordinates signature). StyleController listens for window custom events from map settings.
+- **Landing Page Map**: Still uses Google Maps JS API directly (`src/components/landing-map.tsx`) for decorative animation on the landing page — separate from the interactive app map.
 - **Place Interaction**: Bidirectional synchronization between the place list and map, including visual cues for selection, map panning, and scrolling.
 - **Lists**: Users can create private or public lists to organize saved places.
 - **Place Details**: Dedicated full-page and modal views for place details, including photos, user reviews, and social context.
@@ -63,7 +64,8 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 
 ### APIs and Services
 - **Google Places API**: For place search, autocomplete, and fetching detailed place information.
-- **Google Maps JavaScript API**: For rendering interactive maps and displaying place markers.
+- **MapLibre GL**: For rendering interactive maps with CARTO basemap tiles (replaced Google Maps for app maps).
+- **Google Maps JavaScript API**: For the landing page decorative map animation only.
 - **PostgreSQL Database**: Primary data store.
 - **Replit Auth**: OpenID Connect (OIDC) provider for user authentication.
 - **Replit Object Storage**: For storing user-uploaded photos.
@@ -75,6 +77,7 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 - `openid-client`: OIDC protocol implementation.
 - `@tanstack/react-query`: Asynchronous state management for React.
 - `shadcn/ui` components & `@radix-ui/*`: UI component library and primitives.
+- `maplibre-gl`: MapLibre GL map rendering engine (replaced Google Maps for app maps).
 - `lucide-react`: Icon library.
 - `frimousse`: Headless emoji picker library.
 
