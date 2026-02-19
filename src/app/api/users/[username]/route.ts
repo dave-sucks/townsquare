@@ -351,8 +351,12 @@ export async function GET(
     });
 
     // Transform places to include topTags
+    // When viewing another user's profile, strip their emoji so the map shows
+    // blue dots instead of someone else's emoji. Emoji is the logged-in user's
+    // own thing — never show another user's emoji.
     const formatPlaceWithTags = (sp: typeof wantPlaces[0]) => ({
       ...sp,
+      emoji: isOwnProfile ? sp.emoji : null,
       place: {
         id: sp.place.id,
         googlePlaceId: sp.place.googlePlaceId,
