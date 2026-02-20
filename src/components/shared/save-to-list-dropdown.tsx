@@ -193,21 +193,20 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
 
   const lists = listsData?.lists || [];
 
-  const { data: savedPlacesData } = useQuery<{ savedPlaces: any[] }>({
-    queryKey: ["saved-places"],
-    queryFn: () => apiRequest("/api/saved-places"),
-    enabled: false,
+  const { data: fetchedListIds } = useQuery<string[]>({
+    queryKey: ["place-lists", place.googlePlaceId],
+    queryFn: async () => {
+      const res = await apiRequest(`/api/saved-places/lists-for-place?googlePlaceId=${encodeURIComponent(place.googlePlaceId)}`) as { listIds: string[] };
+      return res.listIds;
+    },
+    enabled: open && listsContainingPlace.length === 0,
   });
 
   useEffect(() => {
-    if (!open || listsContainingPlace.length > 0) return;
-    const cached = savedPlacesData?.savedPlaces;
-    if (!cached) return;
-    const match = cached.find((sp: any) => sp.place?.googlePlaceId === place.googlePlaceId);
-    if (match?.lists) {
-      setOptimisticLists(match.lists.map((l: any) => l.id));
+    if (fetchedListIds && fetchedListIds.length > 0) {
+      setOptimisticLists(fetchedListIds);
     }
-  }, [open, savedPlacesData, place.googlePlaceId, listsContainingPlace.length]);
+  }, [fetchedListIds]);
 
   const openAfterSaveRef = useRef(false);
 
@@ -315,6 +314,7 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
     onSuccess: (_data: any, listId: string) => {
       setPendingListIds(prev => { const next = new Set(prev); next.delete(listId); return next; });
       invalidateListMembership();
+      queryClient.invalidateQueries({ queryKey: ["place-lists", place.googlePlaceId] });
       onSaveSuccess?.();
     },
     onError: (error: Error, listId: string) => {
@@ -339,6 +339,7 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
     onSuccess: (_data: any, listId: string) => {
       setPendingListIds(prev => { const next = new Set(prev); next.delete(listId); return next; });
       invalidateListMembership();
+      queryClient.invalidateQueries({ queryKey: ["place-lists", place.googlePlaceId] });
       onSaveSuccess?.();
     },
     onError: (error: Error, listId: string) => {

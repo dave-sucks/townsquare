@@ -51,7 +51,7 @@ export async function POST(
     });
 
     if (existingListPlace) {
-      return NextResponse.json({ error: "Place already in list" }, { status: 400 });
+      return NextResponse.json({ listPlace: existingListPlace });
     }
 
     const listPlace = await prisma.listPlace.create({
@@ -118,7 +118,7 @@ export async function DELETE(
     });
 
     if (!listPlace) {
-      return NextResponse.json({ error: "Place not in list" }, { status: 404 });
+      return NextResponse.json({ success: true });
     }
 
     await prisma.listPlace.delete({
