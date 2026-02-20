@@ -19,9 +19,10 @@ export async function autoTagPlace(placeId: string, force = false): Promise<void
 
     const existingTags = place.placeTags.length;
     if (existingTags > 0 && !force) {
-      const hasReviews = place.reviews.length > 0;
-      const allAiSourced = place.placeTags.every(t => t.source === "ai");
-      if (!(hasReviews && allAiSourced)) return;
+      const hasReviews = place.reviews.some(r => (r.socialPostCaption || r.note || "").length > 5);
+      const allBasicAi = place.placeTags.every(t => t.source === "ai");
+      const alreadyEnriched = place.placeTags.some(t => t.source === "ai_enriched");
+      if (alreadyEnriched || !hasReviews || !allBasicAi) return;
     }
 
     const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
@@ -98,6 +99,9 @@ Return ONLY a flat JSON object like {"tag_slug": 0.9, "another_slug": 0.8}. Keys
       }
     }
 
+    const hasReviewContext = place.reviews.some(r => (r.socialPostCaption || r.note || "").length > 5);
+    const tagSource = hasReviewContext ? "ai_enriched" : "ai";
+
     let tagCount = 0;
     for (const [slug, confidence] of Object.entries(tagScores)) {
       if (typeof confidence !== "number" || confidence < 0.5) continue;
@@ -113,12 +117,12 @@ Return ONLY a flat JSON object like {"tag_slug": 0.9, "another_slug": 0.8}. Keys
         },
         update: {
           confidence: Math.min(1, confidence),
-          source: "ai",
+          source: tagSource,
         },
         create: {
           placeId: place.id,
           tagId: tag.id,
-          source: "ai",
+          source: tagSource,
           confidence: Math.min(1, confidence),
         },
       });

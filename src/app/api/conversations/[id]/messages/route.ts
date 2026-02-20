@@ -120,6 +120,7 @@ async function fetchPlaceDetailsForNeighborhood(googlePlaceId: string): Promise<
     if (!response.ok) return { neighborhood: null, locality: null, photoRefs: null };
 
     const data = await response.json();
+    if (data.status !== "OK") return { neighborhood: null, locality: null, photoRefs: null };
     const result = data.result;
     if (!result) return { neighborhood: null, locality: null, photoRefs: null };
 
