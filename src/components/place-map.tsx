@@ -1,16 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef, useMemo } from "react";
-import MapLibreGL from "maplibre-gl";
 import { Map, MapMarker, MarkerContent, useMap, type MapRef } from "@/components/ui/map";
 import { cn } from "@/lib/utils";
 import {
   getStoredMapStyle,
-  getMapStyle,
-  getMapCssFilter,
-  getStoredLabelDensity,
+  applyMapStyle,
   applyLabelDensity,
-  applyLabelDensityWhenReady,
+  getStoredLabelDensity,
   type MapStyleKey,
   type LabelDensity,
 } from "@/lib/map-styles";
@@ -44,6 +41,7 @@ interface PlaceMapProps {
   showSettings?: boolean;
   isSettingsOpen?: boolean;
   onSettingsOpenChange?: (open: boolean) => void;
+  showAvatars?: boolean;
 }
 
 export interface PlaceMapHandle {
@@ -92,32 +90,26 @@ function BoundsController({ places }: { places: SavedPlace[] }) {
     hasFittedRef.current = true;
 
     if (places.length === 1) {
-      map.flyTo({
-        center: [places[0].place.lng, places[0].place.lat],
-        zoom: 14,
-        duration: 800,
-      });
+      map.panTo({ lat: places[0].place.lat, lng: places[0].place.lng });
+      map.setZoom(14);
     } else {
-      const bounds = new MapLibreGL.LngLatBounds();
+      const bounds = new google.maps.LatLngBounds();
       places.forEach((sp) => {
-        bounds.extend([sp.place.lng, sp.place.lat]);
+        bounds.extend({ lat: sp.place.lat, lng: sp.place.lng });
       });
-      map.fitBounds(bounds, {
-        padding: { top: 60, right: 60, bottom: 220, left: 60 },
-        maxZoom: 16,
-        duration: 800,
-      });
+      map.fitBounds(bounds, { top: 60, right: 60, bottom: 220, left: 60 });
     }
   }, [map, isLoaded, places]);
 
   useEffect(() => {
     if (!map || !isLoaded) return;
-    const handleMoveEnd = () => {
+    const listener = map.addListener("idle", () => {
       const center = map.getCenter();
-      saveMapView([center.lng, center.lat], map.getZoom());
-    };
-    map.on("moveend", handleMoveEnd);
-    return () => { map.off("moveend", handleMoveEnd); };
+      if (center) {
+        saveMapView([center.lng(), center.lat()], map.getZoom() || DEFAULT_ZOOM);
+      }
+    });
+    return () => { google.maps.event.removeListener(listener); };
   }, [map, isLoaded]);
 
   return null;
@@ -125,55 +117,34 @@ function BoundsController({ places }: { places: SavedPlace[] }) {
 
 function StyleController() {
   const { map, isLoaded } = useMap();
-  const styleChangingRef = useRef(false);
 
   useEffect(() => {
     if (!map || !isLoaded) return;
 
-    const applyCssFilter = (styleKey: MapStyleKey) => {
-      const filter = getMapCssFilter(styleKey);
-      const canvas = map.getCanvas();
-      if (canvas) {
-        canvas.style.filter = filter;
-      }
-    };
-
     const handleStyleChange = (e: Event) => {
       const styleKey = (e as CustomEvent).detail as MapStyleKey;
       const density = getStoredLabelDensity();
-      const style = getMapStyle(styleKey);
-      styleChangingRef.current = true;
-      map.setStyle(style as any);
-      applyCssFilter(styleKey);
-      applyLabelDensityWhenReady(map, density, styleKey);
+      applyMapStyle(map, styleKey);
+      applyLabelDensity(map, density, styleKey);
     };
 
     const handleLabelDensityChange = (e: Event) => {
-      if (styleChangingRef.current) return;
       const density = (e as CustomEvent).detail as LabelDensity;
       const styleKey = getStoredMapStyle();
-      applyLabelDensityWhenReady(map, density, styleKey);
-    };
-
-    const handleIdle = () => {
-      styleChangingRef.current = false;
-      const styleKey = getStoredMapStyle();
-      applyCssFilter(styleKey);
+      applyLabelDensity(map, density, styleKey);
     };
 
     const initialStyleKey = getStoredMapStyle();
     const initialDensity = getStoredLabelDensity();
-    applyCssFilter(initialStyleKey);
-    applyLabelDensityWhenReady(map, initialDensity, initialStyleKey);
+    applyMapStyle(map, initialStyleKey);
+    applyLabelDensity(map, initialDensity, initialStyleKey);
 
     window.addEventListener("map-style-change", handleStyleChange);
     window.addEventListener("map-label-density-change", handleLabelDensityChange);
-    map.on("idle", handleIdle);
 
     return () => {
       window.removeEventListener("map-style-change", handleStyleChange);
       window.removeEventListener("map-label-density-change", handleLabelDensityChange);
-      map.off("idle", handleIdle);
     };
   }, [map, isLoaded]);
 
@@ -181,7 +152,7 @@ function StyleController() {
 }
 
 export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function PlaceMap(
-  { places, selectedPlaceId, onMarkerClick },
+  { places, selectedPlaceId, onMarkerClick, showAvatars = false },
   ref
 ) {
   const mapRef = useRef<MapRef>(null);
@@ -190,11 +161,9 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
     panTo: (lat: number, lng: number) => {
       const m = mapRef.current;
       if (!m) return;
-      m.flyTo({
-        center: [lng, lat],
-        zoom: Math.max(m.getZoom(), 14),
-        duration: 600,
-      });
+      m.panTo({ lat, lng });
+      const currentZoom = m.getZoom() || 12;
+      if (currentZoom < 14) m.setZoom(14);
     },
     setZoom: (zoom: number) => {
       mapRef.current?.setZoom(zoom);
@@ -204,11 +173,6 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
   const storedView = useMemo(() => getStoredMapView(), []);
   const initialCenter = storedView?.center || DEFAULT_CENTER;
   const initialZoom = storedView?.zoom || DEFAULT_ZOOM;
-
-  const initialStyle = useMemo(() => {
-    const styleKey = getStoredMapStyle();
-    return getMapStyle(styleKey);
-  }, []);
 
   const onMarkerClickRef = useRef(onMarkerClick);
   onMarkerClickRef.current = onMarkerClick;
@@ -220,8 +184,6 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
         center={initialCenter}
         zoom={initialZoom}
         className="h-full w-full"
-        theme="light"
-        styles={{ light: initialStyle as any, dark: initialStyle as any }}
       >
         <BoundsController places={places} />
         <StyleController />
@@ -231,6 +193,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
             savedPlace={savedPlace}
             isSelected={savedPlace.id === selectedPlaceId}
             onClickRef={onMarkerClickRef}
+            showAvatar={showAvatars}
           />
         ))}
       </Map>
@@ -242,10 +205,12 @@ function PlaceMarker({
   savedPlace,
   isSelected,
   onClickRef,
+  showAvatar = false,
 }: {
   savedPlace: SavedPlace;
   isSelected: boolean;
   onClickRef: React.MutableRefObject<(id: string) => void>;
+  showAvatar?: boolean;
 }) {
   const handleClick = useCallback(
     (e: MouseEvent) => {
@@ -256,6 +221,7 @@ function PlaceMarker({
   );
 
   const emoji = savedPlace.emoji;
+  const avatarUrl = showAvatar ? savedPlace.savedBy?.profileImageUrl : null;
 
   return (
     <MapMarker
@@ -264,23 +230,40 @@ function PlaceMarker({
       onClick={handleClick}
     >
       <MarkerContent>
-        <div
-          className={cn(
-            "flex items-center justify-center transition-all duration-200",
-            emoji
-              ? "text-2xl drop-shadow-md hover:scale-110"
-              : "w-3.5 h-3.5 rounded-full border-2 shadow-md hover:scale-125",
-            isSelected && emoji && "scale-125 drop-shadow-lg",
-            isSelected && !emoji && "scale-150 ring-2 ring-white shadow-lg",
-          )}
-          style={!emoji ? {
-            backgroundColor: MARKER_COLOR,
-            borderColor: isSelected ? "white" : "rgba(255,255,255,0.8)",
-          } : undefined}
-          data-testid={`marker-${savedPlace.id}`}
-        >
-          {emoji || null}
-        </div>
+        {avatarUrl ? (
+          <div
+            className={cn(
+              "rounded-full border-2 shadow-md transition-all duration-200 overflow-hidden hover:scale-110",
+              isSelected ? "w-10 h-10 border-primary scale-110 ring-2 ring-primary/30" : "w-8 h-8 border-white",
+            )}
+            data-testid={`marker-${savedPlace.id}`}
+          >
+            <img
+              src={avatarUrl}
+              alt=""
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+        ) : (
+          <div
+            className={cn(
+              "flex items-center justify-center transition-all duration-200",
+              emoji
+                ? "text-2xl drop-shadow-md hover:scale-110"
+                : "w-3.5 h-3.5 rounded-full border-2 shadow-md hover:scale-125",
+              isSelected && emoji && "scale-125 drop-shadow-lg",
+              isSelected && !emoji && "scale-150 ring-2 ring-white shadow-lg",
+            )}
+            style={!emoji ? {
+              backgroundColor: MARKER_COLOR,
+              borderColor: isSelected ? "white" : "rgba(255,255,255,0.8)",
+            } : undefined}
+            data-testid={`marker-${savedPlace.id}`}
+          >
+            {emoji || null}
+          </div>
+        )}
       </MarkerContent>
     </MapMarker>
   );

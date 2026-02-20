@@ -72,6 +72,7 @@ interface MapLayoutProps {
   showMapSettings?: boolean;
   showSearch?: boolean;
   sheetComponent?: ReactNode;
+  showAvatars?: boolean;
 }
 
 export function MapLayout({
@@ -83,6 +84,7 @@ export function MapLayout({
   showMapSettings = true,
   showSearch = false,
   sheetComponent,
+  showAvatars = false,
 }: MapLayoutProps) {
   const placeRowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const mapRef = useRef<PlaceMapHandle>(null);
@@ -155,6 +157,7 @@ export function MapLayout({
           selectedPlaceId={selectedPlaceId}
           onMarkerClick={handleMarkerClick}
           showSettings={showMapSettings}
+          showAvatars={showAvatars}
         />
 
         {showSearch && (

@@ -139,12 +139,6 @@
     @apply bg-background text-foreground;
     font-family: "Host Grotesk", ui-sans-serif, system-ui, sans-serif;
   }
-  .maplibregl-popup-content {
-    @apply bg-transparent! shadow-none! p-0! rounded-none!;
-  }
-  .maplibregl-popup-tip {
-    @apply hidden!;
-  }
 }
 
 .font-schibsted {

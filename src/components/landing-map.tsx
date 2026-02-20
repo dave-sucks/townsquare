@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { loadGoogleMaps } from "@/lib/google-maps-loader";
 
 const LANDING_DARK_STYLE: google.maps.MapTypeStyle[] = [
   { elementType: "geometry", stylers: [{ color: "#212121" }] },
@@ -249,8 +250,7 @@ export function LandingMap({ onReady, showSearch = true }: LandingMapProps) {
   }, [typeQuery, createDemoOverlay]);
 
   useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    if (!apiKey || !mapRef.current) return;
+    if (!mapRef.current) return;
 
     const initMap = () => {
       if (!mapRef.current || !window.google) return;
@@ -276,27 +276,7 @@ export function LandingMap({ onReady, showSearch = true }: LandingMapProps) {
       });
     };
 
-    if (window.google?.maps) {
-      initMap();
-    } else {
-      if (window.__googleMapsLoading) {
-        window.__googleMapsCallbacks = window.__googleMapsCallbacks || [];
-        window.__googleMapsCallbacks.push(initMap);
-      } else {
-        window.__googleMapsLoading = true;
-        window.__googleMapsCallbacks = [initMap];
-
-        const script = document.createElement("script");
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&libraries=marker`;
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-          window.__googleMapsCallbacks?.forEach((cb) => cb());
-          window.__googleMapsCallbacks = [];
-        };
-        document.head.appendChild(script);
-      }
-    }
+    loadGoogleMaps().then(() => initMap());
 
     return () => {
       if (animationRef.current) clearTimeout(animationRef.current);
