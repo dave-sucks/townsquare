@@ -562,14 +562,14 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                 <div className="space-y-3">
                   <h3 className="text-sm font-medium">Lists</h3>
                   <Carousel opts={{ align: "start" }}>
-                    <CarouselContent>
+                    <CarouselContent className="ml-0">
                       {savedPlace && (
-                        <CarouselItem>
+                        <CarouselItem className="pl-0">
                           <AllSavedPlacesChip />
                         </CarouselItem>
                       )}
                       {listsContainingPlace.map((list) => (
-                        <CarouselItem key={list.id}>
+                        <CarouselItem key={list.id} className="pl-0">
                           <ListChip list={list} />
                         </CarouselItem>
                       ))}
