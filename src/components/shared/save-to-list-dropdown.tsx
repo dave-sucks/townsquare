@@ -100,16 +100,66 @@ export function SaveToListDropdown({
   }, [listsContainingPlace]);
 
   useEffect(() => {
-    if (savedPlace) {
+    if (savedPlace && !savedPlace.id.startsWith("temp-")) {
       setOptimisticSave(null);
+      setOptimisticUnsaved(false);
     }
-    setOptimisticUnsaved(false);
-  }, [savedPlace]);
+  }, [savedPlace?.id, savedPlace?.hasBeen, savedPlace?.rating]);
 
-  const effectiveSavedPlace = optimisticUnsaved ? null : (savedPlace || optimisticSave);
+  const effectiveSavedPlace = optimisticUnsaved ? null : (optimisticSave || savedPlace);
   const isSaved = !!effectiveSavedPlace;
   const hasBeen = effectiveSavedPlace?.hasBeen ?? false;
   const currentRating = effectiveSavedPlace?.rating ?? null;
+
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ["saved-places"] });
+    queryClient.invalidateQueries({ queryKey: ["place-detail"] });
+    queryClient.invalidateQueries({ queryKey: ["lists"] });
+    queryClient.invalidateQueries({ queryKey: ["collections"] });
+    queryClient.invalidateQueries({ queryKey: ["list"] });
+    queryClient.invalidateQueries({ queryKey: ["user"] });
+  };
+
+  const patchCachedPlaceData = (updates: { hasBeen?: boolean; rating?: number | null }) => {
+    queryClient.setQueryData<{ savedPlaces: any[] }>(["saved-places"], (old) => {
+      if (!old?.savedPlaces) return old;
+      return {
+        ...old,
+        savedPlaces: old.savedPlaces.map((sp: any) =>
+          sp.place?.googlePlaceId === place.googlePlaceId
+            ? { ...sp, hasBeen: updates.hasBeen ?? sp.hasBeen, rating: updates.rating !== undefined ? updates.rating : sp.rating }
+            : sp
+        ),
+      };
+    });
+
+    const patchCurrentUserPlaceData = (old: any) => {
+      if (!old?.currentUserPlaceData) return old;
+      const placeId = effectiveSavedPlace?.placeId || place.id;
+      if (!placeId || !old.currentUserPlaceData[placeId]) return old;
+      return {
+        ...old,
+        currentUserPlaceData: {
+          ...old.currentUserPlaceData,
+          [placeId]: {
+            ...old.currentUserPlaceData[placeId],
+            hasBeen: updates.hasBeen ?? old.currentUserPlaceData[placeId].hasBeen,
+            rating: updates.rating !== undefined ? updates.rating : old.currentUserPlaceData[placeId].rating,
+          },
+        },
+      };
+    };
+
+    queryClient.getQueriesData({ queryKey: ["collections"] }).forEach(([key]) => {
+      queryClient.setQueryData(key, patchCurrentUserPlaceData);
+    });
+    queryClient.getQueriesData({ queryKey: ["list"] }).forEach(([key]) => {
+      queryClient.setQueryData(key, patchCurrentUserPlaceData);
+    });
+    queryClient.getQueriesData({ queryKey: ["user"] }).forEach(([key]) => {
+      queryClient.setQueryData(key, patchCurrentUserPlaceData);
+    });
+  };
 
   const { data: listsData, isLoading: listsLoading } = useQuery<{ lists: ListData[] }>({
     queryKey: ["lists"],
@@ -122,7 +172,7 @@ export function SaveToListDropdown({
   const openAfterSaveRef = useRef(false);
 
   const savePlaceMutation = useMutation({
-    mutationFn: async ({ hasBeen, rating }: { hasBeen?: boolean; rating?: number } = {}) => {
+    mutationFn: async (vars: { hasBeen?: boolean; rating?: number }) => {
       return apiRequest("/api/saved-places", {
         method: "POST",
         body: JSON.stringify({
@@ -135,25 +185,32 @@ export function SaveToListDropdown({
           types: place.types,
           priceLevel: place.priceLevel,
           photoRefs: place.photoRefs,
-          hasBeen: hasBeen ?? false,
-          rating: rating,
+          hasBeen: vars.hasBeen ?? false,
+          rating: vars.rating,
         }),
       });
+    },
+    onMutate: async (vars: { hasBeen?: boolean; rating?: number }) => {
+      const { hasBeen: hb, rating: r } = vars;
+      const tempId = `temp-${Date.now()}`;
+      setOptimisticSave({
+        id: tempId,
+        placeId: place.id || tempId,
+        hasBeen: hb ?? false,
+        rating: r ?? null,
+      });
+      if (openAfterSaveRef.current) {
+        openAfterSaveRef.current = false;
+        setTimeout(() => setOpen(true), 50);
+      }
     },
     onSuccess: (data: any) => {
       const sp = data?.savedPlace;
       if (sp) {
         setOptimisticSave({ id: sp.id, placeId: sp.placeId, hasBeen: sp.hasBeen, rating: sp.rating });
       }
-      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
-      queryClient.invalidateQueries({ queryKey: ["place-detail"] });
-      queryClient.invalidateQueries({ queryKey: ["lists"] });
-      queryClient.invalidateQueries({ queryKey: ["collections"] });
+      invalidateAll();
       onSaveSuccess?.();
-      if (openAfterSaveRef.current) {
-        openAfterSaveRef.current = false;
-        setOpen(true);
-      }
     },
     onError: (error: Error) => {
       openAfterSaveRef.current = false;
@@ -169,13 +226,27 @@ export function SaveToListDropdown({
         body: JSON.stringify({ hasBeen, rating }),
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
-      queryClient.invalidateQueries({ queryKey: ["place-detail"] });
-      queryClient.invalidateQueries({ queryKey: ["collections"] });
+    onMutate: async ({ hasBeen: hb, rating: r }) => {
+      const newHasBeen = hb ?? effectiveSavedPlace?.hasBeen ?? false;
+      const newRating = hb === false ? null : (r ?? effectiveSavedPlace?.rating ?? null);
+      setOptimisticSave({
+        id: effectiveSavedPlace?.id || "",
+        placeId: effectiveSavedPlace?.placeId || "",
+        hasBeen: newHasBeen,
+        rating: newRating,
+      });
+      patchCachedPlaceData({ hasBeen: newHasBeen, rating: newRating });
+    },
+    onSuccess: (data: any) => {
+      const sp = data?.savedPlace;
+      if (sp) {
+        setOptimisticSave({ id: sp.id, placeId: sp.placeId, hasBeen: sp.hasBeen, rating: sp.rating });
+      }
+      invalidateAll();
       onSaveSuccess?.();
     },
     onError: (error: Error) => {
+      setOptimisticSave(null);
       toast.error(error.message || "Failed to update");
     },
   });
@@ -195,10 +266,7 @@ export function SaveToListDropdown({
       setOptimisticLists(prev => [...prev, listId]);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
-      queryClient.invalidateQueries({ queryKey: ["lists"] });
-      queryClient.invalidateQueries({ queryKey: ["place-detail"] });
-      queryClient.invalidateQueries({ queryKey: ["collections"] });
+      invalidateAll();
       toast.success("Added to list!");
       onSaveSuccess?.();
     },
@@ -220,10 +288,7 @@ export function SaveToListDropdown({
       setOptimisticLists(prev => prev.filter(id => id !== listId));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
-      queryClient.invalidateQueries({ queryKey: ["lists"] });
-      queryClient.invalidateQueries({ queryKey: ["place-detail"] });
-      queryClient.invalidateQueries({ queryKey: ["collections"] });
+      invalidateAll();
       toast.success("Removed from list");
       onSaveSuccess?.();
     },
@@ -264,7 +329,7 @@ export function SaveToListDropdown({
       savePlaceMutation.mutate({ hasBeen: true, rating });
     } else {
       const id = effectiveSavedPlace?.id;
-      if (!id) return;
+      if (!id || id.startsWith("temp-")) return;
       const newHasBeen = currentRating === rating && hasBeen ? false : true;
       const newRating = currentRating === rating && hasBeen ? undefined : rating;
       updateSavedPlaceMutation.mutate({ id, hasBeen: newHasBeen, rating: newRating });
@@ -272,6 +337,7 @@ export function SaveToListDropdown({
   };
 
   const handleListToggle = (listId: string) => {
+    if (effectiveSavedPlace?.id?.startsWith("temp-")) return;
     const isInList = optimisticLists.includes(listId);
     if (isInList) {
       removeFromListMutation.mutate(listId);
@@ -288,7 +354,8 @@ export function SaveToListDropdown({
     createListMutation.mutate(newListName.trim());
   };
 
-  const isPending = savePlaceMutation.isPending || updateSavedPlaceMutation.isPending;
+  const isSaving = savePlaceMutation.isPending && !isSaved;
+  const isPending = isSaving || updateSavedPlaceMutation.isPending;
 
   const unsavePlaceMutation = useMutation({
     mutationFn: async (idToDelete: string) => {
@@ -302,10 +369,7 @@ export function SaveToListDropdown({
       setOpen(false);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
-      queryClient.invalidateQueries({ queryKey: ["place-detail"] });
-      queryClient.invalidateQueries({ queryKey: ["lists"] });
-      queryClient.invalidateQueries({ queryKey: ["collections"] });
+      invalidateAll();
       toast.success("Removed from saved places");
       onSaveSuccess?.();
     },
@@ -378,7 +442,7 @@ export function SaveToListDropdown({
                 onValueChange={(value) => {
                   if (value) {
                     handleRatingSelect(Number(value));
-                  } else if (hasBeen && effectiveSavedPlace?.id) {
+                  } else if (hasBeen && effectiveSavedPlace?.id && !effectiveSavedPlace.id.startsWith("temp-")) {
                     updateSavedPlaceMutation.mutate({ id: effectiveSavedPlace.id, hasBeen: false, rating: undefined });
                   }
                 }}

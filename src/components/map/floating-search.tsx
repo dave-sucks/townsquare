@@ -320,6 +320,15 @@ function SavePanelContent({
 
   const lists = listsData?.lists || [];
 
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ["saved-places"] });
+    queryClient.invalidateQueries({ queryKey: ["place-detail"] });
+    queryClient.invalidateQueries({ queryKey: ["lists"] });
+    queryClient.invalidateQueries({ queryKey: ["collections"] });
+    queryClient.invalidateQueries({ queryKey: ["list"] });
+    queryClient.invalidateQueries({ queryKey: ["user"] });
+  };
+
   const updateSavedPlaceMutation = useMutation({
     mutationFn: async (updates: { hasBeen?: boolean; rating?: number; emoji?: string | null }) => {
       if (!savedData) return;
@@ -329,7 +338,7 @@ function SavePanelContent({
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
+      invalidateAll();
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to update");
@@ -349,8 +358,7 @@ function SavePanelContent({
       setOptimisticLists(prev => [...prev, listId]);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
-      queryClient.invalidateQueries({ queryKey: ["lists"] });
+      invalidateAll();
       toast.success("Added to list!");
     },
     onError: (error: Error, listId: string) => {
@@ -371,8 +379,7 @@ function SavePanelContent({
       setOptimisticLists(prev => prev.filter(id => id !== listId));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
-      queryClient.invalidateQueries({ queryKey: ["lists"] });
+      invalidateAll();
       toast.success("Removed from list");
     },
     onError: (error: Error, listId: string) => {
