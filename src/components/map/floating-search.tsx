@@ -138,13 +138,31 @@ export function FloatingSearch() {
     setSavedPlace(null);
   };
 
-  const handleSaved = (data: DrawerPlaceData) => {
+  const savingRef = useRef(false);
+
+  const handleSaved = async (data: DrawerPlaceData) => {
     setSavedPlace(data);
     setSearchResults([]);
-  };
 
-  const handleSavedDataReady = (savedData: SavedData) => {
-    setSavedPlace(prev => prev ? { ...prev, savedData } : null);
+    if (savingRef.current) return;
+    savingRef.current = true;
+
+    try {
+      const detailsResponse = await fetch(`/api/places/details?place_id=${data.prediction.place_id}`);
+      const detailsData = await detailsResponse.json();
+      if (!detailsData.place) throw new Error("Failed to get place details");
+      const response = await apiRequest("/api/saved-places", {
+        method: "POST",
+        body: JSON.stringify({ ...detailsData.place, hasBeen: false }),
+      }) as SavedPlaceResult;
+      setSavedPlace(prev => prev ? { ...prev, savedData: response.savedPlace } : null);
+      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save place");
+      setSavedPlace(null);
+    } finally {
+      savingRef.current = false;
+    }
   };
 
   const handleCloseSavePanel = () => {
@@ -212,7 +230,6 @@ export function FloatingSearch() {
           <SavePanelContent
             drawerPlace={savedPlace}
             onClose={handleCloseSavePanel}
-            onSavedDataReady={handleSavedDataReady}
           />
         </div>
       )}
@@ -224,7 +241,6 @@ export function FloatingSearch() {
             <SavePanelContent
               drawerPlace={savedPlace}
               onClose={handleCloseSavePanel}
-              onSavedDataReady={handleSavedDataReady}
               isMobileDrawer
             />
           </DrawerContent>
@@ -278,21 +294,19 @@ function SearchResultRow({
 function SavePanelContent({
   drawerPlace,
   onClose,
-  onSavedDataReady,
   isMobileDrawer = false,
 }: {
   drawerPlace: DrawerPlaceData | null;
   onClose: () => void;
-  onSavedDataReady: (data: SavedData) => void;
   isMobileDrawer?: boolean;
 }) {
   const [savedData, setSavedData] = useState<SavedData | null>(drawerPlace?.savedData || null);
-  const [isSaving, setIsSaving] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [optimisticLists, setOptimisticLists] = useState<string[]>([]);
   const [pendingListIds, setPendingListIds] = useState<Set<string>>(new Set());
-  const saveTriggered = useRef(false);
+
+  const isSaving = !savedData;
 
   useEffect(() => {
     if (drawerPlace) {
@@ -301,36 +315,8 @@ function SavePanelContent({
       setPendingListIds(new Set());
       setShowCreateDialog(false);
       setNewListName("");
-      saveTriggered.current = false;
     }
   }, [drawerPlace]);
-
-  useEffect(() => {
-    if (!drawerPlace || savedData || saveTriggered.current) return;
-    saveTriggered.current = true;
-    setIsSaving(true);
-
-    const doSave = async () => {
-      try {
-        const detailsResponse = await fetch(`/api/places/details?place_id=${drawerPlace.prediction.place_id}`);
-        const detailsData = await detailsResponse.json();
-        if (!detailsData.place) throw new Error("Failed to get place details");
-        const response = await apiRequest("/api/saved-places", {
-          method: "POST",
-          body: JSON.stringify({ ...detailsData.place, hasBeen: false }),
-        }) as SavedPlaceResult;
-        setSavedData(response.savedPlace);
-        onSavedDataReady(response.savedPlace);
-        queryClient.invalidateQueries({ queryKey: ["saved-places"] });
-      } catch (err: any) {
-        toast.error(err.message || "Failed to save place");
-        onClose();
-      } finally {
-        setIsSaving(false);
-      }
-    };
-    doSave();
-  }, [drawerPlace, savedData, onSavedDataReady, onClose]);
 
   const currentRating = savedData?.rating ?? null;
   const hasBeen = savedData?.hasBeen ?? false;

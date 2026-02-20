@@ -98,41 +98,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Rating must be between 1 and 5" }, { status: 400 });
     }
 
-    let place = await prisma.place.findUnique({
+    let place = await prisma.place.upsert({
       where: { googlePlaceId },
+      create: {
+        googlePlaceId,
+        name,
+        formattedAddress,
+        neighborhood: neighborhood || null,
+        locality: locality || null,
+        lat,
+        lng,
+        primaryType: primaryType || null,
+        types: types || null,
+        priceLevel: priceLevel || null,
+        photoRefs: photoRefs || null,
+      },
+      update: {},
     });
 
-    if (!place) {
-      place = await prisma.place.create({
-        data: {
-          googlePlaceId,
-          name,
-          formattedAddress,
-          neighborhood: neighborhood || null,
-          locality: locality || null,
-          lat,
-          lng,
-          primaryType: primaryType || null,
-          types: types || null,
-          priceLevel: priceLevel || null,
-          photoRefs: photoRefs || null,
-        },
+    const placeUpdates: Record<string, any> = {};
+    if (!place.neighborhood && (neighborhood || locality)) {
+      placeUpdates.neighborhood = neighborhood || null;
+      placeUpdates.locality = locality || null;
+    }
+    if ((!place.photoRefs || (Array.isArray(place.photoRefs) && (place.photoRefs as string[]).length === 0)) && photoRefs && photoRefs.length > 0) {
+      placeUpdates.photoRefs = photoRefs;
+    }
+    if (Object.keys(placeUpdates).length > 0) {
+      place = await prisma.place.update({
+        where: { id: place.id },
+        data: placeUpdates,
       });
-    } else {
-      const needsUpdate: Record<string, any> = {};
-      if (!place.neighborhood && (neighborhood || locality)) {
-        needsUpdate.neighborhood = neighborhood || null;
-        needsUpdate.locality = locality || null;
-      }
-      if ((!place.photoRefs || (Array.isArray(place.photoRefs) && (place.photoRefs as string[]).length === 0)) && photoRefs && photoRefs.length > 0) {
-        needsUpdate.photoRefs = photoRefs;
-      }
-      if (Object.keys(needsUpdate).length > 0) {
-        place = await prisma.place.update({
-          where: { id: place.id },
-          data: needsUpdate,
-        });
-      }
     }
 
     const defaultEmoji = getDefaultEmoji(place.primaryType, place.types as string[] | null);
