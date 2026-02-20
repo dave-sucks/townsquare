@@ -57,25 +57,28 @@ export async function POST(request: NextRequest) {
     let savedCount = 0;
 
     for (const placeData of places) {
-      let place = await prisma.place.findUnique({
+      let place = await prisma.place.upsert({
         where: { googlePlaceId: placeData.googlePlaceId },
+        create: {
+          googlePlaceId: placeData.googlePlaceId,
+          name: placeData.name,
+          formattedAddress: placeData.formattedAddress,
+          lat: placeData.lat,
+          lng: placeData.lng,
+          types: placeData.types || [],
+          primaryType: placeData.primaryType,
+          priceLevel: placeData.priceLevel ?? null,
+          photoRefs: placeData.photoRef ? [placeData.photoRef] : [],
+        },
+        update: {
+          name: placeData.name,
+          formattedAddress: placeData.formattedAddress,
+          types: placeData.types ?? undefined,
+          primaryType: placeData.primaryType ?? undefined,
+          priceLevel: placeData.priceLevel ?? undefined,
+          photoRefs: placeData.photoRef ? [placeData.photoRef] : undefined,
+        },
       });
-
-      if (!place) {
-        place = await prisma.place.create({
-          data: {
-            googlePlaceId: placeData.googlePlaceId,
-            name: placeData.name,
-            formattedAddress: placeData.formattedAddress,
-            lat: placeData.lat,
-            lng: placeData.lng,
-            types: placeData.types,
-            primaryType: placeData.primaryType,
-            priceLevel: placeData.priceLevel,
-            photoRefs: placeData.photoRef ? [placeData.photoRef] : [],
-          },
-        });
-      }
 
       let savedPlace = await prisma.savedPlace.findUnique({
         where: {

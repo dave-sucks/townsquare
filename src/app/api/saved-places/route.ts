@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
         lng = details.lng;
         primaryType = primaryType || details.primaryType;
         types = types || details.types;
-        priceLevel = priceLevel || details.priceLevel;
+        priceLevel = priceLevel ?? details.priceLevel;
         photoRefs = photoRefs || details.photoRefs;
       } catch (fetchError: any) {
         console.error("Failed to fetch place details:", fetchError);
@@ -172,8 +172,8 @@ export async function POST(request: NextRequest) {
         lat,
         lng,
         primaryType: primaryType || null,
-        types: types || null,
-        priceLevel: priceLevel || null,
+        types: types || [],
+        priceLevel: priceLevel ?? null,
         photoRefs: photoRefs || null,
       },
       update: {},
@@ -186,6 +186,14 @@ export async function POST(request: NextRequest) {
     }
     if ((!place.photoRefs || (Array.isArray(place.photoRefs) && (place.photoRefs as string[]).length === 0)) && photoRefs && photoRefs.length > 0) {
       placeUpdates.photoRefs = photoRefs;
+    }
+    if (place.priceLevel == null && priceLevel != null) {
+      placeUpdates.priceLevel = priceLevel;
+    }
+    if (!place.types || (Array.isArray(place.types) && (place.types as string[]).length === 0)) {
+      if (types && Array.isArray(types) && types.length > 0) {
+        placeUpdates.types = types;
+      }
     }
     if (Object.keys(placeUpdates).length > 0) {
       place = await prisma.place.update({

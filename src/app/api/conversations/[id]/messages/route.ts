@@ -174,7 +174,7 @@ async function persistPlaces(places: PlaceResult[]): Promise<PlaceResult[]> {
           lng: place.lng,
           types: place.types || [],
           primaryType: place.primaryType,
-          priceLevel: place.priceLevel || null,
+          priceLevel: place.priceLevel ?? null,
           photoRefs: photoRefsData,
         },
         update: {
@@ -186,7 +186,7 @@ async function persistPlaces(places: PlaceResult[]): Promise<PlaceResult[]> {
           lng: place.lng,
           types: place.types || [],
           primaryType: place.primaryType,
-          priceLevel: place.priceLevel || undefined,
+          priceLevel: place.priceLevel ?? undefined,
           photoRefs: photoRefsData.length > 0 ? photoRefsData : undefined,
         },
       });

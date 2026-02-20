@@ -31,7 +31,7 @@ async function fetchAndCachePlaceFromGoogle(googlePlaceId: string) {
       lng: result.geometry.location.lng,
       types: result.types || [],
       primaryType: result.types?.[0] || null,
-      priceLevel: result.price_level !== undefined ? `PRICE_LEVEL_${['FREE', 'INEXPENSIVE', 'MODERATE', 'EXPENSIVE', 'VERY_EXPENSIVE'][result.price_level] || 'MODERATE'}` : null,
+      priceLevel: result.price_level != null ? result.price_level.toString() : null,
       photoRefs: result.photos?.slice(0, 5).map((p: any) => p.photo_reference) || [],
     },
     update: {
@@ -41,7 +41,7 @@ async function fetchAndCachePlaceFromGoogle(googlePlaceId: string) {
       lng: result.geometry.location.lng,
       types: result.types || [],
       primaryType: result.types?.[0] || null,
-      priceLevel: result.price_level !== undefined ? `PRICE_LEVEL_${['FREE', 'INEXPENSIVE', 'MODERATE', 'EXPENSIVE', 'VERY_EXPENSIVE'][result.price_level] || 'MODERATE'}` : null,
+      priceLevel: result.price_level != null ? result.price_level.toString() : null,
       photoRefs: result.photos?.slice(0, 5).map((p: any) => p.photo_reference) || [],
     },
   });

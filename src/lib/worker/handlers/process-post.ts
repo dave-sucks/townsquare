@@ -305,28 +305,35 @@ export async function createReviewFromPost(
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) throw new Error("GOOGLE_MAPS_API_KEY not configured");
 
-  let place = await prisma.place.findUnique({
+  const details = await fetchPlaceDetails(googlePlaceId, apiKey);
+  let place = await prisma.place.upsert({
     where: { googlePlaceId },
+    create: {
+      googlePlaceId,
+      name: details.name,
+      formattedAddress: details.formattedAddress,
+      neighborhood: details.neighborhood || null,
+      locality: details.locality || null,
+      lat: details.lat,
+      lng: details.lng,
+      primaryType: details.primaryType || null,
+      types: details.types || [],
+      priceLevel: details.priceLevel ?? null,
+      photoRefs: details.photoRefs || null,
+    },
+    update: {
+      name: details.name,
+      formattedAddress: details.formattedAddress,
+      neighborhood: details.neighborhood ?? undefined,
+      locality: details.locality ?? undefined,
+      lat: details.lat,
+      lng: details.lng,
+      primaryType: details.primaryType ?? undefined,
+      types: details.types ?? undefined,
+      priceLevel: details.priceLevel ?? undefined,
+      photoRefs: details.photoRefs ?? undefined,
+    },
   });
-
-  if (!place) {
-    const details = await fetchPlaceDetails(googlePlaceId, apiKey);
-    place = await prisma.place.create({
-      data: {
-        googlePlaceId,
-        name: details.name,
-        formattedAddress: details.formattedAddress,
-        neighborhood: details.neighborhood || null,
-        locality: details.locality || null,
-        lat: details.lat,
-        lng: details.lng,
-        primaryType: details.primaryType || null,
-        types: details.types || null,
-        priceLevel: details.priceLevel || null,
-        photoRefs: details.photoRefs || null,
-      },
-    });
-  }
 
   const user = await prisma.user.findFirst({
     where: { instagramHandle: post.authorHandle },
@@ -483,14 +490,6 @@ async function fetchPlaceDetails(googlePlaceId: string, apiKey: string) {
     }
   }
 
-  const priceLevelMap: Record<number, string> = {
-    0: "PRICE_LEVEL_FREE",
-    1: "PRICE_LEVEL_INEXPENSIVE",
-    2: "PRICE_LEVEL_MODERATE",
-    3: "PRICE_LEVEL_EXPENSIVE",
-    4: "PRICE_LEVEL_VERY_EXPENSIVE",
-  };
-
   const photoRefs = result.photos
     ? result.photos.slice(0, 5).map((p: any) => p.photo_reference)
     : null;
@@ -504,7 +503,7 @@ async function fetchPlaceDetails(googlePlaceId: string, apiKey: string) {
     lng: result.geometry?.location?.lng || 0,
     primaryType: result.types?.[0] || null,
     types: result.types || null,
-    priceLevel: result.price_level != null ? priceLevelMap[result.price_level] || null : null,
+    priceLevel: result.price_level != null ? result.price_level.toString() : null,
     photoRefs,
   };
 }
