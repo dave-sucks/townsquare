@@ -116,18 +116,25 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
     setLocalEmoji(externalEmoji ?? null);
   }, [externalEmoji]);
 
+  const [pendingListIds, setPendingListIds] = useState<Set<string>>(new Set());
+
   const effectiveSavedPlace = optimisticUnsaved ? null : (optimisticSave || savedPlace);
   const isSaved = !!effectiveSavedPlace;
   const hasBeen = effectiveSavedPlace?.hasBeen ?? false;
   const currentRating = effectiveSavedPlace?.rating ?? null;
 
-  const invalidateAll = () => {
+  const invalidatePlaceData = () => {
     queryClient.invalidateQueries({ queryKey: ["saved-places"] });
     queryClient.invalidateQueries({ queryKey: ["place-detail"] });
-    queryClient.invalidateQueries({ queryKey: ["lists"] });
     queryClient.invalidateQueries({ queryKey: ["collections"] });
     queryClient.invalidateQueries({ queryKey: ["list"] });
     queryClient.invalidateQueries({ queryKey: ["user"] });
+  };
+
+  const invalidateListMembership = () => {
+    queryClient.invalidateQueries({ queryKey: ["lists"] });
+    queryClient.invalidateQueries({ queryKey: ["list"] });
+    queryClient.invalidateQueries({ queryKey: ["saved-places"] });
   };
 
   const patchCachedPlaceData = (updates: { hasBeen?: boolean; rating?: number | null }) => {
@@ -219,7 +226,7 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
       if (sp) {
         setOptimisticSave({ id: sp.id, placeId: sp.placeId, hasBeen: sp.hasBeen, rating: sp.rating });
       }
-      invalidateAll();
+      invalidatePlaceData();
       onSaveSuccess?.();
     },
     onError: (error: Error) => {
@@ -252,7 +259,7 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
       if (sp) {
         setOptimisticSave({ id: sp.id, placeId: sp.placeId, hasBeen: sp.hasBeen, rating: sp.rating });
       }
-      invalidateAll();
+      invalidatePlaceData();
       onSaveSuccess?.();
     },
     onError: (error: Error) => {
@@ -274,13 +281,15 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
     },
     onMutate: async (listId: string) => {
       setOptimisticLists(prev => [...prev, listId]);
+      setPendingListIds(prev => new Set(prev).add(listId));
     },
-    onSuccess: () => {
-      invalidateAll();
-      toast.success("Added to list!");
+    onSuccess: (_data: any, listId: string) => {
+      setPendingListIds(prev => { const next = new Set(prev); next.delete(listId); return next; });
+      invalidateListMembership();
       onSaveSuccess?.();
     },
     onError: (error: Error, listId: string) => {
+      setPendingListIds(prev => { const next = new Set(prev); next.delete(listId); return next; });
       setOptimisticLists(prev => prev.filter(id => id !== listId));
       toast.error(error.message || "Failed to add to list");
     },
@@ -296,13 +305,15 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
     },
     onMutate: async (listId: string) => {
       setOptimisticLists(prev => prev.filter(id => id !== listId));
+      setPendingListIds(prev => new Set(prev).add(listId));
     },
-    onSuccess: () => {
-      invalidateAll();
-      toast.success("Removed from list");
+    onSuccess: (_data: any, listId: string) => {
+      setPendingListIds(prev => { const next = new Set(prev); next.delete(listId); return next; });
+      invalidateListMembership();
       onSaveSuccess?.();
     },
     onError: (error: Error, listId: string) => {
+      setPendingListIds(prev => { const next = new Set(prev); next.delete(listId); return next; });
       setOptimisticLists(prev => [...prev, listId]);
       toast.error(error.message || "Failed to remove from list");
     },
@@ -321,6 +332,9 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
       addToListMutation.mutate(listId);
       setShowCreateDialog(false);
       setNewListName("");
+    },
+    onSettled: () => {
+      invalidateListMembership();
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to create list");
@@ -383,7 +397,8 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
       setOpen(false);
     },
     onSuccess: () => {
-      invalidateAll();
+      invalidatePlaceData();
+      invalidateListMembership();
       toast.success("Removed from saved places");
       onSaveSuccess?.();
     },
@@ -409,7 +424,7 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
       });
     },
     onSuccess: () => {
-      invalidateAll();
+      invalidatePlaceData();
     },
   });
 
@@ -530,7 +545,7 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
                         handleListToggle(list.id);
                       }
                     }}
-                    disabled={!isSaved || addToListMutation.isPending || removeFromListMutation.isPending}
+                    disabled={!isSaved || pendingListIds.has(list.id)}
                     data-testid={`list-checkbox-${list.id}`}
                   >
                     <span className="flex-1 text-base font-medium truncate">{list.name}</span>

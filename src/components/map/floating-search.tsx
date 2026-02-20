@@ -298,11 +298,13 @@ function SavePanelContent({
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [optimisticLists, setOptimisticLists] = useState<string[]>([]);
+  const [pendingListIds, setPendingListIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (drawerPlace) {
       setSavedData(drawerPlace.savedData);
       setOptimisticLists([]);
+      setPendingListIds(new Set());
       setShowCreateDialog(false);
       setNewListName("");
     }
@@ -320,13 +322,18 @@ function SavePanelContent({
 
   const lists = listsData?.lists || [];
 
-  const invalidateAll = () => {
+  const invalidatePlaceData = () => {
     queryClient.invalidateQueries({ queryKey: ["saved-places"] });
     queryClient.invalidateQueries({ queryKey: ["place-detail"] });
-    queryClient.invalidateQueries({ queryKey: ["lists"] });
     queryClient.invalidateQueries({ queryKey: ["collections"] });
     queryClient.invalidateQueries({ queryKey: ["list"] });
     queryClient.invalidateQueries({ queryKey: ["user"] });
+  };
+
+  const invalidateListMembership = () => {
+    queryClient.invalidateQueries({ queryKey: ["lists"] });
+    queryClient.invalidateQueries({ queryKey: ["list"] });
+    queryClient.invalidateQueries({ queryKey: ["saved-places"] });
   };
 
   const updateSavedPlaceMutation = useMutation({
@@ -338,7 +345,7 @@ function SavePanelContent({
       });
     },
     onSuccess: () => {
-      invalidateAll();
+      invalidatePlaceData();
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to update");
@@ -356,12 +363,14 @@ function SavePanelContent({
     },
     onMutate: async (listId: string) => {
       setOptimisticLists(prev => [...prev, listId]);
+      setPendingListIds(prev => new Set(prev).add(listId));
     },
-    onSuccess: () => {
-      invalidateAll();
-      toast.success("Added to list!");
+    onSuccess: (_data: any, listId: string) => {
+      setPendingListIds(prev => { const next = new Set(prev); next.delete(listId); return next; });
+      invalidateListMembership();
     },
     onError: (error: Error, listId: string) => {
+      setPendingListIds(prev => { const next = new Set(prev); next.delete(listId); return next; });
       setOptimisticLists(prev => prev.filter(id => id !== listId));
       toast.error(error.message || "Failed to add to list");
     },
@@ -377,12 +386,14 @@ function SavePanelContent({
     },
     onMutate: async (listId: string) => {
       setOptimisticLists(prev => prev.filter(id => id !== listId));
+      setPendingListIds(prev => new Set(prev).add(listId));
     },
-    onSuccess: () => {
-      invalidateAll();
-      toast.success("Removed from list");
+    onSuccess: (_data: any, listId: string) => {
+      setPendingListIds(prev => { const next = new Set(prev); next.delete(listId); return next; });
+      invalidateListMembership();
     },
     onError: (error: Error, listId: string) => {
+      setPendingListIds(prev => { const next = new Set(prev); next.delete(listId); return next; });
       setOptimisticLists(prev => [...prev, listId]);
       toast.error(error.message || "Failed to remove from list");
     },
@@ -401,6 +412,9 @@ function SavePanelContent({
       addToListMutation.mutate(listId);
       setShowCreateDialog(false);
       setNewListName("");
+    },
+    onSettled: () => {
+      invalidateListMembership();
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to create list");
@@ -531,7 +545,7 @@ function SavePanelContent({
                     key={list.id}
                     className="flex items-center gap-3 w-full text-left py-3 px-2 rounded-md hover-elevate transition-colors"
                     onClick={() => handleListToggle(list.id)}
-                    disabled={addToListMutation.isPending || removeFromListMutation.isPending}
+                    disabled={pendingListIds.has(list.id)}
                     data-testid={`save-panel-list-${list.id}`}
                   >
                     <span className="flex-1 text-base font-medium truncate">{list.name}</span>
