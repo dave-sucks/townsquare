@@ -3,18 +3,13 @@
 import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuLabel,
-  DropdownMenuGroup,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-} from "@/components/ui/dropdown-menu";
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import {
   Dialog,
   DialogContent,
@@ -23,13 +18,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Bookmark01Icon, Tick01Icon, PlusSignIcon, Loading03Icon, InformationCircleIcon, Delete02Icon } from "@hugeicons/core-free-icons";
+import { Bookmark01Icon, Tick01Icon, PlusSignIcon, Loading03Icon, Delete02Icon } from "@hugeicons/core-free-icons";
 import { queryClient, apiRequest } from "@/lib/query-client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { EmojiPickerPopover } from "./emoji-picker-popover";
 
 interface Place {
   id?: string;
@@ -74,6 +70,8 @@ interface SaveToListDropdownProps {
   size?: "default" | "sm" | "icon";
   showLabel?: boolean;
   className?: string;
+  emoji?: string | null;
+  onEmojiChange?: (emoji: string | null) => void;
 }
 
 const RATING_OPTIONS = [
@@ -91,6 +89,8 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
   size = "sm",
   showLabel = true,
   className,
+  emoji: externalEmoji,
+  onEmojiChange,
 }, ref) {
   const [open, setOpen] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -98,6 +98,8 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
   const [optimisticLists, setOptimisticLists] = useState<string[]>(listsContainingPlace);
   const [optimisticSave, setOptimisticSave] = useState<SavedPlace | null>(null);
   const [optimisticUnsaved, setOptimisticUnsaved] = useState(false);
+  const [localEmoji, setLocalEmoji] = useState<string | null>(externalEmoji ?? null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     setOptimisticLists(listsContainingPlace);
@@ -109,6 +111,10 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
       setOptimisticUnsaved(false);
     }
   }, [savedPlace?.id, savedPlace?.hasBeen, savedPlace?.rating]);
+
+  useEffect(() => {
+    setLocalEmoji(externalEmoji ?? null);
+  }, [externalEmoji]);
 
   const effectiveSavedPlace = optimisticUnsaved ? null : (optimisticSave || savedPlace);
   const isSaved = !!effectiveSavedPlace;
@@ -393,106 +399,133 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
     unsavePlaceMutation.mutate(idToDelete);
   };
 
-  return (
-    <>
-      <DropdownMenu open={open} onOpenChange={(o) => {
+  const updateEmojiMutation = useMutation({
+    mutationFn: async (emoji: string | null) => {
+      const targetId = effectiveSavedPlace?.id;
+      if (!targetId || targetId.startsWith("temp-")) return;
+      return apiRequest(`/api/saved-places/${targetId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ emoji }),
+      });
+    },
+    onSuccess: () => {
+      invalidateAll();
+    },
+  });
+
+  const handleEmojiSelect = (emoji: string | null) => {
+    setLocalEmoji(emoji);
+    if (onEmojiChange) {
+      onEmojiChange(emoji);
+    } else {
+      updateEmojiMutation.mutate(emoji);
+    }
+  };
+
+  const triggerButton = (
+    <Button
+      variant={variant}
+      size={size}
+      className={cn(className)}
+      onClick={(e) => {
         if (!isSaved) {
-          return;
+          e.preventDefault();
+          e.stopPropagation();
+          handleButtonClick();
         }
-        setOpen(o);
-      }}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant={variant}
-            size={size}
-            className={cn(className)}
-            onClick={(e) => {
-              if (!isSaved) {
-                e.preventDefault();
-                e.stopPropagation();
-                handleButtonClick();
+      }}
+      disabled={isPending}
+      data-testid="button-save-to-list"
+    >
+      {isPending ? (
+        <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+      ) : isSaved ? (
+        <HugeiconsIcon icon={Bookmark01Icon} className="h-4 w-4 fill-current" />
+      ) : (
+        <HugeiconsIcon icon={Bookmark01Icon} className="h-4 w-4" />
+      )}
+      {showLabel && (
+        <span className="ml-1">{isSaved ? "Saved" : "Save"}</span>
+      )}
+    </Button>
+  );
+
+  const panelContent = (
+    <div data-testid="save-panel">
+      <div className="flex items-start gap-3 p-4 pb-3">
+        <EmojiPickerPopover
+          emoji={localEmoji}
+          onEmojiSelect={handleEmojiSelect}
+          disabled={!isSaved || updateEmojiMutation.isPending}
+          variant="area"
+          testId="save-panel-emoji-picker"
+        />
+        <div className="flex-1 min-w-0 text-left">
+          <div className="flex items-center gap-2">
+            <p className="font-semibold text-lg leading-tight truncate" data-testid="text-save-panel-name">
+              {place.name}
+            </p>
+            {isSaved && (
+              <Badge variant="secondary" className="shrink-0 text-xs" data-testid="badge-saved">
+                Saved
+              </Badge>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground truncate mt-0.5">
+            {place.formattedAddress}
+          </p>
+        </div>
+      </div>
+
+      <div className="px-4 pb-4 space-y-4">
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Been here?</p>
+          <ToggleGroup
+            type="single"
+            value={hasBeen && currentRating ? String(currentRating) : ""}
+            onValueChange={(value) => {
+              if (value) {
+                handleRatingSelect(Number(value));
+              } else if (hasBeen && effectiveSavedPlace?.id && !effectiveSavedPlace.id.startsWith("temp-")) {
+                updateSavedPlaceMutation.mutate({ id: effectiveSavedPlace.id, hasBeen: false, rating: undefined });
               }
             }}
-            disabled={isPending}
-            data-testid="button-save-to-list"
+            variant="outline"
+            className="w-full"
           >
-            {isPending ? (
-              <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
-            ) : isSaved ? (
-              <HugeiconsIcon icon={Bookmark01Icon} className="h-4 w-4 fill-current" />
-            ) : (
-              <HugeiconsIcon icon={Bookmark01Icon} className="h-4 w-4" />
-            )}
-            {showLabel && (
-              <span className="ml-1">{isSaved ? "Saved" : "Save"}</span>
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" side="top" className="w-56 z-[200]">
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>
-              <span className="flex items-center gap-1">
-                Been here?
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HugeiconsIcon icon={InformationCircleIcon} className="h-3 w-3 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-[200px]">
-                    Rate places you've been to help drive recommendations
-                  </TooltipContent>
-                </Tooltip>
-              </span>
-            </DropdownMenuLabel>
-            <div className="px-2 pb-1">
-              <ToggleGroup
-                type="single"
-                value={hasBeen && currentRating ? String(currentRating) : ""}
-                onValueChange={(value) => {
-                  if (value) {
-                    handleRatingSelect(Number(value));
-                  } else if (hasBeen && effectiveSavedPlace?.id && !effectiveSavedPlace.id.startsWith("temp-")) {
-                    updateSavedPlaceMutation.mutate({ id: effectiveSavedPlace.id, hasBeen: false, rating: undefined });
-                  }
-                }}
-                variant="outline"
-                className="w-full"
+            {RATING_OPTIONS.map((option) => (
+              <ToggleGroupItem
+                key={option.value}
+                value={String(option.value)}
+                disabled={savePlaceMutation.isPending || updateSavedPlaceMutation.isPending}
+                data-testid={`rating-button-${option.value}`}
+                className="flex-1 gap-1.5 py-3"
               >
-                {RATING_OPTIONS.map((option) => (
-                  <ToggleGroupItem
-                    key={option.value}
-                    value={String(option.value)}
-                    disabled={savePlaceMutation.isPending || updateSavedPlaceMutation.isPending}
-                    data-testid={`rating-button-${option.value}`}
-                    className="flex-1 gap-1"
-                  >
-                    <span className="text-base">{option.emoji}</span>
-                    <span className="text-xs">{option.label}</span>
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </div>
-          </DropdownMenuGroup>
+                <span className="text-xl">{option.emoji}</span>
+                <span className="text-sm">{option.label}</span>
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </div>
 
-          <DropdownMenuSeparator />
-          
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>Lists</DropdownMenuLabel>
-            
-            {listsLoading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground px-1.5 py-1">
-                <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
-                Loading...
-              </div>
-            ) : lists.length === 0 ? (
-              <div className="text-sm text-muted-foreground px-1.5 py-1">No lists yet</div>
-            ) : (
-              lists.map((list) => {
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Lists</p>
+          {listsLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+              <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+              Loading...
+            </div>
+          ) : lists.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-1">No lists yet</p>
+          ) : (
+            <div className="space-y-0.5">
+              {lists.map((list) => {
                 const isInList = optimisticLists.includes(list.id);
                 return (
-                  <DropdownMenuItem
+                  <button
                     key={list.id}
-                    onClick={(e) => {
-                      e.preventDefault();
+                    className="flex items-center gap-3 w-full text-left py-3 px-2 rounded-md hover-elevate transition-colors"
+                    onClick={() => {
                       if (isSaved) {
                         handleListToggle(list.id);
                       }
@@ -500,45 +533,86 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
                     disabled={!isSaved || addToListMutation.isPending || removeFromListMutation.isPending}
                     data-testid={`list-checkbox-${list.id}`}
                   >
-                    <span className="flex-1 truncate">{list.name}</span>
-                    {isInList && <HugeiconsIcon icon={Tick01Icon} className="h-4 w-4 ml-auto" />}
-                  </DropdownMenuItem>
+                    <span className="flex-1 text-base font-medium truncate">{list.name}</span>
+                    {isInList && <HugeiconsIcon icon={Tick01Icon} className="h-5 w-5 flex-shrink-0" />}
+                  </button>
                 );
-              })
-            )}
+              })}
+            </div>
+          )}
 
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.preventDefault();
-                if (isSaved) {
-                  setOpen(false);
-                  setTimeout(() => setShowCreateDialog(true), 150);
-                }
-              }}
-              disabled={!isSaved}
-              data-testid="button-add-new-list"
-            >
-              <HugeiconsIcon icon={PlusSignIcon} className="h-4 w-4" />
-              Create new list
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-
-          <DropdownMenuSeparator />
-
-          <DropdownMenuItem
-            onClick={(e) => {
-              e.preventDefault();
-              handleUnsave();
+          <button
+            className="flex items-center gap-3 w-full text-left py-3 px-2 rounded-md hover-elevate text-muted-foreground transition-colors"
+            onClick={() => {
+              if (isSaved) {
+                setOpen(false);
+                setTimeout(() => setShowCreateDialog(true), 150);
+              }
             }}
+            disabled={!isSaved}
+            data-testid="button-add-new-list"
+          >
+            <HugeiconsIcon icon={PlusSignIcon} className="h-5 w-5" />
+            <span className="text-base font-medium">Create new list</span>
+          </button>
+        </div>
+
+        <div className="border-t pt-2">
+          <button
+            className="flex items-center gap-3 w-full text-left py-3 px-2 rounded-md hover-elevate text-muted-foreground hover:text-destructive transition-colors"
+            onClick={handleUnsave}
             disabled={unsavePlaceMutation.isPending || !isSaved}
             data-testid="button-unsave"
-            className="hover:text-destructive focus:text-destructive"
           >
-            <HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />
-            <span>Remove from saved</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <HugeiconsIcon icon={Delete02Icon} className="h-5 w-5" />
+            <span className="text-base font-medium">Remove from saved</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {isMobile ? (
+        <>
+          <div onClick={(e) => {
+            if (isSaved) {
+              e.preventDefault();
+              e.stopPropagation();
+              setOpen(true);
+            }
+          }}>
+            {triggerButton}
+          </div>
+          <Drawer open={open} onOpenChange={(o) => {
+            if (!isSaved) return;
+            setOpen(o);
+          }}>
+            <DrawerContent data-testid="save-drawer">
+              <DrawerTitle className="sr-only">Save Place</DrawerTitle>
+              {panelContent}
+            </DrawerContent>
+          </Drawer>
+        </>
+      ) : (
+        <Popover open={open} onOpenChange={(o) => {
+          if (!isSaved) return;
+          setOpen(o);
+        }}>
+          <PopoverTrigger asChild>
+            {triggerButton}
+          </PopoverTrigger>
+          <PopoverContent
+            align="end"
+            side="top"
+            className="w-80 p-0 z-[200]"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+          >
+            {panelContent}
+          </PopoverContent>
+        </Popover>
+      )}
 
       <Dialog open={showCreateDialog} onOpenChange={(o) => { setShowCreateDialog(o); if (!o) setNewListName(""); }}>
         <DialogContent className="z-[300]">

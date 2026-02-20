@@ -379,6 +379,8 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
           } : null}
           listsContainingPlace={listsContainingPlace.map(l => l.id)}
           onSaveSuccess={() => refetch()}
+          emoji={savedPlace?.emoji || null}
+          onEmojiChange={(emoji) => updateEmojiMutation.mutate(emoji)}
         />
       </PageHeader>
 

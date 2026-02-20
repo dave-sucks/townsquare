@@ -271,6 +271,8 @@ export function PlaceDetailPanel({
               rating: placeDetails.savedPlace.rating,
             } : null}
             listsContainingPlace={fetchedListIds}
+            emoji={placeDetails?.savedPlace?.emoji || null}
+            onEmojiChange={(emoji) => updateEmojiMutation.mutate(emoji)}
           />
         </div>
       </div>
