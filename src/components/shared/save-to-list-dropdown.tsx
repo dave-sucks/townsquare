@@ -495,8 +495,8 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
   );
 
   const panelContent = (
-    <div data-testid="save-panel" className="overflow-y-auto max-h-[70vh]">
-      <div className="flex items-start gap-3 p-4 pb-3">
+    <div data-testid="save-panel" className="flex flex-col">
+      <div className="flex items-start gap-3 px-4 pt-4 pb-3">
         <EmojiPickerPopover
           emoji={localEmoji}
           onEmojiSelect={handleEmojiSelect}
@@ -522,98 +522,93 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
         </div>
       </div>
 
-      <div className="px-4 pb-4 space-y-4">
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Been here?</p>
-          <ToggleGroup
-            type="single"
-            value={hasBeen && currentRating ? String(currentRating) : ""}
-            onValueChange={(value) => {
-              if (value) {
-                handleRatingSelect(Number(value));
-              } else if (hasBeen && effectiveSavedPlace?.id && !effectiveSavedPlace.id.startsWith("temp-")) {
-                updateSavedPlaceMutation.mutate({ id: effectiveSavedPlace.id, hasBeen: false, rating: undefined });
-              }
-            }}
-            variant="outline"
-            className="w-full"
-          >
-            {RATING_OPTIONS.map((option) => (
-              <ToggleGroupItem
-                key={option.value}
-                value={String(option.value)}
-                disabled={savePlaceMutation.isPending || updateSavedPlaceMutation.isPending}
-                data-testid={`rating-button-${option.value}`}
-                className="flex-1 gap-1.5 py-3"
-              >
-                <span className="text-xl">{option.emoji}</span>
-                <span className="text-sm">{option.label}</span>
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </div>
+      <div className="px-4 pb-3">
+        <ToggleGroup
+          type="single"
+          value={hasBeen && currentRating ? String(currentRating) : ""}
+          onValueChange={(value) => {
+            if (value) {
+              handleRatingSelect(Number(value));
+            } else if (hasBeen && effectiveSavedPlace?.id && !effectiveSavedPlace.id.startsWith("temp-")) {
+              updateSavedPlaceMutation.mutate({ id: effectiveSavedPlace.id, hasBeen: false, rating: undefined });
+            }
+          }}
+          variant="outline"
+          className="w-full"
+        >
+          {RATING_OPTIONS.map((option) => (
+            <ToggleGroupItem
+              key={option.value}
+              value={String(option.value)}
+              disabled={savePlaceMutation.isPending || updateSavedPlaceMutation.isPending}
+              data-testid={`rating-button-${option.value}`}
+              className="flex-1 gap-1.5 py-3"
+            >
+              <span className="text-xl">{option.emoji}</span>
+              <span className="text-sm">{option.label}</span>
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      </div>
 
-        <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Lists</p>
+      <div className="border-t">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 pt-3 pb-2">Lists</p>
+        <div className="overflow-y-auto max-h-[30vh]">
           {listsLoading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground px-4 py-2">
               <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
               Loading...
             </div>
           ) : lists.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-1">No lists yet</p>
+            <p className="text-sm text-muted-foreground px-4 py-1">No lists yet</p>
           ) : (
-            <div className="space-y-0.5">
-              {lists.map((list) => {
-                const isInList = optimisticLists.includes(list.id);
-                return (
-                  <button
-                    key={list.id}
-                    className="flex items-center gap-3 w-full text-left py-3 px-2 rounded-md hover-elevate transition-colors"
-                    onClick={() => {
-                      if (isSaved) {
-                        handleListToggle(list.id);
-                      }
-                    }}
-                    disabled={!isSaved || pendingListIds.has(list.id)}
-                    data-testid={`list-checkbox-${list.id}`}
-                  >
-                    <span className="flex-1 text-base font-medium truncate">{list.name}</span>
-                    {isInList && <HugeiconsIcon icon={Tick01Icon} className="h-5 w-5 flex-shrink-0" />}
-                  </button>
-                );
-              })}
-            </div>
+            lists.map((list) => {
+              const isInList = optimisticLists.includes(list.id);
+              return (
+                <button
+                  key={list.id}
+                  className="flex items-center gap-3 w-full text-left py-3 px-4 hover:bg-accent transition-colors"
+                  onClick={() => {
+                    if (isSaved) {
+                      handleListToggle(list.id);
+                    }
+                  }}
+                  disabled={!isSaved || pendingListIds.has(list.id)}
+                  data-testid={`list-checkbox-${list.id}`}
+                >
+                  <span className="flex-1 text-base font-medium truncate">{list.name}</span>
+                  {isInList && <HugeiconsIcon icon={Tick01Icon} className="h-5 w-5 flex-shrink-0" />}
+                </button>
+              );
+            })
           )}
-
-          <button
-            className="flex items-center gap-3 w-full text-left py-3 px-2 rounded-md hover-elevate text-muted-foreground transition-colors"
-            onClick={() => {
-              if (isSaved) {
-                setOpen(false);
-                setTimeout(() => setShowCreateDialog(true), 150);
-              }
-            }}
-            disabled={!isSaved}
-            data-testid="button-add-new-list"
-          >
-            <HugeiconsIcon icon={PlusSignIcon} className="h-5 w-5" />
-            <span className="text-base font-medium">Create new list</span>
-          </button>
         </div>
 
-        <div className="border-t pt-2">
-          <button
-            className="flex items-center gap-3 w-full text-left py-3 px-2 rounded-md hover-elevate text-muted-foreground hover:text-destructive transition-colors"
-            onClick={handleUnsave}
-            disabled={unsavePlaceMutation.isPending || !isSaved}
-            data-testid="button-unsave"
-          >
-            <HugeiconsIcon icon={Delete02Icon} className="h-5 w-5" />
-            <span className="text-base font-medium">Remove from saved</span>
-          </button>
-        </div>
+        <button
+          className="flex items-center gap-2 w-full text-left py-3 px-4 hover:bg-accent text-muted-foreground transition-colors border-t"
+          onClick={() => {
+            if (isSaved) {
+              setOpen(false);
+              setTimeout(() => setShowCreateDialog(true), 150);
+            }
+          }}
+          disabled={!isSaved}
+          data-testid="button-add-new-list"
+        >
+          <HugeiconsIcon icon={PlusSignIcon} className="h-5 w-5" />
+          <span className="text-base font-medium">Create new list</span>
+        </button>
       </div>
+
+      <button
+        className="flex items-center gap-2 w-full text-left py-3 px-4 hover:bg-accent text-muted-foreground hover:text-destructive transition-colors border-t"
+        onClick={handleUnsave}
+        disabled={unsavePlaceMutation.isPending || !isSaved}
+        data-testid="button-unsave"
+      >
+        <HugeiconsIcon icon={Delete02Icon} className="h-5 w-5" />
+        <span className="text-base font-medium">Remove from saved</span>
+      </button>
     </div>
   );
 
