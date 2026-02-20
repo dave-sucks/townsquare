@@ -17,6 +17,7 @@ import {
   LeftToRightListBulletIcon,
   ArrowRight01Icon,
   LinkSquare01Icon,
+  PinLocation01Icon,
 } from "@hugeicons/core-free-icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SaveToListDropdown } from "./shared/save-to-list-dropdown";
@@ -152,23 +153,39 @@ const RATING_LABELS: Record<number, string> = {
   5: "loved",
 };
 
-function ListRowCard({ list }: { list: ListInfo }) {
+function ListChip({ list }: { list: ListInfo }) {
   return (
     <Link 
       href={`/lists/${list.id}`}
-      className="flex items-center gap-3 p-3 rounded-lg border bg-card hover-elevate"
-      data-testid={`list-row-${list.id}`}
+      className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card hover-elevate whitespace-nowrap"
+      data-testid={`list-chip-${list.id}`}
     >
-      <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0">
-        <HugeiconsIcon icon={LeftToRightListBulletIcon} className="h-5 w-5 text-muted-foreground" />
+      <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+        <HugeiconsIcon icon={LeftToRightListBulletIcon} className="h-4 w-4 text-muted-foreground" />
       </div>
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0">
         <p className="text-sm font-medium truncate">{list.name}</p>
-        <p className="text-xs text-muted-foreground">
-          {list._count?.listPlaces || 0} places
-        </p>
+        <p className="text-xs text-muted-foreground">{list._count?.listPlaces || 0} places</p>
       </div>
-      <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4 text-muted-foreground shrink-0" />
+      <HugeiconsIcon icon={ArrowRight01Icon} className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+    </Link>
+  );
+}
+
+function AllSavedPlacesChip() {
+  return (
+    <Link
+      href="/my-places"
+      className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card hover-elevate whitespace-nowrap"
+      data-testid="link-all-saved-places"
+    >
+      <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+        <HugeiconsIcon icon={PinLocation01Icon} className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-sm font-medium">All Saved Places</p>
+      </div>
+      <HugeiconsIcon icon={ArrowRight01Icon} className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
     </Link>
   );
 }
@@ -396,12 +413,13 @@ export function PlaceDetailPanel({
               </div>
             )}
 
-            {listsForThisPlace.length > 0 && (
+            {(placeDetails?.savedPlace || listsForThisPlace.length > 0) && (
               <div className="space-y-3">
                 <h3 className="text-sm font-medium">Lists</h3>
-                <div className="flex flex-col gap-2">
+                <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-none">
+                  {placeDetails?.savedPlace && <AllSavedPlacesChip />}
                   {listsForThisPlace.map((list) => (
-                    <ListRowCard key={list.id} list={list} />
+                    <ListChip key={list.id} list={list} />
                   ))}
                 </div>
               </div>

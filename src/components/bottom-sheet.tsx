@@ -13,7 +13,7 @@ import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 
 // Snap points as percentages of viewport height (from bottom)
-const MOBILE_NAV_HEIGHT = 44; // Height of fixed bottom nav bar (icon-only)
+const MOBILE_NAV_HEIGHT = 60; // Height of fixed bottom nav bar (pill + py-1.5 padding)
 
 const SNAP_POINTS = {
   COLLAPSED: 56 + MOBILE_NAV_HEIGHT, // Grabber visible above the nav bar
@@ -373,7 +373,7 @@ export function BottomSheet({
         className="fixed left-0 right-0 bottom-0 z-[42] md:hidden bg-background rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] flex flex-col"
         style={{
           height: sheetHeight,
-          paddingBottom: "calc(2.75rem + env(safe-area-inset-bottom, 0px))",
+          paddingBottom: "calc(3.75rem + env(safe-area-inset-bottom, 0px))",
         }}
         onPointerDown={(e) => e.stopPropagation()}
         data-testid="mobile-bottom-sheet"

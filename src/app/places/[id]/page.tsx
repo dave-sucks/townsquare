@@ -16,6 +16,8 @@ import {
   ArrowRight01Icon,
   PencilEdit01Icon,
   Delete02Icon,
+  PinLocation01Icon,
+  Bookmark01Icon,
 } from "@hugeicons/core-free-icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -175,23 +177,39 @@ const RATING_LABELS: Record<number, string> = {
   5: "loved",
 };
 
-function ListRowCard({ list }: { list: ListData }) {
+function ListChip({ list }: { list: ListData }) {
   return (
     <Link 
       href={`/lists/${list.id}`}
-      className="flex items-center gap-3 p-3 rounded-lg border bg-card hover-elevate"
-      data-testid={`list-row-${list.id}`}
+      className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card hover-elevate whitespace-nowrap"
+      data-testid={`list-chip-${list.id}`}
     >
-      <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0">
-        <HugeiconsIcon icon={LeftToRightListBulletIcon} className="h-5 w-5 text-muted-foreground" />
+      <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+        <HugeiconsIcon icon={LeftToRightListBulletIcon} className="h-4 w-4 text-muted-foreground" />
       </div>
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0">
         <p className="text-sm font-medium truncate">{list.name}</p>
-        <p className="text-xs text-muted-foreground">
-          {list._count?.listPlaces || 0} places
-        </p>
+        <p className="text-xs text-muted-foreground">{list._count?.listPlaces || 0} places</p>
       </div>
-      <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4 text-muted-foreground shrink-0" />
+      <HugeiconsIcon icon={ArrowRight01Icon} className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+    </Link>
+  );
+}
+
+function AllSavedPlacesChip() {
+  return (
+    <Link
+      href="/my-places"
+      className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card hover-elevate whitespace-nowrap"
+      data-testid="link-all-saved-places"
+    >
+      <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+        <HugeiconsIcon icon={PinLocation01Icon} className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-sm font-medium">All Saved Places</p>
+      </div>
+      <HugeiconsIcon icon={ArrowRight01Icon} className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
     </Link>
   );
 }
@@ -333,6 +351,36 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
     },
   });
 
+  const quickSaveMutation = useMutation({
+    mutationFn: async () => {
+      if (!place) return;
+      return apiRequest("/api/saved-places", {
+        method: "POST",
+        body: JSON.stringify({
+          googlePlaceId: place.googlePlaceId,
+          name: place.name,
+          formattedAddress: place.formattedAddress,
+          lat: place.lat,
+          lng: place.lng,
+          primaryType: place.primaryType,
+          types: place.types,
+          priceLevel: place.priceLevel,
+          photoRefs: place.photoRefs,
+          hasBeen: false,
+        }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["place-detail", placeId] });
+      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
+      toast.success("Place saved!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to save place");
+    },
+  });
+
   if (!isAuthenticated) {
     return (
       <AppShell user={user}>
@@ -401,7 +449,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
           {/* Header: Big title, inline metadata */}
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              {savedPlace && (
+              {savedPlace ? (
                 <EmojiPickerPopover
                   emoji={savedPlace.emoji || null}
                   onEmojiSelect={(emoji) => updateEmojiMutation.mutate(emoji)}
@@ -409,6 +457,14 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                   variant="area"
                   testId="button-emoji-page"
                 />
+              ) : (
+                <div
+                  className="w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0 cursor-pointer hover-elevate"
+                  data-testid="button-save-bookmark"
+                  onClick={() => quickSaveMutation.mutate()}
+                >
+                  <HugeiconsIcon icon={Bookmark01Icon} className={`h-5 w-5 text-muted-foreground ${quickSaveMutation.isPending ? "animate-pulse" : ""}`} />
+                </div>
               )}
               <h1 className="text-xl font-bold flex items-center gap-2 font-brand" data-testid="text-place-name">
                 {place.name}
@@ -501,13 +557,13 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
               )}
 
-              {/* Lists in horizontal scrollable cards */}
-              {listsContainingPlace.length > 0 && (
+              {(savedPlace || listsContainingPlace.length > 0) && (
                 <div className="space-y-3">
                   <h3 className="text-sm font-medium">Lists</h3>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-none">
+                    {savedPlace && <AllSavedPlacesChip />}
                     {listsContainingPlace.map((list) => (
-                      <ListRowCard key={list.id} list={list} />
+                      <ListChip key={list.id} list={list} />
                     ))}
                   </div>
                 </div>
