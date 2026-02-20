@@ -160,7 +160,7 @@ const RATING_LABELS: Record<number, string> = {
 
 interface PlaceDetailResponse {
   place: Place;
-  savedPlace: { id: string; hasBeen: boolean; rating: number | null; emoji?: string | null } | null;
+  savedPlace: { id: string; placeId?: string; hasBeen: boolean; rating: number | null; emoji?: string | null } | null;
   listsContainingPlace: ListInfo[];
   friendsWhoSaved: FriendSaved[];
   myReview: Review | null;
@@ -186,10 +186,19 @@ export function PlaceDetailPanel({
   isDeleting,
 }: PlaceDetailPanelProps) {
   const saveDropdownRef = useRef<SaveToListDropdownHandle>(null);
+  // Fetch full place details including activities
+  const { data: placeDetails, isLoading: isLoadingDetails } = useQuery<PlaceDetailResponse>({
+    queryKey: ["place-detail", savedPlace?.place?.googlePlaceId],
+    queryFn: () => apiRequest(`/api/places/${savedPlace?.place?.googlePlaceId}`),
+    enabled: !!savedPlace?.place?.googlePlaceId,
+  });
+
+  const currentSavedPlaceId = placeDetails?.savedPlace?.id ?? savedPlace?.id;
+
   const updateEmojiMutation = useMutation({
     mutationFn: async (emoji: string | null) => {
-      if (!savedPlace) return;
-      return apiRequest(`/api/saved-places/${savedPlace.id}`, {
+      if (!currentSavedPlaceId) return;
+      return apiRequest(`/api/saved-places/${currentSavedPlaceId}`, {
         method: "PATCH",
         body: JSON.stringify({ emoji }),
       });
@@ -198,13 +207,6 @@ export function PlaceDetailPanel({
       queryClient.invalidateQueries({ queryKey: ["saved-places"] });
       queryClient.invalidateQueries({ queryKey: ["place-detail"] });
     },
-  });
-
-  // Fetch full place details including activities
-  const { data: placeDetails, isLoading: isLoadingDetails } = useQuery<PlaceDetailResponse>({
-    queryKey: ["place-detail", savedPlace?.place?.googlePlaceId],
-    queryFn: () => apiRequest(`/api/places/${savedPlace?.place?.googlePlaceId}`),
-    enabled: !!savedPlace?.place?.googlePlaceId,
   });
 
   // Use all activities for the place (not just following) so visitors from any profile can see them
@@ -266,12 +268,12 @@ export function PlaceDetailPanel({
             place={place}
             savedPlace={placeDetails?.savedPlace ? {
               id: placeDetails.savedPlace.id,
-              placeId: savedPlace.placeId,
+              placeId: placeDetails.savedPlace.placeId ?? savedPlace?.placeId ?? "",
               hasBeen: placeDetails.savedPlace.hasBeen,
               rating: placeDetails.savedPlace.rating,
-            } : null}
+            } : (savedPlace ? { id: savedPlace.id, placeId: savedPlace.placeId, hasBeen: savedPlace.hasBeen, rating: savedPlace.rating } : null)}
             listsContainingPlace={fetchedListIds}
-            emoji={placeDetails?.savedPlace?.emoji || null}
+            emoji={placeDetails?.savedPlace?.emoji ?? savedPlace?.emoji ?? null}
             onEmojiChange={(emoji) => updateEmojiMutation.mutate(emoji)}
           />
         </div>
