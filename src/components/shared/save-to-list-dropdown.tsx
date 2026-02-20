@@ -186,6 +186,21 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
 
   const lists = listsData?.lists || [];
 
+  const { data: savedPlacesData } = useQuery<{ savedPlaces: any[] }>({
+    queryKey: ["saved-places"],
+    enabled: false,
+  });
+
+  useEffect(() => {
+    if (!open || listsContainingPlace.length > 0) return;
+    const cached = savedPlacesData?.savedPlaces;
+    if (!cached) return;
+    const match = cached.find((sp: any) => sp.place?.googlePlaceId === place.googlePlaceId);
+    if (match?.lists) {
+      setOptimisticLists(match.lists.map((l: any) => l.id));
+    }
+  }, [open, savedPlacesData, place.googlePlaceId, listsContainingPlace.length]);
+
   const openAfterSaveRef = useRef(false);
 
   const savePlaceMutation = useMutation({
