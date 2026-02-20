@@ -21,8 +21,7 @@ export async function autoTagPlace(placeId: string, force = false): Promise<void
     if (existingTags > 0 && !force) {
       const hasReviews = place.reviews.some(r => (r.socialPostCaption || r.note || "").length > 5);
       const allBasicAi = place.placeTags.every(t => t.source === "ai");
-      const alreadyEnriched = place.placeTags.some(t => t.source === "ai_enriched");
-      if (alreadyEnriched || !hasReviews || !allBasicAi) return;
+      if (!hasReviews || !allBasicAi) return;
     }
 
     const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
@@ -99,8 +98,7 @@ Return ONLY a flat JSON object like {"tag_slug": 0.9, "another_slug": 0.8}. Keys
       }
     }
 
-    const hasReviewContext = place.reviews.some(r => (r.socialPostCaption || r.note || "").length > 5);
-    const tagSource = hasReviewContext ? "ai_enriched" : "ai";
+    const tagSource = "ai" as const;
 
     let tagCount = 0;
     for (const [slug, confidence] of Object.entries(tagScores)) {
