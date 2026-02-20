@@ -271,7 +271,7 @@ export function PlaceDetailPanel({
               placeId: placeDetails.savedPlace.placeId ?? savedPlace?.placeId ?? "",
               hasBeen: placeDetails.savedPlace.hasBeen,
               rating: placeDetails.savedPlace.rating,
-            } : (savedPlace ? { id: savedPlace.id, placeId: savedPlace.placeId, hasBeen: savedPlace.hasBeen, rating: savedPlace.rating } : null)}
+            } : null}
             listsContainingPlace={fetchedListIds}
             emoji={placeDetails?.savedPlace?.emoji ?? savedPlace?.emoji ?? null}
             onEmojiChange={(emoji) => updateEmojiMutation.mutate(emoji)}
