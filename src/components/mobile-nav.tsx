@@ -6,9 +6,10 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  Comment01Icon,
-  Location01Icon,
-  Image02Icon,
+  Database01Icon,
+  Bookmark03Icon,
+  MapsSearchIcon,
+  AiSearch02Icon,
   LayoutAlignRightIcon,
   Cancel01Icon,
   UserMultiple02Icon,
@@ -18,7 +19,6 @@ import {
   Notification02Icon,
   Moon02Icon,
   Sun03Icon,
-  PinLocation01Icon,
 } from "@hugeicons/core-free-icons";
 import { useTheme } from "next-themes";
 
@@ -32,10 +32,10 @@ interface User {
 }
 
 const BOTTOM_NAV_ITEMS = [
-  { href: "/", label: "Map", icon: Location01Icon },
-  { href: "/my-places", label: "My Places", icon: PinLocation01Icon },
-  { href: "/chat", label: "Chat", icon: Comment01Icon },
-  { href: "/home", label: "Feed", icon: Image02Icon },
+  { href: "/", label: "Discover", icon: MapsSearchIcon },
+  { href: "/my-places", label: "My Places", icon: Bookmark03Icon },
+  { href: "/chat", label: "Chat", icon: AiSearch02Icon },
+  { href: "/feed", label: "Feed", icon: Database01Icon },
 ] as const;
 
 const MENU_ITEMS_TOP = [
