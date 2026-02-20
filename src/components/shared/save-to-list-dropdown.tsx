@@ -74,6 +74,8 @@ interface SaveToListDropdownProps {
   onEmojiChange?: (emoji: string | null) => void;
 }
 
+const EMPTY_LISTS: string[] = [];
+
 const RATING_OPTIONS = [
   { value: 1, emoji: "👎", label: "ehh" },
   { value: 3, emoji: "👍", label: "liked" },
@@ -83,7 +85,7 @@ const RATING_OPTIONS = [
 export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToListDropdownProps>(function SaveToListDropdown({
   place,
   savedPlace,
-  listsContainingPlace = [],
+  listsContainingPlace = EMPTY_LISTS,
   onSaveSuccess,
   variant = "outline",
   size = "sm",
@@ -102,7 +104,10 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    setOptimisticLists(listsContainingPlace);
+    setOptimisticLists(prev => {
+      if (prev.length === listsContainingPlace.length && prev.every((id, i) => id === listsContainingPlace[i])) return prev;
+      return listsContainingPlace;
+    });
   }, [listsContainingPlace]);
 
   useEffect(() => {
