@@ -188,6 +188,7 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
 
   const { data: savedPlacesData } = useQuery<{ savedPlaces: any[] }>({
     queryKey: ["saved-places"],
+    queryFn: () => apiRequest("/api/saved-places"),
     enabled: false,
   });
 
