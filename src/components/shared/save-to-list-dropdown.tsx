@@ -477,6 +477,7 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
           disabled={!isSaved || updateEmojiMutation.isPending}
           variant="area"
           testId="save-panel-emoji-picker"
+          portalContainer={isMobile ? "drawer" : "drawer"}
         />
         <div className="flex-1 min-w-0 text-left">
           <div className="flex items-center gap-2">
@@ -626,6 +627,20 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
             side="top"
             className="w-80 p-0 z-[200]"
             onOpenAutoFocus={(e) => e.preventDefault()}
+            onPointerDownOutside={(e) => {
+              const target = e.target as HTMLElement;
+              if (target?.closest?.("[data-testid='emoji-picker-container']") ||
+                  target?.closest?.("[data-radix-popper-content-wrapper]")) {
+                e.preventDefault();
+              }
+            }}
+            onInteractOutside={(e) => {
+              const target = e.target as HTMLElement;
+              if (target?.closest?.("[data-testid='emoji-picker-container']") ||
+                  target?.closest?.("[data-radix-popper-content-wrapper]")) {
+                e.preventDefault();
+              }
+            }}
           >
             {panelContent}
           </PopoverContent>
