@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -18,9 +19,11 @@ import {
   ArrowRight01Icon,
   LinkSquare01Icon,
   PinLocation01Icon,
+  Bookmark01Icon,
 } from "@hugeicons/core-free-icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SaveToListDropdown } from "./shared/save-to-list-dropdown";
+import type { SaveToListDropdownHandle } from "./shared/save-to-list-dropdown";
 import { FeedPost } from "./feed-post";
 import { EmojiPickerPopover } from "./shared/emoji-picker-popover";
 import { ListChip } from "./shared/list-chip";
@@ -182,6 +185,7 @@ export function PlaceDetailPanel({
   onAddReview,
   isDeleting,
 }: PlaceDetailPanelProps) {
+  const saveDropdownRef = useRef<SaveToListDropdownHandle>(null);
   const updateEmojiMutation = useMutation({
     mutationFn: async (emoji: string | null) => {
       if (!savedPlace) return;
@@ -258,6 +262,7 @@ export function PlaceDetailPanel({
             </Link>
           </Button>
           <SaveToListDropdown
+            ref={saveDropdownRef}
             place={place}
             savedPlace={placeDetails?.savedPlace ? {
               id: placeDetails.savedPlace.id,
@@ -275,13 +280,23 @@ export function PlaceDetailPanel({
         <div className="p-4 pt-0 space-y-4">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <EmojiPickerPopover
-                emoji={placeDetails?.savedPlace?.emoji || null}
-                onEmojiSelect={(emoji) => updateEmojiMutation.mutate(emoji)}
-                disabled={updateEmojiMutation.isPending}
-                variant="area"
-                testId="button-emoji-panel"
-              />
+              {placeDetails?.savedPlace ? (
+                <EmojiPickerPopover
+                  emoji={placeDetails.savedPlace.emoji || null}
+                  onEmojiSelect={(emoji) => updateEmojiMutation.mutate(emoji)}
+                  disabled={updateEmojiMutation.isPending}
+                  variant="area"
+                  testId="button-emoji-panel"
+                />
+              ) : (
+                <div
+                  className="w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0 cursor-pointer hover-elevate"
+                  data-testid="button-save-bookmark-panel"
+                  onClick={() => saveDropdownRef.current?.triggerSave()}
+                >
+                  <HugeiconsIcon icon={Bookmark01Icon} className="h-5 w-5 text-muted-foreground" />
+                </div>
+              )}
               <h1 className="text-xl font-bold flex items-center gap-2 font-brand" data-testid="panel-place-name">
                 {place.name}
                 {placeDetails?.savedPlace?.hasBeen && (
