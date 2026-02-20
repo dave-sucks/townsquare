@@ -129,42 +129,42 @@ export function ListSidebar({
   const placeCount = list.listPlaces.length;
 
   return (
-    <div className="md:h-full flex flex-col bg-background" data-testid="list-sidebar">
+    <div className="h-full flex flex-col bg-background" data-testid="list-sidebar">
       <div className="flex items-center gap-2 p-3 border-b">
-        <SidebarTrigger data-testid="button-sidebar-toggle" />
-        <span className="font-semibold text-sm flex-1 font-brand">{placeCount} {placeCount === 1 ? "place" : "places"}</span>
+        <SidebarTrigger className="hidden md:flex" data-testid="button-sidebar-toggle" />
+        <span className="font-semibold text-sm flex-1 font-brand">{list.name}</span>
         {list.visibility === "PUBLIC" && (
           <Button
             variant="ghost"
             size="icon"
             onClick={handleShare}
+            title="Share list"
             data-testid="button-share-list"
           >
             {copied ? <HugeiconsIcon icon={Tick01Icon} className="h-4 w-4" /> : <HugeiconsIcon icon={Share01Icon} className="h-4 w-4" />}
           </Button>
         )}
         {list.visibility === "PRIVATE" && (
-          <HugeiconsIcon icon={LockIcon} className="h-4 w-4 text-muted-foreground" />
+          <span title="Private list">
+            <HugeiconsIcon icon={LockIcon} className="h-4 w-4 text-muted-foreground" />
+          </span>
         )}
       </div>
 
-      <div className="p-3 border-b">
-        <h2 className="text-sm font-semibold truncate font-brand" data-testid="text-list-name">{list.name}</h2>
-        <Link 
-          href={`/u/${ownerHandle}`} 
-          className="text-xs text-muted-foreground hover:underline"
-          data-testid="link-list-owner"
-        >
-          by @{ownerHandle}
-        </Link>
-        {list.description && (
-          <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-            {list.description}
-          </p>
-        )}
+      <div className="flex items-center justify-between px-3 py-2 border-b">
+        <div className="min-w-0">
+          <Link 
+            href={`/u/${ownerHandle}`} 
+            className="text-xs text-muted-foreground hover:underline"
+            data-testid="link-list-owner"
+          >
+            by @{ownerHandle}
+          </Link>
+        </div>
+        <span className="text-xs text-muted-foreground shrink-0">{placeCount} {placeCount === 1 ? "place" : "places"}</span>
       </div>
 
-      <div className="md:flex-1 md:overflow-y-auto">
+      <div className="flex-1 overflow-y-auto">
         <PlacesList
           places={savedPlaces}
           selectedPlaceId={selectedPlaceId || null}
