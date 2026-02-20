@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,6 +61,10 @@ interface ListData {
   };
 }
 
+export interface SaveToListDropdownHandle {
+  triggerSave: () => void;
+}
+
 interface SaveToListDropdownProps {
   place: Place;
   savedPlace?: SavedPlace | null;
@@ -78,7 +82,7 @@ const RATING_OPTIONS = [
   { value: 5, emoji: "🔥", label: "loved" },
 ];
 
-export function SaveToListDropdown({
+export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToListDropdownProps>(function SaveToListDropdown({
   place,
   savedPlace,
   listsContainingPlace = [],
@@ -87,7 +91,7 @@ export function SaveToListDropdown({
   size = "sm",
   showLabel = true,
   className,
-}: SaveToListDropdownProps) {
+}, ref) {
   const [open, setOpen] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newListName, setNewListName] = useState("");
@@ -323,6 +327,10 @@ export function SaveToListDropdown({
       savePlaceMutation.mutate({ hasBeen: false });
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    triggerSave: handleButtonClick,
+  }));
 
   const handleRatingSelect = (rating: number) => {
     if (!isSaved) {
@@ -575,4 +583,4 @@ export function SaveToListDropdown({
       </Dialog>
     </>
   );
-}
+});

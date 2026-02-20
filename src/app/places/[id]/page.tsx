@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ const ReviewDialog = dynamic(
 const SaveToListDropdown = dynamic(
   () => import("@/components/shared/save-to-list-dropdown").then(m => ({ default: m.SaveToListDropdown })),
 );
+import type { SaveToListDropdownHandle } from "@/components/shared/save-to-list-dropdown";
 const FeedPost = dynamic(
   () => import("@/components/feed-post").then(m => ({ default: m.FeedPost })),
 );
@@ -266,7 +267,8 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
   const { id: placeId } = use(params);
   const { user, isAuthenticated } = useAuth();
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
-  
+  const saveDropdownRef = useRef<SaveToListDropdownHandle>(null);
+
 
   const { data, isLoading, refetch } = useQuery<PlaceDetailData>({
     queryKey: ["place-detail", placeId],
@@ -316,35 +318,6 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
     },
   });
 
-  const quickSaveMutation = useMutation({
-    mutationFn: async () => {
-      if (!place) return;
-      return apiRequest("/api/saved-places", {
-        method: "POST",
-        body: JSON.stringify({
-          googlePlaceId: place.googlePlaceId,
-          name: place.name,
-          formattedAddress: place.formattedAddress,
-          lat: place.lat,
-          lng: place.lng,
-          primaryType: place.primaryType,
-          types: place.types,
-          priceLevel: place.priceLevel,
-          photoRefs: place.photoRefs,
-          hasBeen: false,
-        }),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["place-detail", placeId] });
-      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
-      queryClient.invalidateQueries({ queryKey: ["lists"] });
-      toast.success("Place saved!");
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to save place");
-    },
-  });
 
   if (!isAuthenticated) {
     return (
@@ -396,6 +369,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
         className="border-b-0"
       >
         <SaveToListDropdown
+          ref={saveDropdownRef}
           place={place}
           savedPlace={savedPlace ? {
             id: savedPlace.id,
@@ -426,9 +400,9 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                 <div
                   className="w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0 cursor-pointer hover-elevate"
                   data-testid="button-save-bookmark"
-                  onClick={() => quickSaveMutation.mutate()}
+                  onClick={() => saveDropdownRef.current?.triggerSave()}
                 >
-                  <HugeiconsIcon icon={Bookmark01Icon} className={`h-5 w-5 text-muted-foreground ${quickSaveMutation.isPending ? "animate-pulse" : ""}`} />
+                  <HugeiconsIcon icon={Bookmark01Icon} className="h-5 w-5 text-muted-foreground" />
                 </div>
               )}
               <h1 className="text-xl font-bold flex items-center gap-2 font-brand" data-testid="text-place-name">
@@ -525,7 +499,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
               {(savedPlace || listsContainingPlace.length > 0) && (
                 <div className="space-y-3">
                   <h3 className="text-sm font-medium">Lists</h3>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4">
                     {savedPlace && (
                       <ListChip name="All Saved Places" href="/my-places" icon="pin" />
                     )}
