@@ -1,11 +1,20 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { PlaceDetailPanel } from "@/components/place-detail-panel";
 import type { SidebarInjectedProps } from "@/components/map/map-layout";
 import { PlacesList } from "@/components/shared/places-list";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { SlidersHorizontalIcon } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+
+const MapSettingsPanel = dynamic(
+  () => import("@/components/panels/map-settings-panel").then(m => ({ default: m.MapSettingsPanel })),
+  { loading: () => <div className="p-4"><Skeleton className="h-8 w-full mb-2" /><Skeleton className="h-8 w-full" /></div> }
+);
 
 interface Place {
   id: string;
@@ -45,7 +54,7 @@ export interface CollectionTab {
   label: string;
 }
 
-export type ExploreView = "list" | "detail";
+export type ExploreView = "list" | "detail" | "settings";
 
 interface CurrentUserPlaceData {
   savedPlaceId: string | null;
@@ -89,6 +98,14 @@ export function ExploreSidebar({
     onPlaceSelect?.(savedPlaceId);
   };
 
+  if (currentView === "settings") {
+    return (
+      <MapSettingsPanel
+        onBack={() => onNavigate("list")}
+      />
+    );
+  }
+
   if (currentView === "detail" && viewingPlace) {
     return (
       <PlaceDetailPanel
@@ -124,6 +141,14 @@ export function ExploreSidebar({
             </button>
           ))}
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onNavigate("settings")}
+          data-testid="button-map-settings-trigger"
+        >
+          <HugeiconsIcon icon={SlidersHorizontalIcon} className="h-4 w-4" />
+        </Button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
