@@ -1,13 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
-export async function autoTagPlace(placeId: string): Promise<void> {
+export async function autoTagPlace(placeId: string, force = false): Promise<void> {
   try {
-    const existingTags = await prisma.placeTag.count({
-      where: { placeId },
-    });
-
-    if (existingTags > 0) return;
-
     const place = await prisma.place.findUnique({
       where: { id: placeId },
       include: {
@@ -15,10 +9,20 @@ export async function autoTagPlace(placeId: string): Promise<void> {
           select: { socialPostCaption: true, note: true },
           take: 5,
         },
+        placeTags: {
+          select: { id: true, source: true },
+        },
       },
     });
 
     if (!place) return;
+
+    const existingTags = place.placeTags.length;
+    if (existingTags > 0 && !force) {
+      const hasReviews = place.reviews.length > 0;
+      const allAiSourced = place.placeTags.every(t => t.source === "ai");
+      if (!(hasReviews && allAiSourced)) return;
+    }
 
     const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
     if (!openaiKey) return;
@@ -44,7 +48,6 @@ Place: "${place.name}"
 ${place.neighborhood ? `Neighborhood: ${place.neighborhood}` : ""}
 Type: ${place.primaryType || "unknown"}
 Google types: ${(place.types as string[] || []).slice(0, 5).join(", ")}
-${place.priceLevel ? `Price: ${place.priceLevel}` : ""}
 ${captions ? `Reviews: ${captions.substring(0, 500)}` : ""}
 
 Return ONLY a flat JSON object like {"tag_slug": 0.9, "another_slug": 0.8}. Keys must be exact slugs from the list above. Values are confidence 0.6-1.0.`;
@@ -123,7 +126,7 @@ Return ONLY a flat JSON object like {"tag_slug": 0.9, "another_slug": 0.8}. Keys
     }
 
     if (tagCount > 0) {
-      console.log(`[AutoTagPlace] Tagged ${place.name} with ${tagCount} tags`);
+      console.log(`[AutoTagPlace] Tagged ${place.name} with ${tagCount} tags${force ? " (forced refresh)" : ""}`);
     } else {
       console.warn(`[AutoTagPlace] No matching tags for ${place.name}. AI returned: ${content}`);
     }

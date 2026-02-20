@@ -109,24 +109,45 @@ async function assignEmojis(places: PlaceResult[], query: string): Promise<Place
   return places;
 }
 
-function extractNeighborhood(formattedAddress: string): string | null {
-  const parts = formattedAddress.split(",").map(p => p.trim());
-  if (parts.length >= 3) {
-    return parts[1];
-  }
-  return null;
-}
+async function fetchPlaceDetailsForNeighborhood(googlePlaceId: string): Promise<{ neighborhood: string | null; locality: string | null; photoRefs: string[] | null }> {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) return { neighborhood: null, locality: null, photoRefs: null };
 
-function extractLocality(formattedAddress: string): string | null {
-  const parts = formattedAddress.split(",").map(p => p.trim());
-  if (parts.length >= 3) {
-    const cityState = parts[parts.length - 2];
-    return cityState?.replace(/\s+\d{5}(-\d{4})?$/, "").trim() || null;
+  try {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(googlePlaceId)}&fields=address_components,photos&key=${apiKey}`
+    );
+    if (!response.ok) return { neighborhood: null, locality: null, photoRefs: null };
+
+    const data = await response.json();
+    const result = data.result;
+    if (!result) return { neighborhood: null, locality: null, photoRefs: null };
+
+    let neighborhood: string | null = null;
+    let locality: string | null = null;
+
+    for (const component of (result.address_components || [])) {
+      const types = component.types || [];
+      if (types.includes("neighborhood") && !neighborhood) {
+        neighborhood = component.long_name;
+      }
+      if (types.includes("sublocality_level_1") && !neighborhood) {
+        neighborhood = component.long_name;
+      }
+      if (types.includes("sublocality") && !neighborhood) {
+        neighborhood = component.long_name;
+      }
+      if (types.includes("locality") && !locality) {
+        locality = component.long_name;
+      }
+    }
+
+    const photoRefs = result.photos?.slice(0, 5).map((p: any) => p.photo_reference) || null;
+
+    return { neighborhood, locality, photoRefs };
+  } catch {
+    return { neighborhood: null, locality: null, photoRefs: null };
   }
-  if (parts.length >= 2) {
-    return parts[parts.length - 1]?.trim() || null;
-  }
-  return null;
 }
 
 async function persistPlaces(places: PlaceResult[]): Promise<PlaceResult[]> {
@@ -134,19 +155,11 @@ async function persistPlaces(places: PlaceResult[]): Promise<PlaceResult[]> {
 
   for (const place of places) {
     try {
-      const priceLevelMap: Record<string, string> = {
-        "0": "PRICE_LEVEL_FREE",
-        "1": "PRICE_LEVEL_INEXPENSIVE",
-        "2": "PRICE_LEVEL_MODERATE",
-        "3": "PRICE_LEVEL_EXPENSIVE",
-        "4": "PRICE_LEVEL_VERY_EXPENSIVE",
-      };
-      const mappedPriceLevel = place.priceLevel ? (priceLevelMap[place.priceLevel] || null) : null;
+      const details = await fetchPlaceDetailsForNeighborhood(place.googlePlaceId);
+      const neighborhood = details.neighborhood;
+      const locality = details.locality;
 
-      const neighborhood = extractNeighborhood(place.formattedAddress);
-      const locality = extractLocality(place.formattedAddress);
-
-      const photoRefsData = place.photoRefs || (place.photoRef ? [place.photoRef] : []);
+      const photoRefsData = details.photoRefs || place.photoRefs || (place.photoRef ? [place.photoRef] : []);
 
       const dbPlace = await prisma.place.upsert({
         where: { googlePlaceId: place.googlePlaceId },
@@ -160,7 +173,6 @@ async function persistPlaces(places: PlaceResult[]): Promise<PlaceResult[]> {
           lng: place.lng,
           types: place.types || [],
           primaryType: place.primaryType,
-          priceLevel: mappedPriceLevel,
           photoRefs: photoRefsData,
         },
         update: {
@@ -172,7 +184,6 @@ async function persistPlaces(places: PlaceResult[]): Promise<PlaceResult[]> {
           lng: place.lng,
           types: place.types || [],
           primaryType: place.primaryType,
-          priceLevel: mappedPriceLevel,
           photoRefs: photoRefsData.length > 0 ? photoRefsData : undefined,
         },
       });

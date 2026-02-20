@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-export async function autoSummaryPlace(placeId: string): Promise<void> {
+export async function autoSummaryPlace(placeId: string, force = false): Promise<void> {
   try {
     const place = await prisma.place.findUnique({
       where: { id: placeId },
@@ -18,7 +18,15 @@ export async function autoSummaryPlace(placeId: string): Promise<void> {
     });
 
     if (!place) return;
-    if (place.aiSummary) return;
+
+    if (place.aiSummary && !force) {
+      const hasReviews = place.reviews.some(r => (r.socialPostCaption || r.note || "").length > 5);
+      const summaryAge = place.aiSummaryUpdatedAt
+        ? Date.now() - new Date(place.aiSummaryUpdatedAt).getTime()
+        : Infinity;
+      const isStale = summaryAge > 7 * 24 * 60 * 60 * 1000;
+      if (!(hasReviews && isStale)) return;
+    }
 
     const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
     if (!openaiKey) return;
@@ -40,7 +48,6 @@ export async function autoSummaryPlace(placeId: string): Promise<void> {
 Type: ${place.primaryType || "establishment"}
 ${place.types ? `Categories: ${(place.types as string[]).slice(0, 5).join(", ")}` : ""}
 ${Object.keys(tagsByCategory).length > 0 ? `Tags: ${JSON.stringify(tagsByCategory)}` : ""}
-${place.priceLevel ? `Price: ${place.priceLevel}` : ""}
 ${captions.length > 0 ? `\nReview snippets:\n${captions.map((c, i) => `${i + 1}. ${c.substring(0, 150)}`).join("\n")}` : ""}
 
 Write a concise, specific summary for a place discovery app. Mention what kind of food/drinks they serve or what makes them special. Be specific, not generic. Do NOT use emojis. Do NOT say "Known for great ambiance and quality service" or similar filler.`;
@@ -77,7 +84,7 @@ Write a concise, specific summary for a place discovery app. Mention what kind o
       },
     });
 
-    console.log(`[AutoSummaryPlace] Generated summary for ${place.name}`);
+    console.log(`[AutoSummaryPlace] Generated summary for ${place.name}${force ? " (forced refresh)" : ""}`);
   } catch (err: any) {
     console.error(`[AutoSummaryPlace] Error for place ${placeId}:`, err.message);
   }
