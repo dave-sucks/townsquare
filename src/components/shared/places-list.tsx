@@ -396,7 +396,7 @@ export function PlacesList({
   }
 
   return (
-    <div className="flex flex-col gap-1 p-1 pb-4">
+    <div className="flex flex-col gap-1 p-1">
       {places.map((savedPlace) => (
         <PlaceCard
           key={savedPlace.id}

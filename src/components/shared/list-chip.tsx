@@ -24,8 +24,8 @@ export function ListChip({ id, name, href, count, icon = "list" }: ListChipProps
       <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center shrink-0">
         <HugeiconsIcon icon={iconComponent} className="h-4 w-4 text-muted-foreground" />
       </div>
-      <div className="min-w-0">
-        <p className="text-sm font-medium whitespace-nowrap">{name}</p>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium truncate">{name}</p>
         {count !== undefined && (
           <p className="text-xs text-muted-foreground">{count} places</p>
         )}
