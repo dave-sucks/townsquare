@@ -495,7 +495,7 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
   );
 
   const panelContent = (
-    <div data-testid="save-panel">
+    <div data-testid="save-panel" className="overflow-y-auto max-h-[70vh]">
       <div className="flex items-start gap-3 p-4 pb-3">
         <EmojiPickerPopover
           emoji={localEmoji}
