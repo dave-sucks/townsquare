@@ -18,7 +18,7 @@ export function ListChip({ id, name, href, count, icon = "list" }: ListChipProps
   return (
     <Link
       href={href}
-      className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card hover-elevate"
+      className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card hover-elevate shrink-0"
       data-testid={id ? `list-chip-${id}` : "link-all-saved-places"}
     >
       <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center shrink-0">
