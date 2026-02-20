@@ -1,0 +1,77 @@
+Ingestion Flow Review - Complete Breakdown
+Flow 1: Google Maps Floating Search (save a place)
+How it works: User searches → Google Autocomplete API → user taps result → fetches Place Details → saves via POST /api/saved-places
+
+What gets stored:
+
+Place record: name, address, lat/lng, neighborhood, locality, primaryType, types, priceLevel, photoRefs (up to 5)
+SavedPlace record: links user to place, default emoji assigned
+Activity created (PLACE_SAVED or PLACE_MARKED_BEEN)
+autoTagPlace and autoSummaryPlace fire in background (fire-and-forget)
+Status: Mostly solid. One inconsistency: the priceLevel from Place Details comes as raw number string ("1", "2") while the Chat flow maps it to enums like "PRICE_LEVEL_MODERATE". This means the same place saved via search vs chat could have different price level formats.
+
+Flow 2: Admin / Instagram Import
+How it works: Admin submits Instagram profile URL → Apify scrapes posts → each post goes through a resolution ladder (geotag → caption → hashtag → tagged accounts → AI) → resolved posts create Reviews with the Instagram data
+
+What gets stored:
+
+User created for the Instagram handle (with profile pic, full name)
+Place created from Google Place Details (full data including neighborhood, locality, photoRefs, mapped price level)
+Review with Instagram data: caption, media URL, media type, likes, posted date, shortcode, URL
+Photos from carousel/media stored in Photos table
+SavedPlace created for the instagram user
+ReviewTags via ENRICH_REVIEW worker (AI extracts tags from captions)
+PlaceTagAggregates via UPDATE_PLACE_AGGREGATES worker
+AI summary refreshed every 5 reviews
+autoTagPlace and autoSummaryPlace also fire
+Status: The pipeline is well built. Data shows 2 import jobs, 31 ingested posts (22 processed, 9 unresolved). The user/person creation with instagramHandle, profileImageUrl, firstName, lastName all looks correct.
+
+Known gap: The createReviewFromPost function requires a User to exist with a matching instagramHandle (line 332: findFirst where instagramHandle). If the user creation in upsertCreatorUser fails or races, the review creation will throw. This is handled by try/catch though.
+
+Flow 3: AI Chat
+How it works: User asks for recs → OpenAI function-calls search_places → Google Text Search → results get emojis assigned → places persisted to DB → auto-tagged in batch → place cards sent to user → user can "Save All to List"
+
+What gets stored:
+
+Places persisted via persistPlaces: full upsert with name, address, neighborhood (parsed from address), locality (parsed from address), types, primaryType, priceLevel (mapped to enum), photoRefs
+Tags assigned immediately via batch autoTagPlaces
+On "Save All to List": creates/uses list, creates SavedPlace for each, fires autoTagPlace and autoSummaryPlace per place
+Status: Working but with differences:
+
+Neighborhood/locality are extracted from the formatted address string (rough parsing) rather than from Google's address_components like the other flows. Less accurate.
+The chat flow does NOT call Place Details API — it uses Text Search results which have less data (no address_components).
+Data Completeness Summary
+Data Point	Floating Search	Instagram Import	AI Chat
+Google Place ID	Yes	Yes	Yes
+Name	Yes	Yes	Yes
+Address	Yes	Yes	Yes
+Neighborhood	From Details API (accurate)	From Details API (accurate)	Parsed from address (rough)
+Locality	From Details API (accurate)	From Details API (accurate)	Parsed from address (rough)
+Primary Type	Yes	Yes	Yes
+Types	Yes	Yes	Yes
+Price Level	Raw string ("1","2")	Mapped enum	Mapped enum
+Photo Refs	Up to 5	Up to 5	Up to 5
+AI Tags	Yes (fire & forget)	Yes (multiple paths)	Yes (batch + deferred)
+AI Summary	Yes (fire & forget)	Yes (on schedule)	Yes (on save-to-list)
+Instagram URL	N/A	Yes	N/A
+Instagram Person	N/A	Yes (created/upserted)	N/A
+Known Issues / Gaps
+Price level inconsistency: Floating Search stores raw values ("1", "2") while Chat and Instagram store mapped enums ("PRICE_LEVEL_MODERATE"). This could break filtering or display.
+
+Neighborhood quality from Chat: Address parsing is unreliable compared to Google's address_components. A place at "123 Main St, West Village, New York, NY" works, but edge cases will fail.
+
+Tags ARE working: DB shows 272 PlaceTag records across 59 places, 6 categories with 49 tags total. The seeding and AI tagging are functional.
+
+AI Summaries working: Sample data shows places have summaries.
+
+Worker system: Need to verify the worker runner is actually running (it polls every 5s). If the app isn't running the worker, Instagram import jobs would queue but never process the ENRICH_REVIEW and UPDATE_PLACE_AGGREGATES steps.
+
+autoSummaryPlace skips if summary exists (line 21: if (place.aiSummary) return). Once a summary is generated, it never updates unless the REFRESH_PLACE_SUMMARY worker fires (which only happens every 5th review). This means a place saved via search gets a summary with almost no context, and it's never improved.
+
+autoTagPlace skips if tags exist (line 9: if (existingTags > 0) return). Same issue — early tags from minimal data stick forever.
+
+Want me to put together a task list to test each flow end-to-end and fix the issues I found? The main fixes would be:
+
+Normalize price level format across all flows
+Have Chat flow call Place Details for accurate neighborhood/locality
+Consider allowing AI summaries and tags to refresh when more data arrives
