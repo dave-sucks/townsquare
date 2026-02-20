@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { LockIcon, Delete02Icon, Share01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
+import { LockIcon, Share01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
 import { toast } from "sonner";
 import { useState } from "react";
 import type { SidebarInjectedProps } from "@/components/map/map-layout";
@@ -129,7 +129,7 @@ export function ListSidebar({
   const placeCount = list.listPlaces.length;
 
   return (
-    <div className="h-full flex flex-col bg-background" data-testid="list-sidebar">
+    <div className="md:h-full flex flex-col bg-background" data-testid="list-sidebar">
       <div className="flex items-center gap-2 p-3 border-b">
         <SidebarTrigger data-testid="button-sidebar-toggle" />
         <span className="font-semibold text-sm flex-1 font-brand">{placeCount} {placeCount === 1 ? "place" : "places"}</span>
@@ -164,7 +164,7 @@ export function ListSidebar({
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="md:flex-1 md:overflow-y-auto">
         <PlacesList
           places={savedPlaces}
           selectedPlaceId={selectedPlaceId || null}
