@@ -233,8 +233,8 @@ function PlaceMarker({
         {avatarUrl ? (
           <div
             className={cn(
-              "rounded-full border-2 shadow-md transition-all duration-200 overflow-hidden hover:scale-110",
-              isSelected ? "w-10 h-10 border-primary scale-110 ring-2 ring-primary/30" : "w-8 h-8 border-white",
+              "rounded-full border-[2.5px] border-white shadow-md transition-all duration-200 overflow-hidden hover:scale-110",
+              isSelected ? "w-9 h-9 scale-110 ring-2 ring-primary/30" : "w-7 h-7",
             )}
             data-testid={`marker-${savedPlace.id}`}
           >
@@ -251,13 +251,12 @@ function PlaceMarker({
               "flex items-center justify-center transition-all duration-200",
               emoji
                 ? "text-2xl drop-shadow-md hover:scale-110"
-                : "w-3.5 h-3.5 rounded-full border-2 shadow-md hover:scale-125",
+                : "w-3.5 h-3.5 rounded-full border-[2.5px] border-white shadow-md hover:scale-125",
               isSelected && emoji && "scale-125 drop-shadow-lg",
               isSelected && !emoji && "scale-150 ring-2 ring-white shadow-lg",
             )}
             style={!emoji ? {
               backgroundColor: MARKER_COLOR,
-              borderColor: isSelected ? "white" : "rgba(255,255,255,0.8)",
             } : undefined}
             data-testid={`marker-${savedPlace.id}`}
           >
