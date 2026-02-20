@@ -417,15 +417,15 @@ export function PlaceDetailPanel({
             {(placeDetails?.savedPlace || listsForThisPlace.length > 0) && (
               <div className="space-y-3">
                 <h3 className="text-sm font-medium">Lists</h3>
-                <Carousel opts={{ align: "start", containScroll: "trimSnaps" }} className="-mx-4">
-                  <CarouselContent className="-ml-2 px-4">
+                <Carousel opts={{ align: "start" }}>
+                  <CarouselContent>
                     {placeDetails?.savedPlace && (
-                      <CarouselItem className="pl-2 basis-[85%]">
+                      <CarouselItem>
                         <AllSavedPlacesChip />
                       </CarouselItem>
                     )}
                     {listsForThisPlace.map((list) => (
-                      <CarouselItem key={list.id} className="pl-2 basis-[85%]">
+                      <CarouselItem key={list.id}>
                         <ListChip list={list} />
                       </CarouselItem>
                     ))}

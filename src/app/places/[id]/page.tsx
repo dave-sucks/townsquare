@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { 
@@ -560,12 +561,20 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
               {(savedPlace || listsContainingPlace.length > 0) && (
                 <div className="space-y-3">
                   <h3 className="text-sm font-medium">Lists</h3>
-                  <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-none">
-                    {savedPlace && <AllSavedPlacesChip />}
-                    {listsContainingPlace.map((list) => (
-                      <ListChip key={list.id} list={list} />
-                    ))}
-                  </div>
+                  <Carousel opts={{ align: "start" }}>
+                    <CarouselContent>
+                      {savedPlace && (
+                        <CarouselItem>
+                          <AllSavedPlacesChip />
+                        </CarouselItem>
+                      )}
+                      {listsContainingPlace.map((list) => (
+                        <CarouselItem key={list.id}>
+                          <ListChip list={list} />
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                  </Carousel>
                 </div>
               )}
 
