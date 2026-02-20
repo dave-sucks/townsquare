@@ -381,7 +381,7 @@ export function PlaceDetailPanel({
             {(placeDetails?.savedPlace || listsForThisPlace.length > 0) && (
               <div className="space-y-3">
                 <h3 className="text-sm font-medium">Lists</h3>
-                <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                <div className="flex flex-col gap-2">
                   {placeDetails?.savedPlace && (
                     <ListChip name="All Saved Places" href="/my-places" icon="pin" />
                   )}
