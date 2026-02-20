@@ -28,6 +28,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { AppShell, PageHeader } from "@/components/layout";
 import { GroupedTags, InlineTags, TagCategoryGroup, TagInfo, TagsWithPopover } from "@/components/shared/place-tags";
 import { SiGooglemaps } from "react-icons/si";
+import { ListChip } from "@/components/shared/list-chip";
 import dynamic from "next/dynamic";
 
 const ReviewDialog = dynamic(
@@ -178,42 +179,6 @@ const RATING_LABELS: Record<number, string> = {
   5: "loved",
 };
 
-function ListChip({ list }: { list: ListData }) {
-  return (
-    <Link 
-      href={`/lists/${list.id}`}
-      className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card hover-elevate whitespace-nowrap"
-      data-testid={`list-chip-${list.id}`}
-    >
-      <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center shrink-0">
-        <HugeiconsIcon icon={LeftToRightListBulletIcon} className="h-4 w-4 text-muted-foreground" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-sm font-medium truncate">{list.name}</p>
-        <p className="text-xs text-muted-foreground">{list._count?.listPlaces || 0} places</p>
-      </div>
-      <HugeiconsIcon icon={ArrowRight01Icon} className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-    </Link>
-  );
-}
-
-function AllSavedPlacesChip() {
-  return (
-    <Link
-      href="/my-places"
-      className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card hover-elevate whitespace-nowrap"
-      data-testid="link-all-saved-places"
-    >
-      <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center shrink-0">
-        <HugeiconsIcon icon={PinLocation01Icon} className="h-4 w-4 text-muted-foreground" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-sm font-medium">All Saved Places</p>
-      </div>
-      <HugeiconsIcon icon={ArrowRight01Icon} className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-    </Link>
-  );
-}
 
 function ReviewCard({ review, isOwn, onEdit, onDelete, isDeleting }: { 
   review: Review; 
@@ -565,12 +530,12 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                     <CarouselContent>
                       {savedPlace && (
                         <CarouselItem>
-                          <AllSavedPlacesChip />
+                          <ListChip name="All Saved Places" href="/my-places" icon="pin" />
                         </CarouselItem>
                       )}
                       {listsContainingPlace.map((list) => (
                         <CarouselItem key={list.id}>
-                          <ListChip list={list} />
+                          <ListChip id={list.id} name={list.name} href={`/lists/${list.id}`} count={list._count?.listPlaces || 0} />
                         </CarouselItem>
                       ))}
                     </CarouselContent>
