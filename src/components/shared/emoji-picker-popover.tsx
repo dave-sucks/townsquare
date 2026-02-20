@@ -28,6 +28,7 @@ interface EmojiPickerPopoverProps {
   variant?: "inline" | "area" | "photo-overlay";
   children?: React.ReactNode;
   testId?: string;
+  portalContainer?: "drawer" | undefined;
 }
 
 export function EmojiPickerPopover({
@@ -38,6 +39,7 @@ export function EmojiPickerPopover({
   variant = "inline",
   children,
   testId = "button-emoji-picker",
+  portalContainer,
 }: EmojiPickerPopoverProps) {
   const [open, setOpen] = useState(false);
 
@@ -183,7 +185,7 @@ export function EmojiPickerPopover({
 
   if (variant === "area") {
     return (
-      <Popover open={open} onOpenChange={setOpen} modal={false}>
+      <Popover open={open} onOpenChange={setOpen} modal={portalContainer === "drawer"}>
         <PopoverTrigger asChild>
           <div
             className={cn(
@@ -205,9 +207,12 @@ export function EmojiPickerPopover({
           </div>
         </PopoverTrigger>
         <PopoverContent
-          className="w-auto p-0 border shadow-lg rounded-lg overflow-hidden"
+          className={cn(
+            "w-auto p-0 border shadow-lg rounded-lg overflow-hidden",
+            portalContainer === "drawer" && "z-[200]"
+          )}
           align="start"
-          side="right"
+          side={portalContainer === "drawer" ? "bottom" : "right"}
           onOpenAutoFocus={(e) => e.preventDefault()}
           onClick={(e) => e.stopPropagation()}
         >

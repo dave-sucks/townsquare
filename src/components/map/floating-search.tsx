@@ -77,7 +77,7 @@ type SavedData = {
 
 type DrawerPlaceData = {
   prediction: PlacePrediction;
-  savedData: SavedData;
+  savedData: SavedData | null;
 };
 
 export function FloatingSearch() {
@@ -140,6 +140,11 @@ export function FloatingSearch() {
 
   const handleSaved = (data: DrawerPlaceData) => {
     setSavedPlace(data);
+    setSearchResults([]);
+  };
+
+  const handleSavedDataReady = (savedData: SavedData) => {
+    setSavedPlace(prev => prev ? { ...prev, savedData } : null);
   };
 
   const handleCloseSavePanel = () => {
@@ -207,6 +212,7 @@ export function FloatingSearch() {
           <SavePanelContent
             drawerPlace={savedPlace}
             onClose={handleCloseSavePanel}
+            onSavedDataReady={handleSavedDataReady}
           />
         </div>
       )}
@@ -218,6 +224,7 @@ export function FloatingSearch() {
             <SavePanelContent
               drawerPlace={savedPlace}
               onClose={handleCloseSavePanel}
+              onSavedDataReady={handleSavedDataReady}
               isMobileDrawer
             />
           </DrawerContent>
@@ -235,38 +242,21 @@ function SearchResultRow({
   onSaved: (data: DrawerPlaceData) => void;
 }) {
   const [isSaved, setIsSaved] = useState(false);
-
-  const savePlaceMutation = useMutation({
-    mutationFn: async () => {
-      const detailsResponse = await fetch(`/api/places/details?place_id=${result.place_id}`);
-      const detailsData = await detailsResponse.json();
-      if (!detailsData.place) throw new Error("Failed to get place details");
-      const response = await apiRequest("/api/saved-places", {
-        method: "POST",
-        body: JSON.stringify({ ...detailsData.place, hasBeen: false }),
-      }) as SavedPlaceResult;
-      return response;
-    },
-    onSuccess: (data) => {
-      setIsSaved(true);
-      queryClient.invalidateQueries({ queryKey: ["saved-places"] });
-      onSaved({ prediction: result, savedData: data.savedPlace });
-    },
-    onError: (error: Error) => toast.error(error.message || "Failed to save place"),
-  });
+  const [isPending, setIsPending] = useState(false);
 
   const handleSaveClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isSaved && !savePlaceMutation.isPending) {
-      savePlaceMutation.mutate();
-    }
+    if (isSaved || isPending) return;
+    setIsPending(true);
+    setIsSaved(true);
+    onSaved({ prediction: result, savedData: null });
   };
 
   return (
     <button
       className="flex items-center gap-2 px-3 py-2 hover-elevate w-full text-left"
       onClick={handleSaveClick}
-      disabled={savePlaceMutation.isPending}
+      disabled={isPending}
       data-testid={`search-result-${result.place_id}`}
     >
       <div className="flex-1 min-w-0">
@@ -275,7 +265,7 @@ function SearchResultRow({
       </div>
 
       <div className="flex items-center flex-shrink-0">
-        {savePlaceMutation.isPending ? (
+        {isPending ? (
           <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin text-muted-foreground" />
         ) : (
           <HugeiconsIcon icon={Bookmark01Icon} className={isSaved ? "h-4 w-4 fill-current" : "h-4 w-4 text-muted-foreground"} />
@@ -288,17 +278,21 @@ function SearchResultRow({
 function SavePanelContent({
   drawerPlace,
   onClose,
+  onSavedDataReady,
   isMobileDrawer = false,
 }: {
   drawerPlace: DrawerPlaceData | null;
   onClose: () => void;
+  onSavedDataReady: (data: SavedData) => void;
   isMobileDrawer?: boolean;
 }) {
   const [savedData, setSavedData] = useState<SavedData | null>(drawerPlace?.savedData || null);
+  const [isSaving, setIsSaving] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [optimisticLists, setOptimisticLists] = useState<string[]>([]);
   const [pendingListIds, setPendingListIds] = useState<Set<string>>(new Set());
+  const saveTriggered = useRef(false);
 
   useEffect(() => {
     if (drawerPlace) {
@@ -307,8 +301,36 @@ function SavePanelContent({
       setPendingListIds(new Set());
       setShowCreateDialog(false);
       setNewListName("");
+      saveTriggered.current = false;
     }
   }, [drawerPlace]);
+
+  useEffect(() => {
+    if (!drawerPlace || savedData || saveTriggered.current) return;
+    saveTriggered.current = true;
+    setIsSaving(true);
+
+    const doSave = async () => {
+      try {
+        const detailsResponse = await fetch(`/api/places/details?place_id=${drawerPlace.prediction.place_id}`);
+        const detailsData = await detailsResponse.json();
+        if (!detailsData.place) throw new Error("Failed to get place details");
+        const response = await apiRequest("/api/saved-places", {
+          method: "POST",
+          body: JSON.stringify({ ...detailsData.place, hasBeen: false }),
+        }) as SavedPlaceResult;
+        setSavedData(response.savedPlace);
+        onSavedDataReady(response.savedPlace);
+        queryClient.invalidateQueries({ queryKey: ["saved-places"] });
+      } catch (err: any) {
+        toast.error(err.message || "Failed to save place");
+        onClose();
+      } finally {
+        setIsSaving(false);
+      }
+    };
+    doSave();
+  }, [drawerPlace, savedData, onSavedDataReady, onClose]);
 
   const currentRating = savedData?.rating ?? null;
   const hasBeen = savedData?.hasBeen ?? false;
@@ -477,8 +499,10 @@ function SavePanelContent({
         <EmojiPickerPopover
           emoji={currentEmoji}
           onEmojiSelect={handleEmojiSelect}
+          disabled={isSaving || !savedData}
           variant="area"
           testId="save-panel-emoji-picker"
+          portalContainer={isMobileDrawer ? "drawer" : undefined}
         />
 
         <div className="flex-1 min-w-0 text-left">
@@ -486,9 +510,16 @@ function SavePanelContent({
             <p className="font-semibold text-lg leading-tight truncate" data-testid="text-save-panel-name">
               {placeName}
             </p>
-            <Badge variant="secondary" className="shrink-0 text-xs" data-testid="badge-saved">
-              Saved
-            </Badge>
+            {savedData ? (
+              <Badge variant="secondary" className="shrink-0 text-xs" data-testid="badge-saved">
+                Saved
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="shrink-0 text-xs" data-testid="badge-saving">
+                <HugeiconsIcon icon={Loading03Icon} className="h-3 w-3 animate-spin mr-1" />
+                Saving
+              </Badge>
+            )}
           </div>
           <p className="text-sm text-muted-foreground truncate mt-0.5">
             {placeAddress}
@@ -516,7 +547,7 @@ function SavePanelContent({
               <ToggleGroupItem
                 key={option.value}
                 value={String(option.value)}
-                disabled={updateSavedPlaceMutation.isPending}
+                disabled={updateSavedPlaceMutation.isPending || isSaving || !savedData}
                 data-testid={`save-panel-rating-${option.value}`}
                 className="flex-1 gap-1.5 py-3"
               >
@@ -529,10 +560,10 @@ function SavePanelContent({
 
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Lists</p>
-          {listsLoading ? (
+          {listsLoading || isSaving ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
               <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
-              Loading...
+              {isSaving ? "Saving place..." : "Loading..."}
             </div>
           ) : lists.length === 0 ? (
             <p className="text-sm text-muted-foreground py-1">No lists yet</p>
@@ -545,7 +576,7 @@ function SavePanelContent({
                     key={list.id}
                     className="flex items-center gap-3 w-full text-left py-3 px-2 rounded-md hover-elevate transition-colors"
                     onClick={() => handleListToggle(list.id)}
-                    disabled={pendingListIds.has(list.id)}
+                    disabled={pendingListIds.has(list.id) || !savedData}
                     data-testid={`save-panel-list-${list.id}`}
                   >
                     <span className="flex-1 text-base font-medium truncate">{list.name}</span>
@@ -559,6 +590,7 @@ function SavePanelContent({
           <button
             className="flex items-center gap-3 w-full text-left py-3 px-2 rounded-md hover-elevate text-muted-foreground transition-colors"
             onClick={() => setShowCreateDialog(true)}
+            disabled={!savedData}
             data-testid="save-panel-button-new-list"
           >
             <HugeiconsIcon icon={PlusSignIcon} className="h-5 w-5" />
