@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { 
   ArrowLeft01Icon,
@@ -416,12 +417,20 @@ export function PlaceDetailPanel({
             {(placeDetails?.savedPlace || listsForThisPlace.length > 0) && (
               <div className="space-y-3">
                 <h3 className="text-sm font-medium">Lists</h3>
-                <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-none">
-                  {placeDetails?.savedPlace && <AllSavedPlacesChip />}
-                  {listsForThisPlace.map((list) => (
-                    <ListChip key={list.id} list={list} />
-                  ))}
-                </div>
+                <Carousel opts={{ align: "start", containScroll: "trimSnaps" }} className="-mx-4">
+                  <CarouselContent className="-ml-2 px-4">
+                    {placeDetails?.savedPlace && (
+                      <CarouselItem className="pl-2 basis-[85%]">
+                        <AllSavedPlacesChip />
+                      </CarouselItem>
+                    )}
+                    {listsForThisPlace.map((list) => (
+                      <CarouselItem key={list.id} className="pl-2 basis-[85%]">
+                        <ListChip list={list} />
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                </Carousel>
               </div>
             )}
 
