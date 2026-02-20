@@ -190,21 +190,24 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
 
   const savePlaceMutation = useMutation({
     mutationFn: async (vars: { hasBeen?: boolean; rating?: number }) => {
+      const payload: Record<string, any> = {
+        googlePlaceId: place.googlePlaceId,
+        name: place.name,
+        formattedAddress: place.formattedAddress,
+        hasBeen: vars.hasBeen ?? false,
+        rating: vars.rating,
+      };
+      if (place.lat && place.lng) {
+        payload.lat = place.lat;
+        payload.lng = place.lng;
+      }
+      if (place.primaryType) payload.primaryType = place.primaryType;
+      if (place.types) payload.types = place.types;
+      if (place.priceLevel) payload.priceLevel = place.priceLevel;
+      if (place.photoRefs) payload.photoRefs = place.photoRefs;
       return apiRequest("/api/saved-places", {
         method: "POST",
-        body: JSON.stringify({
-          googlePlaceId: place.googlePlaceId,
-          name: place.name,
-          formattedAddress: place.formattedAddress,
-          lat: place.lat,
-          lng: place.lng,
-          primaryType: place.primaryType,
-          types: place.types,
-          priceLevel: place.priceLevel,
-          photoRefs: place.photoRefs,
-          hasBeen: vars.hasBeen ?? false,
-          rating: vars.rating,
-        }),
+        body: JSON.stringify(payload),
       });
     },
     onMutate: async (vars: { hasBeen?: boolean; rating?: number }) => {

@@ -80,6 +80,44 @@ export async function GET() {
   }
 }
 
+async function fetchGooglePlaceDetails(googlePlaceId: string) {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) throw new Error("Google Maps API key not configured");
+
+  const response = await fetch(
+    `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(googlePlaceId)}&fields=place_id,name,formatted_address,address_components,geometry,types,price_level,photos&key=${apiKey}`
+  );
+  const data = await response.json();
+  if (data.status !== "OK") throw new Error("Google Place Details API error: " + data.status);
+
+  const result = data.result;
+  const addressComponents = result.address_components || [];
+  let neighborhood: string | null = null;
+  let locality: string | null = null;
+
+  for (const component of addressComponents) {
+    const types = component.types || [];
+    if (types.includes("neighborhood") && !neighborhood) neighborhood = component.long_name;
+    if (types.includes("sublocality_level_1") && !neighborhood) neighborhood = component.long_name;
+    if (types.includes("sublocality") && !neighborhood) neighborhood = component.long_name;
+    if (types.includes("locality") && !locality) locality = component.long_name;
+  }
+
+  return {
+    googlePlaceId: result.place_id,
+    name: result.name,
+    formattedAddress: result.formatted_address,
+    neighborhood,
+    locality,
+    lat: result.geometry.location.lat,
+    lng: result.geometry.location.lng,
+    types: result.types || [],
+    primaryType: result.types?.[0] || null,
+    priceLevel: result.price_level?.toString() || null,
+    photoRefs: result.photos?.slice(0, 5).map((p: any) => p.photo_reference) || [],
+  };
+}
+
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {
@@ -88,22 +126,47 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { googlePlaceId, name, formattedAddress, neighborhood, locality, lat, lng, primaryType, types, priceLevel, photoRefs, hasBeen, rating  } = body;
+    let { googlePlaceId, name, formattedAddress, neighborhood, locality, lat, lng, primaryType, types, priceLevel, photoRefs, hasBeen, rating } = body;
 
-    if (!googlePlaceId || !name || !formattedAddress || lat === undefined || lng === undefined) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!googlePlaceId) {
+      return NextResponse.json({ error: "googlePlaceId is required" }, { status: 400 });
     }
 
     if (rating !== undefined && (rating < 1 || rating > 5)) {
       return NextResponse.json({ error: "Rating must be between 1 and 5" }, { status: 400 });
     }
 
-    let place = await prisma.place.upsert({
+    let existingPlace = await prisma.place.findUnique({ where: { googlePlaceId } });
+
+    if (!existingPlace && (!lat || !lng || !name)) {
+      try {
+        const details = await fetchGooglePlaceDetails(googlePlaceId);
+        name = name || details.name;
+        formattedAddress = formattedAddress || details.formattedAddress;
+        neighborhood = neighborhood || details.neighborhood;
+        locality = locality || details.locality;
+        lat = details.lat;
+        lng = details.lng;
+        primaryType = primaryType || details.primaryType;
+        types = types || details.types;
+        priceLevel = priceLevel || details.priceLevel;
+        photoRefs = photoRefs || details.photoRefs;
+      } catch (fetchError: any) {
+        console.error("Failed to fetch place details:", fetchError);
+        return NextResponse.json({ error: "Could not fetch place details from Google" }, { status: 502 });
+      }
+    }
+
+    if (!existingPlace && (!name || !lat || !lng)) {
+      return NextResponse.json({ error: "Missing place data and could not fetch from Google" }, { status: 400 });
+    }
+
+    let place = existingPlace || await prisma.place.upsert({
       where: { googlePlaceId },
       create: {
         googlePlaceId,
         name,
-        formattedAddress,
+        formattedAddress: formattedAddress || "",
         neighborhood: neighborhood || null,
         locality: locality || null,
         lat,
