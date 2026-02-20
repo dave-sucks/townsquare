@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef, useMemo } from "react";
+import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef, useMemo } from "react";
 import MapLibreGL from "maplibre-gl";
 import { Map, MapMarker, MarkerContent, useMap, type MapRef } from "@/components/ui/map";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,8 @@ import {
   getMapStyle,
   getMapCssFilter,
   getStoredLabelDensity,
-  getStyleForDensity,
+  applyLabelDensity,
+  applyLabelDensityWhenReady,
   type MapStyleKey,
   type LabelDensity,
 } from "@/lib/map-styles";
@@ -124,6 +125,7 @@ function BoundsController({ places }: { places: SavedPlace[] }) {
 
 function StyleController() {
   const { map, isLoaded } = useMap();
+  const styleChangingRef = useRef(false);
 
   useEffect(() => {
     if (!map || !isLoaded) return;
@@ -136,38 +138,42 @@ function StyleController() {
       }
     };
 
-    const applyMapStyle = (styleKey: MapStyleKey, density: LabelDensity) => {
-      const style = getStyleForDensity(styleKey, density);
-      map.setStyle(style as any);
-      applyCssFilter(styleKey);
-    };
-
-    applyCssFilter(getStoredMapStyle());
-
     const handleStyleChange = (e: Event) => {
       const styleKey = (e as CustomEvent).detail as MapStyleKey;
       const density = getStoredLabelDensity();
-      applyMapStyle(styleKey, density);
+      const style = getMapStyle(styleKey);
+      styleChangingRef.current = true;
+      map.setStyle(style as any);
+      applyCssFilter(styleKey);
+      applyLabelDensityWhenReady(map, density, styleKey);
     };
 
     const handleLabelDensityChange = (e: Event) => {
+      if (styleChangingRef.current) return;
       const density = (e as CustomEvent).detail as LabelDensity;
       const styleKey = getStoredMapStyle();
-      applyMapStyle(styleKey, density);
+      applyLabelDensityWhenReady(map, density, styleKey);
     };
 
-    const handleStyleData = () => {
-      applyCssFilter(getStoredMapStyle());
+    const handleIdle = () => {
+      styleChangingRef.current = false;
+      const styleKey = getStoredMapStyle();
+      applyCssFilter(styleKey);
     };
+
+    const initialStyleKey = getStoredMapStyle();
+    const initialDensity = getStoredLabelDensity();
+    applyCssFilter(initialStyleKey);
+    applyLabelDensityWhenReady(map, initialDensity, initialStyleKey);
 
     window.addEventListener("map-style-change", handleStyleChange);
     window.addEventListener("map-label-density-change", handleLabelDensityChange);
-    map.on("styledata", handleStyleData);
+    map.on("idle", handleIdle);
 
     return () => {
       window.removeEventListener("map-style-change", handleStyleChange);
       window.removeEventListener("map-label-density-change", handleLabelDensityChange);
-      map.off("styledata", handleStyleData);
+      map.off("idle", handleIdle);
     };
   }, [map, isLoaded]);
 
@@ -199,12 +205,9 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
   const initialCenter = storedView?.center || DEFAULT_CENTER;
   const initialZoom = storedView?.zoom || DEFAULT_ZOOM;
 
-  const initialStyleData = useMemo(() => {
+  const initialStyle = useMemo(() => {
     const styleKey = getStoredMapStyle();
-    const density = getStoredLabelDensity();
-    const style = getStyleForDensity(styleKey, density);
-    const cssFilter = getMapCssFilter(styleKey);
-    return { style, cssFilter };
+    return getMapStyle(styleKey);
   }, []);
 
   const onMarkerClickRef = useRef(onMarkerClick);
@@ -218,7 +221,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
         zoom={initialZoom}
         className="h-full w-full"
         theme="light"
-        styles={{ light: initialStyleData.style as any, dark: initialStyleData.style as any }}
+        styles={{ light: initialStyle as any, dark: initialStyle as any }}
       >
         <BoundsController places={places} />
         <StyleController />

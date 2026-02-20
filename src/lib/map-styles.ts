@@ -10,9 +10,6 @@ export interface MapStyleConfig {
 const CARTO_VOYAGER = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
 const CARTO_POSITRON = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 const CARTO_DARK = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
-const CARTO_POSITRON_NOLABELS = "https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json";
-const CARTO_DARK_NOLABELS = "https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json";
-const CARTO_VOYAGER_NOLABELS = "https://basemaps.cartocdn.com/gl/voyager-nolabels-gl-style/style.json";
 
 const SATELLITE_STYLE = {
   version: 8 as const,
@@ -53,10 +50,10 @@ export const MAP_STYLES: MapStyleConfig[] = [
   { id: "satellite", name: "Satellite", style: SATELLITE_STYLE },
   { id: "terrain", name: "Terrain", style: TERRAIN_STYLE },
   { id: "silver", name: "Silver", style: CARTO_POSITRON },
-  { id: "retro", name: "Retro", style: CARTO_VOYAGER, cssFilter: "sepia(0.3) saturate(0.7) brightness(1.05)" },
+  { id: "retro", name: "Retro", style: CARTO_VOYAGER, cssFilter: "sepia(0.35) saturate(0.65) brightness(1.05) contrast(1.05)" },
   { id: "dark", name: "Dark", style: CARTO_DARK },
-  { id: "night", name: "Night", style: CARTO_DARK, cssFilter: "brightness(0.85) saturate(0.9) hue-rotate(15deg)" },
-  { id: "aubergine", name: "Aubergine", style: CARTO_DARK, cssFilter: "hue-rotate(290deg) saturate(0.65) brightness(0.95)" },
+  { id: "night", name: "Night", style: CARTO_DARK, cssFilter: "brightness(0.8) saturate(0.85) hue-rotate(20deg)" },
+  { id: "aubergine", name: "Aubergine", style: CARTO_DARK, cssFilter: "hue-rotate(280deg) saturate(0.55) brightness(0.9)" },
 ];
 
 export const DEFAULT_MAP_STYLE: MapStyleKey = "standard";
@@ -73,14 +70,8 @@ export function getMapCssFilter(styleKey: MapStyleKey): string {
   return getMapStyleConfig(styleKey).cssFilter || "none";
 }
 
-export function getStyleForDensity(styleKey: MapStyleKey, density: LabelDensity): string | object {
-  const config = getMapStyleConfig(styleKey);
-  if (density === "minimal" && typeof config.style === "string") {
-    if (config.style === CARTO_DARK) return CARTO_DARK_NOLABELS;
-    if (config.style === CARTO_POSITRON) return CARTO_POSITRON_NOLABELS;
-    if (config.style === CARTO_VOYAGER) return CARTO_VOYAGER_NOLABELS;
-  }
-  return config.style;
+export function isRasterStyle(styleKey: MapStyleKey): boolean {
+  return styleKey === "satellite" || styleKey === "terrain";
 }
 
 export const MAP_STYLE_STORAGE_KEY = "twnsq-map-style";
@@ -89,13 +80,105 @@ export const MAP_LABEL_DENSITY_STORAGE_KEY = "twnsq-map-label-density";
 export type LabelDensity = "minimal" | "low" | "normal" | "full";
 
 export const LABEL_DENSITY_OPTIONS: { id: LabelDensity; name: string; description: string }[] = [
-  { id: "minimal", name: "Minimal", description: "Only major roads" },
+  { id: "minimal", name: "Minimal", description: "Only major cities" },
   { id: "low", name: "Low", description: "Less clutter" },
   { id: "normal", name: "Normal", description: "Default" },
   { id: "full", name: "Full", description: "All labels" },
 ];
 
 export const DEFAULT_LABEL_DENSITY: LabelDensity = "normal";
+
+const LABEL_LAYERS_MINIMAL_HIDE = [
+  "waterway_label", "watername_lake", "watername_lake_line", "watername_sea",
+  "place_hamlet", "place_suburbs", "place_villages", "place_town",
+  "poi_stadium", "poi_park",
+  "roadname_minor", "roadname_sec", "roadname_pri", "roadname_major",
+  "housenumber",
+];
+
+const LABEL_LAYERS_LOW_HIDE = [
+  "waterway_label", "watername_lake_line",
+  "place_hamlet", "place_suburbs",
+  "poi_stadium", "poi_park",
+  "roadname_minor",
+  "housenumber",
+];
+
+const LABEL_LAYERS_NORMAL_HIDE = [
+  "housenumber",
+  "place_hamlet",
+];
+
+const ROAD_LAYERS_MINIMAL_HIDE = [
+  "road_service_case", "road_service_fill",
+  "road_minor_case", "road_minor_fill",
+  "road_path",
+  "tunnel_path", "tunnel_service_case", "tunnel_service_fill",
+  "tunnel_minor_case", "tunnel_minor_fill",
+  "bridge_path", "bridge_service_case", "bridge_service_fill",
+  "bridge_minor_case", "bridge_minor_fill",
+];
+
+const ROAD_LAYERS_LOW_HIDE = [
+  "road_service_case", "road_service_fill",
+  "road_path",
+  "tunnel_path", "tunnel_service_case", "tunnel_service_fill",
+  "bridge_path", "bridge_service_case", "bridge_service_fill",
+];
+
+const ALL_DENSITY_LAYERS = [...new Set([
+  ...LABEL_LAYERS_MINIMAL_HIDE,
+  ...LABEL_LAYERS_LOW_HIDE,
+  ...LABEL_LAYERS_NORMAL_HIDE,
+  ...ROAD_LAYERS_MINIMAL_HIDE,
+  ...ROAD_LAYERS_LOW_HIDE,
+])];
+
+export function applyLabelDensity(map: any, density: LabelDensity, styleKey: MapStyleKey) {
+  if (isRasterStyle(styleKey)) return;
+  if (!map.isStyleLoaded()) return;
+
+  try {
+    ALL_DENSITY_LAYERS.forEach(layerId => {
+      try {
+        map.setLayoutProperty(layerId, "visibility", "visible");
+      } catch (e) {}
+    });
+
+    let layersToHide: string[] = [];
+
+    switch (density) {
+      case "minimal":
+        layersToHide = [...LABEL_LAYERS_MINIMAL_HIDE, ...ROAD_LAYERS_MINIMAL_HIDE];
+        break;
+      case "low":
+        layersToHide = [...LABEL_LAYERS_LOW_HIDE, ...ROAD_LAYERS_LOW_HIDE];
+        break;
+      case "normal":
+        layersToHide = LABEL_LAYERS_NORMAL_HIDE;
+        break;
+      case "full":
+        break;
+    }
+
+    layersToHide.forEach(layerId => {
+      try {
+        map.setLayoutProperty(layerId, "visibility", "none");
+      } catch (e) {}
+    });
+  } catch (e) {}
+}
+
+export function applyLabelDensityWhenReady(map: any, density: LabelDensity, styleKey: MapStyleKey) {
+  if (isRasterStyle(styleKey)) return;
+  if (map.isStyleLoaded()) {
+    applyLabelDensity(map, density, styleKey);
+  } else {
+    map.once("idle", () => {
+      applyLabelDensity(map, density, styleKey);
+    });
+  }
+}
 
 export function getStoredMapStyle(): MapStyleKey {
   if (typeof window === "undefined") return DEFAULT_MAP_STYLE;
