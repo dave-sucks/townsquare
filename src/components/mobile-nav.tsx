@@ -33,12 +33,12 @@ interface User {
 
 const BOTTOM_NAV_ITEMS = [
   { href: "/", label: "Map", icon: Location01Icon },
+  { href: "/my-places", label: "My Places", icon: PinLocation01Icon },
   { href: "/chat", label: "Chat", icon: Comment01Icon },
   { href: "/home", label: "Feed", icon: Image02Icon },
 ] as const;
 
 const MENU_ITEMS_TOP = [
-  { href: "/my-places", label: "My Places", icon: PinLocation01Icon },
   { href: "/people", label: "People", icon: UserMultiple02Icon },
   { href: "/notifications", label: "Notifications", icon: Notification02Icon },
   { href: "/upgrade", label: "Upgrade", icon: SparklesIcon },

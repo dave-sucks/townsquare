@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTheme } from "next-themes";
 import {
   type MapStyleKey,
   type LabelDensity,
@@ -8,8 +9,8 @@ import {
   saveMapStyle,
   getStoredLabelDensity,
   saveLabelDensity,
-  DEFAULT_MAP_STYLE,
   DEFAULT_LABEL_DENSITY,
+  MAP_STYLE_STORAGE_KEY,
 } from "@/lib/map-styles";
 
 const RADIUS_STORAGE_KEY = "twnsq-map-radius";
@@ -30,16 +31,26 @@ function saveRadius(radius: number) {
   } catch (e) {}
 }
 
+function getThemeDefaultStyle(resolvedTheme: string | undefined): MapStyleKey {
+  return resolvedTheme === "dark" ? "night" : "retro";
+}
+
 export function useMapSettings() {
-  const [style, setStyleState] = useState<MapStyleKey>(DEFAULT_MAP_STYLE);
+  const { resolvedTheme } = useTheme();
+  const [style, setStyleState] = useState<MapStyleKey>(getThemeDefaultStyle(resolvedTheme));
   const [labelDensity, setLabelDensityState] = useState<LabelDensity>(DEFAULT_LABEL_DENSITY);
   const [radius, setRadiusState] = useState(1);
 
   useEffect(() => {
-    setStyleState(getStoredMapStyle());
+    const hasStoredStyle = typeof window !== "undefined" && localStorage.getItem(MAP_STYLE_STORAGE_KEY);
+    if (hasStoredStyle) {
+      setStyleState(getStoredMapStyle());
+    } else {
+      setStyleState(getThemeDefaultStyle(resolvedTheme));
+    }
     setLabelDensityState(getStoredLabelDensity());
     setRadiusState(getStoredRadius());
-  }, []);
+  }, [resolvedTheme]);
 
   const setStyle = useCallback((newStyle: MapStyleKey) => {
     setStyleState(newStyle);

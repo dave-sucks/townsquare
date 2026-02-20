@@ -173,7 +173,7 @@ export const LABEL_DENSITY_OPTIONS: { id: LabelDensity; name: string; descriptio
   { id: "full", name: "Full", description: "All labels" },
 ];
 
-export const DEFAULT_LABEL_DENSITY: LabelDensity = "normal";
+export const DEFAULT_LABEL_DENSITY: LabelDensity = "minimal";
 
 function buildDensityStyles(density: LabelDensity): google.maps.MapTypeStyle[] {
   const styles: google.maps.MapTypeStyle[] = [];
