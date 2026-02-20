@@ -7,6 +7,7 @@ if (process.env.REPLIT_DEV_DOMAIN) {
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: devOrigins,
+  turbopack: {},
   env: {
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY,
   },
