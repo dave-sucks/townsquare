@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { flushSync } from "react-dom";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -97,14 +96,24 @@ export function FloatingSearch() {
   };
 
   const handleSaveClick = (prediction: PlacePrediction) => {
-    flushSync(() => {
-      setActivePrediction(prediction);
-      setSearchResults([]);
-    });
-    saveRef.current?.triggerSave();
+    const placeToSave = {
+      googlePlaceId: prediction.place_id,
+      name: prediction.structured_formatting.main_text,
+      formattedAddress: prediction.structured_formatting.secondary_text,
+      lat: 0,
+      lng: 0,
+    };
+    pendingSaveRef.current = placeToSave;
+    handleClear();
+    setTimeout(() => {
+      saveRef.current?.triggerSave();
+    }, 50);
   };
 
-  const showResults = !activePrediction && isFocused && (isSearching || searchResults.length > 0 || searchQuery.trim().length > 0);
+  const pendingSaveRef = useRef<typeof currentPlace | null>(null);
+  const activePlace = pendingSaveRef.current || currentPlace;
+
+  const showResults = isFocused && (isSearching || searchResults.length > 0 || searchQuery.trim().length > 0);
 
   return (
     <div className="md:w-96 md:ml-auto">
@@ -115,9 +124,6 @@ export function FloatingSearch() {
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery(e.target.value);
-            if (activePrediction) {
-              setActivePrediction(null);
-            }
           }}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setTimeout(() => setIsFocused(false), 300)}
@@ -169,21 +175,13 @@ export function FloatingSearch() {
         </div>
       )}
 
-      {activePrediction && (
-        <div className="mt-2 bg-background border rounded-lg shadow-lg p-3 flex items-center gap-3">
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-sm truncate">{activePrediction.structured_formatting.main_text}</p>
-            <p className="text-xs text-muted-foreground truncate">{activePrediction.structured_formatting.secondary_text}</p>
-          </div>
-          <SaveToListDropdown
-            ref={saveRef}
-            place={currentPlace}
-            onSaveSuccess={() => {}}
-            size="sm"
-            showLabel
-          />
-        </div>
-      )}
+      <div className="hidden">
+        <SaveToListDropdown
+          ref={saveRef}
+          place={activePlace}
+          onSaveSuccess={() => { pendingSaveRef.current = null; }}
+        />
+      </div>
     </div>
   );
 }
