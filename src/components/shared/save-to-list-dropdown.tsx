@@ -135,6 +135,8 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
     queryClient.invalidateQueries({ queryKey: ["lists"] });
     queryClient.invalidateQueries({ queryKey: ["list"] });
     queryClient.invalidateQueries({ queryKey: ["saved-places"] });
+    queryClient.invalidateQueries({ queryKey: ["place-detail"] });
+    queryClient.invalidateQueries({ queryKey: ["collections"] });
   };
 
   const patchCachedPlaceData = (updates: { hasBeen?: boolean; rating?: number | null }) => {
