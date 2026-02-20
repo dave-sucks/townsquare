@@ -59,6 +59,7 @@ interface CurrentUserPlaceData {
   savedPlaceId: string | null;
   hasBeen: boolean;
   rating: number | null;
+  emoji?: string | null;
   lists: Array<{ id: string; name: string }>;
 }
 
@@ -326,6 +327,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
               place={savedPlace.place}
               savedPlace={currentUserSavedPlace}
               listsContainingPlace={currentUserLists}
+              emoji={savedPlace.emoji || currentUserData?.emoji || null}
               showLabel={false}
               variant="ghost"
               size="icon"

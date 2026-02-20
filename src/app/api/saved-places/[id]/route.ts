@@ -82,6 +82,21 @@ export async function DELETE(
       return NextResponse.json({ error: "Saved place not found" }, { status: 404 });
     }
 
+    const userLists = await prisma.list.findMany({
+      where: { userId: user.id },
+      select: { id: true },
+    });
+    const userListIds = userLists.map(l => l.id);
+
+    if (userListIds.length > 0) {
+      await prisma.listPlace.deleteMany({
+        where: {
+          placeId: savedPlace.placeId,
+          listId: { in: userListIds },
+        },
+      });
+    }
+
     await prisma.savedPlace.delete({
       where: { id },
     });

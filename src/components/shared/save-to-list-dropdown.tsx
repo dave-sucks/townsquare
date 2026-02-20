@@ -244,6 +244,9 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
       const sp = data?.savedPlace;
       if (sp) {
         setOptimisticSave({ id: sp.id, placeId: sp.placeId, hasBeen: sp.hasBeen, rating: sp.rating });
+        if (sp.emoji != null) {
+          setLocalEmoji(sp.emoji);
+        }
       }
       invalidatePlaceData();
       onSaveSuccess?.();

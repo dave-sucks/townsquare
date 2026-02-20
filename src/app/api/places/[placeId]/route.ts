@@ -90,6 +90,7 @@ export async function GET(
       },
       select: {
         id: true,
+        placeId: true,
         hasBeen: true,
         rating: true,
         emoji: true,

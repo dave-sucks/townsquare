@@ -37,9 +37,11 @@ interface SavedPlace {
   placeId: string;
   hasBeen: boolean;
   rating: number | null;
+  emoji?: string | null;
   visitedAt: string | null;
   createdAt: string;
   place: Place;
+  lists?: Array<{ id: string; name: string }>;
 }
 
 interface ListData {
@@ -85,13 +87,14 @@ export function PlaceListPanel({
   const lists = listsData?.lists || [];
 
   const currentUserPlaceData = useMemo(() => {
-    const map: Record<string, { savedPlaceId: string | null; hasBeen: boolean; rating: number | null; lists: Array<{ id: string; name: string }> }> = {};
+    const map: Record<string, { savedPlaceId: string | null; hasBeen: boolean; rating: number | null; emoji?: string | null; lists: Array<{ id: string; name: string }> }> = {};
     for (const sp of places) {
       map[sp.placeId] = {
         savedPlaceId: sp.id,
         hasBeen: sp.hasBeen,
         rating: sp.rating,
-        lists: [],
+        emoji: sp.emoji || null,
+        lists: sp.lists || [],
       };
     }
     return map;
