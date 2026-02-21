@@ -73,7 +73,6 @@ interface MapLayoutProps {
   showSearch?: boolean;
   sheetComponent?: ReactNode;
   showAvatars?: boolean;
-  centerOnUser?: boolean;
 }
 
 export function MapLayout({
@@ -86,7 +85,6 @@ export function MapLayout({
   showSearch = false,
   sheetComponent,
   showAvatars = false,
-  centerOnUser = false,
 }: MapLayoutProps) {
   const placeRowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const mapRef = useRef<PlaceMapHandle>(null);
@@ -160,7 +158,6 @@ export function MapLayout({
           onMarkerClick={handleMarkerClick}
           showSettings={showMapSettings}
           showAvatars={showAvatars}
-          centerOnUser={centerOnUser}
         />
 
         {showSearch && (

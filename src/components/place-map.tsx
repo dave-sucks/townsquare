@@ -43,7 +43,6 @@ interface PlaceMapProps {
   isSettingsOpen?: boolean;
   onSettingsOpenChange?: (open: boolean) => void;
   showAvatars?: boolean;
-  centerOnUser?: boolean;
 }
 
 export interface PlaceMapHandle {
@@ -78,7 +77,7 @@ function saveMapView(center: [number, number], zoom: number) {
   } catch (e) {}
 }
 
-function BoundsController({ places, centerOnUser = false }: { places: SavedPlace[]; centerOnUser?: boolean }) {
+function BoundsController({ places }: { places: SavedPlace[] }) {
   const { map, isLoaded } = useMap();
   const hasInitializedRef = useRef(false);
   const prevPlaceSignatureRef = useRef<string>("");
@@ -105,40 +104,43 @@ function BoundsController({ places, centerOnUser = false }: { places: SavedPlace
     if (!map || !isLoaded || hasInitializedRef.current) return;
     hasInitializedRef.current = true;
 
-    if (centerOnUser) {
-      const storedView = getStoredMapView();
-      if (storedView) {
-        prevPlaceSignatureRef.current = getPlaceSignature(places);
-        return;
-      }
-      if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-            map.panTo({ lat: latitude, lng: longitude });
-            map.setZoom(12);
-          },
-          () => fitToPlaces(map, places),
-          { enableHighAccuracy: true, timeout: 5000 }
-        );
-      } else {
-        fitToPlaces(map, places);
-      }
-    } else {
-      fitToPlaces(map, places);
+    const storedView = getStoredMapView();
+    if (storedView) {
+      prevPlaceSignatureRef.current = getPlaceSignature(places);
+      return;
     }
 
-    prevPlaceSignatureRef.current = getPlaceSignature(places);
-  }, [map, isLoaded, places, centerOnUser, fitToPlaces, getPlaceSignature]);
+    const fallbackToPlaces = () => {
+      fitToPlaces(map, places);
+      prevPlaceSignatureRef.current = getPlaceSignature(places);
+    };
+
+    if (!("geolocation" in navigator)) {
+      fallbackToPlaces();
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        map.panTo({ lat: latitude, lng: longitude });
+        map.setZoom(12);
+        prevPlaceSignatureRef.current = getPlaceSignature(places);
+      },
+      () => fallbackToPlaces(),
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
+  }, [map, isLoaded, places, fitToPlaces, getPlaceSignature]);
 
   useEffect(() => {
-    if (!map || !isLoaded || centerOnUser) return;
+    if (!map || !isLoaded) return;
+    if (!hasInitializedRef.current) return;
     const newSignature = getPlaceSignature(places);
     if (newSignature !== prevPlaceSignatureRef.current && places.length > 0) {
       prevPlaceSignatureRef.current = newSignature;
       fitToPlaces(map, places);
     }
-  }, [map, isLoaded, places, centerOnUser, fitToPlaces, getPlaceSignature]);
+  }, [map, isLoaded, places, fitToPlaces, getPlaceSignature]);
 
   useEffect(() => {
     if (!map || !isLoaded) return;
@@ -191,7 +193,7 @@ function StyleController() {
 }
 
 export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function PlaceMap(
-  { places, selectedPlaceId, onMarkerClick, showAvatars = false, centerOnUser = false },
+  { places, selectedPlaceId, onMarkerClick, showAvatars = false },
   ref
 ) {
   const mapRef = useRef<MapRef>(null);
@@ -224,7 +226,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
         zoom={initialZoom}
         className="h-full w-full"
       >
-        <BoundsController places={places} centerOnUser={centerOnUser} />
+        <BoundsController places={places} />
         <StyleController />
         <MapControls places={places} />
         {places.map((savedPlace) => (
