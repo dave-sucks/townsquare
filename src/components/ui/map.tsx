@@ -83,11 +83,8 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
         zoom,
         mapTypeId,
         styles: styles || [],
-        disableDefaultUI,
-        zoomControl: true,
-        zoomControlOptions: {
-          position: google.maps.ControlPosition.RIGHT_BOTTOM,
-        },
+        disableDefaultUI: true,
+        zoomControl: false,
         clickableIcons: false,
         gestureHandling: "greedy",
       });
@@ -115,10 +112,10 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
   return (
     <MapContext.Provider value={contextValue}>
       <div className={cn("relative w-full h-full", className)}>
-        <div ref={containerRef} className="absolute inset-0" />
+        <div ref={containerRef} className="absolute inset-0 z-0" />
         {!isLoaded && <DefaultLoader />}
+        {mapInstance && isLoaded && children}
       </div>
-      {mapInstance && isLoaded && children}
     </MapContext.Provider>
   );
 });

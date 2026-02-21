@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef, useMemo } from "react";
 import { Map, MapMarker, MarkerContent, useMap, type MapRef } from "@/components/ui/map";
+import { MapControls } from "@/components/map/map-controls";
 import { cn } from "@/lib/utils";
 import {
   getStoredMapStyle,
@@ -78,27 +79,43 @@ function saveMapView(center: [number, number], zoom: number) {
 
 function BoundsController({ places }: { places: SavedPlace[] }) {
   const { map, isLoaded } = useMap();
-  const prevSignatureRef = useRef<string>("");
-  const hasFittedRef = useRef(false);
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
-    if (!map || !isLoaded || places.length === 0) return;
+    if (!map || !isLoaded || hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
 
-    const currentSignature = places.map(p => `${p.id}:${p.place.lat},${p.place.lng}`).sort().join("|");
-    if (currentSignature === prevSignatureRef.current && hasFittedRef.current) return;
-    prevSignatureRef.current = currentSignature;
-    hasFittedRef.current = true;
+    const storedView = getStoredMapView();
+    if (storedView) return;
 
-    if (places.length === 1) {
-      map.panTo({ lat: places[0].place.lat, lng: places[0].place.lng });
-      map.setZoom(14);
-    } else {
-      const bounds = new google.maps.LatLngBounds();
-      places.forEach((sp) => {
-        bounds.extend({ lat: sp.place.lat, lng: sp.place.lng });
-      });
-      map.fitBounds(bounds, { top: 60, right: 60, bottom: 220, left: 60 });
+    const fallbackToPlaces = () => {
+      if (places.length === 0) return;
+      if (places.length === 1) {
+        map.panTo({ lat: places[0].place.lat, lng: places[0].place.lng });
+        map.setZoom(14);
+      } else {
+        const bounds = new google.maps.LatLngBounds();
+        places.forEach((sp) => {
+          bounds.extend({ lat: sp.place.lat, lng: sp.place.lng });
+        });
+        map.fitBounds(bounds, { top: 60, right: 60, bottom: 220, left: 60 });
+      }
+    };
+
+    if (!("geolocation" in navigator)) {
+      fallbackToPlaces();
+      return;
     }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        map.panTo({ lat: latitude, lng: longitude });
+        map.setZoom(12);
+      },
+      () => fallbackToPlaces(),
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
   }, [map, isLoaded, places]);
 
   useEffect(() => {
@@ -187,6 +204,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
       >
         <BoundsController places={places} />
         <StyleController />
+        <MapControls places={places} />
         {places.map((savedPlace) => (
           <PlaceMarker
             key={savedPlace.id}
