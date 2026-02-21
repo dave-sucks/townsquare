@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useCallback, useMemo } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { MapLayout } from "@/components/map/map-layout";
 import {
   ExploreSidebar,
@@ -64,16 +64,42 @@ export function ExplorePage({ user }: { user: UserData }) {
   const [currentView, setCurrentView] = useState<ExploreView>("list");
   const [viewingPlaceId, setViewingPlaceId] = useState<string | null>(null);
 
-  const { data: collectionData, isLoading } = useQuery<{
+  const {
+    data: infiniteData,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery<{
     places: SavedPlace[];
     currentUserPlaceData?: Record<string, { savedPlaceId: string | null; hasBeen: boolean; rating: number | null; emoji: string | null; lists: Array<{ id: string; name: string }> }>;
+    hasMore: boolean;
+    nextCursor: string | null;
   }>({
     queryKey: ["collections", activeTab],
-    queryFn: () => apiRequest(`/api/collections?collection=${activeTab}`),
+    queryFn: ({ pageParam }) => {
+      const params = new URLSearchParams({ collection: activeTab });
+      if (pageParam) params.set("cursor", pageParam as string);
+      return apiRequest(`/api/collections?${params.toString()}`);
+    },
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
 
-  const rawPlaces = collectionData?.places || [];
-  const currentUserPlaceData = collectionData?.currentUserPlaceData || null;
+  const rawPlaces = useMemo(
+    () => infiniteData?.pages.flatMap((p) => p.places) || [],
+    [infiniteData]
+  );
+  const currentUserPlaceData = useMemo(() => {
+    if (!infiniteData) return null;
+    const merged: Record<string, any> = {};
+    for (const page of infiniteData.pages) {
+      if (page.currentUserPlaceData) {
+        Object.assign(merged, page.currentUserPlaceData);
+      }
+    }
+    return Object.keys(merged).length > 0 ? merged : null;
+  }, [infiniteData]);
 
   const places = rawPlaces;
   const mapPlaces = activeTab === "following"
@@ -120,6 +146,9 @@ export function ExplorePage({ user }: { user: UserData }) {
       viewingPlaceId={viewingPlaceId}
       onNavigate={handleNavigate}
       currentUserPlaceData={currentUserPlaceData}
+      hasMore={!!hasNextPage}
+      onLoadMore={() => fetchNextPage()}
+      isLoadingMore={isFetchingNextPage}
     />
   );
 

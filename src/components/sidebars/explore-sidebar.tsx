@@ -73,6 +73,9 @@ interface ExploreSidebarProps extends Partial<SidebarInjectedProps> {
   viewingPlaceId: string | null;
   onNavigate: (view: ExploreView, placeId?: string | null) => void;
   currentUserPlaceData?: Record<string, CurrentUserPlaceData> | null;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
 }
 
 export function ExploreSidebar({
@@ -88,6 +91,9 @@ export function ExploreSidebar({
   viewingPlaceId,
   onNavigate,
   currentUserPlaceData,
+  hasMore = false,
+  onLoadMore,
+  isLoadingMore = false,
 }: ExploreSidebarProps) {
   const viewingPlace = viewingPlaceId
     ? places.find((p) => p.id === viewingPlaceId)
@@ -177,6 +183,9 @@ export function ExploreSidebar({
             thumbnailMode="photo"
             currentUserPlaceData={currentUserPlaceData}
             showSavedBy={activeTab === "following"}
+            hasMore={hasMore}
+            onLoadMore={onLoadMore}
+            isLoadingMore={isLoadingMore}
           />
         )}
       </div>

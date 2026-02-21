@@ -11,6 +11,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const collection = searchParams.get("collection");
+    const cursor = searchParams.get("cursor");
+    const limit = Math.min(parseInt(searchParams.get("limit") || "30"), 50);
 
     if (collection === "following") {
       const followedUserIds = await prisma.follow.findMany({
@@ -21,7 +23,7 @@ export async function GET(request: NextRequest) {
       const ids = followedUserIds.map((f) => f.followingId);
 
       if (ids.length === 0) {
-        return NextResponse.json({ places: [] });
+        return NextResponse.json({ places: [], hasMore: false });
       }
 
       const savedPlaces = await prisma.savedPlace.findMany({
@@ -49,8 +51,9 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        take: 10,
+        take: limit + 1,
         orderBy: { createdAt: "desc" },
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       });
 
       const placeIds = savedPlaces.map((sp) => sp.placeId);
@@ -78,7 +81,11 @@ export async function GET(request: NextRequest) {
         };
       }
 
-      const mapped = savedPlaces.map((sp) => ({
+      const hasMore = savedPlaces.length > limit;
+      const items = hasMore ? savedPlaces.slice(0, limit) : savedPlaces;
+      const nextCursor = hasMore ? items[items.length - 1].id : null;
+
+      const mapped = items.map((sp) => ({
         id: sp.id,
         userId: sp.userId,
         placeId: sp.placeId,
@@ -110,7 +117,7 @@ export async function GET(request: NextRequest) {
         savedBy: sp.user,
       }));
 
-      return NextResponse.json({ places: mapped, currentUserPlaceData });
+      return NextResponse.json({ places: mapped, currentUserPlaceData, hasMore, nextCursor });
     }
 
     if (collection === "burgers") {
@@ -141,7 +148,7 @@ export async function GET(request: NextRequest) {
             { name: { contains: "smash", mode: "insensitive" as const } },
           ],
         },
-        take: 20,
+        take: 50,
       });
 
       const allPlaceIds = burgerPlacesByName.map((p) => p.id);
@@ -172,7 +179,7 @@ export async function GET(request: NextRequest) {
           },
         },
         distinct: ["placeId"],
-        take: 20,
+        take: 50,
         orderBy: { createdAt: "desc" },
       });
 
@@ -265,7 +272,7 @@ export async function GET(request: NextRequest) {
         savedBy: null,
       }));
 
-      return NextResponse.json({ places: [...mapped, ...unsavedMapped], currentUserPlaceData: currentUserPlaceData2 });
+      return NextResponse.json({ places: [...mapped, ...unsavedMapped], currentUserPlaceData: currentUserPlaceData2, hasMore: false, nextCursor: null });
     }
 
     return NextResponse.json({ error: "Invalid collection" }, { status: 400 });

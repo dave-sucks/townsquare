@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef } from "react";
+import { forwardRef, useRef, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -358,6 +358,9 @@ interface PlacesListProps {
   emojiEditable?: boolean;
   currentUserPlaceData?: Record<string, CurrentUserPlaceData> | null;
   showSavedBy?: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
 }
 
 export function PlacesList({
@@ -376,7 +379,29 @@ export function PlacesList({
   emojiEditable = false,
   currentUserPlaceData,
   showSavedBy = false,
+  hasMore = false,
+  onLoadMore,
+  isLoadingMore = false,
 }: PlacesListProps) {
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!hasMore || !onLoadMore || isLoadingMore) return;
+    const el = loadMoreRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          onLoadMore();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, onLoadMore, isLoadingMore]);
+
   if (isLoading) {
     return (
       <div className="space-y-3 p-2">
@@ -421,6 +446,18 @@ export function PlacesList({
           showSavedBy={showSavedBy}
         />
       ))}
+      {hasMore && (
+        <div ref={loadMoreRef} className="flex justify-center py-4" data-testid="load-more-trigger">
+          {isLoadingMore ? (
+            <div className="space-y-3 w-full">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          ) : (
+            <span className="text-xs text-muted-foreground">Loading more...</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
