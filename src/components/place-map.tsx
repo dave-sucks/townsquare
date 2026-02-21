@@ -43,6 +43,7 @@ interface PlaceMapProps {
   isSettingsOpen?: boolean;
   onSettingsOpenChange?: (open: boolean) => void;
   showAvatars?: boolean;
+  disableFitToPlaces?: boolean;
 }
 
 export interface PlaceMapHandle {
@@ -77,7 +78,7 @@ function saveMapView(center: [number, number], zoom: number) {
   } catch (e) {}
 }
 
-function BoundsController({ places }: { places: SavedPlace[] }) {
+function BoundsController({ places, disableFitToPlaces }: { places: SavedPlace[]; disableFitToPlaces?: boolean }) {
   const { map, isLoaded } = useMap();
   const hasInitializedRef = useRef(false);
   const prevPlaceSignatureRef = useRef<string>("");
@@ -105,6 +106,20 @@ function BoundsController({ places }: { places: SavedPlace[] }) {
     hasInitializedRef.current = true;
     prevPlaceSignatureRef.current = getPlaceSignature(places);
 
+    if (disableFitToPlaces) {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            map.panTo({ lat: position.coords.latitude, lng: position.coords.longitude });
+            map.setZoom(12);
+          },
+          () => {},
+          { enableHighAccuracy: true, timeout: 5000 }
+        );
+      }
+      return;
+    }
+
     const storedView = getStoredMapView();
     if (storedView) return;
 
@@ -122,16 +137,17 @@ function BoundsController({ places }: { places: SavedPlace[] }) {
       () => fitToPlaces(map, places),
       { enableHighAccuracy: true, timeout: 5000 }
     );
-  }, [map, isLoaded, places, getPlaceSignature, fitToPlaces]);
+  }, [map, isLoaded, places, getPlaceSignature, fitToPlaces, disableFitToPlaces]);
 
   useEffect(() => {
+    if (disableFitToPlaces) return;
     if (!map || !isLoaded || !hasInitializedRef.current) return;
     const newSig = getPlaceSignature(places);
     if (newSig !== prevPlaceSignatureRef.current && places.length > 0) {
       prevPlaceSignatureRef.current = newSig;
       fitToPlaces(map, places);
     }
-  }, [map, isLoaded, places, getPlaceSignature, fitToPlaces]);
+  }, [map, isLoaded, places, getPlaceSignature, fitToPlaces, disableFitToPlaces]);
 
   useEffect(() => {
     if (!map || !isLoaded) return;
@@ -184,7 +200,7 @@ function StyleController() {
 }
 
 export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function PlaceMap(
-  { places, selectedPlaceId, onMarkerClick, showAvatars = false },
+  { places, selectedPlaceId, onMarkerClick, showAvatars = false, disableFitToPlaces = false },
   ref
 ) {
   const mapRef = useRef<MapRef>(null);
@@ -217,7 +233,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
         zoom={initialZoom}
         className="h-full w-full"
       >
-        <BoundsController places={places} />
+        <BoundsController places={places} disableFitToPlaces={disableFitToPlaces} />
         <StyleController />
         <MapControls places={places} />
         {places.map((savedPlace) => (
