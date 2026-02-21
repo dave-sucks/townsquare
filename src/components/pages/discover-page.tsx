@@ -208,7 +208,7 @@ export function DiscoverPage({ user }: { user: UserData }) {
       onPlaceSelect={handlePlaceSelect}
       showSearch={true}
       sheetComponent={dialogs}
-      centerOnUser={true}
+      centerOnUser={false}
     >
       {sidebar}
     </MapLayout>
