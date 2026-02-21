@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { enqueueJob } from "../queue";
+import { downloadAndStoreImage } from "@/lib/object-storage";
 
 interface ImportProfilePayload {
   importJobId: string;
@@ -98,12 +99,26 @@ async function upsertCreatorUser(handle: string, profilePicUrl?: string | null, 
   const firstName = nameParts[0] || null;
   const lastName = nameParts.slice(1).join(" ") || null;
 
+  let storedProfileUrl: string | null = null;
+  if (profilePicUrl) {
+    try {
+      storedProfileUrl = await downloadAndStoreImage(
+        profilePicUrl,
+        `profile-pics/${handle}.jpg`
+      );
+      console.log(`[Import] Stored profile pic for @${handle} in object storage`);
+    } catch (err: any) {
+      console.error(`[Import] Failed to store profile pic for @${handle}:`, err.message);
+      storedProfileUrl = profilePicUrl;
+    }
+  }
+
   if (existing) {
     await prisma.user.update({
       where: { id: existing.id },
       data: {
         lastInstagramSync: new Date(),
-        ...(profilePicUrl && !existing.profileImageUrl ? { profileImageUrl: profilePicUrl } : {}),
+        ...(storedProfileUrl ? { profileImageUrl: storedProfileUrl } : {}),
         ...(firstName && !existing.firstName ? { firstName } : {}),
         ...(lastName && !existing.lastName ? { lastName } : {}),
       },
@@ -117,7 +132,7 @@ async function upsertCreatorUser(handle: string, profilePicUrl?: string | null, 
       username: handle,
       isInstagramImport: true,
       lastInstagramSync: new Date(),
-      ...(profilePicUrl ? { profileImageUrl: profilePicUrl } : {}),
+      ...(storedProfileUrl ? { profileImageUrl: storedProfileUrl } : {}),
       ...(firstName ? { firstName } : {}),
       ...(lastName ? { lastName } : {}),
     },
