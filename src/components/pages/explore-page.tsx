@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { MapLayout } from "@/components/map/map-layout";
 import {
@@ -59,6 +59,10 @@ const COLLECTION_TABS: CollectionTab[] = [
 ];
 
 export function ExplorePage({ user }: { user: UserData }) {
+  useEffect(() => {
+    localStorage.removeItem("twnsq-map-view");
+  }, []);
+
   const [activeTab, setActiveTab] = useState("following");
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<ExploreView>("list");
