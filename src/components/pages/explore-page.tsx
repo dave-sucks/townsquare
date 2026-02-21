@@ -160,6 +160,7 @@ export function ExplorePage({ user }: { user: UserData }) {
       onPlaceSelect={handlePlaceSelect}
       showSearch={true}
       showAvatars={activeTab === "following"}
+      centerOnUser={true}
     >
       {sidebar}
     </MapLayout>

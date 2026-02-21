@@ -43,6 +43,7 @@ interface PlaceMapProps {
   isSettingsOpen?: boolean;
   onSettingsOpenChange?: (open: boolean) => void;
   showAvatars?: boolean;
+  centerOnUser?: boolean;
 }
 
 export interface PlaceMapHandle {
@@ -77,46 +78,67 @@ function saveMapView(center: [number, number], zoom: number) {
   } catch (e) {}
 }
 
-function BoundsController({ places }: { places: SavedPlace[] }) {
+function BoundsController({ places, centerOnUser = false }: { places: SavedPlace[]; centerOnUser?: boolean }) {
   const { map, isLoaded } = useMap();
   const hasInitializedRef = useRef(false);
+  const prevPlaceSignatureRef = useRef<string>("");
+
+  const fitToPlaces = useCallback((m: google.maps.Map, placeList: SavedPlace[]) => {
+    if (placeList.length === 0) return;
+    if (placeList.length === 1) {
+      m.panTo({ lat: placeList[0].place.lat, lng: placeList[0].place.lng });
+      m.setZoom(14);
+    } else {
+      const bounds = new google.maps.LatLngBounds();
+      placeList.forEach((sp) => {
+        bounds.extend({ lat: sp.place.lat, lng: sp.place.lng });
+      });
+      m.fitBounds(bounds, { top: 60, right: 60, bottom: 220, left: 60 });
+    }
+  }, []);
+
+  const getPlaceSignature = useCallback((placeList: SavedPlace[]) => {
+    return placeList.map(p => `${p.id}:${p.place.lat},${p.place.lng}`).sort().join("|");
+  }, []);
 
   useEffect(() => {
     if (!map || !isLoaded || hasInitializedRef.current) return;
     hasInitializedRef.current = true;
 
-    const storedView = getStoredMapView();
-    if (storedView) return;
-
-    const fallbackToPlaces = () => {
-      if (places.length === 0) return;
-      if (places.length === 1) {
-        map.panTo({ lat: places[0].place.lat, lng: places[0].place.lng });
-        map.setZoom(14);
-      } else {
-        const bounds = new google.maps.LatLngBounds();
-        places.forEach((sp) => {
-          bounds.extend({ lat: sp.place.lat, lng: sp.place.lng });
-        });
-        map.fitBounds(bounds, { top: 60, right: 60, bottom: 220, left: 60 });
+    if (centerOnUser) {
+      const storedView = getStoredMapView();
+      if (storedView) {
+        prevPlaceSignatureRef.current = getPlaceSignature(places);
+        return;
       }
-    };
-
-    if (!("geolocation" in navigator)) {
-      fallbackToPlaces();
-      return;
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            map.panTo({ lat: latitude, lng: longitude });
+            map.setZoom(12);
+          },
+          () => fitToPlaces(map, places),
+          { enableHighAccuracy: true, timeout: 5000 }
+        );
+      } else {
+        fitToPlaces(map, places);
+      }
+    } else {
+      fitToPlaces(map, places);
     }
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        map.panTo({ lat: latitude, lng: longitude });
-        map.setZoom(12);
-      },
-      () => fallbackToPlaces(),
-      { enableHighAccuracy: true, timeout: 5000 }
-    );
-  }, [map, isLoaded, places]);
+    prevPlaceSignatureRef.current = getPlaceSignature(places);
+  }, [map, isLoaded, places, centerOnUser, fitToPlaces, getPlaceSignature]);
+
+  useEffect(() => {
+    if (!map || !isLoaded || centerOnUser) return;
+    const newSignature = getPlaceSignature(places);
+    if (newSignature !== prevPlaceSignatureRef.current && places.length > 0) {
+      prevPlaceSignatureRef.current = newSignature;
+      fitToPlaces(map, places);
+    }
+  }, [map, isLoaded, places, centerOnUser, fitToPlaces, getPlaceSignature]);
 
   useEffect(() => {
     if (!map || !isLoaded) return;
@@ -169,7 +191,7 @@ function StyleController() {
 }
 
 export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function PlaceMap(
-  { places, selectedPlaceId, onMarkerClick, showAvatars = false },
+  { places, selectedPlaceId, onMarkerClick, showAvatars = false, centerOnUser = false },
   ref
 ) {
   const mapRef = useRef<MapRef>(null);
@@ -202,7 +224,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
         zoom={initialZoom}
         className="h-full w-full"
       >
-        <BoundsController places={places} />
+        <BoundsController places={places} centerOnUser={centerOnUser} />
         <StyleController />
         <MapControls places={places} />
         {places.map((savedPlace) => (
