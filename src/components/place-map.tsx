@@ -104,32 +104,10 @@ function BoundsController({ places }: { places: SavedPlace[] }) {
     if (!map || !isLoaded || hasInitializedRef.current) return;
     hasInitializedRef.current = true;
 
-    const storedView = getStoredMapView();
-    if (storedView) {
-      prevPlaceSignatureRef.current = getPlaceSignature(places);
-      return;
-    }
-
-    const fallbackToPlaces = () => {
+    if (places.length > 0) {
       fitToPlaces(map, places);
       prevPlaceSignatureRef.current = getPlaceSignature(places);
-    };
-
-    if (!("geolocation" in navigator)) {
-      fallbackToPlaces();
-      return;
     }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        map.panTo({ lat: latitude, lng: longitude });
-        map.setZoom(12);
-        prevPlaceSignatureRef.current = getPlaceSignature(places);
-      },
-      () => fallbackToPlaces(),
-      { enableHighAccuracy: true, timeout: 5000 }
-    );
   }, [map, isLoaded, places, fitToPlaces, getPlaceSignature]);
 
   useEffect(() => {
