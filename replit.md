@@ -10,6 +10,9 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 ### Key Rule: Failed Fix Protocol
 **Anytime the user asks for a fix and it doesn't work, do NOT just try again.** First: (1) explain why the previous attempt didn't work and what was done wrong, (2) undo the failed change, and (3) only then attempt a new fix with a proper understanding of the root cause.
 
+### CRITICAL: DO NOT SWITCH TO TURBOPACK
+**NEVER change the dev command from `--webpack` to `--turbopack`.** Turbopack does NOT work with this project. This has been attempted many times and always fails, requiring a revert. The dev command MUST remain `next dev --webpack`. Do not attempt to "fix" slow compilation by switching bundlers.
+
 ## System Architecture
 
 ### Frontend Architecture
