@@ -82,6 +82,10 @@ function BoundsController({ places }: { places: SavedPlace[] }) {
   const hasInitializedRef = useRef(false);
   const prevPlaceSignatureRef = useRef<string>("");
 
+  const getPlaceSignature = useCallback((placeList: SavedPlace[]) => {
+    return placeList.map(p => `${p.id}:${p.place.lat},${p.place.lng}`).sort().join("|");
+  }, []);
+
   const fitToPlaces = useCallback((m: google.maps.Map, placeList: SavedPlace[]) => {
     if (placeList.length === 0) return;
     if (placeList.length === 1) {
@@ -96,29 +100,38 @@ function BoundsController({ places }: { places: SavedPlace[] }) {
     }
   }, []);
 
-  const getPlaceSignature = useCallback((placeList: SavedPlace[]) => {
-    return placeList.map(p => `${p.id}:${p.place.lat},${p.place.lng}`).sort().join("|");
-  }, []);
-
   useEffect(() => {
     if (!map || !isLoaded || hasInitializedRef.current) return;
     hasInitializedRef.current = true;
+    prevPlaceSignatureRef.current = getPlaceSignature(places);
 
-    if (places.length > 0) {
+    const storedView = getStoredMapView();
+    if (storedView) return;
+
+    if (!("geolocation" in navigator)) {
       fitToPlaces(map, places);
-      prevPlaceSignatureRef.current = getPlaceSignature(places);
+      return;
     }
-  }, [map, isLoaded, places, fitToPlaces, getPlaceSignature]);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        map.panTo({ lat: latitude, lng: longitude });
+        map.setZoom(12);
+      },
+      () => fitToPlaces(map, places),
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
+  }, [map, isLoaded, places, getPlaceSignature, fitToPlaces]);
 
   useEffect(() => {
-    if (!map || !isLoaded) return;
-    if (!hasInitializedRef.current) return;
-    const newSignature = getPlaceSignature(places);
-    if (newSignature !== prevPlaceSignatureRef.current && places.length > 0) {
-      prevPlaceSignatureRef.current = newSignature;
+    if (!map || !isLoaded || !hasInitializedRef.current) return;
+    const newSig = getPlaceSignature(places);
+    if (newSig !== prevPlaceSignatureRef.current && places.length > 0) {
+      prevPlaceSignatureRef.current = newSig;
       fitToPlaces(map, places);
     }
-  }, [map, isLoaded, places, fitToPlaces, getPlaceSignature]);
+  }, [map, isLoaded, places, getPlaceSignature, fitToPlaces]);
 
   useEffect(() => {
     if (!map || !isLoaded) return;

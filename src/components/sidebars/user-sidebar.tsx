@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -111,7 +111,6 @@ interface UserSidebarProps extends Partial<SidebarInjectedProps> {
   activities: ActivityData[];
   isLoading?: boolean;
   currentUserPlaceData?: Record<string, CurrentUserPlaceData> | null;
-  onFilteredPlacesChange?: (places: SavedPlace[]) => void;
 }
 
 const statusOptions = [
@@ -175,7 +174,6 @@ export function UserSidebar({
   onPlaceSelect,
   placeRowRefs,
   currentUserPlaceData,
-  onFilteredPlacesChange,
 }: UserSidebarProps) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"places" | "feed">("places");
@@ -223,20 +221,14 @@ export function UserSidebar({
   const selectedList = lists.find(l => l.id === selectedListId);
   const selectedListPlaceIds = selectedList?.listPlaces?.map(lp => lp.placeId) || [];
 
-  const filteredPlaces = useMemo(() => {
-    return places.filter((sp) => {
-      if (selectedListId !== "all" && !selectedListPlaceIds.includes(sp.placeId)) {
-        return false;
-      }
-      if (selectedStatusFilter === "not_visited") return !sp.hasBeen;
-      if (selectedStatusFilter === "been") return sp.hasBeen;
-      return true;
-    });
-  }, [places, selectedListId, selectedListPlaceIds, selectedStatusFilter]);
-
-  useEffect(() => {
-    onFilteredPlacesChange?.(filteredPlaces);
-  }, [filteredPlaces, onFilteredPlacesChange]);
+  const filteredPlaces = places.filter((sp) => {
+    if (selectedListId !== "all" && !selectedListPlaceIds.includes(sp.placeId)) {
+      return false;
+    }
+    if (selectedStatusFilter === "not_visited") return !sp.hasBeen;
+    if (selectedStatusFilter === "been") return sp.hasBeen;
+    return true;
+  });
 
   const selectedStatusLabel = statusOptions.find((o) => o.value === selectedStatusFilter)?.label || "All";
   const selectedListLabel = selectedListId === "all" 

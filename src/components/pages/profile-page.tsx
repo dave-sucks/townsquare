@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MapLayout } from "@/components/map/map-layout";
 import { UserSidebar } from "@/components/sidebars/user-sidebar";
@@ -126,7 +126,6 @@ export function ProfilePage({ username, currentUser, isAuthenticated }: ProfileP
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<SidebarView>("profile");
   const [viewingPlaceId, setViewingPlaceId] = useState<string | null>(null);
-  const [mapPlaces, setMapPlaces] = useState<SavedPlace[]>([]);
 
   const { data, isLoading, error } = useQuery<ProfileData>({
     queryKey: ["user-profile", username],
@@ -146,10 +145,6 @@ export function ProfilePage({ username, currentUser, isAuthenticated }: ProfileP
   const handleBackToProfile = useCallback(() => {
     setCurrentView("profile");
     setViewingPlaceId(null);
-  }, []);
-
-  const handleFilteredPlacesChange = useCallback((filtered: SavedPlace[]) => {
-    setMapPlaces(filtered);
   }, []);
 
   if (!isAuthenticated) {
@@ -182,8 +177,7 @@ export function ProfilePage({ username, currentUser, isAuthenticated }: ProfileP
     );
   }
 
-  const placesSource = mapPlaces.length > 0 || allPlaces.length === 0 ? mapPlaces : allPlaces;
-  const placesForMap = placesSource.map(sp => ({
+  const placesForMap = allPlaces.map(sp => ({
     ...sp,
     userId: data.user.id,
     visitedAt: null,
@@ -213,7 +207,6 @@ export function ProfilePage({ username, currentUser, isAuthenticated }: ProfileP
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={handlePlaceSelect}
       currentUserPlaceData={data.currentUserPlaceData}
-      onFilteredPlacesChange={handleFilteredPlacesChange}
     />
   );
 
