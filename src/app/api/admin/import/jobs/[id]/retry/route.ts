@@ -15,21 +15,46 @@ export async function POST(
 
     const { id } = await params;
 
-    const failedPosts = await prisma.ingestedPost.findMany({
-      where: { importJobId: id, status: "failed" },
+    const { searchParams } = new URL(request.url);
+    const includeUnresolved = searchParams.get("includeUnresolved") === "true";
+
+    const statusFilter: string[] = ["failed"];
+    if (includeUnresolved) {
+      statusFilter.push("unresolved");
+    }
+
+    const postsToRetry = await prisma.ingestedPost.findMany({
+      where: { importJobId: id, status: { in: statusFilter } },
     });
 
     let enqueued = 0;
-    for (const post of failedPosts) {
+    let unresolvedCount = 0;
+    for (const post of postsToRetry) {
+      if (post.status === "unresolved") {
+        unresolvedCount++;
+      }
       await prisma.ingestedPost.update({
         where: { id: post.id },
-        data: { status: "new", error: null },
+        data: {
+          status: "new",
+          error: null,
+          resolveMethod: null,
+          resolveConfidence: null,
+          resolveCandidates: null,
+        },
       });
       await enqueueJob("PROCESS_POST", { ingestedPostId: post.id });
       enqueued++;
     }
 
-    return NextResponse.json({ retriedCount: enqueued });
+    if (unresolvedCount > 0) {
+      await prisma.importJob.update({
+        where: { id },
+        data: { postsUnresolved: { decrement: unresolvedCount } },
+      });
+    }
+
+    return NextResponse.json({ retriedCount: enqueued, unresolvedRetried: unresolvedCount });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

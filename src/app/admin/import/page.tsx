@@ -641,14 +641,18 @@ function JobDetail({ jobId, onBack }: { jobId: string; onBack: () => void }) {
   });
 
   const retryMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest(`/api/admin/import/jobs/${jobId}/retry`, {
+    mutationFn: async (opts?: { includeUnresolved?: boolean }) => {
+      const params = opts?.includeUnresolved ? "?includeUnresolved=true" : "";
+      return apiRequest(`/api/admin/import/jobs/${jobId}/retry${params}`, {
         method: "POST",
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["/api/admin/import/jobs", jobId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/admin/import/jobs", jobId, "posts"],
       });
     },
   });
@@ -728,8 +732,16 @@ function JobDetail({ jobId, onBack }: { jobId: string; onBack: () => void }) {
             </span>
             <span>{job.reviewsCreated} reviews</span>
             {job.postsUnresolved > 0 && (
-              <span className="text-amber-600">
+              <span className="text-amber-600 flex items-center gap-1">
                 {job.postsUnresolved} unresolved
+                <button
+                  className="underline"
+                  onClick={() => retryMutation.mutate({ includeUnresolved: true })}
+                  disabled={retryMutation.isPending}
+                  data-testid="button-retry-unresolved"
+                >
+                  retry
+                </button>
               </span>
             )}
             {job.postsFailed > 0 && (

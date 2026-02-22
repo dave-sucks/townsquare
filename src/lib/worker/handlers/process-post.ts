@@ -32,17 +32,22 @@ export async function handleProcessPost(payload: ProcessPostPayload) {
       return;
     }
 
-    const result = await resolvePlace(post);
+    const allResults = await resolvePlaces(post);
 
-    if (!result || result.confidence < CONFIDENCE_AUTO_THRESHOLD) {
-      const candidates = result?.candidates || [];
+    const autoResolved = allResults
+      .filter(r => r.confidence >= CONFIDENCE_AUTO_THRESHOLD)
+      .sort((a, b) => b.confidence - a.confidence);
+    const allCandidates = allResults.flatMap(r => r.candidates);
+
+    if (autoResolved.length === 0) {
+      const bestResult = allResults.sort((a, b) => b.confidence - a.confidence)[0] || null;
       await prisma.ingestedPost.update({
         where: { id: ingestedPostId },
         data: {
           status: "unresolved",
-          resolveMethod: result?.method || "none",
-          resolveConfidence: result?.confidence || null,
-          resolveCandidates: candidates.length > 0 ? (candidates as any) : null,
+          resolveMethod: bestResult?.method || "none",
+          resolveConfidence: bestResult?.confidence || null,
+          resolveCandidates: allCandidates.length > 0 ? (allCandidates as any) : null,
         },
       });
       await prisma.importJob.update({
@@ -52,7 +57,17 @@ export async function handleProcessPost(payload: ProcessPostPayload) {
       return;
     }
 
-    await createReviewFromPost(post, result.googlePlaceId, result.method, result.confidence);
+    const primary = autoResolved[0];
+    await createReviewFromPost(post, primary.googlePlaceId, primary.method, primary.confidence);
+
+    for (let i = 1; i < autoResolved.length; i++) {
+      const extra = autoResolved[i];
+      try {
+        await createReviewFromPost(post, extra.googlePlaceId, extra.method, extra.confidence, true);
+      } catch (err: any) {
+        console.error(`[ProcessPost] Additional place ${extra.googlePlaceId} failed:`, err.message);
+      }
+    }
   } catch (err: any) {
     await prisma.ingestedPost.update({
       where: { id: ingestedPostId },
@@ -81,11 +96,21 @@ interface ResolveResult {
   }>;
 }
 
-async function resolvePlace(post: any): Promise<ResolveResult | null> {
+async function resolvePlaces(post: any): Promise<ResolveResult[]> {
   const raw = post.rawPayload as any;
   const caption = post.caption || "";
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) throw new Error("GOOGLE_MAPS_API_KEY not configured");
+
+  const results: ResolveResult[] = [];
+  const seenPlaceIds = new Set<string>();
+
+  function addResult(r: ResolveResult) {
+    if (!seenPlaceIds.has(r.googlePlaceId)) {
+      seenPlaceIds.add(r.googlePlaceId);
+      results.push(r);
+    }
+  }
 
   const locationName = raw?.locationName || raw?.location?.name;
   if (locationName) {
@@ -95,12 +120,12 @@ async function resolvePlace(post: any): Promise<ResolveResult | null> {
       const geotagConfidence = best.name.toLowerCase().includes(locationName.toLowerCase().split(" ")[0])
         ? 0.95
         : Math.max(best.score, 0.85);
-      return {
+      addResult({
         googlePlaceId: best.googlePlaceId,
         confidence: geotagConfidence,
         method: "geotag",
         candidates: result.candidates,
-      };
+      });
     }
   }
 
@@ -109,12 +134,12 @@ async function resolvePlace(post: any): Promise<ResolveResult | null> {
     const result = await searchGooglePlaces(venueName, apiKey);
     if (result && result.candidates.length > 0) {
       const best = result.candidates[0];
-      return {
+      addResult({
         googlePlaceId: best.googlePlaceId,
         confidence: Math.min(best.score, 0.85),
         method: "caption",
         candidates: result.candidates,
-      };
+      });
     }
   }
 
@@ -123,12 +148,12 @@ async function resolvePlace(post: any): Promise<ResolveResult | null> {
     const result = await searchGooglePlaces(hashtagVenue, apiKey);
     if (result && result.candidates.length > 0) {
       const best = result.candidates[0];
-      return {
+      addResult({
         googlePlaceId: best.googlePlaceId,
         confidence: Math.min(best.score, 0.75),
         method: "hashtag",
         candidates: result.candidates,
-      };
+      });
     }
   }
 
@@ -138,34 +163,34 @@ async function resolvePlace(post: any): Promise<ResolveResult | null> {
     if (result && result.candidates.length > 0) {
       const best = result.candidates[0];
       if (best.score >= 0.7) {
-        return {
+        addResult({
           googlePlaceId: best.googlePlaceId,
           confidence: Math.min(best.score, 0.80),
           method: "caption",
           candidates: result.candidates,
-        };
+        });
       }
     }
   }
 
   try {
-    const aiResult = await aiExtractVenue(caption);
-    if (aiResult) {
-      const result = await searchGooglePlaces(aiResult, apiKey);
+    const aiVenues = await aiExtractVenues(caption);
+    for (const venueName of aiVenues) {
+      const result = await searchGooglePlaces(venueName, apiKey);
       if (result && result.candidates.length > 0) {
         const best = result.candidates[0];
-        return {
+        addResult({
           googlePlaceId: best.googlePlaceId,
           confidence: Math.min(best.score, 0.80),
           method: "ai",
           candidates: result.candidates,
-        };
+        });
       }
     }
   } catch {
   }
 
-  return null;
+  return results;
 }
 
 async function searchGooglePlaces(
@@ -257,11 +282,11 @@ function extractTaggedAccounts(caption: string): string[] {
   return tags ? tags.map((t) => t.replace("@", "")) : [];
 }
 
-async function aiExtractVenue(caption: string): Promise<string | null> {
-  if (!caption || caption.length < 10) return null;
+async function aiExtractVenues(caption: string): Promise<string[]> {
+  if (!caption || caption.length < 10) return [];
 
   const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-  if (!openaiKey) return null;
+  if (!openaiKey) return [];
 
   try {
     const baseUrl = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || "https://api.openai.com/v1";
@@ -277,22 +302,35 @@ async function aiExtractVenue(caption: string): Promise<string | null> {
           {
             role: "system",
             content:
-              'Extract the restaurant/bar/cafe name from this Instagram caption. Return ONLY the venue name, nothing else. If no venue can be identified, return "NONE".',
+              'Extract ALL restaurant, bar, cafe, and food venue names mentioned in this Instagram caption. A post may mention multiple places. Return a JSON array of venue name strings, e.g. ["Venue One", "Venue Two"]. If no venues can be identified, return []. Return ONLY the JSON array, nothing else.',
           },
           { role: "user", content: caption.substring(0, 500) },
         ],
         temperature: 0,
-        max_tokens: 100,
+        max_tokens: 200,
       }),
     });
 
-    if (!response.ok) return null;
+    if (!response.ok) return [];
     const data = await response.json();
     const result = data.choices?.[0]?.message?.content?.trim();
-    if (!result || result === "NONE" || result.length > 100) return null;
-    return result;
+    if (!result) return [];
+    try {
+      const parsed = JSON.parse(result);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((v: any) => typeof v === "string" && v.length > 0 && v.length <= 100);
+      }
+      if (typeof parsed === "string" && parsed !== "NONE" && parsed.length <= 100) {
+        return [parsed];
+      }
+    } catch {
+      if (result !== "NONE" && result.length <= 100) {
+        return [result];
+      }
+    }
+    return [];
   } catch {
-    return null;
+    return [];
   }
 }
 
@@ -300,7 +338,8 @@ export async function createReviewFromPost(
   post: any,
   googlePlaceId: string,
   method: string,
-  confidence: number
+  confidence: number,
+  isAdditionalPlace: boolean = false
 ) {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) throw new Error("GOOGLE_MAPS_API_KEY not configured");
@@ -340,28 +379,34 @@ export async function createReviewFromPost(
   });
   if (!user) throw new Error(`User not found for handle: ${post.authorHandle}`);
 
+  const reviewPostId = isAdditionalPlace
+    ? `${post.canonicalPostId}__place_${googlePlaceId}`
+    : post.canonicalPostId;
+
   const existingReview = await prisma.review.findFirst({
     where: {
-      instagramPostId: post.canonicalPostId,
+      instagramPostId: reviewPostId,
     },
   });
   if (existingReview) {
-    await prisma.ingestedPost.update({
-      where: { id: post.id },
-      data: {
-        status: "processed",
-        resolvedGooglePlaceId: googlePlaceId,
-        resolveMethod: method as any,
-        resolveConfidence: confidence,
-        reviewId: existingReview.id,
-      },
-    });
-    await prisma.importJob.update({
-      where: { id: post.importJobId },
-      data: {
-        postsProcessed: { increment: 1 },
-      },
-    });
+    if (!isAdditionalPlace) {
+      await prisma.ingestedPost.update({
+        where: { id: post.id },
+        data: {
+          status: "processed",
+          resolvedGooglePlaceId: googlePlaceId,
+          resolveMethod: method as any,
+          resolveConfidence: confidence,
+          reviewId: existingReview.id,
+        },
+      });
+      await prisma.importJob.update({
+        where: { id: post.importJobId },
+        data: {
+          postsProcessed: { increment: 1 },
+        },
+      });
+    }
     return;
   }
 
@@ -372,7 +417,7 @@ export async function createReviewFromPost(
       userId: user.id,
       placeId: place.id,
       source: "instagram",
-      instagramPostId: post.canonicalPostId,
+      instagramPostId: reviewPostId,
       instagramShortcode: (post.rawPayload as any)?.shortCode || null,
       instagramUrl: post.url,
       socialPostCaption: post.caption || null,
@@ -421,7 +466,7 @@ export async function createReviewFromPost(
         actorId: user.id,
         type: "REVIEW_CREATED",
         placeId: place.id,
-        dedupeKey: `review_import_${post.canonicalPostId}`,
+        dedupeKey: `review_import_${reviewPostId}`,
         createdAt: post.postedAt || new Date(),
       },
     });
@@ -431,21 +476,23 @@ export async function createReviewFromPost(
     }
   }
 
-  await prisma.ingestedPost.update({
-    where: { id: post.id },
-    data: {
-      status: "processed",
-      resolvedGooglePlaceId: googlePlaceId,
-      resolveMethod: method as any,
-      resolveConfidence: confidence,
-      reviewId: review.id,
-    },
-  });
+  if (!isAdditionalPlace) {
+    await prisma.ingestedPost.update({
+      where: { id: post.id },
+      data: {
+        status: "processed",
+        resolvedGooglePlaceId: googlePlaceId,
+        resolveMethod: method as any,
+        resolveConfidence: confidence,
+        reviewId: review.id,
+      },
+    });
+  }
 
   await prisma.importJob.update({
     where: { id: post.importJobId },
     data: {
-      postsProcessed: { increment: 1 },
+      postsProcessed: isAdditionalPlace ? undefined : { increment: 1 },
       reviewsCreated: { increment: 1 },
     },
   });
