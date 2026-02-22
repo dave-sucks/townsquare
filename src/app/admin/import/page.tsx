@@ -646,11 +646,11 @@ function JobDetail({ jobId, onBack }: { jobId: string; onBack: () => void }) {
         <div className="max-w-lg mx-auto">
           <div className="px-4 pb-2">
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-              <TabsList className="h-auto bg-transparent p-0 gap-0 w-auto">
-                <TabsTrigger value="all" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 py-1.5 text-sm" data-testid="tab-all">All</TabsTrigger>
-                <TabsTrigger value="processed" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 py-1.5 text-sm" data-testid="tab-processed">Processed</TabsTrigger>
-                <TabsTrigger value="unresolved" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 py-1.5 text-sm" data-testid="tab-unresolved">Unresolved</TabsTrigger>
-                <TabsTrigger value="failed" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 py-1.5 text-sm" data-testid="tab-failed">Failed</TabsTrigger>
+              <TabsList className="w-auto">
+                <TabsTrigger value="all" data-testid="tab-all">All</TabsTrigger>
+                <TabsTrigger value="processed" data-testid="tab-processed">Processed</TabsTrigger>
+                <TabsTrigger value="unresolved" data-testid="tab-unresolved">Unresolved</TabsTrigger>
+                <TabsTrigger value="failed" data-testid="tab-failed">Failed</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
