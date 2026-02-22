@@ -25,7 +25,29 @@ export async function GET(
       take: 200,
     });
 
-    return NextResponse.json({ posts });
+    const resolvedPlaceIds = posts
+      .map((p) => p.resolvedGooglePlaceId)
+      .filter(Boolean) as string[];
+
+    let placesMap: Record<string, { name: string; formattedAddress: string }> = {};
+    if (resolvedPlaceIds.length > 0) {
+      const places = await prisma.place.findMany({
+        where: { googlePlaceId: { in: resolvedPlaceIds } },
+        select: { googlePlaceId: true, name: true, formattedAddress: true },
+      });
+      for (const p of places) {
+        placesMap[p.googlePlaceId] = { name: p.name, formattedAddress: p.formattedAddress };
+      }
+    }
+
+    const postsWithPlaces = posts.map((post) => ({
+      ...post,
+      resolvedPlace: post.resolvedGooglePlaceId
+        ? placesMap[post.resolvedGooglePlaceId] || null
+        : null,
+    }));
+
+    return NextResponse.json({ posts: postsWithPlaces });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
