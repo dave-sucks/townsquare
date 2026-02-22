@@ -78,7 +78,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     loadGoogleMaps().then(() => {
       if (cancelled || !containerRef.current) return;
 
-      const map = new google.maps.Map(containerRef.current, {
+      const mapOptions: google.maps.MapOptions = {
         center: { lat: center[1], lng: center[0] },
         zoom,
         mapTypeId,
@@ -87,7 +87,13 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
         zoomControl: false,
         clickableIcons: false,
         gestureHandling: "greedy",
-      });
+      };
+
+      if (google.maps.RenderingType) {
+        mapOptions.renderingType = google.maps.RenderingType.RASTER;
+      }
+
+      const map = new google.maps.Map(containerRef.current, mapOptions);
 
       setMapInstance(map);
 
