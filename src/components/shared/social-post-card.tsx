@@ -73,8 +73,8 @@ export function SocialPostCard({
             borderRadius: 0,
             boxShadow: 'none',
             margin: 0,
-            maxWidth: '540px',
-            minWidth: '326px',
+            maxWidth: '100%',
+            minWidth: '280px',
             padding: 0,
             width: '100%',
           }}

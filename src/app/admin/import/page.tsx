@@ -602,57 +602,55 @@ function JobDetail({ jobId, onBack }: { jobId: string; onBack: () => void }) {
   return (
     <div className="flex flex-col h-dvh overflow-hidden">
       <div className="flex-shrink-0 px-4 py-3">
-        <div className="max-w-lg mx-auto">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8 flex-shrink-0" data-testid="button-back">
-              <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4 rotate-180" />
-            </Button>
-            <div className="flex-1 min-w-0">
-              {handle && (
-                <p className="font-semibold text-lg" data-testid="text-handle">@{handle}</p>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5">
-              <StatusDot status={job?.status || "pending"} />
-              <span className="text-sm">{job?.status || "loading"}</span>
-            </div>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8 flex-shrink-0" data-testid="button-back">
+            <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4 rotate-180" />
+          </Button>
+          <div className="flex-1 min-w-0">
+            {handle && (
+              <p className="font-semibold text-lg" data-testid="text-handle">@{handle}</p>
+            )}
           </div>
-
-          {job && (
-            <div className="flex items-center gap-4 mt-1 ml-11 text-xs text-muted-foreground">
-              <span>{job.postsFetched} fetched</span>
-              <span className="text-emerald-600">{job.postsProcessed} processed</span>
-              <span>{job.reviewsCreated} reviews</span>
-              {job.postsUnresolved > 0 && (
-                <span className="text-amber-600">{job.postsUnresolved} unresolved</span>
-              )}
-              {job.postsFailed > 0 && (
-                <span className="text-destructive flex items-center gap-1">
-                  {job.postsFailed} failed
-                  <button
-                    className="underline"
-                    onClick={() => retryMutation.mutate()}
-                    disabled={retryMutation.isPending}
-                    data-testid="button-retry-failed"
-                  >
-                    retry
-                  </button>
-                </span>
-              )}
-            </div>
-          )}
+          <div className="flex items-center gap-1.5">
+            <StatusDot status={job?.status || "pending"} />
+            <span className="text-sm">{job?.status || "loading"}</span>
+          </div>
         </div>
+
+        {job && (
+          <div className="flex items-center gap-4 mt-1 ml-11 text-xs text-muted-foreground">
+            <span>{job.postsFetched} fetched</span>
+            <span className="text-emerald-600">{job.postsProcessed} processed</span>
+            <span>{job.reviewsCreated} reviews</span>
+            {job.postsUnresolved > 0 && (
+              <span className="text-amber-600">{job.postsUnresolved} unresolved</span>
+            )}
+            {job.postsFailed > 0 && (
+              <span className="text-destructive flex items-center gap-1">
+                {job.postsFailed} failed
+                <button
+                  className="underline"
+                  onClick={() => retryMutation.mutate()}
+                  disabled={retryMutation.isPending}
+                  data-testid="button-retry-failed"
+                >
+                  retry
+                </button>
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-lg mx-auto">
           <div className="px-4 pb-2">
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-              <TabsList className="w-auto">
-                <TabsTrigger value="all" data-testid="tab-all">All</TabsTrigger>
-                <TabsTrigger value="processed" data-testid="tab-processed">Processed</TabsTrigger>
-                <TabsTrigger value="unresolved" data-testid="tab-unresolved">Unresolved</TabsTrigger>
-                <TabsTrigger value="failed" data-testid="tab-failed">Failed</TabsTrigger>
+              <TabsList className="h-auto bg-transparent p-0 gap-0 w-auto">
+                <TabsTrigger value="all" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 py-1.5 text-sm" data-testid="tab-all">All</TabsTrigger>
+                <TabsTrigger value="processed" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 py-1.5 text-sm" data-testid="tab-processed">Processed</TabsTrigger>
+                <TabsTrigger value="unresolved" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 py-1.5 text-sm" data-testid="tab-unresolved">Unresolved</TabsTrigger>
+                <TabsTrigger value="failed" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 py-1.5 text-sm" data-testid="tab-failed">Failed</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
