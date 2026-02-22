@@ -16,6 +16,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverAnchor,
+} from "@/components/ui/popover";
 import { apiRequest } from "@/lib/query-client";
 import { useAuth } from "@/hooks/use-auth";
 import { AppShell, PageHeader } from "@/components/layout";
@@ -321,86 +327,97 @@ function AddPlacesPanel({
     setSelectedPlaces((prev) => prev.filter((p) => p.placeId !== placeId));
   };
 
+  const showDropdown = query.length >= 2 && (isSearching || results.length > 0);
+
   return (
     <div className="space-y-3 pt-2" data-testid={`resolve-inline-${postId}`}>
-      <div className="relative">
-        <HugeiconsIcon
-          icon={Search01Icon}
-          className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
-        />
-        <Input
-          placeholder="Search for a place..."
-          value={query}
-          onChange={(e) => search(e.target.value)}
-          className="pl-9"
-          autoFocus
-          data-testid="input-place-search"
-        />
-        {query && (
-          <button
-            className="absolute right-3 top-1/2 -translate-y-1/2"
-            onClick={() => search("")}
-          >
+      <Popover open={showDropdown}>
+        <PopoverAnchor asChild>
+          <div className="relative">
             <HugeiconsIcon
-              icon={Cancel01Icon}
-              className="h-4 w-4 text-muted-foreground"
+              icon={Search01Icon}
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
             />
-          </button>
-        )}
-      </div>
-
-      {isSearching && (
-        <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
-          <HugeiconsIcon
-            icon={Loading03Icon}
-            className="h-4 w-4 animate-spin"
-          />
-          Searching...
-        </div>
-      )}
-
-      {!isSearching && results.length > 0 && (
-        <div className="max-h-52 overflow-y-auto border rounded-md divide-y bg-background">
-          {results.map((place) => {
-            const alreadyAdded = selectedPlaces.some(
-              (p) => p.placeId === place.place_id,
-            );
-            return (
-              <div
-                key={place.place_id}
-                className={`flex items-center gap-2 px-3 py-2.5 ${alreadyAdded ? "opacity-40" : "hover:bg-muted/50 cursor-pointer"}`}
-                onClick={() => !alreadyAdded && addPlace(place)}
-                data-testid={`place-result-${place.place_id}`}
+            <Input
+              placeholder="Search for a place..."
+              value={query}
+              onChange={(e) => search(e.target.value)}
+              className="pl-9"
+              autoFocus
+              data-testid="input-place-search"
+            />
+            {query && (
+              <button
+                className="absolute right-3 top-1/2 -translate-y-1/2"
+                onClick={() => search("")}
               >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {place.main_text}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {place.secondary_text}
-                  </p>
-                </div>
-                {alreadyAdded ? (
-                  <span className="text-xs text-muted-foreground flex-shrink-0">
-                    Added
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-0.5 text-xs text-primary flex-shrink-0">
-                    <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
-                    Add
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {!isSearching && query.length >= 2 && results.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-2">
-          No results
-        </p>
-      )}
+                <HugeiconsIcon
+                  icon={Cancel01Icon}
+                  className="h-4 w-4 text-muted-foreground"
+                />
+              </button>
+            )}
+          </div>
+        </PopoverAnchor>
+        <PopoverContent
+          className="p-0 w-[var(--radix-popover-trigger-width)] max-h-60 overflow-y-auto"
+          align="start"
+          sideOffset={4}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          {isSearching && (
+            <div className="flex items-center gap-2 py-3 px-3 text-sm text-muted-foreground">
+              <HugeiconsIcon
+                icon={Loading03Icon}
+                className="h-4 w-4 animate-spin"
+              />
+              Searching...
+            </div>
+          )}
+          {!isSearching && results.length > 0 && (
+            <div className="divide-y">
+              {results.map((place) => {
+                const alreadyAdded = selectedPlaces.some(
+                  (p) => p.placeId === place.place_id,
+                );
+                return (
+                  <div
+                    key={place.place_id}
+                    className={`flex items-center gap-2 px-3 py-2.5 ${alreadyAdded ? "opacity-40" : "hover:bg-accent cursor-pointer"}`}
+                    onClick={() => !alreadyAdded && addPlace(place)}
+                    data-testid={`place-result-${place.place_id}`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {place.main_text}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {place.secondary_text}
+                      </p>
+                    </div>
+                    {alreadyAdded ? (
+                      <span className="text-xs text-muted-foreground flex-shrink-0">
+                        Added
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-0.5 text-xs text-primary flex-shrink-0">
+                        <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
+                        Add
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {!isSearching && query.length >= 2 && results.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-3">
+              No results
+            </p>
+          )}
+        </PopoverContent>
+      </Popover>
 
       {selectedPlaces.length > 0 && (
         <div className="space-y-1">
