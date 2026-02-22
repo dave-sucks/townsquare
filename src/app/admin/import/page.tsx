@@ -486,7 +486,7 @@ function FeedPostItem({
   const hasLocations = hasResolved || hasCandidates;
 
   return (
-    <article className="flex flex-col p-4 bg-muted" data-testid={`card-post-${post.id}`}>
+    <article className="flex flex-col p-4 bg-muted/50 rounded-lg" data-testid={`card-post-${post.id}`}>
       <div className="flex items-center gap-2 px-0 py-3">
         <StatusDot status={post.status} />
         <span className="text-lg">{post.status}</span>
@@ -498,7 +498,7 @@ function FeedPostItem({
       </div>
 
       <div className="flex flex-col gap-0 px-0 pb-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-2">
           <p className="text-sm font-semibold uppercase text-muted-foreground">Locations</p>
           {post.status === "unresolved" && !addingPlaces && (
             <Button
