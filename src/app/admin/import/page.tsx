@@ -155,7 +155,10 @@ function ImportPanel() {
         >
           {startImport.isPending ? (
             <>
-              <HugeiconsIcon icon={Loading03Icon} className="mr-2 h-4 w-4 animate-spin" />
+              <HugeiconsIcon
+                icon={Loading03Icon}
+                className="mr-2 h-4 w-4 animate-spin"
+              />
               Starting...
             </>
           ) : (
@@ -163,7 +166,10 @@ function ImportPanel() {
           )}
         </Button>
         {startImport.isError && (
-          <p className="text-sm text-destructive" data-testid="text-import-error">
+          <p
+            className="text-sm text-destructive"
+            data-testid="text-import-error"
+          >
             {(startImport.error as Error).message}
           </p>
         )}
@@ -198,7 +204,9 @@ function JobCard({ job, onSelect }: { job: ImportJob; onSelect: () => void }) {
           <span>Processed: {job.postsProcessed}</span>
           <span>Reviews: {job.reviewsCreated}</span>
           {job.postsUnresolved > 0 && (
-            <span className="text-amber-600">{job.postsUnresolved} unresolved</span>
+            <span className="text-amber-600">
+              {job.postsUnresolved} unresolved
+            </span>
           )}
           {job.postsFailed > 0 && (
             <span className="text-red-600">{job.postsFailed} failed</span>
@@ -214,7 +222,9 @@ function JobCard({ job, onSelect }: { job: ImportJob; onSelect: () => void }) {
 
 function usePlaceSearch() {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Array<{ place_id: string; main_text: string; secondary_text: string }>>([]);
+  const [results, setResults] = useState<
+    Array<{ place_id: string; main_text: string; secondary_text: string }>
+  >([]);
   const [isSearching, setIsSearching] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -229,15 +239,18 @@ function usePlaceSearch() {
     setIsSearching(true);
     debounceRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/places/search?q=${encodeURIComponent(q)}`);
+        const res = await fetch(
+          `/api/places/search?q=${encodeURIComponent(q)}`,
+        );
         const data = await res.json();
         const predictions = data.predictions || [];
         setResults(
           predictions.map((p: any) => ({
             place_id: p.place_id,
-            main_text: p.structured_formatting?.main_text || p.description || "",
+            main_text:
+              p.structured_formatting?.main_text || p.description || "",
             secondary_text: p.structured_formatting?.secondary_text || "",
-          }))
+          })),
         );
       } catch {
         setResults([]);
@@ -287,11 +300,19 @@ function AddPlacesPanel({
     },
   });
 
-  const addPlace = (place: { place_id: string; main_text: string; secondary_text: string }) => {
+  const addPlace = (place: {
+    place_id: string;
+    main_text: string;
+    secondary_text: string;
+  }) => {
     if (selectedPlaces.some((p) => p.placeId === place.place_id)) return;
     setSelectedPlaces((prev) => [
       ...prev,
-      { placeId: place.place_id, name: place.main_text, address: place.secondary_text },
+      {
+        placeId: place.place_id,
+        name: place.main_text,
+        address: place.secondary_text,
+      },
     ]);
     search("");
   };
@@ -303,7 +324,10 @@ function AddPlacesPanel({
   return (
     <div className="space-y-3 pt-2" data-testid={`resolve-inline-${postId}`}>
       <div className="relative">
-        <HugeiconsIcon icon={Search01Icon} className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <HugeiconsIcon
+          icon={Search01Icon}
+          className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+        />
         <Input
           placeholder="Search for a place..."
           value={query}
@@ -317,14 +341,20 @@ function AddPlacesPanel({
             className="absolute right-3 top-1/2 -translate-y-1/2"
             onClick={() => search("")}
           >
-            <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4 text-muted-foreground" />
+            <HugeiconsIcon
+              icon={Cancel01Icon}
+              className="h-4 w-4 text-muted-foreground"
+            />
           </button>
         )}
       </div>
 
       {isSearching && (
         <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
-          <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+          <HugeiconsIcon
+            icon={Loading03Icon}
+            className="h-4 w-4 animate-spin"
+          />
           Searching...
         </div>
       )}
@@ -332,7 +362,9 @@ function AddPlacesPanel({
       {!isSearching && results.length > 0 && (
         <div className="max-h-52 overflow-y-auto border rounded-md divide-y bg-background">
           {results.map((place) => {
-            const alreadyAdded = selectedPlaces.some((p) => p.placeId === place.place_id);
+            const alreadyAdded = selectedPlaces.some(
+              (p) => p.placeId === place.place_id,
+            );
             return (
               <div
                 key={place.place_id}
@@ -341,11 +373,17 @@ function AddPlacesPanel({
                 data-testid={`place-result-${place.place_id}`}
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{place.main_text}</p>
-                  <p className="text-xs text-muted-foreground truncate">{place.secondary_text}</p>
+                  <p className="text-sm font-medium truncate">
+                    {place.main_text}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {place.secondary_text}
+                  </p>
                 </div>
                 {alreadyAdded ? (
-                  <span className="text-xs text-muted-foreground flex-shrink-0">Added</span>
+                  <span className="text-xs text-muted-foreground flex-shrink-0">
+                    Added
+                  </span>
                 ) : (
                   <span className="flex items-center gap-0.5 text-xs text-primary flex-shrink-0">
                     <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
@@ -359,7 +397,9 @@ function AddPlacesPanel({
       )}
 
       {!isSearching && query.length >= 2 && results.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-2">No results</p>
+        <p className="text-sm text-muted-foreground text-center py-2">
+          No results
+        </p>
       )}
 
       {selectedPlaces.length > 0 && (
@@ -371,7 +411,9 @@ function AddPlacesPanel({
             >
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{place.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{place.address}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {place.address}
+                </p>
               </div>
               <button
                 className="flex-shrink-0 text-muted-foreground hover:text-destructive"
@@ -406,7 +448,10 @@ function AddPlacesPanel({
             data-testid="button-submit-resolve"
           >
             {resolveMutation.isPending ? (
-              <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+              <HugeiconsIcon
+                icon={Loading03Icon}
+                className="h-4 w-4 animate-spin"
+              />
             ) : (
               `Save ${selectedPlaces.length} Place${selectedPlaces.length !== 1 ? "s" : ""}`
             )}
@@ -429,16 +474,22 @@ function FeedPostItem({
   isQuickResolving: boolean;
 }) {
   const [addingPlaces, setAddingPlaces] = useState(false);
-  const candidates = (post.resolveCandidates as Array<{ googlePlaceId: string; name: string; address: string; score: number }>) || [];
+  const candidates =
+    (post.resolveCandidates as Array<{
+      googlePlaceId: string;
+      name: string;
+      address: string;
+      score: number;
+    }>) || [];
   const hasResolved = !!post.resolvedPlace;
   const hasCandidates = candidates.length > 0;
   const hasLocations = hasResolved || hasCandidates;
 
   return (
-    <article className="flex flex-col" data-testid={`card-post-${post.id}`}>
-      <div className="flex items-center gap-2 px-4 py-3">
+    <article className="flex flex-col p-4 bg-muted" data-testid={`card-post-${post.id}`}>
+      <div className="flex items-center gap-2 px-0 py-3">
         <StatusDot status={post.status} />
-        <span className="text-sm">{post.status}</span>
+        <span className="text-lg">{post.status}</span>
         {post.resolveMethod && (
           <Badge variant="outline" className="text-xs">
             {post.resolveMethod}
@@ -446,9 +497,9 @@ function FeedPostItem({
         )}
       </div>
 
-      <div className="flex flex-col gap-0 px-4 pb-3">
+      <div className="flex flex-col gap-0 px-0 pb-3">
         <div className="flex items-center justify-between">
-          <p className="text-base font-semibold">Locations</p>
+          <p className="text-sm font-semibold uppercase text-muted-foreground">Locations</p>
           {post.status === "unresolved" && !addingPlaces && (
             <Button
               variant="outline"
@@ -472,7 +523,7 @@ function FeedPostItem({
         </div>
 
         {hasResolved && (
-          <div className="py-2.5 border-b">
+          <div className="py-2.5 border-t">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">{post.resolvedPlace!.name}</p>
               <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -481,7 +532,10 @@ function FeedPostItem({
                     {Math.round(post.resolveConfidence * 100)}%
                   </span>
                 )}
-                <HugeiconsIcon icon={CheckmarkCircle01Icon} className="h-4 w-4 text-emerald-500" />
+                <HugeiconsIcon
+                  icon={CheckmarkCircle01Icon}
+                  className="h-4 w-4 text-emerald-500"
+                />
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -490,27 +544,30 @@ function FeedPostItem({
           </div>
         )}
 
-        {!hasResolved && candidates.map((c, i) => (
-          <div key={i} className="py-2.5 border-b last:border-b-0">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium">{c.name}</p>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                <span className="text-xs text-muted-foreground">
-                  {Math.round(c.score * 100)}%
-                </span>
-                <button
-                  className="text-muted-foreground hover:text-primary disabled:opacity-50"
-                  disabled={isQuickResolving}
-                  onClick={() => onQuickResolve(c.googlePlaceId)}
-                  data-testid={`button-resolve-candidate-${i}`}
-                >
-                  <HugeiconsIcon icon={HelpCircleIcon} className="h-4 w-4" />
-                </button>
+        {!hasResolved &&
+          candidates.map((c, i) => (
+            <div key={i} className="py-2.5 border-b last:border-b-0">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">{c.name}</p>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <span className="text-xs text-muted-foreground">
+                    {Math.round(c.score * 100)}%
+                  </span>
+                  <button
+                    className="text-muted-foreground hover:text-primary disabled:opacity-50"
+                    disabled={isQuickResolving}
+                    onClick={() => onQuickResolve(c.googlePlaceId)}
+                    data-testid={`button-resolve-candidate-${i}`}
+                  >
+                    <HugeiconsIcon icon={HelpCircleIcon} className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {c.address}
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">{c.address}</p>
-          </div>
-        ))}
+          ))}
 
         {!hasResolved && !hasCandidates && !addingPlaces && (
           <p className="text-sm text-muted-foreground py-2">No locations yet</p>
@@ -561,7 +618,7 @@ function JobDetail({ jobId, onBack }: { jobId: string; onBack: () => void }) {
     queryKey: ["/api/admin/import/jobs", jobId, "posts", selectedTab],
     queryFn: () =>
       apiRequest(
-        `/api/admin/import/jobs/${jobId}/posts${selectedTab !== "all" ? `?status=${selectedTab}` : ""}`
+        `/api/admin/import/jobs/${jobId}/posts${selectedTab !== "all" ? `?status=${selectedTab}` : ""}`,
       ),
     refetchInterval: 10000,
   });
@@ -573,26 +630,42 @@ function JobDetail({ jobId, onBack }: { jobId: string; onBack: () => void }) {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/import/jobs", jobId] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/admin/import/jobs", jobId],
+      });
     },
   });
 
   const quickResolveMutation = useMutation({
-    mutationFn: async ({ postId, googlePlaceId }: { postId: string; googlePlaceId: string }) => {
+    mutationFn: async ({
+      postId,
+      googlePlaceId,
+    }: {
+      postId: string;
+      googlePlaceId: string;
+    }) => {
       return apiRequest(`/api/admin/import/posts/${postId}/resolve`, {
         method: "POST",
         body: JSON.stringify({ googlePlaceId, confidence: 1.0 }),
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/import/jobs", jobId] });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/import/jobs", jobId, "posts"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/admin/import/jobs", jobId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/admin/import/jobs", jobId, "posts"],
+      });
     },
   });
 
   const invalidateAll = () => {
-    queryClient.invalidateQueries({ queryKey: ["/api/admin/import/jobs", jobId] });
-    queryClient.invalidateQueries({ queryKey: ["/api/admin/import/jobs", jobId, "posts"] });
+    queryClient.invalidateQueries({
+      queryKey: ["/api/admin/import/jobs", jobId],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["/api/admin/import/jobs", jobId, "posts"],
+    });
   };
 
   const job = jobQuery.data;
@@ -603,12 +676,23 @@ function JobDetail({ jobId, onBack }: { jobId: string; onBack: () => void }) {
     <div className="flex flex-col h-dvh overflow-hidden">
       <div className="flex-shrink-0 px-4 py-3">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8 flex-shrink-0" data-testid="button-back">
-            <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4 rotate-180" />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onBack}
+            className="h-8 w-8 flex-shrink-0"
+            data-testid="button-back"
+          >
+            <HugeiconsIcon
+              icon={ArrowRight01Icon}
+              className="h-4 w-4 rotate-180"
+            />
           </Button>
           <div className="flex-1 min-w-0">
             {handle && (
-              <p className="font-semibold text-lg" data-testid="text-handle">@{handle}</p>
+              <p className="font-semibold text-lg" data-testid="text-handle">
+                @{handle}
+              </p>
             )}
           </div>
           <div className="flex items-center gap-1.5">
@@ -620,10 +704,14 @@ function JobDetail({ jobId, onBack }: { jobId: string; onBack: () => void }) {
         {job && (
           <div className="flex items-center gap-4 mt-1 ml-11 text-xs text-muted-foreground">
             <span>{job.postsFetched} fetched</span>
-            <span className="text-emerald-600">{job.postsProcessed} processed</span>
+            <span className="text-emerald-600">
+              {job.postsProcessed} processed
+            </span>
             <span>{job.reviewsCreated} reviews</span>
             {job.postsUnresolved > 0 && (
-              <span className="text-amber-600">{job.postsUnresolved} unresolved</span>
+              <span className="text-amber-600">
+                {job.postsUnresolved} unresolved
+              </span>
             )}
             {job.postsFailed > 0 && (
               <span className="text-destructive flex items-center gap-1">
@@ -642,15 +730,23 @@ function JobDetail({ jobId, onBack }: { jobId: string; onBack: () => void }) {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 my-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto">
-          <div className="pb-2">
+          <div className="flex items-start pb-2">
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
               <TabsList className="w-auto">
-                <TabsTrigger value="all" data-testid="tab-all">All</TabsTrigger>
-                <TabsTrigger value="processed" data-testid="tab-processed">Processed</TabsTrigger>
-                <TabsTrigger value="unresolved" data-testid="tab-unresolved">Unresolved</TabsTrigger>
-                <TabsTrigger value="failed" data-testid="tab-failed">Failed</TabsTrigger>
+                <TabsTrigger value="all" data-testid="tab-all">
+                  All
+                </TabsTrigger>
+                <TabsTrigger value="processed" data-testid="tab-processed">
+                  Processed
+                </TabsTrigger>
+                <TabsTrigger value="unresolved" data-testid="tab-unresolved">
+                  Unresolved
+                </TabsTrigger>
+                <TabsTrigger value="failed" data-testid="tab-failed">
+                  Failed
+                </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -658,7 +754,10 @@ function JobDetail({ jobId, onBack }: { jobId: string; onBack: () => void }) {
           <div>
             {postsQuery.isLoading ? (
               <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
-                <HugeiconsIcon icon={Loading03Icon} className="h-5 w-5 animate-spin" />
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  className="h-5 w-5 animate-spin"
+                />
                 <span>Loading posts...</span>
               </div>
             ) : posts.length === 0 ? (
@@ -666,14 +765,17 @@ function JobDetail({ jobId, onBack }: { jobId: string; onBack: () => void }) {
                 No posts in this category
               </p>
             ) : (
-              <div className="divide-y divide-border">
+              <div className="divide-y divide-border space-y-12">
                 {posts.map((post) => (
                   <FeedPostItem
                     key={post.id}
                     post={post}
                     onResolved={invalidateAll}
                     onQuickResolve={(googlePlaceId) =>
-                      quickResolveMutation.mutate({ postId: post.id, googlePlaceId })
+                      quickResolveMutation.mutate({
+                        postId: post.id,
+                        googlePlaceId,
+                      })
                     }
                     isQuickResolving={quickResolveMutation.isPending}
                   />
