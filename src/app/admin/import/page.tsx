@@ -749,7 +749,7 @@ function JobDetail({ jobId, onBack }: { jobId: string; onBack: () => void }) {
                 {job.postsFailed} failed
                 <button
                   className="underline"
-                  onClick={() => retryMutation.mutate()}
+                  onClick={() => retryMutation.mutate({})}
                   disabled={retryMutation.isPending}
                   data-testid="button-retry-failed"
                 >

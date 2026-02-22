@@ -18,7 +18,7 @@ export async function POST(
     const { searchParams } = new URL(request.url);
     const includeUnresolved = searchParams.get("includeUnresolved") === "true";
 
-    const statusFilter: string[] = ["failed"];
+    const statusFilter: Array<"failed" | "unresolved"> = ["failed"];
     if (includeUnresolved) {
       statusFilter.push("unresolved");
     }
@@ -40,7 +40,7 @@ export async function POST(
           error: null,
           resolveMethod: null,
           resolveConfidence: null,
-          resolveCandidates: null,
+          resolveCandidates: { set: null } as any,
         },
       });
       await enqueueJob("PROCESS_POST", { ingestedPostId: post.id });
