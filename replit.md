@@ -13,6 +13,9 @@ UI components: All UI must use shadcn/ui components exclusively - no ad-hoc Tail
 ### CRITICAL: DO NOT SWITCH TO TURBOPACK
 **NEVER change the dev command from `--webpack` to `--turbopack`.** Turbopack does NOT work with this project. This has been attempted many times and always fails, requiring a revert. The dev command MUST remain `next dev --webpack`. Do not attempt to "fix" slow compilation by switching bundlers.
 
+### CRITICAL: PRODUCTION MODE WORKFLOW
+The app workflow MUST run in production mode: `npm run build && npx next start -p 5000`. Do NOT use `npm run dev` or `next dev` for the workflow — it causes 5-24 second live compilation delays per page. The app must be built once and served as a production app. The `.replit` workflow args should be `"npm run build && npx next start -p 5000"`, NEVER `"npm run dev"`.
+
 ## System Architecture
 
 ### Frontend Architecture
