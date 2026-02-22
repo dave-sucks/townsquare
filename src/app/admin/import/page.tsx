@@ -643,7 +643,7 @@ function JobDetail({ jobId, onBack }: { jobId: string; onBack: () => void }) {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-lg mx-auto">
+        <div className="max-w-sm mx-auto">
           <div className="px-4 pb-2">
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
               <TabsList className="w-auto">
