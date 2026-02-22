@@ -643,8 +643,8 @@ function JobDetail({ jobId, onBack }: { jobId: string; onBack: () => void }) {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-sm mx-auto">
-          <div className="px-4 pb-2">
+        <div className="max-w-4xl mx-auto">
+          <div className="pb-2">
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
               <TabsList className="w-auto">
                 <TabsTrigger value="all" data-testid="tab-all">All</TabsTrigger>
