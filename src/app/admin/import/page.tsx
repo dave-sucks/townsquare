@@ -298,11 +298,11 @@ function AddPlacesPanel({
         }),
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await onResolved();
       setSelectedPlaces([]);
       reset();
       onClose();
-      onResolved();
     },
   });
 
@@ -676,13 +676,15 @@ function JobDetail({ jobId, onBack }: { jobId: string; onBack: () => void }) {
     },
   });
 
-  const invalidateAll = () => {
-    queryClient.invalidateQueries({
-      queryKey: ["/api/admin/import/jobs", jobId],
-    });
-    queryClient.invalidateQueries({
-      queryKey: ["/api/admin/import/jobs", jobId, "posts"],
-    });
+  const invalidateAll = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: ["/api/admin/import/jobs", jobId],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["/api/admin/import/jobs", jobId, "posts"],
+      }),
+    ]);
   };
 
   const job = jobQuery.data;
