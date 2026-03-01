@@ -3,30 +3,10 @@
 import { useState, useEffect } from "react";
 import { LandingMap } from "@/components/landing-map";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/browser";
 
 export function LandingPage() {
   const [mapReady, setMapReady] = useState(false);
-  const [showCard, setShowCard] = useState(false);
-
-  async function handleLogin() {
-    const supabase = createClient();
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/api/auth/callback`,
-      },
-    });
-    if (error) {
-      console.error("OAuth error:", error);
-      return;
-    }
-    if (data?.url) {
-      window.location.href = data.url;
-    }
-  }
-
-  useEffect(() => {
+  const [showCard, setShowCard] = useState(false);  useEffect(() => {
     const timer = setTimeout(() => setShowCard(true), 1500);
     return () => clearTimeout(timer);
   }, []);
@@ -64,23 +44,23 @@ export function LandingPage() {
 
           <div className="w-full flex flex-col gap-3">
             <Button
+              asChild
               variant="secondary"
               size="lg"
               className="w-full bg-white text-black hover-elevate active-elevate-2"
               data-testid="button-signup"
-              onClick={handleLogin}
             >
-              Sign Up
+              <a href="/api/login">Sign Up</a>
             </Button>
 
             <Button
+              asChild
               variant="outline"
               size="lg"
               className="w-full border-white/20 bg-white/10 text-white hover-elevate active-elevate-2"
               data-testid="button-login"
-              onClick={handleLogin}
             >
-              Log In
+              <a href="/api/login">Log In</a>
             </Button>
           </div>
 

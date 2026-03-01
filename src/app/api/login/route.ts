@@ -14,9 +14,8 @@ export async function GET(request: NextRequest) {
 
   if (error || !data.url) {
     console.error("Login error:", error);
-    return NextResponse.json(
-      { error: "Login failed", detail: error?.message },
-      { status: 500 }
+    return NextResponse.redirect(
+      `${origin}/?error=${encodeURIComponent(error?.message ?? "login_failed")}`
     );
   }
 
