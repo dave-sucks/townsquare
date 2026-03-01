@@ -1,12 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { LandingMap } from "@/components/landing-map";
 import { Button } from "@/components/ui/button";
 
+function LoginError() {
+  const params = useSearchParams();
+  const error = params.get("error");
+  if (!error) return null;
+  return (
+    <p className="text-xs text-red-400 text-center bg-red-900/30 rounded-lg px-3 py-2 w-full">
+      Error: {decodeURIComponent(error)}
+    </p>
+  );
+}
+
 export function LandingPage() {
   const [mapReady, setMapReady] = useState(false);
-  const [showCard, setShowCard] = useState(false);  useEffect(() => {
+  const [showCard, setShowCard] = useState(false);
+
+  useEffect(() => {
     const timer = setTimeout(() => setShowCard(true), 1500);
     return () => clearTimeout(timer);
   }, []);
@@ -41,6 +55,10 @@ export function LandingPage() {
               Save every spot worth remembering. Build maps of your favorites, follow friends, and never lose that place again.
             </p>
           </div>
+
+          <Suspense>
+            <LoginError />
+          </Suspense>
 
           <div className="w-full flex flex-col gap-3">
             <Button
