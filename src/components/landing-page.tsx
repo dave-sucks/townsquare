@@ -11,12 +11,19 @@ export function LandingPage() {
 
   async function handleLogin() {
     const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/api/auth/callback`,
       },
     });
+    if (error) {
+      console.error("OAuth error:", error);
+      return;
+    }
+    if (data?.url) {
+      window.location.href = data.url;
+    }
   }
 
   useEffect(() => {
