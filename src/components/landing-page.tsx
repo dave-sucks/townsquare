@@ -3,10 +3,21 @@
 import { useState, useEffect } from "react";
 import { LandingMap } from "@/components/landing-map";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/browser";
 
 export function LandingPage() {
   const [mapReady, setMapReady] = useState(false);
   const [showCard, setShowCard] = useState(false);
+
+  async function handleLogin() {
+    const supabase = createClient();
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/api/auth/callback`,
+      },
+    });
+  }
 
   useEffect(() => {
     const timer = setTimeout(() => setShowCard(true), 1500);
@@ -46,23 +57,23 @@ export function LandingPage() {
 
           <div className="w-full flex flex-col gap-3">
             <Button
-              asChild
               variant="secondary"
               size="lg"
               className="w-full bg-white text-black hover-elevate active-elevate-2"
               data-testid="button-signup"
+              onClick={handleLogin}
             >
-              <a href="/api/login">Sign Up</a>
+              Sign Up
             </Button>
 
             <Button
-              asChild
               variant="outline"
               size="lg"
               className="w-full border-white/20 bg-white/10 text-white hover-elevate active-elevate-2"
               data-testid="button-login"
+              onClick={handleLogin}
             >
-              <a href="/api/login">Log In</a>
+              Log In
             </Button>
           </div>
 
