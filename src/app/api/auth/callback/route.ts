@@ -49,14 +49,25 @@ export async function GET(request: NextRequest) {
     if (email) {
       const existing = await prisma.user.findUnique({ where: { email } });
       if (existing && existing.id !== authUser.id) {
-        await prisma.$executeRaw`
-          UPDATE users
-          SET id = ${authUser.id},
-              first_name = ${firstName},
-              last_name = ${lastName},
-              profile_image_url = ${profileImageUrl}
-          WHERE email = ${email}
-        `;
+        const oldId = existing.id;
+        const newId = authUser.id;
+        // Migrate old ID → new Supabase ID. Update every FK table explicitly
+        // rather than relying on DB-level CASCADE (schema was pushed, not migrated).
+        await prisma.$transaction(async (tx) => {
+          await tx.$executeRaw`UPDATE saved_places    SET user_id      = ${newId} WHERE user_id      = ${oldId}`;
+          await tx.$executeRaw`UPDATE lists           SET user_id      = ${newId} WHERE user_id      = ${oldId}`;
+          await tx.$executeRaw`UPDATE follows         SET follower_id  = ${newId} WHERE follower_id  = ${oldId}`;
+          await tx.$executeRaw`UPDATE follows         SET following_id = ${newId} WHERE following_id = ${oldId}`;
+          await tx.$executeRaw`UPDATE activities      SET actor_id     = ${newId} WHERE actor_id     = ${oldId}`;
+          await tx.$executeRaw`UPDATE reviews         SET user_id      = ${newId} WHERE user_id      = ${oldId}`;
+          await tx.$executeRaw`UPDATE photos          SET user_id      = ${newId} WHERE user_id      = ${oldId}`;
+          await tx.$executeRaw`UPDATE conversations   SET user_id      = ${newId} WHERE user_id      = ${oldId}`;
+          await tx.$executeRaw`
+            UPDATE users
+            SET id = ${newId}, first_name = ${firstName}, last_name = ${lastName}, profile_image_url = ${profileImageUrl}
+            WHERE id = ${oldId}
+          `;
+        });
         return NextResponse.redirect(`${origin}/`);
       }
     }
