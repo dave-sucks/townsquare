@@ -51,22 +51,38 @@ export async function GET(request: NextRequest) {
       if (existing && existing.id !== authUser.id) {
         const oldId = existing.id;
         const newId = authUser.id;
-        // Migrate old ID → new Supabase ID. Update every FK table explicitly
-        // rather than relying on DB-level CASCADE (schema was pushed, not migrated).
+        // Can't UPDATE users.id directly — child FK constraints reject it because
+        // newId doesn't exist in users yet, and oldId can't be removed while
+        // children still reference it. Instead: insert new row, re-point children, delete old.
         await prisma.$transaction(async (tx) => {
-          await tx.$executeRaw`UPDATE saved_places    SET user_id      = ${newId} WHERE user_id      = ${oldId}`;
-          await tx.$executeRaw`UPDATE lists           SET user_id      = ${newId} WHERE user_id      = ${oldId}`;
-          await tx.$executeRaw`UPDATE follows         SET follower_id  = ${newId} WHERE follower_id  = ${oldId}`;
-          await tx.$executeRaw`UPDATE follows         SET following_id = ${newId} WHERE following_id = ${oldId}`;
-          await tx.$executeRaw`UPDATE activities      SET actor_id     = ${newId} WHERE actor_id     = ${oldId}`;
-          await tx.$executeRaw`UPDATE reviews         SET user_id      = ${newId} WHERE user_id      = ${oldId}`;
-          await tx.$executeRaw`UPDATE photos          SET user_id      = ${newId} WHERE user_id      = ${oldId}`;
-          await tx.$executeRaw`UPDATE conversations   SET user_id      = ${newId} WHERE user_id      = ${oldId}`;
+          // 1. Insert the new user row (copy old, override id + profile fields)
           await tx.$executeRaw`
-            UPDATE users
-            SET id = ${newId}, first_name = ${firstName}, last_name = ${lastName}, profile_image_url = ${profileImageUrl}
-            WHERE id = ${oldId}
+            INSERT INTO users (
+              id, email, username, password_hash, created_at,
+              first_name, last_name, profile_image_url,
+              bio, instagram_handle, is_verified, location, website,
+              avatar_emoji, instagram_id, instagram_post_count,
+              is_instagram_import, last_instagram_sync
+            )
+            SELECT
+              ${newId}, email, username, password_hash, created_at,
+              ${firstName}, ${lastName}, ${profileImageUrl},
+              bio, instagram_handle, is_verified, location, website,
+              avatar_emoji, instagram_id, instagram_post_count,
+              is_instagram_import, last_instagram_sync
+            FROM users WHERE id = ${oldId}
           `;
+          // 2. Re-point all child tables from oldId → newId
+          await tx.$executeRaw`UPDATE saved_places  SET user_id      = ${newId} WHERE user_id      = ${oldId}`;
+          await tx.$executeRaw`UPDATE lists         SET user_id      = ${newId} WHERE user_id      = ${oldId}`;
+          await tx.$executeRaw`UPDATE follows       SET follower_id  = ${newId} WHERE follower_id  = ${oldId}`;
+          await tx.$executeRaw`UPDATE follows       SET following_id = ${newId} WHERE following_id = ${oldId}`;
+          await tx.$executeRaw`UPDATE activities    SET actor_id     = ${newId} WHERE actor_id     = ${oldId}`;
+          await tx.$executeRaw`UPDATE reviews       SET user_id      = ${newId} WHERE user_id      = ${oldId}`;
+          await tx.$executeRaw`UPDATE photos        SET user_id      = ${newId} WHERE user_id      = ${oldId}`;
+          await tx.$executeRaw`UPDATE conversations SET user_id      = ${newId} WHERE user_id      = ${oldId}`;
+          // 3. Delete the old user row (now has no children)
+          await tx.$executeRaw`DELETE FROM users WHERE id = ${oldId}`;
         });
         return NextResponse.redirect(`${origin}/`);
       }
