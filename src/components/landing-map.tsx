@@ -288,7 +288,7 @@ export function LandingMap({ onReady, showSearch = true }: LandingMapProps) {
   }, [runSequence]);
 
   return (
-    <div className="absolute inset-0">
+    <div className="absolute inset-0 pointer-events-none">
       <div ref={mapRef} className="h-full w-full" />
 
       {showSearch && (
