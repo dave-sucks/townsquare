@@ -39,27 +39,45 @@ export async function GET(request: NextRequest) {
   const profileImageUrl: string | null =
     meta.avatar_url ?? meta.picture ?? null;
 
-  // Upsert our app's user record keyed on the Supabase auth user ID
+  // Upsert our app's user record keyed on the Supabase auth user ID.
+  // If a row already exists with this email under a different ID (pre-Supabase
+  // migration), update that row's primary key to the new Supabase ID so that
+  // all related records (saved places, lists, follows, etc.) cascade over too.
   try {
+    const email = authUser.email ?? null;
+
+    if (email) {
+      const existing = await prisma.user.findUnique({ where: { email } });
+      if (existing && existing.id !== authUser.id) {
+        await prisma.$executeRaw`
+          UPDATE users
+          SET id = ${authUser.id},
+              first_name = ${firstName},
+              last_name = ${lastName},
+              profile_image_url = ${profileImageUrl}
+          WHERE email = ${email}
+        `;
+        return NextResponse.redirect(`${origin}/`);
+      }
+    }
+
     await prisma.user.upsert({
       where: { id: authUser.id },
       create: {
         id: authUser.id,
-        email: authUser.email ?? null,
+        email,
         firstName,
         lastName,
         profileImageUrl,
       },
       update: {
-        email: authUser.email ?? null,
+        email,
         firstName,
         lastName,
         profileImageUrl,
       },
     });
   } catch (err: any) {
-    // Email uniqueness clash (another account with same email) — log and continue.
-    // The user will still be authenticated; profile data may be stale.
     console.error("User upsert error:", err?.message);
   }
 
