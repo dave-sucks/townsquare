@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
-import { logout, getCallbackUrl } from "@/lib/auth";
+import { logout } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await logout();
-    const origin = new URL(getCallbackUrl()).origin;
+    const origin = new URL(request.url).origin;
     return NextResponse.redirect(new URL("/", origin));
   } catch (error: any) {
     console.error("Logout error:", error);
