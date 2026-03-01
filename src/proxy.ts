@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -26,7 +26,6 @@ export async function middleware(request: NextRequest) {
   );
 
   // Refresh the session so it doesn't expire mid-visit.
-  // IMPORTANT: do not add auth redirect logic here — handle it in pages/layouts.
   await supabase.auth.getUser();
 
   return supabaseResponse;
