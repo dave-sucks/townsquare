@@ -9,6 +9,7 @@ declare global {
 function createPrismaClient(): PrismaClient {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
+    max: 1, // Serverless: one connection per invocation, avoids pool exhaustion
   });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
