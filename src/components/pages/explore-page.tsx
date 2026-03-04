@@ -211,7 +211,7 @@ export function ExplorePage({ user }: { user: UserData }) {
     }
   }, []);
 
-  const locationLabel = searchLocation?.label ?? "Your Location";
+  const locationLabel = searchLocation?.label ?? "Nearby";
   const isCustomLocation = !!searchLocation;
 
   const sidebar = (

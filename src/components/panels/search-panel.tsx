@@ -257,8 +257,8 @@ export function SearchPanel({
 
   return (
     <div className="h-full flex flex-col bg-background" data-testid="search-panel">
-      {/* ── Back + Location/Radius header ───────────────────────────────── */}
-      <div className="flex items-center gap-2 px-2 py-2 border-b shrink-0">
+      {/* ── Back button header ───────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 px-3 py-2 border-b shrink-0">
         <Button
           variant="ghost"
           size="icon"
@@ -268,11 +268,14 @@ export function SearchPanel({
         >
           <HugeiconsIcon icon={ArrowLeft01Icon} className="h-4 w-4" />
         </Button>
+        <span className="font-semibold text-sm font-brand flex-1">Search</span>
+      </div>
 
-        {/* ── Location + Radius button group ───────────────────────────── */}
+      {/* ── Location + Radius row (full width) ───────────────────────────── */}
+      <div className="px-3 py-2 border-b shrink-0">
         {/* Outer div is relative so the location icon can float over Input  */}
         {/* WITHOUT being a wrapper div inside ButtonGroup (causes double borders) */}
-        <div className="relative flex-1">
+        <div className="relative w-full">
           <HugeiconsIcon
             icon={Location01Icon}
             className={cn(
@@ -307,7 +310,7 @@ export function SearchPanel({
               value={String(radius)}
               onValueChange={(v) => onRadiusChange(Number(v))}
             >
-              <SelectTrigger className="w-[4.5rem]" data-testid="radius-select">
+              <SelectTrigger className="w-24" data-testid="radius-select">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent align="end">
@@ -324,7 +327,7 @@ export function SearchPanel({
           {isCustomLocation && (
             <button
               onClick={handleClearLocation}
-              className="absolute right-[calc(4.5rem+1px)] top-1/2 -translate-y-1/2 z-10 text-muted-foreground hover:text-foreground px-1.5"
+              className="absolute right-[calc(6rem+1px)] top-1/2 -translate-y-1/2 z-10 text-muted-foreground hover:text-foreground px-1.5"
             >
               <HugeiconsIcon icon={Cancel01Icon} className="h-3.5 w-3.5" />
             </button>

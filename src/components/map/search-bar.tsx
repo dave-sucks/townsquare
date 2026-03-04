@@ -48,7 +48,7 @@ export function SearchBar({
           onChange={(e) => onSearchQueryChange?.(e.target.value)}
           onFocus={() => onOpen?.()}
           placeholder="Search places…"
-          className="h-11 pl-9"
+          className="h-11 pl-9 bg-background"
           data-testid="search-bar-input"
         />
 
