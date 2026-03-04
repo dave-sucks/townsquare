@@ -59,7 +59,6 @@ interface SavedPlace {
 }
 
 const COLLECTION_TABS: CollectionTab[] = [
-  { id: "nearby", label: "Nearby" },
   { id: "trending", label: "Trending" },
   { id: "for-you", label: "For You" },
   { id: "following", label: "Following" },
@@ -73,7 +72,7 @@ export function ExplorePage({ user }: { user: UserData }) {
   const { location } = useUserLocation();
   const { radius } = useMapSettings();
 
-  const [activeTab, setActiveTab] = useState("nearby");
+  const [activeTab, setActiveTab] = useState("trending");
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<ExploreView>("list");
   const [viewingPlaceId, setViewingPlaceId] = useState<string | null>(null);
@@ -138,7 +137,7 @@ export function ExplorePage({ user }: { user: UserData }) {
     },
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    enabled: activeTab === "following" || !!location || activeTab !== "nearby",
+    enabled: true,
   });
 
   const rawPlaces = useMemo(

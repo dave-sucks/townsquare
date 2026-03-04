@@ -106,31 +106,37 @@ export function MapLayout({
     };
   }, []);
 
-  const handleMarkerClick = useCallback((savedPlaceId: string) => {
-    onPlaceSelect(savedPlaceId);
-    triggerSnapRequest("mid");
-    const selectedPlace = places.find(p => p.id === savedPlaceId);
-    if (selectedPlace && mapRef.current) {
-      mapRef.current.panTo(selectedPlace.place.lat, selectedPlace.place.lng);
-    }
-    const rowElement = placeRowRefs.current.get(savedPlaceId);
-    if (rowElement) {
-      rowElement.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }, [onPlaceSelect, triggerSnapRequest, places]);
+  const handleMarkerClick = useCallback(
+    (savedPlaceId: string) => {
+      onPlaceSelect(savedPlaceId);
+      triggerSnapRequest("mid");
+      const selectedPlace = places.find((p) => p.id === savedPlaceId);
+      if (selectedPlace && mapRef.current) {
+        mapRef.current.panTo(selectedPlace.place.lat, selectedPlace.place.lng);
+      }
+      const rowElement = placeRowRefs.current.get(savedPlaceId);
+      if (rowElement) {
+        rowElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    },
+    [onPlaceSelect, triggerSnapRequest, places]
+  );
 
-  const handleSidebarPlaceSelect = useCallback((savedPlaceId: string) => {
-    onPlaceSelect(savedPlaceId);
-    triggerSnapRequest("mid");
-    const selectedPlace = places.find(p => p.id === savedPlaceId);
-    if (selectedPlace && mapRef.current) {
-      mapRef.current.panTo(selectedPlace.place.lat, selectedPlace.place.lng);
-    }
-  }, [places, onPlaceSelect, triggerSnapRequest]);
+  const handleSidebarPlaceSelect = useCallback(
+    (savedPlaceId: string) => {
+      onPlaceSelect(savedPlaceId);
+      triggerSnapRequest("mid");
+      const selectedPlace = places.find((p) => p.id === savedPlaceId);
+      if (selectedPlace && mapRef.current) {
+        mapRef.current.panTo(selectedPlace.place.lat, selectedPlace.place.lng);
+      }
+    },
+    [places, onPlaceSelect, triggerSnapRequest]
+  );
 
   useEffect(() => {
     if (selectedPlaceId) {
-      const selectedPlace = places.find(p => p.id === selectedPlaceId);
+      const selectedPlace = places.find((p) => p.id === selectedPlaceId);
       if (selectedPlace && mapRef.current) {
         mapRef.current.panTo(selectedPlace.place.lat, selectedPlace.place.lng);
       }
@@ -163,18 +169,22 @@ export function MapLayout({
           disableFitToPlaces={disableFitToPlaces}
         />
 
-        {showSearch && (
-          <div className="absolute top-3 left-3 right-3 md:left-[26.5rem] z-[55]">
-            <FloatingSearch />
-          </div>
-        )}
-
-        <div className="absolute top-0 left-0 bottom-0 z-10 w-[25rem] p-3 hidden md:block">
-          <div className="h-full bg-background rounded-lg border shadow-lg overflow-hidden">
+        {/* ── Desktop: left column with search above panel ──────────── */}
+        <div className="absolute top-0 left-0 bottom-0 z-10 w-[25rem] p-3 hidden md:flex flex-col gap-2">
+          {showSearch && <FloatingSearch />}
+          <div className="flex-1 bg-background rounded-lg border shadow-lg overflow-hidden min-h-0">
             {renderChildrenWithProps(children)}
           </div>
         </div>
 
+        {/* ── Mobile: search floats at top ──────────────────────────── */}
+        {showSearch && (
+          <div className="absolute top-3 left-3 right-3 z-[55] md:hidden">
+            <FloatingSearch />
+          </div>
+        )}
+
+        {/* ── Mobile: bottom sheet panel ───────────────────────────── */}
         <div className="md:hidden">
           <BottomSheet defaultSnapPoint="mid" requestedSnapPoint={sheetSnapRequest}>
             {renderChildrenWithProps(children)}

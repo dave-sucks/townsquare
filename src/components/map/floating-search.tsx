@@ -13,6 +13,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { SaveToListDropdown } from "@/components/shared/save-to-list-dropdown";
 import type { SaveToListDropdownHandle } from "@/components/shared/save-to-list-dropdown";
+import { useUserLocation } from "@/hooks/use-user-location";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -67,6 +68,8 @@ const CATEGORIES = [
   { emoji: "🍦", label: "Dessert", query: "Dessert" },
 ];
 
+const RADIUS_OPTIONS = [0.5, 1, 2, 5, 10];
+
 function formatPriceLevel(level: string | null): string {
   if (!level) return "";
   const map: Record<string, string> = {
@@ -87,11 +90,33 @@ export function FloatingSearch() {
   const [isSearching, setIsSearching] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [activePrediction, setActivePrediction] = useState<PlacePrediction | null>(null);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const locationRequested = useRef(false);
   const saveRef = useRef<SaveToListDropdownHandle>(null);
   const pendingSaveRef = useRef<typeof EMPTY_PLACE | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Location + radius from hooks
+  const { location: userLocation } = useUserLocation();
+  const [radius, setRadius] = useState(() => {
+    try {
+      return parseFloat(localStorage.getItem("twnsq-map-radius") || "1");
+    } catch {
+      return 1;
+    }
+  });
+
+  useEffect(() => {
+    const handler = (e: Event) => setRadius((e as CustomEvent).detail);
+    window.addEventListener("map-radius-change", handler);
+    return () => window.removeEventListener("map-radius-change", handler);
+  }, []);
+
+  const handleRadiusChange = (r: number) => {
+    setRadius(r);
+    try {
+      localStorage.setItem("twnsq-map-radius", String(r));
+    } catch {}
+    window.dispatchEvent(new CustomEvent("map-radius-change", { detail: r }));
+  };
 
   const currentPlace = activePrediction
     ? {
@@ -104,46 +129,6 @@ export function FloatingSearch() {
     : EMPTY_PLACE;
 
   const activePlace = pendingSaveRef.current || currentPlace;
-
-  // Get user location
-  useEffect(() => {
-    if (locationRequested.current || !navigator.geolocation) return;
-    locationRequested.current = true;
-
-    // Try cached first
-    try {
-      const cached = localStorage.getItem("twnsq-user-location");
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Date.now() - parsed.timestamp < 10 * 60 * 1000) {
-          setUserLocation({ lat: parsed.lat, lng: parsed.lng });
-          return;
-        }
-      }
-    } catch {}
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-      },
-      () => {},
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
-    );
-  }, []);
-
-  // Fetch radius from settings
-  const [radius, setRadius] = useState(() => {
-    try {
-      return parseFloat(localStorage.getItem("twnsq-map-radius") || "5");
-    } catch {
-      return 5;
-    }
-  });
-  useEffect(() => {
-    const handler = (e: Event) => setRadius((e as CustomEvent).detail);
-    window.addEventListener("map-radius-change", handler);
-    return () => window.removeEventListener("map-radius-change", handler);
-  }, []);
 
   // Search both DB and Google
   const search = useCallback(
@@ -241,7 +226,8 @@ export function FloatingSearch() {
   const filteredGoogle = googleResults.filter((r) => !dbPlaceIds.has(r.place_id));
 
   return (
-    <div className="md:w-96 md:ml-auto">
+    <div className="w-full">
+      {/* ── Search input ──────────────────────────────────────────── */}
       <div className="relative">
         <HugeiconsIcon
           icon={Search01Icon}
@@ -268,9 +254,45 @@ export function FloatingSearch() {
         )}
       </div>
 
+      {/* ── Location context row (shown when no query) ────────────── */}
+      {!hasQuery && (
+        <div className="flex items-center gap-2 mt-1.5 px-1">
+          <HugeiconsIcon
+            icon={Location01Icon}
+            className={cn(
+              "h-3.5 w-3.5 flex-shrink-0",
+              userLocation ? "text-blue-500" : "text-muted-foreground"
+            )}
+          />
+          <span className="text-xs text-muted-foreground flex-1 truncate">
+            {userLocation ? "Current Location" : "Getting location…"}
+          </span>
+          {userLocation && (
+            <div className="flex gap-0.5">
+              {RADIUS_OPTIONS.map((r) => (
+                <button
+                  key={r}
+                  onClick={() => handleRadiusChange(r)}
+                  className={cn(
+                    "px-1.5 py-0.5 rounded text-[11px] font-medium transition-colors",
+                    radius === r
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  )}
+                  data-testid={`radius-${r}`}
+                >
+                  {r}mi
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Dropdown ──────────────────────────────────────────────── */}
       {showDropdown && (
-        <div className="mt-2 bg-background border rounded-lg shadow-xl max-h-[70vh] overflow-y-auto">
-          {/* ── Empty state: category grid ─────────────────────────────── */}
+        <div className="mt-2 bg-background border rounded-lg shadow-xl max-h-[60vh] overflow-y-auto">
+          {/* ── Empty state: category grid ─────────────────────────── */}
           {!hasQuery && (
             <div className="p-3">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
@@ -293,7 +315,7 @@ export function FloatingSearch() {
             </div>
           )}
 
-          {/* ── Searching spinner ──────────────────────────────────────── */}
+          {/* ── Searching spinner ──────────────────────────────────── */}
           {hasQuery && isSearching && (
             <div className="space-y-2 p-3">
               <Skeleton className="h-12 w-full" />
@@ -302,7 +324,7 @@ export function FloatingSearch() {
             </div>
           )}
 
-          {/* ── Results ───────────────────────────────────────────────── */}
+          {/* ── Results ───────────────────────────────────────────── */}
           {hasQuery && !isSearching && (
             <>
               {/* DB places — already in Townsquare */}
@@ -334,7 +356,7 @@ export function FloatingSearch() {
                         )}
                       </div>
 
-                      {/* Info — clicking navigates */}
+                      {/* Info */}
                       <button
                         className="flex-1 min-w-0 text-left"
                         onClick={() => handleDbSave(place)}

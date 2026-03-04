@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { LockIcon, Share01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
 import { toast } from "sonner";
@@ -110,7 +109,6 @@ export function ListSidebar({
     return (
       <div className="h-full flex flex-col bg-background">
         <div className="flex items-center gap-2 p-3 border-b">
-          <SidebarTrigger data-testid="button-sidebar-toggle" />
           <Skeleton className="h-4 w-20" />
         </div>
         <div className="p-3 border-b space-y-1">
@@ -131,7 +129,6 @@ export function ListSidebar({
   return (
     <div className="h-full flex flex-col bg-background" data-testid="list-sidebar">
       <div className="flex items-center gap-2 p-3 border-b">
-        <SidebarTrigger className="hidden md:flex" data-testid="button-sidebar-toggle" />
         <span className="font-semibold text-sm flex-1 font-brand">{list.name}</span>
         {list.visibility === "PUBLIC" && (
           <Button

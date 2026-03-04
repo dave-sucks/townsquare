@@ -9,7 +9,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowDown01Icon, Tick01Icon, SlidersHorizontalIcon } from "@hugeicons/core-free-icons";
 import { apiRequest } from "@/lib/query-client";
@@ -108,7 +107,6 @@ export function PlaceListPanel({
   return (
     <div className="h-full flex flex-col bg-background" data-testid="place-list-panel">
       <div className="flex items-center gap-2 p-3 border-b">
-        <SidebarTrigger className="hidden md:flex" data-testid="button-sidebar-toggle" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" data-testid="select-status-filter">

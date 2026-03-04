@@ -25,7 +25,6 @@ import {
   Bookmark01Icon,
   Tick01Icon,
 } from "@hugeicons/core-free-icons";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -502,7 +501,6 @@ export function ChatDashboard({ user }: { user: UserData }) {
   const sidebar = (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 p-3 border-b">
-        <SidebarTrigger data-testid="button-sidebar-toggle" />
         <h1 className="font-semibold text-sm flex-1 font-brand">AI Chat</h1>
         {showHistory ? (
           <Button

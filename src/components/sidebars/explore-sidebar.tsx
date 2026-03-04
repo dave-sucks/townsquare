@@ -1,19 +1,14 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { PlaceDetailPanel } from "@/components/place-detail-panel";
 import type { SidebarInjectedProps } from "@/components/map/map-layout";
 import { PlacesList } from "@/components/shared/places-list";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  SlidersHorizontalIcon,
-  Location01Icon,
-  Cancel01Icon,
-} from "@hugeicons/core-free-icons";
+import { SlidersHorizontalIcon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -21,21 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
-const MapSettingsPanel = dynamic(
-  () =>
-    import("@/components/panels/map-settings-panel").then((m) => ({
-      default: m.MapSettingsPanel,
-    })),
-  {
-    loading: () => (
-      <div className="p-4">
-        <Skeleton className="h-8 w-full mb-2" />
-        <Skeleton className="h-8 w-full" />
-      </div>
-    ),
-  }
-);
+import { apiRequest } from "@/lib/query-client";
 
 interface Place {
   id: string;
@@ -113,8 +94,6 @@ interface ExploreSidebarProps extends Partial<SidebarInjectedProps> {
   forYouReason?: string | null;
 }
 
-const RADIUS_OPTIONS = [0.5, 1, 2, 5, 10];
-
 const PRICE_OPTIONS = [
   { label: "$", value: "PRICE_LEVEL_INEXPENSIVE" },
   { label: "$$", value: "PRICE_LEVEL_MODERATE" },
@@ -122,16 +101,12 @@ const PRICE_OPTIONS = [
   { label: "$$$$", value: "PRICE_LEVEL_VERY_EXPENSIVE" },
 ];
 
-const QUICK_TAGS = [
-  { label: "Date Night", slug: "date-night" },
-  { label: "Brunch", slug: "brunch" },
-  { label: "Takeout", slug: "takeout" },
-  { label: "Outdoor", slug: "outdoor-seating" },
-  { label: "Sushi", slug: "sushi" },
-  { label: "Italian", slug: "italian" },
-  { label: "Burgers", slug: "burgers" },
-  { label: "Cocktails", slug: "cocktail-bar" },
-];
+interface TagCategory {
+  id: string;
+  slug: string;
+  displayName: string;
+  tags: Array<{ id: string; slug: string; displayName: string }>;
+}
 
 export function ExploreSidebar({
   tabs,
@@ -157,6 +132,19 @@ export function ExploreSidebar({
 }: ExploreSidebarProps) {
   const [filterOpen, setFilterOpen] = useState(false);
 
+  // Fetch tags from DB
+  const { data: tagsData } = useQuery<{ categories: TagCategory[] }>({
+    queryKey: ["tags"],
+    queryFn: () => apiRequest("/api/tags"),
+    staleTime: 5 * 60 * 1000, // 5 min
+  });
+
+  // Flatten all tags for filter chips (use first 2 categories or all if small)
+  const quickTags =
+    tagsData?.categories.flatMap((cat) =>
+      cat.tags.map((t) => ({ label: t.displayName, slug: t.slug }))
+    ) ?? [];
+
   const viewingPlace = viewingPlaceId
     ? places.find((p) => p.id === viewingPlaceId)
     : null;
@@ -179,16 +167,15 @@ export function ExploreSidebar({
 
   const setPrice = (price: string | null) => {
     if (!onFiltersChange) return;
-    onFiltersChange({ ...activeFilters, price: activeFilters.price === price ? null : price });
+    onFiltersChange({
+      ...activeFilters,
+      price: activeFilters.price === price ? null : price,
+    });
   };
 
   const clearFilters = () => {
     onFiltersChange?.({ tags: [], price: null, sort: "default" });
   };
-
-  if (currentView === "settings") {
-    return <MapSettingsPanel onBack={() => onNavigate("list")} />;
-  }
 
   if (currentView === "detail" && viewingPlace) {
     return (
@@ -200,13 +187,10 @@ export function ExploreSidebar({
     );
   }
 
-  const needsLocation = (activeTab === "nearby" || activeTab === "trending" || activeTab === "for-you") && !userLocation;
-
   return (
     <div className="h-full flex flex-col bg-background" data-testid="explore-sidebar">
       {/* ── Tab bar ──────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-2 p-3 border-b">
-        <SidebarTrigger className="hidden md:flex" data-testid="button-sidebar-toggle" />
         <div
           className="flex-1 flex gap-1.5 overflow-x-auto scrollbar-none"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
@@ -230,63 +214,65 @@ export function ExploreSidebar({
         </div>
 
         {/* Filter button */}
-        {(activeTab === "nearby" || activeTab === "trending" || activeTab === "for-you") && (
-          <Popover open={filterOpen} onOpenChange={setFilterOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative"
-                data-testid="button-filter-trigger"
-              >
-                <HugeiconsIcon icon={SlidersHorizontalIcon} className="h-4 w-4" />
+        <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative shrink-0"
+              data-testid="button-filter-trigger"
+            >
+              <HugeiconsIcon icon={SlidersHorizontalIcon} className="h-4 w-4" />
+              {activeFilterCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-foreground text-background text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-4" align="end">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-sm">Filters</h3>
                 {activeFilterCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-foreground text-background text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                    {activeFilterCount}
-                  </span>
+                  <button
+                    onClick={clearFilters}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Clear all
+                  </button>
                 )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-72 p-4" align="end">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-sm">Filters</h3>
-                  {activeFilterCount > 0 && (
+              </div>
+
+              {/* Price */}
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2">Price</p>
+                <div className="flex gap-1.5">
+                  {PRICE_OPTIONS.map((opt) => (
                     <button
-                      onClick={clearFilters}
-                      className="text-xs text-muted-foreground hover:text-foreground"
+                      key={opt.value}
+                      onClick={() => setPrice(opt.value)}
+                      className={cn(
+                        "px-2.5 py-1 rounded text-xs font-medium border transition-colors",
+                        activeFilters.price === opt.value
+                          ? "bg-foreground text-background border-foreground"
+                          : "border-input hover:bg-accent"
+                      )}
                     >
-                      Clear all
+                      {opt.label}
                     </button>
-                  )}
+                  ))}
                 </div>
+              </div>
 
-                {/* Price */}
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">Price</p>
-                  <div className="flex gap-1.5">
-                    {PRICE_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.value}
-                        onClick={() => setPrice(opt.value)}
-                        className={cn(
-                          "px-2.5 py-1 rounded text-xs font-medium border transition-colors",
-                          activeFilters.price === opt.value
-                            ? "bg-foreground text-background border-foreground"
-                            : "border-input hover:bg-accent"
-                        )}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Tags */}
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">Category</p>
+              {/* Tags — dynamic from DB */}
+              {tagsData?.categories.map((cat) => (
+                <div key={cat.slug}>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">
+                    {cat.displayName}
+                  </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {QUICK_TAGS.map((tag) => (
+                    {cat.tags.map((tag) => (
                       <button
                         key={tag.slug}
                         onClick={() => toggleTag(tag.slug)}
@@ -297,56 +283,28 @@ export function ExploreSidebar({
                             : "border-input hover:bg-accent"
                         )}
                       >
-                        {tag.label}
+                        {tag.displayName}
                       </button>
                     ))}
                   </div>
                 </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-        )}
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onNavigate("settings")}
-          data-testid="button-map-settings-trigger"
-        >
-          <HugeiconsIcon icon={SlidersHorizontalIcon} className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* ── Location + radius pill ────────────────────────────────────────── */}
-      {(activeTab === "nearby" || activeTab === "trending" || activeTab === "for-you") && (
-        <div className="px-3 py-2 border-b flex items-center gap-2 text-xs text-muted-foreground">
-          <HugeiconsIcon icon={Location01Icon} className="h-3.5 w-3.5 flex-shrink-0" />
-          <span className="flex-1 truncate">
-            {userLocation ? `Within ${radius} mi of your location` : "Getting your location…"}
-          </span>
-          {userLocation && (
-            <div className="flex gap-1">
-              {RADIUS_OPTIONS.map((r) => (
-                <button
-                  key={r}
-                  onClick={() => {
-                    localStorage.setItem("twnsq-map-radius", String(r));
-                    window.dispatchEvent(new CustomEvent("map-radius-change", { detail: r }));
-                  }}
-                  className={cn(
-                    "px-1.5 py-0.5 rounded text-[11px] font-medium transition-colors",
-                    radius === r
-                      ? "bg-foreground text-background"
-                      : "hover:bg-accent"
-                  )}
-                >
-                  {r}mi
-                </button>
               ))}
+
+              {/* Loading state for tags */}
+              {!tagsData && (
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-20" />
+                  <div className="flex flex-wrap gap-1.5">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Skeleton key={i} className="h-7 w-16 rounded-full" />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      )}
+          </PopoverContent>
+        </Popover>
+      </div>
 
       {/* ── For You reason ───────────────────────────────────────────────── */}
       {activeTab === "for-you" && forYouReason && (
@@ -359,7 +317,8 @@ export function ExploreSidebar({
       {activeFilterCount > 0 && (
         <div className="px-3 py-2 border-b flex flex-wrap gap-1.5">
           {activeFilters.tags.map((tag) => {
-            const label = QUICK_TAGS.find((t) => t.slug === tag)?.label || tag;
+            const label =
+              quickTags.find((t) => t.slug === tag)?.label || tag;
             return (
               <Badge
                 key={tag}
@@ -385,71 +344,54 @@ export function ExploreSidebar({
         </div>
       )}
 
-      {/* ── Location required prompt ──────────────────────────────────────── */}
-      {needsLocation && (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-3">
-          <HugeiconsIcon icon={Location01Icon} className="h-10 w-10 text-muted-foreground" />
-          <p className="font-medium text-sm">Waiting for your location</p>
-          <p className="text-xs text-muted-foreground">
-            Allow location access to see places near you
-          </p>
-        </div>
-      )}
-
       {/* ── Place list ───────────────────────────────────────────────────── */}
-      {!needsLocation && (
-        <div className="flex-1 overflow-y-auto">
-          {isLoading ? (
-            <div className="p-3 space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex gap-3">
-                  <Skeleton className="h-16 w-16 rounded-lg shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                    <Skeleton className="h-3 w-1/3" />
-                  </div>
+      <div className="flex-1 overflow-y-auto">
+        {isLoading ? (
+          <div className="p-3 space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex gap-3">
+                <Skeleton className="h-16 w-16 rounded-lg shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-3 w-1/3" />
                 </div>
-              ))}
-            </div>
-          ) : (
-            <PlacesList
-              places={places}
-              isLoading={false}
-              selectedPlaceId={selectedPlaceId || null}
-              onPlaceSelect={handlePlaceClick}
-              placeRowRefs={placeRowRefs}
-              showStatus={false}
-              showSaveDropdown={true}
-              hideDropdownUntilHover={true}
-              thumbnailMode="photo"
-              currentUserPlaceData={currentUserPlaceData}
-              showSavedBy={activeTab === "following"}
-              hasMore={hasMore}
-              onLoadMore={onLoadMore}
-              isLoadingMore={isLoadingMore}
-              emptyMessage={
-                activeTab === "nearby"
-                  ? "No places found nearby"
-                  : activeTab === "trending"
-                  ? "No trending spots found"
-                  : activeTab === "for-you"
-                  ? "Nothing for you yet"
-                  : "No places yet"
-              }
-              emptySubMessage={
-                activeTab === "nearby"
-                  ? "Try increasing your radius or searching for a specific place"
-                  : activeTab === "trending"
-                  ? "Places with recent Instagram or TikTok posts will appear here"
-                  : activeTab === "for-you"
-                  ? "Rate some places you've visited and we'll find similar spots"
-                  : "Follow people to see where they're saving"
-              }
-            />
-          )}
-        </div>
-      )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <PlacesList
+            places={places}
+            isLoading={false}
+            selectedPlaceId={selectedPlaceId || null}
+            onPlaceSelect={handlePlaceClick}
+            placeRowRefs={placeRowRefs}
+            showStatus={false}
+            showSaveDropdown={true}
+            hideDropdownUntilHover={true}
+            thumbnailMode="photo"
+            currentUserPlaceData={currentUserPlaceData}
+            showSavedBy={activeTab === "following"}
+            hasMore={hasMore}
+            onLoadMore={onLoadMore}
+            isLoadingMore={isLoadingMore}
+            emptyMessage={
+              activeTab === "trending"
+                ? "No trending spots found"
+                : activeTab === "for-you"
+                ? "Nothing for you yet"
+                : "No places yet"
+            }
+            emptySubMessage={
+              activeTab === "trending"
+                ? "Places with recent Instagram or TikTok posts will appear here"
+                : activeTab === "for-you"
+                ? "Rate some places you've visited and we'll find similar spots"
+                : "Follow people to see where they're saving"
+            }
+          />
+        )}
+      </div>
     </div>
   );
 }
