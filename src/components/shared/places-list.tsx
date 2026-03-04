@@ -4,7 +4,7 @@ import { forwardRef, useRef, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Location01Icon, CheckmarkBadge01Icon } from "@hugeicons/core-free-icons";
+import { Location01Icon, CheckmarkBadge01Icon, Fire02Icon } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import { SaveToListDropdown } from "./save-to-list-dropdown";
 import { EmojiPickerPopover } from "./emoji-picker-popover";
@@ -50,6 +50,8 @@ interface SavedPlace {
   emoji?: string | null;
   visitedAt?: string | null;
   createdAt?: string;
+  saveCount?: number;
+  trendingCount?: number;
   place: Place;
   lists?: ListInfo[];
   savedBy?: SavedByUser | null;
@@ -70,6 +72,17 @@ const RATING_NAMES: Record<number, string> = {
   4: "great",
   5: "loved",
 };
+
+function formatPriceLevel(level: string | null): string {
+  if (!level) return "";
+  const map: Record<string, string> = {
+    PRICE_LEVEL_INEXPENSIVE: "$",
+    PRICE_LEVEL_MODERATE: "$$",
+    PRICE_LEVEL_EXPENSIVE: "$$$",
+    PRICE_LEVEL_VERY_EXPENSIVE: "$$$$",
+  };
+  return map[level] || "";
+}
 
 type ThumbnailMode = "emoji" | "my-places" | "photo";
 
@@ -139,9 +152,12 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
   ({ savedPlace, isSelected, showStatus = true, showSaveDropdown = false, hideDropdownUntilHover = false, listsContainingPlace = [], actionButton, onClick, thumbnailMode = "photo", emojiEditable = false, currentUserData, showSavedBy = false }, ref) => {
     const queryClient = useQueryClient();
     const category = getBestCategory(savedPlace.place.primaryType, savedPlace.place.types);
-    const locationDisplay = savedPlace.place.neighborhood 
-      || savedPlace.place.locality 
+    const locationDisplay = savedPlace.place.neighborhood
+      || savedPlace.place.locality
       || savedPlace.place.formattedAddress.split(",")[0];
+    const priceDisplay = formatPriceLevel(savedPlace.place.priceLevel);
+    const trendingCount = savedPlace.trendingCount ?? 0;
+    const saveCount = savedPlace.saveCount ?? 0;
     
     const currentUserLists = currentUserData?.lists?.map(l => l.id) || listsContainingPlace || [];
     
@@ -299,6 +315,27 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
             <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1 truncate" data-testid="place-card-location-row">
               <HugeiconsIcon icon={Location01Icon} className="h-3 w-3 flex-shrink-0" />
               <span className="truncate">{locationDisplay}</span>
+              {priceDisplay && (
+                <>
+                  <span className="flex-shrink-0">·</span>
+                  <span className="flex-shrink-0 font-medium">{priceDisplay}</span>
+                </>
+              )}
+              {trendingCount > 0 && (
+                <>
+                  <span className="flex-shrink-0">·</span>
+                  <span className="flex-shrink-0 text-orange-500 font-medium flex items-center gap-0.5">
+                    <HugeiconsIcon icon={Fire02Icon} className="h-3 w-3" />
+                    {trendingCount}
+                  </span>
+                </>
+              )}
+              {saveCount > 1 && trendingCount === 0 && (
+                <>
+                  <span className="flex-shrink-0">·</span>
+                  <span className="flex-shrink-0">{saveCount} saves</span>
+                </>
+              )}
               {showSavedBy && savedPlace.savedBy?.username && (
                 <>
                   <span className="flex-shrink-0">·</span>

@@ -8,9 +8,14 @@ import {
   Search01Icon,
   Bookmark01Icon,
   Cancel01Icon,
+  Location01Icon,
+  Fire02Icon,
 } from "@hugeicons/core-free-icons";
 import { SaveToListDropdown } from "@/components/shared/save-to-list-dropdown";
 import type { SaveToListDropdownHandle } from "@/components/shared/save-to-list-dropdown";
+import { cn } from "@/lib/utils";
+
+// ── Types ─────────────────────────────────────────────────────────────────
 
 interface PlacePrediction {
   place_id: string;
@@ -21,6 +26,22 @@ interface PlacePrediction {
   };
 }
 
+interface DbPlace {
+  id: string;
+  googlePlaceId: string;
+  name: string;
+  formattedAddress: string;
+  neighborhood: string | null;
+  lat: number;
+  lng: number;
+  primaryType: string | null;
+  priceLevel: string | null;
+  photoRefs: string[] | null;
+  saveCount: number;
+  trendingCount: number;
+  topTags: Array<{ slug: string; displayName: string }>;
+}
+
 const EMPTY_PLACE = {
   googlePlaceId: "",
   name: "",
@@ -29,73 +50,154 @@ const EMPTY_PLACE = {
   lng: 0,
 };
 
+// ── Category grid ─────────────────────────────────────────────────────────
+
+const CATEGORIES = [
+  { emoji: "🍕", label: "Italian", query: "Italian" },
+  { emoji: "🍣", label: "Sushi", query: "Sushi" },
+  { emoji: "🥩", label: "Burgers", query: "Burgers" },
+  { emoji: "🌮", label: "Mexican", query: "Mexican" },
+  { emoji: "🥐", label: "Brunch", query: "Brunch" },
+  { emoji: "🍜", label: "Asian", query: "Asian" },
+  { emoji: "🍷", label: "Wine Bar", query: "Wine Bar" },
+  { emoji: "☕", label: "Coffee", query: "Coffee" },
+  { emoji: "🍹", label: "Cocktails", query: "Cocktails" },
+  { emoji: "🎉", label: "Date Night", query: "Date Night" },
+  { emoji: "🌿", label: "Vegan", query: "Vegan" },
+  { emoji: "🍦", label: "Dessert", query: "Dessert" },
+];
+
+function formatPriceLevel(level: string | null): string {
+  if (!level) return "";
+  const map: Record<string, string> = {
+    PRICE_LEVEL_INEXPENSIVE: "$",
+    PRICE_LEVEL_MODERATE: "$$",
+    PRICE_LEVEL_EXPENSIVE: "$$$",
+    PRICE_LEVEL_VERY_EXPENSIVE: "$$$$",
+  };
+  return map[level] || "";
+}
+
+// ── Component ─────────────────────────────────────────────────────────────
+
 export function FloatingSearch() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<PlacePrediction[]>([]);
+  const [googleResults, setGoogleResults] = useState<PlacePrediction[]>([]);
+  const [dbResults, setDbResults] = useState<DbPlace[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [activePrediction, setActivePrediction] = useState<PlacePrediction | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const locationRequested = useRef(false);
   const saveRef = useRef<SaveToListDropdownHandle>(null);
+  const pendingSaveRef = useRef<typeof EMPTY_PLACE | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const currentPlace = activePrediction ? {
-    googlePlaceId: activePrediction.place_id,
-    name: activePrediction.structured_formatting.main_text,
-    formattedAddress: activePrediction.structured_formatting.secondary_text,
-    lat: 0,
-    lng: 0,
-  } : EMPTY_PLACE;
+  const currentPlace = activePrediction
+    ? {
+        googlePlaceId: activePrediction.place_id,
+        name: activePrediction.structured_formatting.main_text,
+        formattedAddress: activePrediction.structured_formatting.secondary_text,
+        lat: 0,
+        lng: 0,
+      }
+    : EMPTY_PLACE;
 
+  const activePlace = pendingSaveRef.current || currentPlace;
+
+  // Get user location
   useEffect(() => {
-    if (!locationRequested.current && navigator.geolocation) {
-      locationRequested.current = true;
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        () => {},
-        { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
-      );
-    }
+    if (locationRequested.current || !navigator.geolocation) return;
+    locationRequested.current = true;
+
+    // Try cached first
+    try {
+      const cached = localStorage.getItem("twnsq-user-location");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Date.now() - parsed.timestamp < 10 * 60 * 1000) {
+          setUserLocation({ lat: parsed.lat, lng: parsed.lng });
+          return;
+        }
+      }
+    } catch {}
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
+      () => {},
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+    );
   }, []);
 
-  const searchPlaces = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    setIsSearching(true);
+  // Fetch radius from settings
+  const [radius, setRadius] = useState(() => {
     try {
-      let url = `/api/places/search?q=${encodeURIComponent(query)}`;
-      if (userLocation) {
-        url += `&lat=${userLocation.lat}&lng=${userLocation.lng}`;
-      }
-      const response = await fetch(url);
-      const data = await response.json();
-      setSearchResults(data.predictions || []);
-    } catch (error) {
-      console.error("Search error:", error);
-    } finally {
-      setIsSearching(false);
+      return parseFloat(localStorage.getItem("twnsq-map-radius") || "5");
+    } catch {
+      return 5;
     }
-  }, [userLocation]);
+  });
+  useEffect(() => {
+    const handler = (e: Event) => setRadius((e as CustomEvent).detail);
+    window.addEventListener("map-radius-change", handler);
+    return () => window.removeEventListener("map-radius-change", handler);
+  }, []);
+
+  // Search both DB and Google
+  const search = useCallback(
+    async (query: string) => {
+      if (!query.trim()) {
+        setGoogleResults([]);
+        setDbResults([]);
+        return;
+      }
+      setIsSearching(true);
+      try {
+        const [googleRes, dbRes] = await Promise.allSettled([
+          fetch(
+            `/api/places/search?q=${encodeURIComponent(query)}${
+              userLocation ? `&lat=${userLocation.lat}&lng=${userLocation.lng}` : ""
+            }`
+          ).then((r) => r.json()),
+          fetch(
+            `/api/places/db-search?q=${encodeURIComponent(query)}${
+              userLocation
+                ? `&lat=${userLocation.lat}&lng=${userLocation.lng}&radius=${radius}`
+                : ""
+            }`
+          ).then((r) => r.json()),
+        ]);
+
+        if (googleRes.status === "fulfilled") {
+          setGoogleResults(googleRes.value.predictions || []);
+        }
+        if (dbRes.status === "fulfilled") {
+          setDbResults(dbRes.value.places || []);
+        }
+      } catch (error) {
+        console.error("Search error:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [userLocation, radius]
+  );
 
   useEffect(() => {
-    const debounce = setTimeout(() => searchPlaces(searchQuery), 300);
+    const debounce = setTimeout(() => search(searchQuery), 300);
     return () => clearTimeout(debounce);
-  }, [searchQuery, searchPlaces]);
+  }, [searchQuery, search]);
 
   const handleClear = () => {
     setSearchQuery("");
-    setSearchResults([]);
+    setGoogleResults([]);
+    setDbResults([]);
     setActivePrediction(null);
   };
 
-  const handleSaveClick = (prediction: PlacePrediction) => {
+  const handleGoogleSave = (prediction: PlacePrediction) => {
     const placeToSave = {
       googlePlaceId: prediction.place_id,
       name: prediction.structured_formatting.main_text,
@@ -110,23 +212,48 @@ export function FloatingSearch() {
     }, 50);
   };
 
-  const pendingSaveRef = useRef<typeof currentPlace | null>(null);
-  const activePlace = pendingSaveRef.current || currentPlace;
+  const handleDbSave = (place: DbPlace) => {
+    const placeToSave = {
+      googlePlaceId: place.googlePlaceId,
+      name: place.name,
+      formattedAddress: place.formattedAddress,
+      lat: place.lat,
+      lng: place.lng,
+    };
+    pendingSaveRef.current = placeToSave;
+    handleClear();
+    setTimeout(() => {
+      saveRef.current?.triggerSave();
+    }, 50);
+  };
 
-  const showResults = isFocused && (isSearching || searchResults.length > 0 || searchQuery.trim().length > 0);
+  const handleCategoryClick = (category: (typeof CATEGORIES)[0]) => {
+    setSearchQuery(category.query);
+    inputRef.current?.focus();
+  };
+
+  const showDropdown = isFocused;
+  const hasQuery = searchQuery.trim().length > 0;
+  const hasResults = dbResults.length > 0 || googleResults.length > 0;
+
+  // Filter out Google results that are already in DB to avoid duplicates
+  const dbPlaceIds = new Set(dbResults.map((p) => p.googlePlaceId));
+  const filteredGoogle = googleResults.filter((r) => !dbPlaceIds.has(r.place_id));
 
   return (
     <div className="md:w-96 md:ml-auto">
       <div className="relative">
-        <HugeiconsIcon icon={Search01Icon} className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <HugeiconsIcon
+          icon={Search01Icon}
+          className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+        />
         <Input
-          placeholder="Search for a place..."
+          ref={inputRef}
+          placeholder="Find dinner, brunch, date spots…"
           value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-          }}
+          onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={() => setIsFocused(true)}
-          onBlur={() => setTimeout(() => setIsFocused(false), 300)}
+          onBlur={() => setTimeout(() => setIsFocused(false), 200)}
           className="pl-10 pr-8 bg-background dark:bg-background shadow-lg border"
           data-testid="input-search-place"
         />
@@ -141,45 +268,185 @@ export function FloatingSearch() {
         )}
       </div>
 
-      {showResults && (
-        <div className="mt-2 bg-background border rounded-lg shadow-lg max-h-96 overflow-y-auto">
-          {isSearching && (
+      {showDropdown && (
+        <div className="mt-2 bg-background border rounded-lg shadow-xl max-h-[70vh] overflow-y-auto">
+          {/* ── Empty state: category grid ─────────────────────────────── */}
+          {!hasQuery && (
+            <div className="p-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                Browse by category
+              </p>
+              <div className="grid grid-cols-4 gap-1.5">
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.label}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleCategoryClick(cat)}
+                    className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-accent transition-colors text-center"
+                    data-testid={`category-${cat.label.toLowerCase()}`}
+                  >
+                    <span className="text-xl">{cat.emoji}</span>
+                    <span className="text-[11px] font-medium leading-tight">{cat.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Searching spinner ──────────────────────────────────────── */}
+          {hasQuery && isSearching && (
             <div className="space-y-2 p-3">
               <Skeleton className="h-12 w-full" />
               <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
             </div>
           )}
-          {!isSearching && searchResults.length > 0 && (
-            <div className="py-1">
-              {searchResults.map((result) => (
-                <button
-                  key={result.place_id}
-                  className="flex items-center gap-2 px-3 py-2 hover-elevate w-full text-left"
-                  onClick={() => handleSaveClick(result)}
-                  data-testid={`search-result-${result.place_id}`}
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{result.structured_formatting.main_text}</p>
-                    <p className="text-xs text-muted-foreground truncate">{result.structured_formatting.secondary_text}</p>
-                  </div>
-                  <div className="flex items-center flex-shrink-0">
-                    <HugeiconsIcon icon={Bookmark01Icon} className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-          {!isSearching && searchQuery && searchResults.length === 0 && (
-            <p className="p-3 text-center text-sm text-muted-foreground">No places found</p>
+
+          {/* ── Results ───────────────────────────────────────────────── */}
+          {hasQuery && !isSearching && (
+            <>
+              {/* DB places — already in Townsquare */}
+              {dbResults.length > 0 && (
+                <div>
+                  <p className="px-3 pt-3 pb-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    In Townsquare
+                  </p>
+                  {dbResults.map((place) => (
+                    <div
+                      key={place.id}
+                      className="flex items-center gap-2.5 px-3 py-2 hover:bg-accent transition-colors cursor-pointer group"
+                    >
+                      {/* Thumbnail */}
+                      <div className="w-10 h-10 rounded bg-muted flex-shrink-0 overflow-hidden">
+                        {place.photoRefs?.[0] ? (
+                          <img
+                            src={`/api/places/photo?photoRef=${place.photoRefs[0]}&maxWidth=80`}
+                            alt={place.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <HugeiconsIcon
+                              icon={Location01Icon}
+                              className="h-4 w-4 text-muted-foreground"
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Info — clicking navigates */}
+                      <button
+                        className="flex-1 min-w-0 text-left"
+                        onClick={() => handleDbSave(place)}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-medium text-sm truncate">{place.name}</p>
+                          {place.trendingCount > 0 && (
+                            <span className="flex items-center gap-0.5 text-orange-500 text-[11px] font-semibold flex-shrink-0">
+                              <HugeiconsIcon icon={Fire02Icon} className="h-3 w-3" />
+                              {place.trendingCount}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <span className="truncate">
+                            {place.neighborhood || place.formattedAddress.split(",")[0]}
+                          </span>
+                          {place.priceLevel && (
+                            <>
+                              <span>·</span>
+                              <span className="flex-shrink-0">
+                                {formatPriceLevel(place.priceLevel)}
+                              </span>
+                            </>
+                          )}
+                          {place.saveCount > 0 && (
+                            <>
+                              <span>·</span>
+                              <span className="flex-shrink-0">
+                                {place.saveCount} save{place.saveCount !== 1 ? "s" : ""}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        {place.topTags.length > 0 && (
+                          <div className="flex gap-1 mt-0.5">
+                            {place.topTags.slice(0, 2).map((tag) => (
+                              <span
+                                key={tag.slug}
+                                className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full"
+                              >
+                                {tag.displayName}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </button>
+
+                      {/* Save button */}
+                      <div
+                        className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDbSave(place);
+                        }}
+                      >
+                        <HugeiconsIcon icon={Bookmark01Icon} className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Google fallback */}
+              {filteredGoogle.length > 0 && (
+                <div>
+                  <p className="px-3 pt-3 pb-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    {dbResults.length > 0 ? "Add new place" : "From Google"}
+                  </p>
+                  {filteredGoogle.map((result) => (
+                    <button
+                      key={result.place_id}
+                      className="flex items-center gap-2 px-3 py-2 hover:bg-accent w-full text-left transition-colors"
+                      onClick={() => handleGoogleSave(result)}
+                      data-testid={`search-result-${result.place_id}`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">
+                          {result.structured_formatting.main_text}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {result.structured_formatting.secondary_text}
+                        </p>
+                      </div>
+                      <HugeiconsIcon
+                        icon={Bookmark01Icon}
+                        className="h-4 w-4 text-muted-foreground flex-shrink-0"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* No results */}
+              {!hasResults && (
+                <p className="p-3 text-center text-sm text-muted-foreground">
+                  No places found for &ldquo;{searchQuery}&rdquo;
+                </p>
+              )}
+            </>
           )}
         </div>
       )}
 
+      {/* Hidden save modal */}
       <div className="hidden">
         <SaveToListDropdown
           ref={saveRef}
           place={activePlace}
-          onSaveSuccess={() => { pendingSaveRef.current = null; }}
+          onSaveSuccess={() => {
+            pendingSaveRef.current = null;
+          }}
         />
       </div>
     </div>
