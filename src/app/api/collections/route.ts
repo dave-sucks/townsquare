@@ -180,7 +180,12 @@ export async function GET(request: NextRequest) {
       const lat = parseFloat(searchParams.get("lat") || "0");
       const lng = parseFloat(searchParams.get("lng") || "0");
       const radius = parseFloat(searchParams.get("radius") || "5");
+      const tags = searchParams.getAll("tag");
+      const priceLevel = searchParams.get("price");
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+      const tagFilter = tags.length > 0 ? { placeTags: { some: { tag: { slug: { in: tags } } } } } : {};
+      const priceFilter = priceLevel ? { priceLevel } : {};
 
       const postCounts = await prisma.review.groupBy({
         by: ["placeId"],
@@ -192,7 +197,7 @@ export async function GET(request: NextRequest) {
 
       if (postCounts.length === 0) {
         // Fallback: most saved places overall
-        const fallbackWhere: any = {};
+        const fallbackWhere: any = { ...tagFilter, ...priceFilter };
         if (lat && lng) {
           const { latDelta, lngDelta } = getBoundingBox(lat, lng, radius);
           fallbackWhere.lat = { gte: lat - latDelta, lte: lat + latDelta };
@@ -222,7 +227,7 @@ export async function GET(request: NextRequest) {
       const trendingPlaceIds = postCounts.map((r) => r.placeId);
       const countMap = new Map(postCounts.map((r) => [r.placeId, r._count.id]));
 
-      const whereClause: any = { id: { in: trendingPlaceIds } };
+      const whereClause: any = { id: { in: trendingPlaceIds }, ...tagFilter, ...priceFilter };
       if (lat && lng) {
         const { latDelta, lngDelta } = getBoundingBox(lat, lng, radius);
         whereClause.lat = { gte: lat - latDelta, lte: lat + latDelta };
@@ -272,6 +277,8 @@ export async function GET(request: NextRequest) {
       const lat = parseFloat(searchParams.get("lat") || "0");
       const lng = parseFloat(searchParams.get("lng") || "0");
       const radius = parseFloat(searchParams.get("radius") || "5");
+      const tags = searchParams.getAll("tag");
+      const priceLevel = searchParams.get("price");
 
       // Get user's top-rated saved places
       const topRatedSaves = await prisma.savedPlace.findMany({
@@ -298,6 +305,9 @@ export async function GET(request: NextRequest) {
         ...(topTagIds.length > 0
           ? { placeTags: { some: { tagId: { in: topTagIds } } } }
           : {}),
+        // User-selected tag filters narrow down results further
+        ...(tags.length > 0 ? { placeTags: { some: { tag: { slug: { in: tags } } } } } : {}),
+        ...(priceLevel ? { priceLevel } : {}),
       };
 
       if (lat && lng) {
@@ -343,6 +353,9 @@ export async function GET(request: NextRequest) {
 
     // ── Following ──────────────────────────────────────────────────────────
     if (collection === "following") {
+      const tags = searchParams.getAll("tag");
+      const priceLevel = searchParams.get("price");
+
       const followedUserIds = await prisma.follow.findMany({
         where: { followerId: user.id },
         select: { followingId: true },
@@ -354,8 +367,16 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ places: [], hasMore: false });
       }
 
+      const placeFilter: any = {
+        ...(tags.length > 0 ? { placeTags: { some: { tag: { slug: { in: tags } } } } } : {}),
+        ...(priceLevel ? { priceLevel } : {}),
+      };
+
       const savedPlaces = await prisma.savedPlace.findMany({
-        where: { userId: { in: ids } },
+        where: {
+          userId: { in: ids },
+          ...(Object.keys(placeFilter).length > 0 ? { place: placeFilter } : {}),
+        },
         include: {
           place: {
             include: {
