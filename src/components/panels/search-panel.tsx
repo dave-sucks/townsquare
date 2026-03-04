@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ButtonGroup, ButtonGroupSeparator } from "@/components/ui/button-group";
 import {
   Select,
   SelectContent,
@@ -255,8 +256,8 @@ export function SearchPanel({
 
   return (
     <div className="h-full flex flex-col bg-background" data-testid="search-panel">
-      {/* ── Back header ─────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1 px-2 py-2 border-b shrink-0">
+      {/* ── Back + Location/Radius header ───────────────────────────────── */}
+      <div className="flex items-center gap-2 px-2 py-2 border-b shrink-0">
         <Button
           variant="ghost"
           size="icon"
@@ -268,13 +269,13 @@ export function SearchPanel({
         </Button>
 
         {/* ── Location + Radius button group ───────────────────────────── */}
-        <div className="flex flex-1 h-9 rounded-lg border bg-background overflow-visible">
+        <ButtonGroup className="flex-1">
           {/* Location input */}
-          <div className="flex items-center gap-2 flex-1 min-w-0 px-2.5">
+          <div className="relative flex flex-1 items-center border rounded-md bg-background">
             <HugeiconsIcon
               icon={Location01Icon}
               className={cn(
-                "h-3.5 w-3.5 shrink-0",
+                "absolute left-2.5 h-3.5 w-3.5 pointer-events-none shrink-0",
                 isCustomLocation ? "text-muted-foreground" : "text-blue-500"
               )}
             />
@@ -289,25 +290,24 @@ export function SearchPanel({
               onBlur={() => setTimeout(() => setLocationFocused(false), 150)}
               placeholder="My Location"
               className={cn(
-                "flex-1 bg-transparent text-sm outline-none min-w-0",
+                "flex-1 h-9 bg-transparent pl-8 pr-2 text-sm outline-none min-w-0",
                 isCustomLocation
-                  ? "placeholder:text-muted-foreground"
-                  : "placeholder:text-blue-500 dark:placeholder:text-blue-400 text-blue-600 dark:text-blue-400 placeholder:font-medium font-medium"
+                  ? "placeholder:text-muted-foreground text-foreground"
+                  : "placeholder:text-blue-500 placeholder:font-medium text-blue-600 dark:text-blue-400 font-medium"
               )}
               data-testid="search-panel-location-input"
             />
             {isCustomLocation && (
               <button
                 onClick={handleClearLocation}
-                className="shrink-0 text-muted-foreground hover:text-foreground"
+                className="absolute right-2 shrink-0 text-muted-foreground hover:text-foreground"
               >
                 <HugeiconsIcon icon={Cancel01Icon} className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
 
-          {/* Divider */}
-          <div className="w-px bg-border self-stretch my-1.5 shrink-0" />
+          <ButtonGroupSeparator />
 
           {/* Radius select */}
           <Select
@@ -315,7 +315,7 @@ export function SearchPanel({
             onValueChange={(v) => onRadiusChange(Number(v))}
           >
             <SelectTrigger
-              className="w-[4.5rem] h-full border-0 rounded-none rounded-r-lg shadow-none text-xs font-medium focus:ring-0 px-2"
+              className="h-9 w-[4.5rem] border rounded-md shadow-none text-xs font-medium focus:ring-0"
               data-testid="radius-select"
             >
               <SelectValue />
@@ -328,7 +328,7 @@ export function SearchPanel({
               <SelectItem value="10">10 mi</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        </ButtonGroup>
       </div>
 
       {/* ── Location suggestions dropdown ───────────────────────────────── */}
