@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ButtonGroup, ButtonGroupSeparator } from "@/components/ui/button-group";
+import { ButtonGroup } from "@/components/ui/button-group";
 import {
   Select,
   SelectContent,
@@ -269,17 +270,20 @@ export function SearchPanel({
         </Button>
 
         {/* ── Location + Radius button group ───────────────────────────── */}
-        <ButtonGroup className="flex-1">
-          {/* Location input */}
-          <div className="relative flex flex-1 items-center border rounded-md bg-background">
-            <HugeiconsIcon
-              icon={Location01Icon}
-              className={cn(
-                "absolute left-2.5 h-3.5 w-3.5 pointer-events-none shrink-0",
-                isCustomLocation ? "text-muted-foreground" : "text-blue-500"
-              )}
-            />
-            <input
+        {/* Outer div is relative so the location icon can float over Input  */}
+        {/* WITHOUT being a wrapper div inside ButtonGroup (causes double borders) */}
+        <div className="relative flex-1">
+          <HugeiconsIcon
+            icon={Location01Icon}
+            className={cn(
+              "absolute left-2.5 top-1/2 -translate-y-1/2 z-10 h-3.5 w-3.5 pointer-events-none",
+              isCustomLocation ? "text-muted-foreground" : "text-blue-500"
+            )}
+          />
+
+          <ButtonGroup className="w-full">
+            {/* Direct Input child — no wrapper, no extra border */}
+            <Input
               ref={locationInputRef}
               value={locationFocused ? locationQuery : (searchLocation?.label ?? "")}
               onChange={(e) => setLocationQuery(e.target.value)}
@@ -290,45 +294,42 @@ export function SearchPanel({
               onBlur={() => setTimeout(() => setLocationFocused(false), 150)}
               placeholder="My Location"
               className={cn(
-                "flex-1 h-9 bg-transparent pl-8 pr-2 text-sm outline-none min-w-0",
+                "pl-8",
                 isCustomLocation
-                  ? "placeholder:text-muted-foreground text-foreground"
-                  : "placeholder:text-blue-500 placeholder:font-medium text-blue-600 dark:text-blue-400 font-medium"
+                  ? ""
+                  : "text-blue-600 dark:text-blue-400 placeholder:text-blue-500 placeholder:font-medium font-medium"
               )}
               data-testid="search-panel-location-input"
             />
-            {isCustomLocation && (
-              <button
-                onClick={handleClearLocation}
-                className="absolute right-2 shrink-0 text-muted-foreground hover:text-foreground"
-              >
-                <HugeiconsIcon icon={Cancel01Icon} className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
 
-          <ButtonGroupSeparator />
-
-          {/* Radius select */}
-          <Select
-            value={String(radius)}
-            onValueChange={(v) => onRadiusChange(Number(v))}
-          >
-            <SelectTrigger
-              className="h-9 w-[4.5rem] border rounded-md shadow-none text-xs font-medium focus:ring-0"
-              data-testid="radius-select"
+            {/* Direct Select child — ButtonGroup handles its radius via has-[select] */}
+            <Select
+              value={String(radius)}
+              onValueChange={(v) => onRadiusChange(Number(v))}
             >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent align="end">
-              <SelectItem value="0.5">0.5 mi</SelectItem>
-              <SelectItem value="1">1 mi</SelectItem>
-              <SelectItem value="2">2 mi</SelectItem>
-              <SelectItem value="5">5 mi</SelectItem>
-              <SelectItem value="10">10 mi</SelectItem>
-            </SelectContent>
-          </Select>
-        </ButtonGroup>
+              <SelectTrigger className="w-[4.5rem]" data-testid="radius-select">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                <SelectItem value="0.5">0.5 mi</SelectItem>
+                <SelectItem value="1">1 mi</SelectItem>
+                <SelectItem value="2">2 mi</SelectItem>
+                <SelectItem value="5">5 mi</SelectItem>
+                <SelectItem value="10">10 mi</SelectItem>
+              </SelectContent>
+            </Select>
+          </ButtonGroup>
+
+          {/* Clear location — outside ButtonGroup to avoid border issues */}
+          {isCustomLocation && (
+            <button
+              onClick={handleClearLocation}
+              className="absolute right-[calc(4.5rem+1px)] top-1/2 -translate-y-1/2 z-10 text-muted-foreground hover:text-foreground px-1.5"
+            >
+              <HugeiconsIcon icon={Cancel01Icon} className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Location suggestions dropdown ───────────────────────────────── */}
