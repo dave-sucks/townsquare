@@ -178,13 +178,13 @@ export function ExploreSidebar({
     return (
       <SearchPanel
         onBack={() => onNavigate("list")}
-        initialSearchQuery={searchQuery}
+        searchQuery={searchQuery}
+        onSearchQueryChange={onSearchQueryChange}
         searchLocation={searchLocation ?? null}
         onLocationChange={onSearchLocationChange ?? (() => {})}
         radius={radius}
         onRadiusChange={onRadiusChange ?? (() => {})}
         userGpsLocation={userGpsLocation ?? null}
-        onSearchQueryChange={onSearchQueryChange}
       />
     );
   }

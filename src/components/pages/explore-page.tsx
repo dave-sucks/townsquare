@@ -249,6 +249,10 @@ export function ExplorePage({ user }: { user: UserData }) {
       onPlaceSelect={handlePlaceSelect}
       showSearch={true}
       searchQuery={searchQuery}
+      onSearchQueryChange={(q) => {
+        setSearchQuery(q);
+        if (q && currentView !== "search") handleNavigate("search");
+      }}
       locationLabel={locationLabel}
       isCustomLocation={isCustomLocation}
       onOpenSearch={() => handleNavigate("search")}

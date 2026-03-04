@@ -2,12 +2,17 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowLeft01Icon,
-  Search01Icon,
   Location01Icon,
   Cancel01Icon,
   Bookmark01Icon,
@@ -52,15 +57,15 @@ export interface SearchLocation {
 
 interface SearchPanelProps {
   onBack: () => void;
-  // Initial values (preserved when reopening)
-  initialSearchQuery?: string;
-  searchLocation: SearchLocation | null; // null = use GPS
+  /** Controlled — the search input lives in SearchBar, not here */
+  searchQuery: string;
+  /** Category click needs to push a query back up to the SearchBar */
+  onSearchQueryChange?: (q: string) => void;
+  searchLocation: SearchLocation | null; // null = GPS mode
   onLocationChange: (loc: SearchLocation | null) => void;
   radius: number;
   onRadiusChange: (r: number) => void;
   userGpsLocation: { lat: number; lng: number } | null;
-  // Lift search query to parent so SearchBar can display it when closed
-  onSearchQueryChange?: (q: string) => void;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────
@@ -79,8 +84,6 @@ const CATEGORIES = [
   { emoji: "🌿", label: "Vegan" },
   { emoji: "🍦", label: "Dessert" },
 ];
-
-const RADIUS_OPTIONS = [0.5, 1, 2, 5, 10];
 
 const EMPTY_PLACE = {
   googlePlaceId: "",
@@ -104,37 +107,30 @@ function formatPriceLevel(level: string | null): string {
 
 export function SearchPanel({
   onBack,
-  initialSearchQuery = "",
+  searchQuery,
+  onSearchQueryChange,
   searchLocation,
   onLocationChange,
   radius,
   onRadiusChange,
   userGpsLocation,
-  onSearchQueryChange,
 }: SearchPanelProps) {
-  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
-
-  // Lift search query to parent so SearchBar reflects it when panel closes
-  useEffect(() => {
-    onSearchQueryChange?.(searchQuery);
-  }, [searchQuery, onSearchQueryChange]);
-  const [locationQuery, setLocationQuery] = useState(searchLocation?.label || "");
+  // Location input state (local — only committed to parent on selection)
+  const [locationQuery, setLocationQuery] = useState(searchLocation?.label ?? "");
   const [locationFocused, setLocationFocused] = useState(false);
   const [locationSuggestions, setLocationSuggestions] = useState<PlacePrediction[]>([]);
+
+  // Place search results (driven by searchQuery prop)
   const [dbResults, setDbResults] = useState<DbPlace[]>([]);
   const [googleResults, setGoogleResults] = useState<PlacePrediction[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  // Save-to-list
   const [pendingSave, setPendingSave] = useState<typeof EMPTY_PLACE | null>(null);
   const saveRef = useRef<SaveToListDropdownHandle>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const locationInputRef = useRef<HTMLInputElement>(null);
 
-  // Focus search input on mount
-  useEffect(() => {
-    setTimeout(() => searchInputRef.current?.focus(), 50);
-  }, []);
-
-  // ── Location search (for location input) ──────────────────────────────
+  // ── Location autocomplete ──────────────────────────────────────────────
   const searchLocations = useCallback(async (q: string) => {
     if (!q.trim()) {
       setLocationSuggestions([]);
@@ -152,15 +148,15 @@ export function SearchPanel({
   }, []);
 
   useEffect(() => {
-    const debounce = setTimeout(() => {
+    const t = setTimeout(() => {
       if (locationFocused && locationQuery && locationQuery !== searchLocation?.label) {
         searchLocations(locationQuery);
       }
     }, 300);
-    return () => clearTimeout(debounce);
+    return () => clearTimeout(t);
   }, [locationQuery, locationFocused, searchLocations, searchLocation?.label]);
 
-  // ── Place search (for main search input) ──────────────────────────────
+  // ── Place search (driven by searchQuery prop) ──────────────────────────
   const activeLat = searchLocation?.lat ?? userGpsLocation?.lat;
   const activeLng = searchLocation?.lng ?? userGpsLocation?.lng;
 
@@ -186,7 +182,8 @@ export function SearchPanel({
           ).then((r) => r.json()),
         ]);
         if (dbRes.status === "fulfilled") setDbResults(dbRes.value.places || []);
-        if (googleRes.status === "fulfilled") setGoogleResults(googleRes.value.predictions || []);
+        if (googleRes.status === "fulfilled")
+          setGoogleResults(googleRes.value.predictions || []);
       } catch {
         // silent
       } finally {
@@ -197,8 +194,8 @@ export function SearchPanel({
   );
 
   useEffect(() => {
-    const debounce = setTimeout(() => searchPlaces(searchQuery), 300);
-    return () => clearTimeout(debounce);
+    const t = setTimeout(() => searchPlaces(searchQuery), 300);
+    return () => clearTimeout(t);
   }, [searchQuery, searchPlaces]);
 
   // ── Handlers ──────────────────────────────────────────────────────────
@@ -207,8 +204,6 @@ export function SearchPanel({
     setLocationQuery(prediction.structured_formatting.main_text);
     setLocationFocused(false);
     setLocationSuggestions([]);
-
-    // Geocode via place details
     try {
       const res = await fetch(`/api/places/details?placeId=${prediction.place_id}`);
       const data = await res.json();
@@ -220,12 +215,7 @@ export function SearchPanel({
         });
       }
     } catch {
-      // Fall back to just storing label without coordinates
-      onLocationChange({
-        label: prediction.structured_formatting.main_text,
-        lat: 0,
-        lng: 0,
-      });
+      onLocationChange({ label: prediction.structured_formatting.main_text, lat: 0, lng: 0 });
     }
   };
 
@@ -257,21 +247,16 @@ export function SearchPanel({
     setTimeout(() => saveRef.current?.triggerSave(), 50);
   };
 
-  const handleCategoryClick = (label: string) => {
-    setSearchQuery(label);
-    searchInputRef.current?.focus();
-  };
-
+  const isCustomLocation = !!searchLocation;
   const hasQuery = searchQuery.trim().length > 0;
   const hasResults = dbResults.length > 0 || googleResults.length > 0;
-  const isCustomLocation = !!searchLocation;
   const dbPlaceIds = new Set(dbResults.map((p) => p.googlePlaceId));
   const filteredGoogle = googleResults.filter((r) => !dbPlaceIds.has(r.place_id));
 
   return (
     <div className="h-full flex flex-col bg-background" data-testid="search-panel">
-      {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b shrink-0">
+      {/* ── Back header ─────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-1 px-2 py-2 border-b shrink-0">
         <Button
           variant="ghost"
           size="icon"
@@ -281,121 +266,101 @@ export function SearchPanel({
         >
           <HugeiconsIcon icon={ArrowLeft01Icon} className="h-4 w-4" />
         </Button>
-        <span className="font-semibold text-sm font-brand">Search</span>
-      </div>
 
-      {/* ── Search input ────────────────────────────────────────────────── */}
-      <div className="px-3 pt-3 pb-2 space-y-2 shrink-0">
-        {/* Place search */}
-        <div className="relative">
-          <HugeiconsIcon
-            icon={Search01Icon}
-            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
-          />
-          <Input
-            ref={searchInputRef}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search places, categories…"
-            className="pl-9 pr-8"
-            data-testid="search-panel-input"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <HugeiconsIcon icon={Cancel01Icon} className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* Location input + radius */}
-        <div className="flex gap-2">
-          <div className="relative flex-1">
+        {/* ── Location + Radius button group ───────────────────────────── */}
+        <div className="flex flex-1 h-9 rounded-lg border bg-background overflow-visible">
+          {/* Location input */}
+          <div className="flex items-center gap-2 flex-1 min-w-0 px-2.5">
             <HugeiconsIcon
               icon={Location01Icon}
               className={cn(
-                "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none",
+                "h-3.5 w-3.5 shrink-0",
                 isCustomLocation ? "text-muted-foreground" : "text-blue-500"
               )}
             />
-            <Input
+            <input
               ref={locationInputRef}
-              value={locationFocused ? locationQuery : (searchLocation?.label || "")}
+              value={locationFocused ? locationQuery : (searchLocation?.label ?? "")}
               onChange={(e) => setLocationQuery(e.target.value)}
               onFocus={() => {
                 setLocationFocused(true);
-                setLocationQuery(searchLocation?.label || "");
+                setLocationQuery(searchLocation?.label ?? "");
               }}
               onBlur={() => setTimeout(() => setLocationFocused(false), 150)}
               placeholder="My Location"
               className={cn(
-                "pl-9 pr-8",
-                !isCustomLocation && "bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800"
+                "flex-1 bg-transparent text-sm outline-none min-w-0",
+                isCustomLocation
+                  ? "placeholder:text-muted-foreground"
+                  : "placeholder:text-blue-500 dark:placeholder:text-blue-400 text-blue-600 dark:text-blue-400 placeholder:font-medium font-medium"
               )}
               data-testid="search-panel-location-input"
             />
             {isCustomLocation && (
               <button
                 onClick={handleClearLocation}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="shrink-0 text-muted-foreground hover:text-foreground"
               >
                 <HugeiconsIcon icon={Cancel01Icon} className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
 
-          {/* Radius chips — only when using GPS location */}
-          {!isCustomLocation && (
-            <div className="flex gap-0.5 items-center">
-              {RADIUS_OPTIONS.map((r) => (
-                <button
-                  key={r}
-                  onClick={() => onRadiusChange(r)}
-                  className={cn(
-                    "px-2 py-1.5 rounded-md text-xs font-medium transition-colors border",
-                    radius === r
-                      ? "bg-foreground text-background border-foreground"
-                      : "bg-background border-input text-muted-foreground hover:bg-accent"
-                  )}
-                  data-testid={`radius-chip-${r}`}
-                >
-                  {r < 1 ? `${r}` : r}mi
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+          {/* Divider */}
+          <div className="w-px bg-border self-stretch my-1.5 shrink-0" />
 
-        {/* Location autocomplete dropdown */}
-        {locationFocused && locationSuggestions.length > 0 && (
-          <div className="border rounded-lg shadow-lg bg-background overflow-hidden">
-            {locationSuggestions.slice(0, 5).map((s) => (
-              <button
-                key={s.place_id}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => handleLocationSelect(s)}
-                className="flex items-center gap-2 w-full px-3 py-2 hover:bg-accent text-left text-sm transition-colors"
-              >
-                <HugeiconsIcon icon={Location01Icon} className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <div className="min-w-0">
-                  <p className="font-medium truncate">{s.structured_formatting.main_text}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {s.structured_formatting.secondary_text}
-                  </p>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
+          {/* Radius select */}
+          <Select
+            value={String(radius)}
+            onValueChange={(v) => onRadiusChange(Number(v))}
+          >
+            <SelectTrigger
+              className="w-[4.5rem] h-full border-0 rounded-none rounded-r-lg shadow-none text-xs font-medium focus:ring-0 px-2"
+              data-testid="radius-select"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="0.5">0.5 mi</SelectItem>
+              <SelectItem value="1">1 mi</SelectItem>
+              <SelectItem value="2">2 mi</SelectItem>
+              <SelectItem value="5">5 mi</SelectItem>
+              <SelectItem value="10">10 mi</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
+
+      {/* ── Location suggestions dropdown ───────────────────────────────── */}
+      {locationFocused && locationSuggestions.length > 0 && (
+        <div className="mx-3 mt-0.5 border rounded-lg shadow-lg bg-background overflow-hidden z-10 shrink-0">
+          {locationSuggestions.slice(0, 5).map((s) => (
+            <button
+              key={s.place_id}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => handleLocationSelect(s)}
+              className="flex items-center gap-2 w-full px-3 py-2 hover:bg-accent text-left text-sm transition-colors"
+            >
+              <HugeiconsIcon
+                icon={Location01Icon}
+                className="h-3.5 w-3.5 text-muted-foreground shrink-0"
+              />
+              <div className="min-w-0">
+                <p className="font-medium truncate">{s.structured_formatting.main_text}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {s.structured_formatting.secondary_text}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── Scrollable content ──────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto">
-        {/* Category grid (empty state) */}
+        {/* Empty state: category grid */}
         {!hasQuery && (
-          <div className="px-3 pb-3">
+          <div className="px-3 pt-3 pb-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
               Browse by category
             </p>
@@ -403,12 +368,14 @@ export function SearchPanel({
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat.label}
-                  onClick={() => handleCategoryClick(cat.label)}
+                  onClick={() => onSearchQueryChange?.(cat.label)}
                   className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-accent transition-colors"
                   data-testid={`category-${cat.label.toLowerCase()}`}
                 >
                   <span className="text-xl">{cat.emoji}</span>
-                  <span className="text-[11px] font-medium leading-tight text-center">{cat.label}</span>
+                  <span className="text-[11px] font-medium leading-tight text-center">
+                    {cat.label}
+                  </span>
                 </button>
               ))}
             </div>
@@ -417,7 +384,7 @@ export function SearchPanel({
 
         {/* Loading */}
         {hasQuery && isSearching && (
-          <div className="px-3 space-y-2">
+          <div className="px-3 pt-3 space-y-2">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex gap-3">
                 <Skeleton className="h-12 w-12 rounded-lg shrink-0" />
@@ -433,10 +400,9 @@ export function SearchPanel({
         {/* Results */}
         {hasQuery && !isSearching && (
           <>
-            {/* DB places */}
             {dbResults.length > 0 && (
               <div>
-                <p className="px-3 pt-1 pb-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                <p className="px-3 pt-2 pb-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
                   In Townsquare
                 </p>
                 {dbResults.map((place) => (
@@ -444,7 +410,6 @@ export function SearchPanel({
                     key={place.id}
                     className="flex items-center gap-2.5 px-3 py-2 hover:bg-accent group cursor-pointer"
                   >
-                    {/* Thumbnail */}
                     <div className="w-10 h-10 rounded-lg bg-muted shrink-0 overflow-hidden">
                       {place.photoRefs?.[0] ? (
                         <img
@@ -454,13 +419,17 @@ export function SearchPanel({
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <HugeiconsIcon icon={Location01Icon} className="h-4 w-4 text-muted-foreground" />
+                          <HugeiconsIcon
+                            icon={Location01Icon}
+                            className="h-4 w-4 text-muted-foreground"
+                          />
                         </div>
                       )}
                     </div>
-
-                    {/* Info */}
-                    <button className="flex-1 min-w-0 text-left" onClick={() => handleDbSave(place)}>
+                    <button
+                      className="flex-1 min-w-0 text-left"
+                      onClick={() => handleDbSave(place)}
+                    >
                       <div className="flex items-center gap-1.5">
                         <p className="font-medium text-sm truncate">{place.name}</p>
                         {place.trendingCount > 0 && (
@@ -488,8 +457,6 @@ export function SearchPanel({
                         )}
                       </div>
                     </button>
-
-                    {/* Save */}
                     <button
                       onClick={() => handleDbSave(place)}
                       className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
@@ -501,10 +468,9 @@ export function SearchPanel({
               </div>
             )}
 
-            {/* Google fallback */}
             {filteredGoogle.length > 0 && (
               <div>
-                <p className="px-3 pt-1 pb-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                <p className="px-3 pt-2 pb-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
                   {dbResults.length > 0 ? "Add new place" : "From Google"}
                 </p>
                 {filteredGoogle.map((result) => (
@@ -514,18 +480,24 @@ export function SearchPanel({
                     onClick={() => handleGoogleSave(result)}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{result.structured_formatting.main_text}</p>
-                      <p className="text-xs text-muted-foreground truncate">{result.structured_formatting.secondary_text}</p>
+                      <p className="font-medium text-sm truncate">
+                        {result.structured_formatting.main_text}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {result.structured_formatting.secondary_text}
+                      </p>
                     </div>
-                    <HugeiconsIcon icon={Bookmark01Icon} className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <HugeiconsIcon
+                      icon={Bookmark01Icon}
+                      className="h-4 w-4 text-muted-foreground shrink-0"
+                    />
                   </button>
                 ))}
               </div>
             )}
 
-            {/* No results */}
             {!hasResults && (
-              <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+              <p className="px-3 py-6 text-center text-sm text-muted-foreground">
                 No places found for &ldquo;{searchQuery}&rdquo;
               </p>
             )}

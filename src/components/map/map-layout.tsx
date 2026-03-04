@@ -76,6 +76,7 @@ interface MapLayoutProps {
   disableFitToPlaces?: boolean;
   // Search bar props (passed through to SearchBar)
   searchQuery?: string;
+  onSearchQueryChange?: (q: string) => void;
   locationLabel?: string;
   isCustomLocation?: boolean;
   onOpenSearch?: () => void;
@@ -95,6 +96,7 @@ export function MapLayout({
   showAvatars = false,
   disableFitToPlaces = false,
   searchQuery,
+  onSearchQueryChange,
   locationLabel,
   isCustomLocation,
   onOpenSearch,
@@ -188,6 +190,7 @@ export function MapLayout({
             <SearchBar
               onOpen={onOpenSearch ?? (() => {})}
               searchQuery={searchQuery}
+              onSearchQueryChange={onSearchQueryChange}
               locationLabel={locationLabel}
               isCustomLocation={isCustomLocation}
               onClearSearch={onClearSearch}
@@ -205,6 +208,7 @@ export function MapLayout({
             <SearchBar
               onOpen={onOpenSearch ?? (() => {})}
               searchQuery={searchQuery}
+              onSearchQueryChange={onSearchQueryChange}
               locationLabel={locationLabel}
               isCustomLocation={isCustomLocation}
               onClearSearch={onClearSearch}
