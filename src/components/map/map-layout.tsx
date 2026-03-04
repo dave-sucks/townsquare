@@ -13,7 +13,7 @@ import {
 import type { SnapPoint } from "@/components/bottom-sheet";
 import { PlaceMap, type PlaceMapHandle } from "@/components/place-map";
 import { BottomSheet } from "@/components/bottom-sheet";
-import { FloatingSearch } from "@/components/map/floating-search";
+import { SearchBar } from "@/components/map/search-bar";
 import { AppShell } from "@/components/layout";
 
 interface Place {
@@ -74,6 +74,13 @@ interface MapLayoutProps {
   sheetComponent?: ReactNode;
   showAvatars?: boolean;
   disableFitToPlaces?: boolean;
+  // Search bar props (passed through to SearchBar)
+  searchQuery?: string;
+  locationLabel?: string;
+  isCustomLocation?: boolean;
+  onOpenSearch?: () => void;
+  onClearSearch?: () => void;
+  onClearLocation?: () => void;
 }
 
 export function MapLayout({
@@ -87,6 +94,12 @@ export function MapLayout({
   sheetComponent,
   showAvatars = false,
   disableFitToPlaces = false,
+  searchQuery,
+  locationLabel,
+  isCustomLocation,
+  onOpenSearch,
+  onClearSearch,
+  onClearLocation,
 }: MapLayoutProps) {
   const placeRowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const mapRef = useRef<PlaceMapHandle>(null);
@@ -171,7 +184,16 @@ export function MapLayout({
 
         {/* ── Desktop: left column with search above panel ──────────── */}
         <div className="absolute top-0 left-0 bottom-0 z-10 w-[25rem] p-3 hidden md:flex flex-col gap-2">
-          {showSearch && <FloatingSearch />}
+          {showSearch && (
+            <SearchBar
+              onOpen={onOpenSearch ?? (() => {})}
+              searchQuery={searchQuery}
+              locationLabel={locationLabel}
+              isCustomLocation={isCustomLocation}
+              onClearSearch={onClearSearch}
+              onClearLocation={onClearLocation}
+            />
+          )}
           <div className="flex-1 bg-background rounded-lg border shadow-lg overflow-hidden min-h-0">
             {renderChildrenWithProps(children)}
           </div>
@@ -180,7 +202,14 @@ export function MapLayout({
         {/* ── Mobile: search floats at top ──────────────────────────── */}
         {showSearch && (
           <div className="absolute top-3 left-3 right-3 z-[55] md:hidden">
-            <FloatingSearch />
+            <SearchBar
+              onOpen={onOpenSearch ?? (() => {})}
+              searchQuery={searchQuery}
+              locationLabel={locationLabel}
+              isCustomLocation={isCustomLocation}
+              onClearSearch={onClearSearch}
+              onClearLocation={onClearLocation}
+            />
           </div>
         )}
 
