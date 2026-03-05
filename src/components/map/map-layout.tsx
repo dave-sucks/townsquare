@@ -210,7 +210,6 @@ export function MapLayout({
             <SearchBar
               onOpen={onOpenSearch ?? (() => {})}
               onClose={onOverlayClick}
-              onOpenLocation={onOpenLocation}
               searchQuery={searchQuery}
               onSearchQueryChange={onSearchQueryChange}
               locationLabel={locationLabel}
@@ -231,7 +230,6 @@ export function MapLayout({
             <SearchBar
               onOpen={onOpenSearch ?? (() => {})}
               onClose={onOverlayClick}
-              onOpenLocation={onOpenLocation}
               searchQuery={searchQuery}
               onSearchQueryChange={onSearchQueryChange}
               locationLabel={locationLabel}
