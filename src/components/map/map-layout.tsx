@@ -80,8 +80,12 @@ interface MapLayoutProps {
   locationLabel?: string;
   isCustomLocation?: boolean;
   onOpenSearch?: () => void;
+  onOpenLocation?: () => void;
   onClearSearch?: () => void;
   onClearLocation?: () => void;
+  onOverlayClick?: () => void;
+  searchCenter?: { lat: number; lng: number };
+  isSearchOpen?: boolean;
 }
 
 export function MapLayout({
@@ -100,8 +104,12 @@ export function MapLayout({
   locationLabel,
   isCustomLocation,
   onOpenSearch,
+  onOpenLocation,
   onClearSearch,
   onClearLocation,
+  onOverlayClick,
+  searchCenter,
+  isSearchOpen = false,
 }: MapLayoutProps) {
   const placeRowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const mapRef = useRef<PlaceMapHandle>(null);
@@ -158,6 +166,13 @@ export function MapLayout({
     }
   }, [selectedPlaceId, places]);
 
+  useEffect(() => {
+    if (searchCenter && mapRef.current) {
+      mapRef.current.panTo(searchCenter.lat, searchCenter.lng);
+      mapRef.current.setZoom(11);
+    }
+  }, [searchCenter]);
+
   const injectedProps: SidebarInjectedProps = {
     selectedPlaceId,
     onPlaceSelect: handleSidebarPlaceSelect,
@@ -174,6 +189,11 @@ export function MapLayout({
   return (
     <AppShell user={user}>
       <div className="relative flex-1 overflow-hidden">
+        {/* Transparent backdrop — sits below the sidebar (z-9) so clicking the map closes panels */}
+        {onOverlayClick && (
+          <div className="absolute inset-0 z-[9]" onClick={onOverlayClick} />
+        )}
+
         <PlaceMap
           ref={mapRef}
           places={places}
@@ -189,12 +209,15 @@ export function MapLayout({
           {showSearch && (
             <SearchBar
               onOpen={onOpenSearch ?? (() => {})}
+              onClose={onOverlayClick}
+              onOpenLocation={onOpenLocation}
               searchQuery={searchQuery}
               onSearchQueryChange={onSearchQueryChange}
               locationLabel={locationLabel}
               isCustomLocation={isCustomLocation}
               onClearSearch={onClearSearch}
               onClearLocation={onClearLocation}
+              isSearchOpen={isSearchOpen}
             />
           )}
           <div className="flex-1 bg-background rounded-lg border shadow-lg overflow-hidden min-h-0">
@@ -207,12 +230,15 @@ export function MapLayout({
           <div className="absolute top-3 left-3 right-3 z-[55] md:hidden">
             <SearchBar
               onOpen={onOpenSearch ?? (() => {})}
+              onClose={onOverlayClick}
+              onOpenLocation={onOpenLocation}
               searchQuery={searchQuery}
               onSearchQueryChange={onSearchQueryChange}
               locationLabel={locationLabel}
               isCustomLocation={isCustomLocation}
               onClearSearch={onClearSearch}
               onClearLocation={onClearLocation}
+              isSearchOpen={isSearchOpen}
             />
           </div>
         )}

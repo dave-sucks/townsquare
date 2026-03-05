@@ -256,10 +256,14 @@ export function ExplorePage({ user }: { user: UserData }) {
       locationLabel={locationLabel}
       isCustomLocation={isCustomLocation}
       onOpenSearch={() => handleNavigate("search")}
+      onOpenLocation={() => handleNavigate("search")}
+      onOverlayClick={currentView === "search" ? () => handleNavigate("list") : undefined}
       onClearSearch={() => setSearchQuery("")}
       onClearLocation={() => setSearchLocation(null)}
       showAvatars={activeTab === "following"}
       disableFitToPlaces={true}
+      searchCenter={searchLocation ?? undefined}
+      isSearchOpen={currentView === "search"}
     >
       {sidebar}
     </MapLayout>
