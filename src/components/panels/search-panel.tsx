@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -12,13 +10,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Input } from "@/components/ui/input";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  ArrowLeft01Icon,
   Location01Icon,
   Cancel01Icon,
   Bookmark01Icon,
   Fire02Icon,
+  PinLocation03Icon,
 } from "@hugeicons/core-free-icons";
 import { SaveToListDropdown } from "@/components/shared/save-to-list-dropdown";
 import type { SaveToListDropdownHandle } from "@/components/shared/save-to-list-dropdown";
@@ -59,11 +70,9 @@ export interface SearchLocation {
 
 interface SearchPanelProps {
   onBack: () => void;
-  /** Controlled — the search input lives in SearchBar, not here */
   searchQuery: string;
-  /** Category click needs to push a query back up to the SearchBar */
   onSearchQueryChange?: (q: string) => void;
-  searchLocation: SearchLocation | null; // null = GPS mode
+  searchLocation: SearchLocation | null;
   onLocationChange: (loc: SearchLocation | null) => void;
   radius: number;
   onRadiusChange: (r: number) => void;
@@ -87,13 +96,15 @@ const CATEGORIES = [
   { emoji: "🍦", label: "Dessert" },
 ];
 
-const EMPTY_PLACE = {
-  googlePlaceId: "",
-  name: "",
-  formattedAddress: "",
-  lat: 0,
-  lng: 0,
-};
+const DEFAULT_CITIES = [
+  { label: "New York City", lat: 40.7128, lng: -74.006 },
+  { label: "Los Angeles", lat: 34.0522, lng: -118.2437 },
+  { label: "Chicago", lat: 41.8781, lng: -87.6298 },
+  { label: "Miami", lat: 25.7617, lng: -80.1918 },
+  { label: "San Francisco", lat: 37.7749, lng: -122.4194 },
+];
+
+const EMPTY_PLACE = { googlePlaceId: "", name: "", formattedAddress: "", lat: 0, lng: 0 };
 
 function formatPriceLevel(level: string | null): string {
   const map: Record<string, string> = {
@@ -117,12 +128,17 @@ export function SearchPanel({
   onRadiusChange,
   userGpsLocation,
 }: SearchPanelProps) {
-  // Location input state (local — only committed to parent on selection)
-  const [locationQuery, setLocationQuery] = useState(searchLocation?.label ?? "");
-  const [locationFocused, setLocationFocused] = useState(false);
+  // Location combobox state
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [locationInput, setLocationInput] = useState(searchLocation?.label ?? "");
   const [locationSuggestions, setLocationSuggestions] = useState<PlacePrediction[]>([]);
 
-  // Place search results (driven by searchQuery prop)
+  // Sync input when location changes externally (e.g., cleared from SearchBar badge)
+  useEffect(() => {
+    setLocationInput(searchLocation?.label ?? "");
+  }, [searchLocation]);
+
+  // Place search results
   const [dbResults, setDbResults] = useState<DbPlace[]>([]);
   const [googleResults, setGoogleResults] = useState<PlacePrediction[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -130,18 +146,15 @@ export function SearchPanel({
   // Save-to-list
   const [pendingSave, setPendingSave] = useState<typeof EMPTY_PLACE | null>(null);
   const saveRef = useRef<SaveToListDropdownHandle>(null);
-  const locationInputRef = useRef<HTMLInputElement>(null);
 
-  // ── Location autocomplete ──────────────────────────────────────────────
+  const isCustomLocation = !!searchLocation;
+
+  // ── Location autocomplete ─────────────────────────────────────────────
+
   const searchLocations = useCallback(async (q: string) => {
-    if (!q.trim()) {
-      setLocationSuggestions([]);
-      return;
-    }
+    if (!q.trim()) { setLocationSuggestions([]); return; }
     try {
-      const res = await fetch(
-        `/api/places/search?q=${encodeURIComponent(q)}&types=(regions)`
-      );
+      const res = await fetch(`/api/places/search?q=${encodeURIComponent(q)}&types=(regions)`);
       const data = await res.json();
       setLocationSuggestions(data.predictions || []);
     } catch {
@@ -150,106 +163,90 @@ export function SearchPanel({
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => {
-      if (locationFocused && locationQuery && locationQuery !== searchLocation?.label) {
-        searchLocations(locationQuery);
-      }
-    }, 300);
+    if (!locationOpen) return;
+    const t = setTimeout(() => searchLocations(locationInput), 300);
     return () => clearTimeout(t);
-  }, [locationQuery, locationFocused, searchLocations, searchLocation?.label]);
+  }, [locationInput, locationOpen, searchLocations]);
 
-  // ── Place search (driven by searchQuery prop) ──────────────────────────
+  // ── Place search ──────────────────────────────────────────────────────
+
   const activeLat = searchLocation?.lat ?? userGpsLocation?.lat;
   const activeLng = searchLocation?.lng ?? userGpsLocation?.lng;
 
-  const searchPlaces = useCallback(
-    async (query: string) => {
-      if (!query.trim()) {
-        setDbResults([]);
-        setGoogleResults([]);
-        return;
-      }
-      setIsSearching(true);
-      try {
-        const [dbRes, googleRes] = await Promise.allSettled([
-          fetch(
-            `/api/places/db-search?q=${encodeURIComponent(query)}${
-              activeLat != null ? `&lat=${activeLat}&lng=${activeLng}&radius=${radius}` : ""
-            }`
-          ).then((r) => r.json()),
-          fetch(
-            `/api/places/search?q=${encodeURIComponent(query)}${
-              activeLat != null ? `&lat=${activeLat}&lng=${activeLng}` : ""
-            }`
-          ).then((r) => r.json()),
-        ]);
-        if (dbRes.status === "fulfilled") setDbResults(dbRes.value.places || []);
-        if (googleRes.status === "fulfilled")
-          setGoogleResults(googleRes.value.predictions || []);
-      } catch {
-        // silent
-      } finally {
-        setIsSearching(false);
-      }
-    },
-    [activeLat, activeLng, radius]
-  );
+  const searchPlaces = useCallback(async (query: string) => {
+    if (!query.trim()) { setDbResults([]); setGoogleResults([]); return; }
+    setIsSearching(true);
+    try {
+      const [dbRes, googleRes] = await Promise.allSettled([
+        fetch(
+          `/api/places/db-search?q=${encodeURIComponent(query)}${
+            activeLat != null ? `&lat=${activeLat}&lng=${activeLng}&radius=${radius}` : ""
+          }`
+        ).then((r) => r.json()),
+        fetch(
+          `/api/places/search?q=${encodeURIComponent(query)}${
+            activeLat != null ? `&lat=${activeLat}&lng=${activeLng}` : ""
+          }`
+        ).then((r) => r.json()),
+      ]);
+      if (dbRes.status === "fulfilled") setDbResults(dbRes.value.places || []);
+      if (googleRes.status === "fulfilled") setGoogleResults(googleRes.value.predictions || []);
+    } catch {
+      // silent
+    } finally {
+      setIsSearching(false);
+    }
+  }, [activeLat, activeLng, radius]);
 
   useEffect(() => {
     const t = setTimeout(() => searchPlaces(searchQuery), 300);
     return () => clearTimeout(t);
   }, [searchQuery, searchPlaces]);
 
-  // ── Handlers ──────────────────────────────────────────────────────────
+  // ── Location handlers ─────────────────────────────────────────────────
 
-  const handleLocationSelect = async (prediction: PlacePrediction) => {
-    setLocationQuery(prediction.structured_formatting.main_text);
-    setLocationFocused(false);
-    setLocationSuggestions([]);
+  const handleSelectCurrentLocation = () => {
+    setLocationOpen(false);
+    setLocationInput("");
+    onLocationChange(null);
+    onBack();
+  };
+
+  const handleSelectDefaultCity = (city: typeof DEFAULT_CITIES[0]) => {
+    setLocationOpen(false);
+    setLocationInput(city.label);
+    onLocationChange(city);
+    onBack();
+  };
+
+  const handleSelectSuggestion = async (prediction: PlacePrediction) => {
+    const label = prediction.structured_formatting.main_text;
+    setLocationOpen(false);
+    setLocationInput(label);
+    onBack();
     try {
       const res = await fetch(`/api/places/details?placeId=${prediction.place_id}`);
       const data = await res.json();
-      if (data.lat && data.lng) {
-        onLocationChange({
-          label: prediction.structured_formatting.main_text,
-          lat: data.lat,
-          lng: data.lng,
-        });
-      }
+      onLocationChange({ label, lat: data.lat ?? 0, lng: data.lng ?? 0 });
     } catch {
-      onLocationChange({ label: prediction.structured_formatting.main_text, lat: 0, lng: 0 });
+      onLocationChange({ label, lat: 0, lng: 0 });
     }
   };
 
-  const handleClearLocation = () => {
-    setLocationQuery("");
-    onLocationChange(null);
-    locationInputRef.current?.focus();
-  };
+  // ── Save handlers ─────────────────────────────────────────────────────
 
   const handleDbSave = (place: DbPlace) => {
-    setPendingSave({
-      googlePlaceId: place.googlePlaceId,
-      name: place.name,
-      formattedAddress: place.formattedAddress,
-      lat: place.lat,
-      lng: place.lng,
-    });
+    setPendingSave({ googlePlaceId: place.googlePlaceId, name: place.name, formattedAddress: place.formattedAddress, lat: place.lat, lng: place.lng });
     setTimeout(() => saveRef.current?.triggerSave(), 50);
   };
 
   const handleGoogleSave = (prediction: PlacePrediction) => {
-    setPendingSave({
-      googlePlaceId: prediction.place_id,
-      name: prediction.structured_formatting.main_text,
-      formattedAddress: prediction.structured_formatting.secondary_text,
-      lat: 0,
-      lng: 0,
-    });
+    setPendingSave({ googlePlaceId: prediction.place_id, name: prediction.structured_formatting.main_text, formattedAddress: prediction.structured_formatting.secondary_text, lat: 0, lng: 0 });
     setTimeout(() => saveRef.current?.triggerSave(), 50);
   };
 
-  const isCustomLocation = !!searchLocation;
+  // ── Derived ───────────────────────────────────────────────────────────
+
   const hasQuery = searchQuery.trim().length > 0;
   const hasResults = dbResults.length > 0 || googleResults.length > 0;
   const dbPlaceIds = new Set(dbResults.map((p) => p.googlePlaceId));
@@ -257,112 +254,97 @@ export function SearchPanel({
 
   return (
     <div className="h-full flex flex-col bg-background" data-testid="search-panel">
-      {/* ── Back button header ───────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b shrink-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onBack}
-          className="h-8 w-8 shrink-0"
-          data-testid="button-search-back"
-        >
-          <HugeiconsIcon icon={ArrowLeft01Icon} className="h-4 w-4" />
-        </Button>
-        <span className="font-semibold text-sm font-brand flex-1">Search</span>
-      </div>
 
-      {/* ── Location + Radius row (full width) ───────────────────────────── */}
+      {/* ── Location Combobox + Radius ────────────────────────────────── */}
       <div className="px-3 py-2 border-b shrink-0">
-        {/* Outer div is relative so the location icon can float over Input  */}
-        {/* WITHOUT being a wrapper div inside ButtonGroup (causes double borders) */}
-        <div className="relative w-full">
-          <HugeiconsIcon
-            icon={Location01Icon}
-            className={cn(
-              "absolute left-2.5 top-1/2 -translate-y-1/2 z-10 h-3.5 w-3.5 pointer-events-none",
-              isCustomLocation ? "text-muted-foreground" : "text-blue-500"
-            )}
-          />
-
-          <ButtonGroup className="w-full">
-            {/* Direct Input child — no wrapper, no extra border */}
-            <Input
-              ref={locationInputRef}
-              value={locationFocused ? locationQuery : (searchLocation?.label ?? "")}
-              onChange={(e) => setLocationQuery(e.target.value)}
-              onFocus={() => {
-                setLocationFocused(true);
-                setLocationQuery(searchLocation?.label ?? "");
-              }}
-              onBlur={() => setTimeout(() => setLocationFocused(false), 150)}
-              placeholder="My Location"
-              className={cn(
-                "pl-8",
-                isCustomLocation
-                  ? ""
-                  : "text-blue-600 dark:text-blue-400 placeholder:text-blue-500 placeholder:font-medium font-medium"
-              )}
-              data-testid="search-panel-location-input"
-            />
-
-            {/* Direct Select child — ButtonGroup handles its radius via has-[select] */}
-            <Select
-              value={String(radius)}
-              onValueChange={(v) => onRadiusChange(Number(v))}
-            >
-              <SelectTrigger className="w-24" data-testid="radius-select">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="end">
-                <SelectItem value="0.5">0.5 mi</SelectItem>
-                <SelectItem value="1">1 mi</SelectItem>
-                <SelectItem value="2">2 mi</SelectItem>
-                <SelectItem value="5">5 mi</SelectItem>
-                <SelectItem value="10">10 mi</SelectItem>
-              </SelectContent>
-            </Select>
-          </ButtonGroup>
-
-          {/* Clear location — outside ButtonGroup to avoid border issues */}
-          {isCustomLocation && (
-            <button
-              onClick={handleClearLocation}
-              className="absolute right-[calc(6rem+1px)] top-1/2 -translate-y-1/2 z-10 text-muted-foreground hover:text-foreground px-1.5"
-            >
-              <HugeiconsIcon icon={Cancel01Icon} className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ── Location suggestions dropdown ───────────────────────────────── */}
-      {locationFocused && locationSuggestions.length > 0 && (
-        <div className="mx-3 mt-0.5 border rounded-lg shadow-lg bg-background overflow-hidden z-10 shrink-0">
-          {locationSuggestions.slice(0, 5).map((s) => (
-            <button
-              key={s.place_id}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => handleLocationSelect(s)}
-              className="flex items-center gap-2 w-full px-3 py-2 hover:bg-accent text-left text-sm transition-colors"
-            >
-              <HugeiconsIcon
-                icon={Location01Icon}
-                className="h-3.5 w-3.5 text-muted-foreground shrink-0"
+        <Popover
+          open={locationOpen}
+          onOpenChange={(open) => { if (!open) setLocationOpen(false); }}
+        >
+          <PopoverAnchor asChild>
+            <ButtonGroup className="w-full">
+              {/* Input IS the combobox — focus opens dropdown, typing filters */}
+              <Input
+                value={locationInput}
+                onChange={(e) => setLocationInput(e.target.value)}
+                onFocus={() => setLocationOpen(true)}
+                placeholder="Current location"
+                className="h-9 flex-1 min-w-0"
+                data-testid="location-input"
               />
-              <div className="min-w-0">
-                <p className="font-medium truncate">{s.structured_formatting.main_text}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {s.structured_formatting.secondary_text}
-                </p>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
+
+              {/* Radius select — direct child of ButtonGroup */}
+              <Select value={String(radius)} onValueChange={(v) => onRadiusChange(Number(v))}>
+                <SelectTrigger className="w-24" data-testid="radius-select">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="0.5">0.5 mi</SelectItem>
+                  <SelectItem value="1">1 mi</SelectItem>
+                  <SelectItem value="2">2 mi</SelectItem>
+                  <SelectItem value="5">5 mi</SelectItem>
+                  <SelectItem value="10">10 mi</SelectItem>
+                </SelectContent>
+              </Select>
+            </ButtonGroup>
+          </PopoverAnchor>
+
+          <PopoverContent
+            className="p-0 w-72"
+            align="start"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            onInteractOutside={() => setLocationOpen(false)}
+          >
+            <Command shouldFilter={false}>
+              <CommandList>
+                <CommandEmpty>No results found.</CommandEmpty>
+                <CommandGroup>
+                  {/* Current Location always first */}
+                  <CommandItem value="current-location" onSelect={handleSelectCurrentLocation}>
+                    <HugeiconsIcon icon={PinLocation03Icon} className="text-blue-500" />
+                    Current Location
+                  </CommandItem>
+
+                  {/* While typing → autocomplete results; otherwise → popular cities */}
+                  {locationInput.trim() ? (
+                    locationSuggestions.slice(0, 5).map((s) => (
+                      <CommandItem
+                        key={s.place_id}
+                        value={s.place_id}
+                        onSelect={() => handleSelectSuggestion(s)}
+                      >
+                        <HugeiconsIcon icon={Location01Icon} />
+                        <div className="flex flex-col min-w-0">
+                          <span className="truncate">{s.structured_formatting.main_text}</span>
+                          <span className="text-xs text-muted-foreground truncate">
+                            {s.structured_formatting.secondary_text}
+                          </span>
+                        </div>
+                      </CommandItem>
+                    ))
+                  ) : (
+                    DEFAULT_CITIES.map((city) => (
+                      <CommandItem
+                        key={city.label}
+                        value={city.label}
+                        onSelect={() => handleSelectDefaultCity(city)}
+                      >
+                        <HugeiconsIcon icon={Location01Icon} />
+                        {city.label}
+                      </CommandItem>
+                    ))
+                  )}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+      </div>
 
       {/* ── Scrollable content ──────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto">
-        {/* Empty state: category grid */}
+
+        {/* Category grid */}
         {!hasQuery && (
           <div className="px-3 pt-3 pb-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
@@ -377,9 +359,7 @@ export function SearchPanel({
                   data-testid={`category-${cat.label.toLowerCase()}`}
                 >
                   <span className="text-xl">{cat.emoji}</span>
-                  <span className="text-[11px] font-medium leading-tight text-center">
-                    {cat.label}
-                  </span>
+                  <span className="text-[11px] font-medium leading-tight text-center">{cat.label}</span>
                 </button>
               ))}
             </div>
@@ -410,30 +390,17 @@ export function SearchPanel({
                   In Townsquare
                 </p>
                 {dbResults.map((place) => (
-                  <div
-                    key={place.id}
-                    className="flex items-center gap-2.5 px-3 py-2 hover:bg-accent group cursor-pointer"
-                  >
+                  <div key={place.id} className="flex items-center gap-2.5 px-3 py-2 hover:bg-accent group cursor-pointer">
                     <div className="w-10 h-10 rounded-lg bg-muted shrink-0 overflow-hidden">
                       {place.photoRefs?.[0] ? (
-                        <img
-                          src={`/api/places/photo?photoRef=${place.photoRefs[0]}&maxWidth=80`}
-                          alt={place.name}
-                          className="w-full h-full object-cover"
-                        />
+                        <img src={`/api/places/photo?photoRef=${place.photoRefs[0]}&maxWidth=80`} alt={place.name} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <HugeiconsIcon
-                            icon={Location01Icon}
-                            className="h-4 w-4 text-muted-foreground"
-                          />
+                          <HugeiconsIcon icon={Location01Icon} className="h-4 w-4 text-muted-foreground" />
                         </div>
                       )}
                     </div>
-                    <button
-                      className="flex-1 min-w-0 text-left"
-                      onClick={() => handleDbSave(place)}
-                    >
+                    <button className="flex-1 min-w-0 text-left" onClick={() => handleDbSave(place)}>
                       <div className="flex items-center gap-1.5">
                         <p className="font-medium text-sm truncate">{place.name}</p>
                         {place.trendingCount > 0 && (
@@ -444,27 +411,12 @@ export function SearchPanel({
                         )}
                       </div>
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <span className="truncate">
-                          {place.neighborhood || place.formattedAddress.split(",")[0]}
-                        </span>
-                        {place.priceLevel && (
-                          <>
-                            <span>·</span>
-                            <span className="shrink-0">{formatPriceLevel(place.priceLevel)}</span>
-                          </>
-                        )}
-                        {place.saveCount > 0 && (
-                          <>
-                            <span>·</span>
-                            <span className="shrink-0">{place.saveCount} saves</span>
-                          </>
-                        )}
+                        <span className="truncate">{place.neighborhood || place.formattedAddress.split(",")[0]}</span>
+                        {place.priceLevel && (<><span>·</span><span className="shrink-0">{formatPriceLevel(place.priceLevel)}</span></>)}
+                        {place.saveCount > 0 && (<><span>·</span><span className="shrink-0">{place.saveCount} saves</span></>)}
                       </div>
                     </button>
-                    <button
-                      onClick={() => handleDbSave(place)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                    >
+                    <button onClick={() => handleDbSave(place)} className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                       <HugeiconsIcon icon={Bookmark01Icon} className="h-4 w-4 text-muted-foreground" />
                     </button>
                   </div>
@@ -478,23 +430,12 @@ export function SearchPanel({
                   {dbResults.length > 0 ? "Add new place" : "From Google"}
                 </p>
                 {filteredGoogle.map((result) => (
-                  <button
-                    key={result.place_id}
-                    className="flex items-center gap-2 px-3 py-2 hover:bg-accent w-full text-left transition-colors"
-                    onClick={() => handleGoogleSave(result)}
-                  >
+                  <button key={result.place_id} className="flex items-center gap-2 px-3 py-2 hover:bg-accent w-full text-left transition-colors" onClick={() => handleGoogleSave(result)}>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">
-                        {result.structured_formatting.main_text}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {result.structured_formatting.secondary_text}
-                      </p>
+                      <p className="font-medium text-sm truncate">{result.structured_formatting.main_text}</p>
+                      <p className="text-xs text-muted-foreground truncate">{result.structured_formatting.secondary_text}</p>
                     </div>
-                    <HugeiconsIcon
-                      icon={Bookmark01Icon}
-                      className="h-4 w-4 text-muted-foreground shrink-0"
-                    />
+                    <HugeiconsIcon icon={Bookmark01Icon} className="h-4 w-4 text-muted-foreground shrink-0" />
                   </button>
                 ))}
               </div>
@@ -509,13 +450,8 @@ export function SearchPanel({
         )}
       </div>
 
-      {/* Hidden save modal */}
       <div className="hidden">
-        <SaveToListDropdown
-          ref={saveRef}
-          place={pendingSave || EMPTY_PLACE}
-          onSaveSuccess={() => setPendingSave(null)}
-        />
+        <SaveToListDropdown ref={saveRef} place={pendingSave || EMPTY_PLACE} onSaveSuccess={() => setPendingSave(null)} />
       </div>
     </div>
   );
