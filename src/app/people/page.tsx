@@ -93,9 +93,7 @@ export default function PeoplePage() {
           <div className="flex flex-col items-center justify-center py-16">
             <HugeiconsIcon icon={UserMultiple02Icon} className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="font-medium">Please sign in</p>
-            <Button asChild className="mt-4">
-              <Link href="/">Go to Home</Link>
-            </Button>
+            <Button className="mt-4" nativeButton={false} render={<Link href="/" />}>Go to Home</Button>
           </div>
         </div>
       </AppShell>

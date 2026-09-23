@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/select";
 import {
   Popover,
-  PopoverAnchor,
   PopoverContent,
 } from "@/components/ui/popover";
 import {
@@ -33,6 +32,8 @@ import {
 import { SaveToListDropdown } from "@/components/shared/save-to-list-dropdown";
 import type { SaveToListDropdownHandle } from "@/components/shared/save-to-list-dropdown";
 import { cn } from "@/lib/utils";
+
+const RADIUS_LABELS = { "0.5": "0.5 mi", "1": "1 mi", "2": "2 mi", "5": "5 mi", "10": "10 mi" };
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -281,6 +282,7 @@ export function SearchPanel({
   // Save-to-list
   const [pendingSave, setPendingSave] = useState<typeof EMPTY_PLACE | null>(null);
   const saveRef = useRef<SaveToListDropdownHandle>(null);
+  const locationAnchorRef = useRef<HTMLDivElement>(null);
 
   const activeLat = searchLocation?.lat ?? userGpsLocation?.lat;
   const activeLng = searchLocation?.lng ?? userGpsLocation?.lng;
@@ -441,36 +443,38 @@ export function SearchPanel({
           open={locationOpen}
           onOpenChange={(open) => { if (!open) setLocationOpen(false); }}
         >
-          <PopoverAnchor asChild>
-            <ButtonGroup className="w-full">
-              <Input
-                value={locationInput}
-                onChange={(e) => setLocationInput(e.target.value)}
-                onFocus={() => setLocationOpen(true)}
-                placeholder="Current location"
-                className="h-9 flex-1 min-w-0"
-                data-testid="location-input"
-              />
-              <Select value={String(radius)} onValueChange={(v) => onRadiusChange(Number(v))}>
-                <SelectTrigger className="w-24" data-testid="radius-select">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent align="end">
-                  <SelectItem value="0.5">0.5 mi</SelectItem>
-                  <SelectItem value="1">1 mi</SelectItem>
-                  <SelectItem value="2">2 mi</SelectItem>
-                  <SelectItem value="5">5 mi</SelectItem>
-                  <SelectItem value="10">10 mi</SelectItem>
-                </SelectContent>
-              </Select>
-            </ButtonGroup>
-          </PopoverAnchor>
+          <ButtonGroup ref={locationAnchorRef} className="w-full">
+            <Input
+              value={locationInput}
+              onChange={(e) => setLocationInput(e.target.value)}
+              onFocus={() => setLocationOpen(true)}
+              placeholder="Current location"
+              className="h-9 flex-1 min-w-0"
+              data-testid="location-input"
+            />
+            <Select
+              value={String(radius)}
+              onValueChange={(v) => v && onRadiusChange(Number(v))}
+              items={RADIUS_LABELS}
+            >
+              <SelectTrigger className="w-24" data-testid="radius-select">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                <SelectItem value="0.5">0.5 mi</SelectItem>
+                <SelectItem value="1">1 mi</SelectItem>
+                <SelectItem value="2">2 mi</SelectItem>
+                <SelectItem value="5">5 mi</SelectItem>
+                <SelectItem value="10">10 mi</SelectItem>
+              </SelectContent>
+            </Select>
+          </ButtonGroup>
 
           <PopoverContent
             className="p-0 w-72"
             align="start"
-            onOpenAutoFocus={(e) => e.preventDefault()}
-            onInteractOutside={() => setLocationOpen(false)}
+            anchor={locationAnchorRef}
+            initialFocus={false}
           >
             <Command shouldFilter={false}>
               <CommandList>

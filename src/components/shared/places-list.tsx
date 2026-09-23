@@ -289,7 +289,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
               {savedPlace.place.name}
               {myHasBeen && (
                 <Tooltip>
-                  <TooltipTrigger asChild>
+                  <TooltipTrigger render={<span className="inline-flex" />}>
                     <HugeiconsIcon icon={CheckmarkBadge01Icon} className="w-4 h-4 flex-shrink-0 fill-foreground text-background" />
                   </TooltipTrigger>
                   <TooltipContent side="top">

@@ -149,32 +149,35 @@ export function EmojiPickerPopover({
   if (variant === "photo-overlay") {
     return (
       <Popover open={open} onOpenChange={setOpen} modal={false}>
-        <PopoverTrigger asChild>
-          <div
-            className={cn(
-              "relative flex-shrink-0 cursor-pointer",
-              disabled && "opacity-50 cursor-not-allowed pointer-events-none",
-              className
-            )}
-            data-testid={testId}
-            onClick={(e) => e.stopPropagation()}
-            role="button"
-            tabIndex={disabled ? -1 : 0}
-            aria-disabled={disabled}
-          >
-            {children}
-            {emoji && (
-              <span className="absolute -bottom-1 -right-1 text-xs bg-background rounded-full w-5 h-5 flex items-center justify-center border shadow-sm">
-                {emoji}
-              </span>
-            )}
-          </div>
+        <PopoverTrigger
+          nativeButton={false}
+          render={
+            <div
+              className={cn(
+                "relative flex-shrink-0 cursor-pointer",
+                disabled && "opacity-50 cursor-not-allowed pointer-events-none",
+                className
+              )}
+              data-testid={testId}
+              onClick={(e) => e.stopPropagation()}
+              role="button"
+              tabIndex={disabled ? -1 : 0}
+              aria-disabled={disabled}
+            />
+          }
+        >
+          {children}
+          {emoji && (
+            <span className="absolute -bottom-1 -right-1 text-xs bg-background rounded-full w-5 h-5 flex items-center justify-center border shadow-sm">
+              {emoji}
+            </span>
+          )}
         </PopoverTrigger>
         <PopoverContent
           className="w-auto p-0 border shadow-lg rounded-lg overflow-hidden"
           align="start"
           side="right"
-          onOpenAutoFocus={(e) => e.preventDefault()}
+          initialFocus={false}
           onClick={(e) => e.stopPropagation()}
         >
           {emojiPickerContent}
@@ -186,25 +189,28 @@ export function EmojiPickerPopover({
   if (variant === "area") {
     return (
       <Popover open={open} onOpenChange={setOpen} modal={portalContainer === "drawer"}>
-        <PopoverTrigger asChild>
-          <div
-            className={cn(
-              "w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0 cursor-pointer hover-elevate",
-              disabled && "opacity-50 cursor-not-allowed pointer-events-none",
-              className
-            )}
-            data-testid={testId}
-            onClick={(e) => e.stopPropagation()}
-            role="button"
-            tabIndex={disabled ? -1 : 0}
-            aria-disabled={disabled}
-          >
-            {emoji ? (
-              <span className="text-2xl" data-testid="text-selected-emoji">{emoji}</span>
-            ) : (
-              <HugeiconsIcon icon={SmileIcon} className="h-5 w-5 text-muted-foreground" />
-            )}
-          </div>
+        <PopoverTrigger
+          nativeButton={false}
+          render={
+            <div
+              className={cn(
+                "w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0 cursor-pointer hover-elevate",
+                disabled && "opacity-50 cursor-not-allowed pointer-events-none",
+                className
+              )}
+              data-testid={testId}
+              onClick={(e) => e.stopPropagation()}
+              role="button"
+              tabIndex={disabled ? -1 : 0}
+              aria-disabled={disabled}
+            />
+          }
+        >
+          {emoji ? (
+            <span className="text-2xl" data-testid="text-selected-emoji">{emoji}</span>
+          ) : (
+            <HugeiconsIcon icon={SmileIcon} className="h-5 w-5 text-muted-foreground" />
+          )}
         </PopoverTrigger>
         <PopoverContent
           className={cn(
@@ -213,7 +219,7 @@ export function EmojiPickerPopover({
           )}
           align="start"
           side={portalContainer === "drawer" ? "bottom" : "right"}
-          onOpenAutoFocus={(e) => e.preventDefault()}
+          initialFocus={false}
           onClick={(e) => e.stopPropagation()}
         >
           {emojiPickerContent}
@@ -224,31 +230,33 @@ export function EmojiPickerPopover({
 
   return (
     <Popover open={open} onOpenChange={setOpen} modal={false}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          disabled={disabled}
-          className={cn(
-            "flex-shrink-0",
-            !emoji && "invisible group-hover:visible group-focus-within:visible focus:visible",
-            className
-          )}
-          data-testid={testId}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {emoji ? (
-            <span className="text-base" data-testid="text-selected-emoji">{emoji}</span>
-          ) : (
-            <HugeiconsIcon icon={SmileIcon} className="h-3.5 w-3.5 text-muted-foreground" />
-          )}
-        </Button>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={disabled}
+            className={cn(
+              "flex-shrink-0",
+              !emoji && "invisible group-hover:visible group-focus-within:visible focus:visible",
+              className
+            )}
+            data-testid={testId}
+            onClick={(e) => e.stopPropagation()}
+          />
+        }
+      >
+        {emoji ? (
+          <span className="text-base" data-testid="text-selected-emoji">{emoji}</span>
+        ) : (
+          <HugeiconsIcon icon={SmileIcon} className="h-3.5 w-3.5 text-muted-foreground" />
+        )}
       </PopoverTrigger>
       <PopoverContent
         className="w-auto p-0 border shadow-lg rounded-lg overflow-hidden"
         align="start"
         side="right"
-        onOpenAutoFocus={(e) => e.preventDefault()}
+        initialFocus={false}
         onClick={(e) => e.stopPropagation()}
       >
         {emojiPickerContent}

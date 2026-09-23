@@ -46,24 +46,16 @@ export function LandingPage() {
 
           <div className="w-full flex flex-col gap-3">
             <Button
-              asChild
               variant="secondary"
               size="lg"
               className="w-full bg-white text-black hover-elevate active-elevate-2"
-              data-testid="button-signup"
-            >
-              <a href="/api/login">Sign Up</a>
-            </Button>
+              data-testid="button-signup" nativeButton={false} render={<a href="/api/login" />}>Sign Up</Button>
 
             <Button
-              asChild
               variant="outline"
               size="lg"
               className="w-full border-white/20 bg-white/10 text-white hover-elevate active-elevate-2"
-              data-testid="button-login"
-            >
-              <a href="/api/login">Log In</a>
-            </Button>
+              data-testid="button-login" nativeButton={false} render={<a href="/api/login" />}>Log In</Button>
           </div>
 
           <p className="text-[11px] text-white/30 text-center leading-snug">

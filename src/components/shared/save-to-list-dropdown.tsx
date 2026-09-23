@@ -525,9 +525,9 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
 
       <div className="px-4 pb-3">
         <ToggleGroup
-          type="single"
-          value={hasBeen && currentRating ? String(currentRating) : ""}
-          onValueChange={(value) => {
+          value={hasBeen && currentRating ? [String(currentRating)] : []}
+          onValueChange={(values) => {
+            const value = values[0];
             if (value) {
               handleRatingSelect(Number(value));
             } else if (hasBeen && effectiveSavedPlace?.id && !effectiveSavedPlace.id.startsWith("temp-")) {
@@ -637,32 +637,22 @@ export const SaveToListDropdown = forwardRef<SaveToListDropdownHandle, SaveToLis
           </Drawer>
         </>
       ) : (
-        <Popover open={open} onOpenChange={(o) => {
+        <Popover open={open} onOpenChange={(o, details) => {
           if (!isSaved) return;
+          // Clicks inside the emoji picker count as outside presses; keep the
+          // panel open for them. Nested Base UI popups are handled natively.
+          if (!o && details.reason === "outside-press") {
+            const target = details.event.target as HTMLElement | null;
+            if (target?.closest?.("[data-testid='emoji-picker-container']")) return;
+          }
           setOpen(o);
         }}>
-          <PopoverTrigger asChild>
-            {triggerButton}
-          </PopoverTrigger>
+          <PopoverTrigger render={triggerButton} />
           <PopoverContent
             align="end"
             side="top"
             className="w-80 p-0 z-[200]"
-            onOpenAutoFocus={(e) => e.preventDefault()}
-            onPointerDownOutside={(e) => {
-              const target = e.target as HTMLElement;
-              if (target?.closest?.("[data-testid='emoji-picker-container']") ||
-                  target?.closest?.("[data-radix-popper-content-wrapper]")) {
-                e.preventDefault();
-              }
-            }}
-            onInteractOutside={(e) => {
-              const target = e.target as HTMLElement;
-              if (target?.closest?.("[data-testid='emoji-picker-container']") ||
-                  target?.closest?.("[data-radix-popper-content-wrapper]")) {
-                e.preventDefault();
-              }
-            }}
+            initialFocus={false}
           >
             {panelContent}
           </PopoverContent>

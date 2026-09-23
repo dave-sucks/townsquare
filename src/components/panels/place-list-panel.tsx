@@ -108,17 +108,15 @@ export function PlaceListPanel({
     <div className="h-full flex flex-col bg-background" data-testid="place-list-panel">
       <div className="flex items-center gap-2 p-3 border-b">
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" data-testid="select-status-filter">
+          <DropdownMenuTrigger render={<Button variant="outline" size="sm" data-testid="select-status-filter" />}>
               {selectedStatusLabel}
               <HugeiconsIcon icon={ArrowDown01Icon} className="h-3 w-3 text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
+            </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             {statusOptions.map((option) => (
               <DropdownMenuItem
                 key={option.value}
-                onSelect={() => onStatusFilterChange(option.value)}
+                onClick={() => onStatusFilterChange(option.value)}
                 data-active={statusFilter === option.value}
               >
                 {option.label}
@@ -128,15 +126,13 @@ export function PlaceListPanel({
           </DropdownMenuContent>
         </DropdownMenu>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" data-testid="select-list-filter">
+          <DropdownMenuTrigger render={<Button variant="outline" size="sm" data-testid="select-list-filter" />}>
               {selectedListLabel}
               <HugeiconsIcon icon={ArrowDown01Icon} className="h-3 w-3 text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
+            </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             <DropdownMenuItem
-              onSelect={() => onListFilterChange("all")}
+              onClick={() => onListFilterChange("all")}
               data-active={listFilter === "all"}
             >
               All Lists
@@ -145,7 +141,7 @@ export function PlaceListPanel({
             {lists.map((list) => (
               <DropdownMenuItem
                 key={list.id}
-                onSelect={() => onListFilterChange(list.id)}
+                onClick={() => onListFilterChange(list.id)}
                 data-active={listFilter === list.id}
               >
                 {list.name}

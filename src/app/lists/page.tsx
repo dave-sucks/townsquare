@@ -108,9 +108,7 @@ export default function ListsPage() {
           <div className="flex flex-col items-center justify-center py-16">
             <HugeiconsIcon icon={LeftToRightListBulletIcon} className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="font-medium">Sign in to view your lists</p>
-            <Button asChild className="mt-4">
-              <a href="/api/login">Sign In</a>
-            </Button>
+            <Button className="mt-4" nativeButton={false} render={<a href="/api/login" />}>Sign In</Button>
           </div>
         </div>
       </AppShell>
@@ -121,12 +119,10 @@ export default function ListsPage() {
     <AppShell user={user}>
       <PageHeader title="Lists">
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" data-testid="button-create-list">
+          <DialogTrigger render={<Button size="sm" data-testid="button-create-list" />}>
               <HugeiconsIcon icon={PlusSignIcon} className="mr-1 h-4 w-4" />
               New List
-            </Button>
-          </DialogTrigger>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create a New List</DialogTitle>

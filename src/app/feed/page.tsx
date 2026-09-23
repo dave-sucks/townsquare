@@ -176,9 +176,7 @@ function FeedList({
               : "Follow people to see their activity here"}
           </p>
           {!data?.hasFollowing && (
-            <Button asChild className="mt-4" data-testid="button-find-people-following">
-              <Link href="/people">Find People</Link>
-            </Button>
+            <Button className="mt-4" data-testid="button-find-people-following" nativeButton={false} render={<Link href="/people" />}>Find People</Button>
           )}
         </div>
       );
@@ -201,12 +199,10 @@ function FeedList({
         <p className="text-sm text-muted-foreground mt-1 text-center max-w-xs">
           Save places and leave reviews to see activity here
         </p>
-        <Button variant="outline" asChild className="mt-4" data-testid="button-go-map-all">
-          <Link href="/">
+        <Button variant="outline" className="mt-4" data-testid="button-go-map-all" nativeButton={false} render={<Link href="/" />}>
             <HugeiconsIcon icon={Location01Icon} className="mr-1.5 h-4 w-4" />
             Map
-          </Link>
-        </Button>
+          </Button>
       </div>
     );
   }

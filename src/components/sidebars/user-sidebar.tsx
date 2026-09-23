@@ -317,22 +317,20 @@ export function UserSidebar({
             <div className="flex gap-2">
               {!isOwnProfile ? (
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" data-testid="select-combined-filter">
+                  <DropdownMenuTrigger render={<Button variant="outline" size="sm" data-testid="select-combined-filter" />}>
                       {combinedFilterLabel}
                       <HugeiconsIcon icon={ArrowDown01Icon} className="h-3 w-3 text-muted-foreground" />
-                    </Button>
-                  </DropdownMenuTrigger>
+                    </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="whitespace-nowrap min-w-[200px]">
                     <DropdownMenuItem
-                      onSelect={() => { setSelectedStatusFilter("all"); setSelectedListId("all"); }}
+                      onClick={() => { setSelectedStatusFilter("all"); setSelectedListId("all"); }}
                       data-active={combinedFilterValue === "all"}
                     >
                       All
                       <HugeiconsIcon icon={Tick01Icon} className={`ml-auto h-4 w-4 ${combinedFilterValue === "all" ? "opacity-100" : "opacity-0"}`} />
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onSelect={() => { setSelectedStatusFilter("been"); setSelectedListId("all"); }}
+                      onClick={() => { setSelectedStatusFilter("been"); setSelectedListId("all"); }}
                       data-active={combinedFilterValue === "been"}
                     >
                       Places they've been
@@ -342,7 +340,7 @@ export function UserSidebar({
                     {publicLists.map((list) => (
                       <DropdownMenuItem
                         key={list.id}
-                        onSelect={() => { setSelectedStatusFilter("all"); setSelectedListId(list.id); }}
+                        onClick={() => { setSelectedStatusFilter("all"); setSelectedListId(list.id); }}
                         data-active={combinedFilterValue === `list:${list.id}`}
                       >
                         {list.name}
@@ -354,17 +352,15 @@ export function UserSidebar({
               ) : (
                 <>
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" data-testid="select-status-filter">
+                    <DropdownMenuTrigger render={<Button variant="outline" size="sm" data-testid="select-status-filter" />}>
                         {selectedStatusLabel}
                         <HugeiconsIcon icon={ArrowDown01Icon} className="h-3 w-3 text-muted-foreground" />
-                      </Button>
-                    </DropdownMenuTrigger>
+                      </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       {statusOptions.map((option) => (
                         <DropdownMenuItem
                           key={option.value}
-                          onSelect={() => setSelectedStatusFilter(option.value)}
+                          onClick={() => setSelectedStatusFilter(option.value)}
                           data-active={selectedStatusFilter === option.value}
                         >
                           {option.label}
@@ -375,15 +371,13 @@ export function UserSidebar({
                   </DropdownMenu>
                   {publicLists.length > 0 && (
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" data-testid="select-list-filter">
+                      <DropdownMenuTrigger render={<Button variant="outline" size="sm" data-testid="select-list-filter" />}>
                           {selectedListLabel}
                           <HugeiconsIcon icon={ArrowDown01Icon} className="h-3 w-3 text-muted-foreground" />
-                        </Button>
-                      </DropdownMenuTrigger>
+                        </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onSelect={() => setSelectedListId("all")}
+                          onClick={() => setSelectedListId("all")}
                           data-active={selectedListId === "all"}
                         >
                           All Lists
@@ -392,7 +386,7 @@ export function UserSidebar({
                         {publicLists.map((list) => (
                           <DropdownMenuItem
                             key={list.id}
-                            onSelect={() => setSelectedListId(list.id)}
+                            onClick={() => setSelectedListId(list.id)}
                             data-active={selectedListId === list.id}
                           >
                             {list.name}

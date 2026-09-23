@@ -256,13 +256,9 @@ export function PlaceDetailPanel({
           <Button
             variant="ghost"
             size="icon"
-            asChild
-            data-testid="button-open-full-page"
-          >
-            <Link href={`/places/${place.googlePlaceId}`}>
+            data-testid="button-open-full-page" nativeButton={false} render={<Link href={`/places/${place.googlePlaceId}`} />}>
               <HugeiconsIcon icon={Maximize01Icon} className="h-4 w-4" />
-            </Link>
-          </Button>
+            </Button>
           <SaveToListDropdown
             ref={saveDropdownRef}
             place={place}
@@ -305,7 +301,7 @@ export function PlaceDetailPanel({
                 {place.name}
                 {placeDetails?.savedPlace?.hasBeen && (
                   <Tooltip>
-                    <TooltipTrigger asChild>
+                    <TooltipTrigger render={<span className="inline-flex" />}>
                       <HugeiconsIcon icon={CheckmarkBadge01Icon} className="w-5 h-5 flex-shrink-0 fill-foreground text-background" />
                     </TooltipTrigger>
                     <TooltipContent side="top">
@@ -415,15 +411,12 @@ export function PlaceDetailPanel({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-medium">Recent Activity</h3>
-                  <Button variant="ghost" size="sm" className="text-xs" asChild>
-                    <Link href="#" onClick={(e) => {
-                      e.preventDefault();
+                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => {
                       const feedTab = document.querySelector('[data-testid="panel-tab-feed"]') as HTMLButtonElement;
                       feedTab?.click();
                     }}>
                       See all <HugeiconsIcon icon={ArrowRight01Icon} className="h-3 w-3 ml-1" />
-                    </Link>
-                  </Button>
+                    </Button>
                 </div>
                 <div className="-mx-4">
                   <FeedPost activity={activities[0]} />

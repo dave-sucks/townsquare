@@ -180,13 +180,16 @@ export function TagsWithPopover({
       )}
       {hasMoreTags && (
         <Popover>
-          <PopoverTrigger asChild>
-            <span 
-              className="whitespace-nowrap text-muted-foreground cursor-pointer underline decoration-dotted underline-offset-4 hover:text-foreground transition-colors"
-              data-testid="text-view-all-tags"
-            >
-              View all
-            </span>
+          <PopoverTrigger
+            nativeButton={false}
+            render={
+              <span
+                className="whitespace-nowrap text-muted-foreground cursor-pointer underline decoration-dotted underline-offset-4 hover:text-foreground transition-colors"
+                data-testid="text-view-all-tags"
+              />
+            }
+          >
+            View all
           </PopoverTrigger>
           <PopoverContent className="w-72 p-3" align="start">
             <GroupedTags tagGroups={tagGroups} />

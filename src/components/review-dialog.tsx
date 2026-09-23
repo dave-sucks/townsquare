@@ -224,7 +224,7 @@ export function ReviewDialog({
                 max={10}
                 step={1}
                 value={[rating]}
-                onValueChange={([value]) => form.setValue("rating", value)}
+                onValueChange={(value) => form.setValue("rating", Array.isArray(value) ? value[0] : value)}
                 className="flex-1"
                 data-testid="slider-rating"
               />

@@ -325,9 +325,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <HugeiconsIcon icon={Location01Icon} className="mb-4 h-12 w-12 text-muted-foreground" />
           <p className="text-lg font-medium">Please sign in</p>
-          <Button asChild className="mt-4">
-            <Link href="/">Go to Home</Link>
-          </Button>
+          <Button className="mt-4" nativeButton={false} render={<Link href="/" />}>Go to Home</Button>
         </div>
       </AppShell>
     );
@@ -353,9 +351,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <HugeiconsIcon icon={Location01Icon} className="mb-4 h-12 w-12 text-muted-foreground" />
           <p className="text-lg font-medium">Place not found</p>
-          <Button asChild className="mt-4">
-            <Link href="/">Go to Map</Link>
-          </Button>
+          <Button className="mt-4" nativeButton={false} render={<Link href="/" />}>Go to Map</Button>
         </div>
       </AppShell>
     );
@@ -411,7 +407,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                 {place.name}
                 {savedPlace?.hasBeen && (
                   <Tooltip>
-                    <TooltipTrigger asChild>
+                    <TooltipTrigger render={<span className="inline-flex" />}>
                       <HugeiconsIcon icon={CheckmarkBadge01Icon} className="w-6 h-6 flex-shrink-0 fill-foreground text-background" />
                     </TooltipTrigger>
                     <TooltipContent side="top">
@@ -517,15 +513,12 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-medium">Recent Activity</h3>
-                    <Button variant="ghost" size="sm" className="text-xs" asChild>
-                      <Link href="#" onClick={(e) => {
-                        e.preventDefault();
+                    <Button variant="ghost" size="sm" className="text-xs" onClick={() => {
                         const feedTab = document.querySelector('[data-testid="tab-feed"]') as HTMLButtonElement;
                         feedTab?.click();
                       }}>
                         See all <HugeiconsIcon icon={ArrowRight01Icon} className="h-3 w-3 ml-1" />
-                      </Link>
-                    </Button>
+                      </Button>
                   </div>
                   <div className="-mx-4">
                     <FeedPost activity={activities[0]} />
