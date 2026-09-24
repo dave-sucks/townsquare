@@ -7,13 +7,19 @@
  * ViewportFooter mask, scroll-to-bottom, welcome, message components.
  * Changed for townsquare: the thread lives in a 22rem floating panel (and
  * the mobile bottom sheet), so it runs full-width at a tighter gutter; the
- * composer is the trimmed Composer; no attachments. Tool calls render
- * through WebSearchRow / ToolFallback until the phase-2 ToolCallGroup lands.
+ * composer is the trimmed Composer; no attachments.
+ *
+ * Assistant parts render through Unstable_PartsGrouped: runs of reasoning
+ * and quiet tool steps collapse into one chain-of-thought trace
+ * (chain-of-thought.tsx); prose and loud results (place lists, questions)
+ * render between traces.
  */
 
 import { CitationPill, CitedMarkdownText } from "@/components/chat/cited-markdown-text";
-import { ToolFallback } from "@/components/chat/tool-fallback";
 import { HiddenToolRow, WebSearchRow } from "@/components/chat/web-search-row";
+import { ToolPart } from "@/components/chat/tool-call-row";
+import { TraceGroup, makeGroupingFunction } from "@/components/chat/chain-of-thought";
+import { ToolDedupeProvider, useToolDedupeCursor } from "@/components/chat/tool-dedupe-context";
 import { TooltipIconButton } from "@/components/chat/tooltip-icon-button";
 import {
   SourcesProvider,
@@ -65,6 +71,7 @@ export interface ThreadProps {
 
 export const Thread: FC<ThreadProps> = ({ hideWelcome = false, welcomeConfig }) => {
   return (
+    <ToolDedupeProvider>
     <ThreadPrimitive.Root
       // No bg here on purpose — inherit the panel's surface.
       className="aui-root aui-thread-root @container flex h-full flex-col"
@@ -101,6 +108,7 @@ export const Thread: FC<ThreadProps> = ({ hideWelcome = false, welcomeConfig }) 
         </ThreadPrimitive.ViewportFooter>
       </ThreadPrimitive.Viewport>
     </ThreadPrimitive.Root>
+    </ToolDedupeProvider>
   );
 };
 
@@ -183,6 +191,10 @@ const AssistantMessage: FC = () => {
       ),
     [content],
   );
+  const dedupeCursor = useToolDedupeCursor();
+  // A fresh function each render: the cursor is reset per thread render and
+  // must be re-read in message order, so this can't be memoized away.
+  const groupingFunction = makeGroupingFunction(dedupeCursor);
 
   return (
     <MessagePrimitive.Root
@@ -192,14 +204,17 @@ const AssistantMessage: FC = () => {
       <div className="min-w-0">
         <div className="aui-assistant-message-content wrap-break-word text-foreground text-message">
           <SourcesProvider sources={sources}>
-            <MessagePrimitive.Parts
+            <PendingIndicator />
+            <MessagePrimitive.Unstable_PartsGrouped
+              groupingFunction={groupingFunction}
               components={{
                 Text: CitedMarkdownText,
                 Reasoning: ReasoningPart,
                 tools: {
                   by_name: { web_search: WebSearchRow, code_execution: HiddenToolRow },
-                  Fallback: ToolFallback,
+                  Fallback: ToolPart,
                 },
+                Group: TraceGroup,
               }}
             />
             <UncitedSources sources={sources} content={content} />
@@ -213,6 +228,17 @@ const AssistantMessage: FC = () => {
         </div>
       </div>
     </MessagePrimitive.Root>
+  );
+};
+
+/** Before the first part arrives, a shimmer so the send doesn't look dead. */
+const PendingIndicator: FC = () => {
+  const waiting = useMessage((m) => m.status?.type === "running" && m.content.length === 0);
+  if (!waiting) return null;
+  return (
+    <div className="my-1 flex items-center gap-2 py-1">
+      <span className="shimmer-text text-[13px] font-medium">Thinking</span>
+    </div>
   );
 };
 

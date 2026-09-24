@@ -26,6 +26,8 @@ import { prisma } from "@/lib/prisma";
 import { CHAT_MODEL, CHAT_MAX_STEPS, TITLE_MAX_CHARS, WEB_SEARCH_MAX_USES } from "@/lib/agent/config";
 import { buildSystemMessages, loadChatUserContext } from "@/lib/agent/system-prompt";
 import { citationMarkers } from "@/lib/agent/citations";
+import { createToolContext } from "@/lib/agent/tool-context";
+import { createChatTools } from "@/lib/agent/tools";
 
 export const maxDuration = 300;
 
@@ -165,7 +167,6 @@ export async function POST(req: Request) {
   if (typeof conversationId !== "string" || conversationId.length === 0 || conversationId.length > 36) {
     return new Response("conversationId required", { status: 400 });
   }
-  // Wired into the tool context in phase 2+; parsed now so bad input fails early.
   const location = parseLocation(body.location);
   const mapBounds = parseBounds(body.mapBounds);
   const timezone = typeof body.timezone === "string" ? body.timezone.slice(0, 64) : undefined;
@@ -188,7 +189,9 @@ export async function POST(req: Request) {
   }
 
   // ── Tools ──────────────────────────────────────────────────────────────
+  const ctx = createToolContext({ userId: user.id, conversationId, location, mapBounds });
   const tools = {
+    ...createChatTools(ctx),
     web_search: anthropic.tools.webSearch_20260209({
       maxUses: WEB_SEARCH_MAX_USES,
       ...(timezone ? { userLocation: { type: "approximate" as const, timezone } } : {}),
