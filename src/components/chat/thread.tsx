@@ -7,13 +7,18 @@
  * ViewportFooter mask, scroll-to-bottom, welcome, message components.
  * Changed for townsquare: the thread lives in a 22rem floating panel (and
  * the mobile bottom sheet), so it runs full-width at a tighter gutter; the
- * composer is the trimmed Composer; no attachments. Tool calls render
- * through WebSearchRow / ToolFallback until the phase-2 ToolCallGroup lands.
+ * composer is the trimmed Composer; no attachments.
+ *
+ * Assistant parts render through Unstable_PartsGrouped: runs of reasoning
+ * and quiet tool steps collapse into one chain-of-thought trace
+ * (chain-of-thought.tsx); prose and loud results (place lists, questions)
+ * render between traces.
  */
 
 import { CitationPill, CitedMarkdownText } from "@/components/chat/cited-markdown-text";
-import { ToolFallback } from "@/components/chat/tool-fallback";
 import { HiddenToolRow, WebSearchRow } from "@/components/chat/web-search-row";
+import { ToolPart } from "@/components/chat/tool-call-row";
+import { TraceGroup, lastToolKey, makeGroupingFunction } from "@/components/chat/chain-of-thought";
 import { TooltipIconButton } from "@/components/chat/tooltip-icon-button";
 import {
   SourcesProvider,
@@ -31,6 +36,7 @@ import {
   ErrorPrimitive,
   MessagePrimitive,
   ThreadPrimitive,
+  useAuiState,
   useMessage,
   useMessagePartReasoning,
 } from "@assistant-ui/react";
@@ -183,6 +189,17 @@ const AssistantMessage: FC = () => {
       ),
     [content],
   );
+  // Last tool call of the assistant message right before this one (none if
+  // a user message sits between) — so a repeated call across the two is
+  // shown once.
+  const prevToolKey = useAuiState((s) => {
+    const msgs = s.thread.messages;
+    const i = msgs.findIndex((m) => m.id === s.message.id);
+    const prev = i > 0 ? msgs[i - 1] : undefined;
+    if (!prev || prev.role !== "assistant") return null;
+    return lastToolKey((prev as unknown as { parts?: readonly unknown[]; content?: readonly unknown[] }).parts ?? prev.content);
+  });
+  const groupingFunction = useMemo(() => makeGroupingFunction(prevToolKey), [prevToolKey]);
 
   return (
     <MessagePrimitive.Root
@@ -192,14 +209,17 @@ const AssistantMessage: FC = () => {
       <div className="min-w-0">
         <div className="aui-assistant-message-content wrap-break-word text-foreground text-message">
           <SourcesProvider sources={sources}>
-            <MessagePrimitive.Parts
+            <PendingIndicator />
+            <MessagePrimitive.Unstable_PartsGrouped
+              groupingFunction={groupingFunction}
               components={{
                 Text: CitedMarkdownText,
                 Reasoning: ReasoningPart,
                 tools: {
                   by_name: { web_search: WebSearchRow, code_execution: HiddenToolRow },
-                  Fallback: ToolFallback,
+                  Fallback: ToolPart,
                 },
+                Group: TraceGroup,
               }}
             />
             <UncitedSources sources={sources} content={content} />
@@ -213,6 +233,17 @@ const AssistantMessage: FC = () => {
         </div>
       </div>
     </MessagePrimitive.Root>
+  );
+};
+
+/** Before the first part arrives, a shimmer so the send doesn't look dead. */
+const PendingIndicator: FC = () => {
+  const waiting = useMessage((m) => m.status?.type === "running" && m.content.length === 0);
+  if (!waiting) return null;
+  return (
+    <div className="my-1 flex items-center gap-2 py-1">
+      <span className="shimmer-text text-[13px] font-medium">Thinking</span>
+    </div>
   );
 };
 
