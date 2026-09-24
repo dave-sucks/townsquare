@@ -48,7 +48,14 @@ function isLoudToolPart(part: ContentPart): boolean {
   const ui =
     part.result != null ? normalizeToolResult(part.toolName, part.result) : null;
   const kind = ui ? (ui.ok ? ui.ui : "tool-ui") : inferToolUI(part.toolName);
+  // A search that came back empty is a step in the thinking, not an answer.
+  if (kind === "place-list" && ui?.ok && isEmptyPlaceList(ui.data)) return false;
   return kind === "place-list" || kind === "ask-question";
+}
+
+export function isEmptyPlaceList(data: unknown): boolean {
+  const places = (data as { places?: unknown[] } | null)?.places;
+  return Array.isArray(places) && places.length === 0;
 }
 
 function isQuietPart(part: ContentPart): boolean {

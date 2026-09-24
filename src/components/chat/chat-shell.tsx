@@ -14,7 +14,7 @@
  * ChatRuntime keyed by id — the runtime takes messages at mount time.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { UIMessage } from "ai";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -29,7 +29,9 @@ import {
 } from "@hugeicons/core-free-icons";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout";
-import { PlaceMap, type MapBounds } from "@/components/place-map";
+import { PlaceMap, type MapBounds, type PlaceMapHandle } from "@/components/place-map";
+import { ChatMapProvider, useChatMap } from "@/components/chat/chat-map-context";
+import type { PlaceRow } from "@/lib/agent/place-row";
 import { BottomSheet } from "@/components/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { ChatRuntime } from "@/components/chat/chat-runtime";
@@ -267,14 +269,9 @@ export function ChatShell({ user }: { user: UserData }) {
 
   return (
     <AppShell user={user}>
+      <ChatMapProvider resetKey={conversationId}>
       <div className="relative flex-1 overflow-hidden">
-        <PlaceMap
-          places={[]}
-          selectedPlaceId={null}
-          onMarkerClick={() => {}}
-          showSettings
-          onBoundsChange={setMapBounds}
-        />
+        <ChatResultsMap onBoundsChange={setMapBounds} />
 
         {isMobile ? (
           <BottomSheet defaultSnapPoint="expanded">{panel}</BottomSheet>
@@ -286,8 +283,57 @@ export function ChatShell({ user }: { user: UserData }) {
           </div>
         )}
       </div>
+      </ChatMapProvider>
     </AppShell>
   );
+}
+
+/**
+ * The full-bleed map, showing the active place-list result set's pins
+ * (docs/AGENT_CHAT_REBUILD.md §8). Marker click selects the place and
+ * scrolls its row into view; a row click pans here via the registered pan.
+ */
+function ChatResultsMap({ onBoundsChange }: { onBoundsChange: (b: MapBounds) => void }) {
+  const { activePlaces, selectedKey, setSelected, setPanHandler } = useChatMap();
+  const mapRef = useRef<PlaceMapHandle>(null);
+
+  useEffect(() => {
+    setPanHandler((lat, lng) => mapRef.current?.panTo(lat, lng));
+    return () => setPanHandler(null);
+  }, [setPanHandler]);
+
+  const places = useMemo(() => activePlaces.map(toMapPlace), [activePlaces]);
+
+  return (
+    <PlaceMap
+      ref={mapRef}
+      places={places}
+      selectedPlaceId={selectedKey}
+      onMarkerClick={(id) => setSelected(id, "map")}
+      showSettings
+      onBoundsChange={onBoundsChange}
+    />
+  );
+}
+
+/** PlaceRow → the shape PlaceMap renders (id = googlePlaceId, the selection key). */
+function toMapPlace(p: PlaceRow) {
+  return {
+    id: p.googlePlaceId,
+    emoji: p.emoji ?? null,
+    place: {
+      id: p.placeId ?? p.googlePlaceId,
+      googlePlaceId: p.googlePlaceId,
+      name: p.name,
+      formattedAddress: p.address ?? "",
+      lat: p.lat,
+      lng: p.lng,
+      primaryType: null,
+      types: null,
+      priceLevel: p.priceLevel ?? null,
+      photoRefs: p.photoRef ? [p.photoRef] : null,
+    },
+  };
 }
 
 /** Fires onStarted when the thread gets its first message, onTurnEnd when a run finishes. */

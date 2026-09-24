@@ -15,7 +15,7 @@
 
 import type { ToolResult, ToolUIItem } from "@/lib/agent/tool-result";
 import type { PlaceRow } from "@/lib/agent/place-row";
-import { TraceStep } from "@/components/chat/chain-of-thought";
+import { TraceStep, pastTense } from "@/components/chat/chain-of-thought";
 import { TraceItem } from "@/components/chat/trace-items";
 import { toolLabel } from "@/lib/agent/tool-labels";
 
@@ -24,6 +24,8 @@ interface Props {
   args?: Record<string, unknown>;
   result: Extract<ToolResult, { ok: true }>;
   loading: boolean;
+  /** Override the count shown after the label. */
+  secondary?: string;
 }
 
 function deriveItems(data: unknown, summary: string): ToolUIItem[] {
@@ -52,16 +54,17 @@ function countLabel(items: ToolUIItem[]): string | undefined {
   return undefined;
 }
 
-export function ToolUIRenderer({ toolName, args, result, loading }: Props) {
+export function ToolUIRenderer({ toolName, args, result, loading, secondary }: Props) {
   const items = loading ? [] : deriveItems(result.data, result.summary);
-  const label = result.progressLabel ?? toolLabel(toolName, args);
+  const gerund = result.progressLabel ?? toolLabel(toolName, args);
+  const label = loading ? gerund : pastTense(gerund);
   const answerItems = items.some((i) => i.kind !== "generic");
 
   return (
     <TraceStep
       running={loading}
       label={label}
-      secondary={countLabel(items)}
+      secondary={secondary ?? countLabel(items)}
       defaultOpen={answerItems}
     >
       {items.length > 0 ? items.map((it, i) => <TraceItem key={i} item={it} />) : null}
