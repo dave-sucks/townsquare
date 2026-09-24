@@ -316,6 +316,10 @@ model Conversation {
   title     String    @default("New Chat")
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  /// Full AI SDK UIMessage[] for the agent chat (text, reasoning, tool calls,
+  /// sources). Written in /api/chat onFinish. Legacy rows still read from
+  /// ChatMessage and are converted on read (lib/agent/convert-messages.ts).
+  uiMessages Json?    @map("ui_messages")
   messages  ChatMessage[]
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 

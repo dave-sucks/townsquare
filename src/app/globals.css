@@ -6,6 +6,10 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Chat message body size (Hindsight's token): 15px / 1.6 — a hair
+     under text-base so long answers read comfortably in a narrow panel. */
+  --text-message: 0.9375rem;
+  --text-message--line-height: 1.6;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: "Host Grotesk", ui-sans-serif, system-ui, sans-serif;
@@ -187,4 +191,29 @@
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+/* ── Agent chat ───────────────────────────────────────────────────────────
+   Label shimmer while a step is running (Reasoning "Thinking", tool rows). */
+@keyframes shimmer-slide {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.shimmer-text {
+  background-image: linear-gradient(
+    90deg,
+    var(--muted-foreground) 0%,
+    var(--foreground) 50%,
+    var(--muted-foreground) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: shimmer-slide 2.5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-text { animation: none; }
 }

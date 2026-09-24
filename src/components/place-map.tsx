@@ -44,7 +44,11 @@ interface PlaceMapProps {
   onSettingsOpenChange?: (open: boolean) => void;
   showAvatars?: boolean;
   disableFitToPlaces?: boolean;
+  /** Called with the visible bounds each time the map settles (idle). */
+  onBoundsChange?: (bounds: MapBounds) => void;
 }
+
+export type MapBounds = { north: number; south: number; east: number; west: number };
 
 export interface PlaceMapHandle {
   panTo: (lat: number, lng: number) => void;
@@ -78,7 +82,15 @@ function saveMapView(center: [number, number], zoom: number) {
   } catch (e) {}
 }
 
-function BoundsController({ places, disableFitToPlaces }: { places: SavedPlace[]; disableFitToPlaces?: boolean }) {
+function BoundsController({
+  places,
+  disableFitToPlaces,
+  onBoundsChangeRef,
+}: {
+  places: SavedPlace[];
+  disableFitToPlaces?: boolean;
+  onBoundsChangeRef: React.MutableRefObject<((bounds: MapBounds) => void) | undefined>;
+}) {
   const { map, isLoaded } = useMap();
   const hasInitializedRef = useRef(false);
   const prevPlaceSignatureRef = useRef<string>("");
@@ -156,9 +168,15 @@ function BoundsController({ places, disableFitToPlaces }: { places: SavedPlace[]
       if (center) {
         saveMapView([center.lng(), center.lat()], map.getZoom() || DEFAULT_ZOOM);
       }
+      const b = map.getBounds();
+      if (b && onBoundsChangeRef.current) {
+        const ne = b.getNorthEast();
+        const sw = b.getSouthWest();
+        onBoundsChangeRef.current({ north: ne.lat(), east: ne.lng(), south: sw.lat(), west: sw.lng() });
+      }
     });
     return () => { google.maps.event.removeListener(listener); };
-  }, [map, isLoaded]);
+  }, [map, isLoaded, onBoundsChangeRef]);
 
   return null;
 }
@@ -200,7 +218,7 @@ function StyleController() {
 }
 
 export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function PlaceMap(
-  { places, selectedPlaceId, onMarkerClick, showAvatars = false, disableFitToPlaces = false },
+  { places, selectedPlaceId, onMarkerClick, showAvatars = false, disableFitToPlaces = false, onBoundsChange },
   ref
 ) {
   const mapRef = useRef<MapRef>(null);
@@ -224,6 +242,8 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
 
   const onMarkerClickRef = useRef(onMarkerClick);
   onMarkerClickRef.current = onMarkerClick;
+  const onBoundsChangeRef = useRef(onBoundsChange);
+  onBoundsChangeRef.current = onBoundsChange;
 
   return (
     <div className="relative h-full w-full" data-testid="map-container">
@@ -233,7 +253,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
         zoom={initialZoom}
         className="h-full w-full"
       >
-        <BoundsController places={places} disableFitToPlaces={disableFitToPlaces} />
+        <BoundsController places={places} disableFitToPlaces={disableFitToPlaces} onBoundsChangeRef={onBoundsChangeRef} />
         <StyleController />
         <MapControls places={places} />
         {places.map((savedPlace) => (
