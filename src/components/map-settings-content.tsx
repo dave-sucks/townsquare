@@ -142,8 +142,9 @@ export function MapSettingsContent({
   const currentRadiusIndex = RADIUS_STEPS.findIndex((r) => r >= radius) || 0;
   const displayRadius = RADIUS_STEPS[currentRadiusIndex] || 1;
 
-  const handleSliderChange = (value: number[]) => {
-    const index = Math.round((value[0] / 100) * (RADIUS_STEPS.length - 1));
+  const handleSliderChange = (value: number | readonly number[]) => {
+    const v = Array.isArray(value) ? value[0] : value;
+    const index = Math.round((v / 100) * (RADIUS_STEPS.length - 1));
     onRadiusChange(RADIUS_STEPS[index]);
   };
 

@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowLeft01Icon, ArrowRight01Icon, Cancel01Icon, Image01Icon } from "@hugeicons/core-free-icons";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 interface Photo {
   id: string;
@@ -116,9 +115,7 @@ export function PlacePhotoGrid({ photos, maxDisplay = 5 }: PlacePhotoGridProps) 
 
       <Dialog open={selectedIndex !== null} onOpenChange={closeLightbox}>
         <DialogContent className="max-w-4xl p-0 overflow-hidden">
-          <VisuallyHidden>
-            <DialogTitle>Photo Viewer</DialogTitle>
-          </VisuallyHidden>
+          <DialogTitle className="sr-only">Photo Viewer</DialogTitle>
           {selectedIndex !== null && (
             <div className="relative">
               <img

@@ -9,8 +9,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
-  DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuLinkItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -72,20 +72,22 @@ function ThemeToggleButton() {
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          data-testid="button-theme-toggle"
-        >
-          {theme === "dark" ? (
-            <HugeiconsIcon icon={Sun03Icon} className="h-5 w-5" />
-          ) : (
-            <HugeiconsIcon icon={Moon02Icon} className="h-5 w-5" />
-          )}
-        </Button>
+      <TooltipTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            data-testid="button-theme-toggle"
+          />
+        }
+      >
+        {theme === "dark" ? (
+          <HugeiconsIcon icon={Sun03Icon} className="h-5 w-5" />
+        ) : (
+          <HugeiconsIcon icon={Moon02Icon} className="h-5 w-5" />
+        )}
       </TooltipTrigger>
       <TooltipContent side="right">
         {theme === "dark" ? "Light mode" : "Dark mode"}
@@ -101,7 +103,7 @@ function DesktopSideNav({ user }: { user: User | null }) {
   const userEmail = user?.email || "";
 
   return (
-    <TooltipProvider delayDuration={400}>
+    <TooltipProvider delay={400}>
       <nav
         className="hidden md:flex flex-col items-center w-14 shrink-0 border-r bg-background py-3 gap-1 h-dvh"
         data-testid="desktop-side-nav"
@@ -130,19 +132,21 @@ function DesktopSideNav({ user }: { user: User | null }) {
               (item.href !== "/" && pathname.startsWith(item.href));
             return (
               <Tooltip key={item.href}>
-                <TooltipTrigger asChild>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "flex items-center justify-center h-9 w-full rounded-lg transition-colors",
-                      isActive
-                        ? "bg-foreground text-background"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                    )}
-                    data-testid={`nav-${item.label.toLowerCase().replace(" ", "-")}`}
-                  >
-                    <HugeiconsIcon icon={item.icon} className="h-5 w-5" />
-                  </Link>
+                <TooltipTrigger
+                  render={
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        "flex items-center justify-center h-9 w-full rounded-lg transition-colors",
+                        isActive
+                          ? "bg-foreground text-background"
+                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                      )}
+                      data-testid={`nav-${item.label.toLowerCase().replace(" ", "-")}`}
+                    />
+                  }
+                >
+                  <HugeiconsIcon icon={item.icon} className="h-5 w-5" />
                 </TooltipTrigger>
                 <TooltipContent side="right">{item.label}</TooltipContent>
               </Tooltip>
@@ -155,18 +159,16 @@ function DesktopSideNav({ user }: { user: User | null }) {
           <ThemeToggleButton />
           {user ? (
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="flex items-center justify-center h-9 w-full rounded-lg hover:bg-accent transition-colors"
-                  data-testid="button-user-menu"
-                >
-                  <Avatar className="h-7 w-7 rounded-md">
-                    <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
-                    <AvatarFallback className="rounded-md text-xs">
-                      {userName.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </button>
+              <DropdownMenuTrigger
+                className="flex items-center justify-center h-9 w-full rounded-lg hover:bg-accent transition-colors"
+                data-testid="button-user-menu"
+              >
+                <Avatar className="h-7 w-7 rounded-md">
+                  <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
+                  <AvatarFallback className="rounded-md text-xs">
+                    {userName.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 className="min-w-56 rounded-lg"
@@ -190,63 +192,50 @@ function DesktopSideNav({ user }: { user: User | null }) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem asChild>
-                    <Link href="/upgrade" className="flex items-center gap-2 w-full">
-                      <HugeiconsIcon icon={SparklesIcon} className="size-4" />
-                      Upgrade to Pro
-                    </Link>
-                  </DropdownMenuItem>
+                  <DropdownMenuLinkItem render={<Link href="/upgrade" />}>
+                    <HugeiconsIcon icon={SparklesIcon} className="size-4" />
+                    Upgrade to Pro
+                  </DropdownMenuLinkItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href={`/u/${user.username || user.id}`}
-                      className="flex items-center gap-2 w-full"
-                      data-testid="link-my-profile"
-                    >
-                      <HugeiconsIcon icon={CheckmarkBadge01Icon} className="size-4" />
-                      Account
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/billing" className="flex items-center gap-2 w-full">
-                      <HugeiconsIcon icon={CreditCardIcon} className="size-4" />
-                      Billing
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/notifications" className="flex items-center gap-2 w-full">
-                      <HugeiconsIcon icon={Notification02Icon} className="size-4" />
-                      Notifications
-                    </Link>
-                  </DropdownMenuItem>
+                  <DropdownMenuLinkItem
+                    render={<Link href={`/u/${user.username || user.id}`} />}
+                    data-testid="link-my-profile"
+                  >
+                    <HugeiconsIcon icon={CheckmarkBadge01Icon} className="size-4" />
+                    Account
+                  </DropdownMenuLinkItem>
+                  <DropdownMenuLinkItem render={<Link href="/billing" />}>
+                    <HugeiconsIcon icon={CreditCardIcon} className="size-4" />
+                    Billing
+                  </DropdownMenuLinkItem>
+                  <DropdownMenuLinkItem render={<Link href="/notifications" />}>
+                    <HugeiconsIcon icon={Notification02Icon} className="size-4" />
+                    Notifications
+                  </DropdownMenuLinkItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <a
-                    href="/api/logout"
-                    className="flex items-center gap-2 w-full"
-                    data-testid="button-logout"
-                  >
-                    <HugeiconsIcon icon={Logout02Icon} className="size-4" />
-                    Log out
-                  </a>
-                </DropdownMenuItem>
+                <DropdownMenuLinkItem href="/api/logout" data-testid="button-logout">
+                  <HugeiconsIcon icon={Logout02Icon} className="size-4" />
+                  Log out
+                </DropdownMenuLinkItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <Tooltip>
-              <TooltipTrigger asChild>
-                <a
-                  href="/api/login"
-                  className="flex items-center justify-center h-9 w-full rounded-lg hover:bg-accent transition-colors text-muted-foreground"
-                  data-testid="button-login"
-                >
-                  <Avatar className="h-7 w-7 rounded-md">
-                    <AvatarFallback className="rounded-md text-xs">?</AvatarFallback>
-                  </Avatar>
-                </a>
+              <TooltipTrigger
+                render={
+                  <a
+                    href="/api/login"
+                    className="flex items-center justify-center h-9 w-full rounded-lg hover:bg-accent transition-colors text-muted-foreground"
+                    data-testid="button-login"
+                  />
+                }
+              >
+                <Avatar className="h-7 w-7 rounded-md">
+                  <AvatarFallback className="rounded-md text-xs">?</AvatarFallback>
+                </Avatar>
               </TooltipTrigger>
               <TooltipContent side="right">Sign In</TooltipContent>
             </Tooltip>

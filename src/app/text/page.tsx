@@ -44,7 +44,7 @@ export default function TextPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="container max-w-4xl py-6 px-4">
           <div className="mb-8">
-            <Select value={selectedFont} onValueChange={setSelectedFont}>
+            <Select value={selectedFont} onValueChange={(v) => v && setSelectedFont(v)} items={FONTS}>
               <SelectTrigger className="w-[220px]" data-testid="select-font">
                 <SelectValue />
               </SelectTrigger>

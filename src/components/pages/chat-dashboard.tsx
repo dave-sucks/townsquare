@@ -712,14 +712,12 @@ function SaveAllToListButton({ places }: { places: PlaceResult[] }) {
   return (
     <>
       <DropdownMenu open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setNewListName(""); } }}>
-        <DropdownMenuTrigger asChild>
-          <Button
+        <DropdownMenuTrigger render={<Button
             variant="outline"
             size="sm"
             className="mt-1 gap-1.5 text-xs"
             disabled={saving}
-            data-testid="button-save-all-to-list"
-          >
+            data-testid="button-save-all-to-list" />}>
             {saving ? (
               <>
                 <HugeiconsIcon icon={Loading03Icon} className="h-3 w-3 animate-spin" />
@@ -731,8 +729,7 @@ function SaveAllToListButton({ places }: { places: PlaceResult[] }) {
                 Save all to list
               </>
             )}
-          </Button>
-        </DropdownMenuTrigger>
+          </DropdownMenuTrigger>
         <DropdownMenuContent side="top" align="start" className="w-56 z-[200]">
           <DropdownMenuLabel className="text-xs text-muted-foreground">
             Save {places.length} places to...
@@ -760,8 +757,7 @@ function SaveAllToListButton({ places }: { places: PlaceResult[] }) {
           ))}
           {(lists.length > 0 || (listsData && lists.length === 0)) && <DropdownMenuSeparator />}
           <DropdownMenuItem
-            onSelect={(e) => {
-              e.preventDefault();
+            onClick={() => {
               setOpen(false);
               setTimeout(() => setShowCreateDialog(true), 150);
             }}

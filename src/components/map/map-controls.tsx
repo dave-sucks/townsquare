@@ -132,17 +132,14 @@ export function MapControls({ places }: MapControlsProps) {
 
       {/* Map settings */}
       <Popover>
-        <PopoverTrigger asChild>
-          <Button
+        <PopoverTrigger render={<Button
             variant="ghost"
             size="icon"
             aria-label="Map settings"
             data-testid="button-map-settings"
-            className="bg-background/90 backdrop-blur-sm border shadow-md"
-          >
+            className="bg-background/90 backdrop-blur-sm border shadow-md" />}>
             <HugeiconsIcon icon={SlidersHorizontalIcon} className="h-4 w-4" />
-          </Button>
-        </PopoverTrigger>
+          </PopoverTrigger>
         <PopoverContent
           side="left"
           align="end"

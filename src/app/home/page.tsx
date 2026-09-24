@@ -133,9 +133,7 @@ function FeedList({ filter }: { filter: "all" | "following" }) {
               : "Follow people to see their activity here"}
           </p>
           {!data?.hasFollowing && (
-            <Button asChild className="mt-4" data-testid="button-find-people-following">
-              <Link href="/people">Find People</Link>
-            </Button>
+            <Button className="mt-4" data-testid="button-find-people-following" nativeButton={false} render={<Link href="/people" />}>Find People</Button>
           )}
         </div>
       );
@@ -148,12 +146,10 @@ function FeedList({ filter }: { filter: "all" | "following" }) {
           Save places and leave reviews to see activity here
         </p>
         <div className="flex gap-2 mt-4">
-          <Button variant="outline" asChild data-testid="button-go-map-all">
-            <Link href="/">
+          <Button variant="outline" data-testid="button-go-map-all" nativeButton={false} render={<Link href="/" />}>
               <HugeiconsIcon icon={Location01Icon} className="mr-1.5 h-4 w-4" />
               Map
-            </Link>
-          </Button>
+            </Button>
         </div>
       </div>
     );
