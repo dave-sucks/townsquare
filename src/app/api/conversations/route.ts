@@ -12,12 +12,7 @@ export async function GET() {
     const conversations = await prisma.conversation.findMany({
       where: { userId: user.id },
       orderBy: { updatedAt: "desc" },
-      include: {
-        messages: {
-          take: 1,
-          orderBy: { createdAt: "desc" },
-        },
-      },
+      select: { id: true, title: true, createdAt: true, updatedAt: true },
     });
 
     return NextResponse.json({ conversations });
