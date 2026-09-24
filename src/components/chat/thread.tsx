@@ -18,8 +18,7 @@
 import { CitationPill, CitedMarkdownText } from "@/components/chat/cited-markdown-text";
 import { HiddenToolRow, WebSearchRow } from "@/components/chat/web-search-row";
 import { ToolPart } from "@/components/chat/tool-call-row";
-import { TraceGroup, makeGroupingFunction } from "@/components/chat/chain-of-thought";
-import { ToolDedupeProvider, useToolDedupeCursor } from "@/components/chat/tool-dedupe-context";
+import { TraceGroup, lastToolKey, makeGroupingFunction } from "@/components/chat/chain-of-thought";
 import { TooltipIconButton } from "@/components/chat/tooltip-icon-button";
 import {
   SourcesProvider,
@@ -37,6 +36,7 @@ import {
   ErrorPrimitive,
   MessagePrimitive,
   ThreadPrimitive,
+  useAuiState,
   useMessage,
   useMessagePartReasoning,
 } from "@assistant-ui/react";
@@ -71,7 +71,6 @@ export interface ThreadProps {
 
 export const Thread: FC<ThreadProps> = ({ hideWelcome = false, welcomeConfig }) => {
   return (
-    <ToolDedupeProvider>
     <ThreadPrimitive.Root
       // No bg here on purpose — inherit the panel's surface.
       className="aui-root aui-thread-root @container flex h-full flex-col"
@@ -108,7 +107,6 @@ export const Thread: FC<ThreadProps> = ({ hideWelcome = false, welcomeConfig }) 
         </ThreadPrimitive.ViewportFooter>
       </ThreadPrimitive.Viewport>
     </ThreadPrimitive.Root>
-    </ToolDedupeProvider>
   );
 };
 
@@ -191,10 +189,17 @@ const AssistantMessage: FC = () => {
       ),
     [content],
   );
-  const dedupeCursor = useToolDedupeCursor();
-  // A fresh function each render: the cursor is reset per thread render and
-  // must be re-read in message order, so this can't be memoized away.
-  const groupingFunction = makeGroupingFunction(dedupeCursor);
+  // Last tool call of the assistant message right before this one (none if
+  // a user message sits between) — so a repeated call across the two is
+  // shown once.
+  const prevToolKey = useAuiState((s) => {
+    const msgs = s.thread.messages;
+    const i = msgs.findIndex((m) => m.id === s.message.id);
+    const prev = i > 0 ? msgs[i - 1] : undefined;
+    if (!prev || prev.role !== "assistant") return null;
+    return lastToolKey((prev as unknown as { parts?: readonly unknown[]; content?: readonly unknown[] }).parts ?? prev.content);
+  });
+  const groupingFunction = useMemo(() => makeGroupingFunction(prevToolKey), [prevToolKey]);
 
   return (
     <MessagePrimitive.Root

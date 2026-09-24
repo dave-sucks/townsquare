@@ -11,9 +11,16 @@
  * components render as TraceSteps when useInTrace() is true.
  *
  * Replaces Hindsight's ToolGroup/ToolCallGroup: its groupId phases and
- * "(+N more)" header survive here as one trace per run of quiet parts, and
- * its cross-message dedupe cursor still skips a tool call identical to the
- * previous one.
+ * "(+N more)" header survive here as one trace per run of quiet parts, and a
+ * tool call identical to the previous one (in this message, or the last call
+ * of the assistant message right before it) is still skipped.
+ *
+ * That cross-message check is a pure lookup of the previous message
+ * (lastToolKey), not Hindsight's render-order cursor. The cursor was reset
+ * only when the whole Thread re-rendered; while a message streams, only
+ * that message re-renders, so its second pass compared its first tool call
+ * against its own last one and a single-call message deduped itself out of
+ * existence. Seen 2026-09-23: the place list vanished mid-stream.
  */
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -52,29 +59,46 @@ function isQuietPart(part: ContentPart): boolean {
 
 type Group = { groupKey: string | undefined; indices: number[] };
 
+/** `toolName::JSON(args)` for a visible tool-call part, else null. */
+export function toolCallKey(part: unknown): string | null {
+  const p = part as ContentPart;
+  if (p?.type !== "tool-call" || !p.toolName || HIDDEN_TOOLS.has(p.toolName)) return null;
+  try {
+    return `${p.toolName}::${JSON.stringify(p.args ?? {})}`;
+  } catch {
+    return p.toolName;
+  }
+}
+
+/** The key of the last visible tool call in a message's parts. */
+export function lastToolKey(parts: readonly unknown[] | undefined): string | null {
+  if (!parts) return null;
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const k = toolCallKey(parts[i]);
+    if (k) return k;
+  }
+  return null;
+}
+
 /**
  * Runs of quiet parts → one "trace-N" group each; every other part (text,
- * sources, loud tools) → its own ungrouped entry, in order. A tool call with
- * the same name + args as the previous one (in this message or, via the
- * cursor, the last message) is dropped.
+ * loud tools) → its own ungrouped entry, in order. A tool call with the same
+ * name + args as the previous one — in this message, or `prevMessageKey`
+ * (the last call of the assistant message before this one) — is dropped.
+ * Pure: same parts + same key → same groups, however often it runs.
  */
-export function makeGroupingFunction(cursor: { current: { lastKey: string | null } }) {
+export function makeGroupingFunction(prevMessageKey: string | null) {
   return (parts: readonly unknown[]): Group[] => {
     const groups: Group[] = [];
     let trace: Group | null = null;
     let traces = 0;
-    let prevKey = cursor.current.lastKey;
+    let prevKey = prevMessageKey;
 
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i] as ContentPart;
 
-      if (part.type === "tool-call" && part.toolName && !HIDDEN_TOOLS.has(part.toolName)) {
-        let key: string;
-        try {
-          key = `${part.toolName}::${JSON.stringify(part.args ?? {})}`;
-        } catch {
-          key = part.toolName;
-        }
+      const key = toolCallKey(part);
+      if (key) {
         if (key === prevKey) continue;
         prevKey = key;
       }
@@ -95,11 +119,6 @@ export function makeGroupingFunction(cursor: { current: { lastKey: string | null
         groups.push({ groupKey: undefined, indices: [i] });
       }
     }
-
-    // Publish this message's last key back to the cross-message cursor so
-    // the NEXT message's grouping pass sees it. Done in the render pass, not
-    // a useEffect, so the next message renders with correct state.
-    cursor.current.lastKey = prevKey;
     return groups;
   };
 }
