@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import {
-  convertPersistedToUIMessages,
-  legacyChatMessagesToUIMessages,
-} from "@/lib/agent/convert-messages";
+import { convertPersistedToUIMessages } from "@/lib/agent/convert-messages";
 
 export async function GET(
   request: NextRequest,
@@ -20,22 +17,16 @@ export async function GET(
   try {
     const conversation = await prisma.conversation.findFirst({
       where: { id, userId: user.id },
-      include: {
-        messages: {
-          orderBy: { createdAt: "asc" },
-        },
-      },
     });
 
     if (!conversation) {
       return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
     }
 
-    // New chats store the full UIMessage[]; old ones only have ChatMessage
-    // rows, converted on read so they open in the new thread.
+    // A conversation created but never answered has no uiMessages yet.
     const messages = Array.isArray(conversation.uiMessages)
       ? convertPersistedToUIMessages(conversation.uiMessages as unknown[])
-      : legacyChatMessagesToUIMessages(conversation.messages);
+      : [];
 
     return NextResponse.json({
       conversation: {
