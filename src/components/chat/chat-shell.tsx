@@ -23,7 +23,6 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
   AiChat02Icon,
   ArrowTurnBackwardIcon,
-  Delete02Icon,
   Loading03Icon,
   PlusSignIcon,
 } from "@hugeicons/core-free-icons";
@@ -36,6 +35,7 @@ import { BottomSheet } from "@/components/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { ChatRuntime } from "@/components/chat/chat-runtime";
 import { Thread, type WelcomeConfig } from "@/components/chat/thread";
+import { ChatHistory, type ConversationSummary } from "@/components/chat/chat-history";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserLocation } from "@/hooks/use-user-location";
 import { apiRequest, queryClient } from "@/lib/query-client";
@@ -50,21 +50,9 @@ interface UserData {
   profileImageUrl: string | null;
 }
 
-interface ConversationSummary {
-  id: string;
-  title: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 const WELCOME: WelcomeConfig = {
   title: "What are you hungry for?",
   subtitle: "Ask about places, what creators are posting, or plan a night out.",
-  suggestions: [
-    { title: "Burger spots from people I follow around here", prompt: "Find burger spots from people I follow in this area" },
-    { title: "Is Katz's actually worth the line?", prompt: "Is Katz's actually worth the line?" },
-    { title: "Plan a Saturday in Williamsburg", prompt: "Plan a Saturday in Williamsburg: coffee, lunch, and a bar" },
-  ],
 };
 
 const newConversationId = () => crypto.randomUUID();
@@ -83,7 +71,12 @@ export function ChatShell({ user }: { user: UserData }) {
   const [showHistory, setShowHistory] = useState(false);
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
 
-  const { data: conversationsData, isLoading: conversationsLoading } = useQuery<{
+  const {
+    data: conversationsData,
+    isLoading: conversationsLoading,
+    isError: conversationsError,
+    refetch: refetchConversations,
+  } = useQuery<{
     conversations: ConversationSummary[];
   }>({
     queryKey: ["conversations"],
@@ -183,48 +176,16 @@ export function ChatShell({ user }: { user: UserData }) {
   );
 
   const historyView = (
-    <div className="flex-1 overflow-y-auto">
-      {conversationsLoading ? (
-        <div className="flex h-full items-center justify-center">
-          <HugeiconsIcon icon={Loading03Icon} className="size-5 animate-spin text-muted-foreground" />
-        </div>
-      ) : conversations.length === 0 ? (
-        <div className="flex h-full items-center justify-center px-4">
-          <p className="text-sm text-muted-foreground">No past chats yet</p>
-        </div>
-      ) : (
-        <div className="space-y-0.5 p-2">
-          {conversations.map((conv) => (
-            <div
-              key={conv.id}
-              className={cn(
-                "group flex items-center gap-1 rounded-lg pr-1 transition-colors hover:bg-muted",
-                conv.id === conversationId && "bg-muted",
-              )}
-            >
-              <button
-                type="button"
-                onClick={() => openConversation(conv.id)}
-                className="min-w-0 flex-1 truncate px-3 py-2 text-left text-sm"
-                data-testid={`button-conversation-${conv.id}`}
-              >
-                {conv.title}
-              </button>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-                onClick={() => deleteConversation.mutate(conv.id)}
-                aria-label="Delete chat"
-                data-testid={`button-delete-conversation-${conv.id}`}
-              >
-                <HugeiconsIcon icon={Delete02Icon} />
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    <ChatHistory
+      conversations={conversations}
+      loading={conversationsLoading}
+      error={conversationsError}
+      activeId={conversationId}
+      deletingId={deleteConversation.isPending ? (deleteConversation.variables ?? null) : null}
+      onOpen={openConversation}
+      onDelete={(id) => deleteConversation.mutate(id)}
+      onRetry={() => refetchConversations()}
+    />
   );
 
   const panel = (
@@ -234,15 +195,20 @@ export function ChatShell({ user }: { user: UserData }) {
           {showHistory ? "Chats" : "Chat"}
         </h1>
         {showHistory ? (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => setShowHistory(false)}
-            aria-label="Back to chat"
-            data-testid="button-back-to-chat"
-          >
-            <HugeiconsIcon icon={ArrowTurnBackwardIcon} />
-          </Button>
+          <>
+            <Button variant="ghost" size="icon-sm" onClick={startNewChat} aria-label="New chat" data-testid="button-new-chat">
+              <HugeiconsIcon icon={PlusSignIcon} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setShowHistory(false)}
+              aria-label="Back to chat"
+              data-testid="button-back-to-chat"
+            >
+              <HugeiconsIcon icon={ArrowTurnBackwardIcon} />
+            </Button>
+          </>
         ) : (
           <>
             <Button variant="ghost" size="icon-sm" onClick={startNewChat} aria-label="New chat" data-testid="button-new-chat">
@@ -263,7 +229,7 @@ export function ChatShell({ user }: { user: UserData }) {
       {/* Keep the thread mounted under the history list so an in-flight
           answer keeps streaming while the user browses past chats. */}
       <div className={cn("flex min-h-0 flex-1 flex-col", showHistory && "hidden")}>{chatView}</div>
-      {showHistory && historyView}
+      {showHistory && <div className="flex min-h-0 flex-1 flex-col">{historyView}</div>}
     </div>
   );
 

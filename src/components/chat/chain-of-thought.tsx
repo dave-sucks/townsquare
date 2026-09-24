@@ -58,6 +58,15 @@ export function isEmptyPlaceList(data: unknown): boolean {
   return Array.isArray(places) && places.length === 0;
 }
 
+/** A finished place-list result with at least one place — a list the user sees. */
+export function isFilledPlaceList(part: unknown): boolean {
+  const p = part as ContentPart;
+  if (p?.type !== "tool-call" || !p.toolName || p.result == null) return false;
+  const r = normalizeToolResult(p.toolName, p.result);
+  const places = r.ok ? (r.data as { places?: unknown[] } | null)?.places : undefined;
+  return r.ok && r.ui === "place-list" && Array.isArray(places) && places.length > 0;
+}
+
 function isQuietPart(part: ContentPart): boolean {
   if (part.type === "reasoning") return true;
   if (part.type === "tool-call") return !isLoudToolPart(part);

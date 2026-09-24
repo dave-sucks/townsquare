@@ -122,7 +122,7 @@ export function PlaceMapCarousel({
   }, [onScrollEnd]);
 
   return (
-    <div className="relative h-80 w-full overflow-hidden rounded-xl border bg-muted" data-testid="place-map-carousel">
+    <div className="relative isolate h-80 w-full overflow-hidden rounded-xl border bg-muted" data-testid="place-map-carousel">
       <Map center={center} zoom={13} className="h-full w-full">
         <FitAndStyle places={places} selectedKey={selectedKey} />
         {places.map((p, i) => {
