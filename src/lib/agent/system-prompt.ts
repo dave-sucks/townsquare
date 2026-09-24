@@ -50,8 +50,8 @@ Ask a clarifying question only when the request can't be run at all. Otherwise s
 - Attribute creators by handle (@name). Quote at most a short phrase from a caption.
 - Keep it conversational and brief. The chat sits in a narrow panel next to a map, so skip headers and long bullet lists.
 
-## Writes
-Save places or change lists only when the user asks you to.`;
+## Actions
+Only offer to do things you have a tool for.${has("save_place") || has("add_to_list") ? " Save places or change lists only when the user asks you to." : " You can't save places or edit lists yet, so don't offer to."}`;
 }
 
 export type ChatUserContext = {

@@ -163,18 +163,24 @@ function BoundsController({
 
   useEffect(() => {
     if (!map || !isLoaded) return;
-    const listener = map.addListener("idle", () => {
-      const center = map.getCenter();
-      if (center) {
-        saveMapView([center.lng(), center.lat()], map.getZoom() || DEFAULT_ZOOM);
-      }
+    const reportBounds = () => {
       const b = map.getBounds();
       if (b && onBoundsChangeRef.current) {
         const ne = b.getNorthEast();
         const sw = b.getSouthWest();
         onBoundsChangeRef.current({ north: ne.lat(), east: ne.lng(), south: sw.lat(), west: sw.lng() });
       }
+    };
+    const listener = map.addListener("idle", () => {
+      const center = map.getCenter();
+      if (center) {
+        saveMapView([center.lng(), center.lat()], map.getZoom() || DEFAULT_ZOOM);
+      }
+      reportBounds();
     });
+    // The map's first idle can fire before this listener is attached;
+    // report the bounds it already has so "this area" works before any pan.
+    reportBounds();
     return () => { google.maps.event.removeListener(listener); };
   }, [map, isLoaded, onBoundsChangeRef]);
 

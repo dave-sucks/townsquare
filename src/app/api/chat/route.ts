@@ -59,6 +59,59 @@ function trimToolResults(messages: UIMessage[]): UIMessage[] {
   });
 }
 
+/**
+ * Leave Anthropic-executed tool calls (web_search, and the code_execution
+ * steps web_search_20260209 runs to filter results) out of the history sent
+ * back to the model.
+ *
+ * 1. They can't be replayed faithfully. A dynamically filtered search is
+ *    called *from* a code_execution block and carries a `caller` pointing at
+ *    it, but those code_execution calls never reach the UI stream (they
+ *    aren't in our tool set), so the saved thread has the search without its
+ *    caller and the API rejects the next turn: "source tool srvtoolu_… not
+ *    found for tool use block srvtoolu_…". Seen live 2026-09-23 on the first
+ *    follow-up in a conversation that had searched.
+ * 2. They're big: a search result list is thousands of tokens of encrypted
+ *    page content, re-sent on every later turn. The answer the model wrote
+ *    from them stays in the history; it can search again if it needs to.
+ *
+ * A turn that loses blocks also loses its thinking. Thinking blocks are
+ * signed against the content before them, so once the search blocks are gone
+ * the API rejects them: "thinking or redacted_thinking blocks in the latest
+ * assistant message cannot be modified". Thinking from a finished turn may be
+ * omitted, so it is.
+ *
+ * A trailing assistant message is a turn still in progress (the client just
+ * supplied a tool result, e.g. an ask_question answer). Its blocks must go
+ * back exactly as they were, so it is left alone.
+ *
+ * The UI keeps all of it — this only shapes what goes to the model.
+ */
+function dropServerToolCalls(messages: UIMessage[]): UIMessage[] {
+  const last = messages.length - 1;
+  return messages.map((msg, i) => {
+    if (msg.role !== "assistant" || i === last) return msg;
+    const isServerTool = (part: UIMessage["parts"][number]) => {
+      const p = part as Record<string, unknown>;
+      return typeof p.type === "string" && p.type.startsWith("tool-") && p.providerExecuted === true;
+    };
+    if (!msg.parts.some(isServerTool)) return msg;
+    return { ...msg, parts: msg.parts.filter((p) => !isServerTool(p) && p.type !== "reasoning") };
+  });
+}
+
+/**
+ * A turn that errored before producing anything leaves an assistant message
+ * with no content (just step-start); the API rejects empty assistant turns.
+ */
+function dropEmptyAssistantMessages(messages: UIMessage[]): UIMessage[] {
+  return messages.filter(
+    (msg) =>
+      msg.role !== "assistant" ||
+      msg.parts.some((p) => p.type === "text" ? p.text.trim().length > 0 : p.type !== "step-start"),
+  );
+}
+
 function firstUserText(messages: UIMessage[]): string {
   const first = messages.find((m) => m.role === "user");
   const text = first?.parts
@@ -158,12 +211,15 @@ export async function POST(req: Request) {
   // Strip tool results down to summary-only before sending to the model.
   // Full data stays on the client for UI rendering — the model only needs
   // the one-line summary to continue reasoning.
-  const modelMessages = await convertToModelMessages(trimToolResults(messages), {
-    tools,
-    // A turn stopped mid-tool-call leaves a call with no result; the API
-    // rejects that on the next turn.
-    ignoreIncompleteToolCalls: true,
-  });
+  const modelMessages = await convertToModelMessages(
+    dropEmptyAssistantMessages(dropServerToolCalls(trimToolResults(messages))),
+    {
+      tools,
+      // A turn stopped mid-tool-call leaves a call with no result; the API
+      // rejects that on the next turn.
+      ignoreIncompleteToolCalls: true,
+    },
+  );
 
   const result = streamText({
     model: anthropic(CHAT_MODEL),

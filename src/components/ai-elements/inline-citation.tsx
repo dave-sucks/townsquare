@@ -65,7 +65,7 @@ export const InlineCitationCardTrigger = ({
 }: InlineCitationCardTriggerProps) => (
   <HoverCardTrigger render={<Badge className={cn("font-regular text-muted-foreground rounded-full cursor-help", className)} variant="secondary" {...props} />}>{sources[0] ? (
             <>
-              {new URL(sources[0]).hostname}{" "}
+              {new URL(sources[0]).hostname.replace(/^www\./, "")}{" "}
               {sources.length > 1 && `+${sources.length - 1}`}
             </>
           ) : (
