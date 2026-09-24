@@ -12,16 +12,21 @@
  * Registers its places with ChatMapProvider (the big map shows the newest
  * set, or whichever list was touched last) and shares selection with it.
  * Mobile defaults to the Map view — the big map is behind the bottom sheet.
+ *
+ * When a later list lands in the same answer (a retry with looser terms,
+ * a get_place after a search, a second ask), this one folds to its header
+ * so the answer reads as one result, not a stack of them.
  */
 
 import { useEffect, useState } from "react";
+import { useAuiState } from "@assistant-ui/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { MapsLocation01Icon, LeftToRightListBulletIcon } from "@hugeicons/core-free-icons";
 import type { ToolResult } from "@/lib/agent/tool-result";
 import type { PlaceListData, PlaceRow } from "@/lib/agent/place-row";
 import { toolLabel } from "@/lib/agent/tool-labels";
 import { useChatMap } from "@/components/chat/chat-map-context";
-import { pastTense } from "@/components/chat/chain-of-thought";
+import { isFilledPlaceList, pastTense } from "@/components/chat/chain-of-thought";
 import { PlaceRowCard } from "@/components/chat/place-row-card";
 import { PlaceMapCarousel } from "@/components/chat/place-map-carousel";
 import { SaveAllToListButton } from "@/components/chat/save-all-to-list-button";
@@ -56,7 +61,16 @@ export function PlaceListRenderer({ toolName, toolCallId, args, result, loading 
   const { registerResultSet, activateSet, activeSetId, selectedKey, setSelected, registerRow, panTo } = useChatMap();
   const [view, setView] = useState<"list" | "map" | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const [open, setOpen] = useState(true);
+  // null = follow the default: open, unless a later list in this message supersedes it.
+  const [openOverride, setOpenOverride] = useState<boolean | null>(null);
+  const superseded = useAuiState((s) => {
+    if (!toolCallId) return false;
+    const msg = s.message as unknown as { parts?: readonly unknown[]; content?: readonly unknown[] };
+    const parts = msg.parts ?? msg.content ?? [];
+    const i = parts.findIndex((p) => (p as { toolCallId?: string }).toolCallId === toolCallId);
+    return i >= 0 && parts.slice(i + 1).some(isFilledPlaceList);
+  });
+  const open = openOverride ?? !superseded;
   const effectiveView = view ?? (isMobile ? "map" : "list");
   const isActive = activeSetId === setId;
 
@@ -117,7 +131,7 @@ export function PlaceListRenderer({ toolName, toolCallId, args, result, loading 
       <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => setOpenOverride(!open)}
           aria-expanded={open}
           className="-mx-1 flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-1 py-1 text-left hover:bg-muted"
         >

@@ -25,7 +25,7 @@ import {
   extractSourcesFromParts,
 } from "@/components/chat/message-sources-context";
 import { Reasoning } from "@/components/chat/reasoning";
-import { Composer } from "@/components/chat/composer";
+import { Composer, QuickAsks } from "@/components/chat/composer";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -42,6 +42,7 @@ import {
 } from "@assistant-ui/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
+  Alert02Icon,
   ArrowDown01Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
@@ -58,7 +59,7 @@ export interface WelcomeConfig {
   subtitle: string;
   /** Optional icon to render above the title */
   icon?: React.ReactNode;
-  /** Prompts shown under the welcome; clicking one sends it. */
+  /** Prompts shown under the welcome; clicking one sends it. Defaults to the quick-ask chips. */
   suggestions?: { title: string; prompt: string }[];
 }
 
@@ -142,30 +143,64 @@ const ThreadWelcome: FC<{ config?: WelcomeConfig }> = ({ config }) => {
           </p>
         </div>
       </div>
-      {config?.suggestions && config.suggestions.length > 0 && (
-        <div className="aui-thread-welcome-suggestions flex flex-col gap-1.5 pb-3">
-          {config.suggestions.map((s, i) => (
-            <ThreadPrimitive.Suggestion key={s.prompt} prompt={s.prompt} send asChild>
-              <Button
-                variant="outline"
-                className="fade-in slide-in-from-bottom-2 animate-in fill-mode-both h-auto justify-start whitespace-normal rounded-xl px-3 py-2 text-left font-normal duration-200"
-                style={{ animationDelay: `${100 + i * 40}ms` }}
-              >
-                {s.title}
-              </Button>
-            </ThreadPrimitive.Suggestion>
-          ))}
-        </div>
-      )}
+      <div className="aui-thread-welcome-suggestions pb-3">
+        {config?.suggestions && config.suggestions.length > 0 ? (
+          <div className="flex flex-col gap-1.5">
+            {config.suggestions.map((s, i) => (
+              <ThreadPrimitive.Suggestion key={s.prompt} prompt={s.prompt} send asChild>
+                <Button
+                  variant="outline"
+                  className="fade-in slide-in-from-bottom-2 animate-in fill-mode-both h-auto justify-start whitespace-normal rounded-xl px-3 py-2 text-left font-normal duration-200"
+                  style={{ animationDelay: `${100 + i * 40}ms` }}
+                >
+                  {s.title}
+                </Button>
+              </ThreadPrimitive.Suggestion>
+            ))}
+          </div>
+        ) : (
+          <QuickAsks wrap />
+        )}
+      </div>
     </div>
   );
 };
 
+/** An error as readable text: a JSON body's `error` field, else the string itself. */
+function errorText(error: unknown): string {
+  const text = error instanceof Error ? error.message : String(error ?? "");
+  try {
+    const body = JSON.parse(text) as { error?: unknown };
+    if (typeof body?.error === "string") return body.error;
+  } catch {
+    // not JSON — show as-is
+  }
+  return text;
+}
+
+/** A turn that failed or was cut off: what happened, the reason, and a retry. */
 const MessageError: FC = () => {
+  const error = useAuiState((s) =>
+    s.message.status?.type === "incomplete" && s.message.status.reason === "error" ? s.message.status.error : undefined,
+  );
   return (
     <MessagePrimitive.Error>
-      <ErrorPrimitive.Root className="aui-message-error-root mt-2 rounded-md border border-destructive bg-destructive/10 p-3 text-destructive text-sm dark:bg-destructive/5 dark:text-red-200">
-        <ErrorPrimitive.Message className="aui-message-error-message line-clamp-2" />
+      <ErrorPrimitive.Root
+        className="aui-message-error-root mt-2 flex items-start gap-2.5 rounded-xl border border-destructive/25 bg-destructive/5 p-3 dark:bg-destructive/10"
+        data-testid="message-error"
+      >
+        <HugeiconsIcon icon={Alert02Icon} className="mt-0.5 size-4 shrink-0 text-destructive" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-medium text-foreground">That answer didn&apos;t finish.</p>
+          <ErrorPrimitive.Message className="aui-message-error-message mt-0.5 line-clamp-2 block text-xs text-muted-foreground">
+            {errorText(error)}
+          </ErrorPrimitive.Message>
+        </div>
+        <ActionBarPrimitive.Reload asChild>
+          <Button variant="outline" size="sm" className="shrink-0" data-testid="button-retry">
+            Retry
+          </Button>
+        </ActionBarPrimitive.Reload>
       </ErrorPrimitive.Root>
     </MessagePrimitive.Error>
   );
@@ -209,7 +244,6 @@ const AssistantMessage: FC = () => {
       <div className="min-w-0">
         <div className="aui-assistant-message-content wrap-break-word text-foreground text-message">
           <SourcesProvider sources={sources}>
-            <PendingIndicator />
             <MessagePrimitive.Unstable_PartsGrouped
               groupingFunction={groupingFunction}
               components={{
@@ -220,6 +254,7 @@ const AssistantMessage: FC = () => {
                   Fallback: ToolPart,
                 },
                 Group: TraceGroup,
+                Empty: PendingPart,
               }}
             />
             <UncitedSources sources={sources} content={content} />
@@ -236,12 +271,15 @@ const AssistantMessage: FC = () => {
   );
 };
 
-/** Before the first part arrives, a shimmer so the send doesn't look dead. */
-const PendingIndicator: FC = () => {
-  const waiting = useMessage((m) => m.status?.type === "running" && m.content.length === 0);
-  if (!waiting) return null;
+/**
+ * Before the first part arrives, a shimmer so the send doesn't look dead.
+ * Passed as Empty so it replaces assistant-ui's default (an empty streaming
+ * text part, which draws its own dot).
+ */
+const PendingPart: FC<{ status: { type: string } }> = ({ status }) => {
+  if (status.type !== "running") return null;
   return (
-    <div className="my-1 flex items-center gap-2 py-1">
+    <div className="my-1 flex items-center gap-2 py-1" data-testid="pending-indicator">
       <span className="shimmer-text text-[13px] font-medium">Thinking</span>
     </div>
   );
