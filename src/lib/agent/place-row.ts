@@ -41,10 +41,39 @@ export type PlaceRow = {
   why?: string;
 };
 
+/** One creator post about a place (get_place's feed). */
+export type PlacePost = {
+  reviewId: string;
+  creator: { id: string; username: string; avatar?: string | null; isFollowed: boolean };
+  caption?: string;
+  mediaUrl?: string;
+  url?: string;
+  postedAt?: string;
+  likes?: number;
+};
+
+/** The creator a get_creator answer is about. */
+export type CreatorHeader = {
+  id: string;
+  username: string;
+  displayName?: string | null;
+  avatar?: string | null;
+  bio?: string | null;
+  isFollowed: boolean;
+  postCount: number;
+  placeCount: number;
+  followerCount: number;
+};
+
 export type PlaceListData = {
   query: string;
   scope: string;
   places: PlaceRow[];
   total: number;
   truncated: boolean;
+  /** get_place: the place's AI summary and recent posts, shown expanded. */
+  aiSummary?: string | null;
+  posts?: PlacePost[];
+  /** get_creator: header above the creator's places. */
+  creator?: CreatorHeader;
 };
