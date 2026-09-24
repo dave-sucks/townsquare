@@ -7,9 +7,13 @@
 import type { ToolContext } from "@/lib/agent/tool-context";
 import { findCreatorsTool } from "./find-creators";
 import { getMyPlacesTool } from "./get-my-places";
+import { searchPlacesTool } from "./search-places";
+import { placesFromPeopleIFollowTool } from "./places-from-people-i-follow";
 
 export function createChatTools(ctx: ToolContext) {
   return {
+    search_places: searchPlacesTool(ctx),
+    places_from_people_i_follow: placesFromPeopleIFollowTool(ctx),
     find_creators: findCreatorsTool(ctx),
     get_my_places: getMyPlacesTool(ctx),
   };

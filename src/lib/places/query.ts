@@ -18,6 +18,7 @@
 import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { getChatCategory } from "@/lib/places/category";
+import { formatPriceLevel } from "@/lib/places/format";
 import type { PlaceRow } from "@/lib/agent/place-row";
 import type { LatLng, MapBounds, ToolContext } from "@/lib/agent/tool-context";
 
@@ -93,23 +94,63 @@ const FILLER = new Set([
   "great", "near", "me", "around", "here", "the", "a", "an", "in", "for", "some",
 ]);
 
-/**
- * "burger spots" → ["burger", "burgers"]; "natural wine" → ["natural wine",
- * "natural wines"]. Filler words drop out; the phrase stays a phrase.
- */
-export function matchTerms(query: string | undefined): string[] {
-  const words = (query ?? "")
+/** Venue nouns that describe the kind of place, not what it's known for. */
+const VENUE = new Set([
+  "bar", "bars", "restaurant", "restaurants", "cafe", "cafes", "café", "cafés",
+  "shop", "shops", "place", "places", "spot", "spots", "joint", "joints",
+]);
+
+function queryWords(query: string | undefined): string[] {
+  return (query ?? "")
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s'&-]/gu, " ")
     .split(/\s+/)
     .filter((w) => w && !FILLER.has(w));
-  if (words.length === 0) return [];
-  const phrase = words.join(" ");
+}
+
+function withPlurals(phrase: string): string[] {
   const variants = new Set([phrase]);
   if (phrase.endsWith("es") && phrase.length > 4) variants.add(phrase.slice(0, -2));
   if (phrase.endsWith("s") && phrase.length > 3) variants.add(phrase.slice(0, -1));
   else variants.add(`${phrase}s`);
   return [...variants];
+}
+
+/**
+ * "burger spots" → ["burger", "burgers"]; "natural wine" → ["natural wine",
+ * "natural wines"]. Filler words drop out; the phrase stays a phrase.
+ */
+export function matchTerms(query: string | undefined): string[] {
+  const words = queryWords(query);
+  return words.length === 0 ? [] : withPlurals(words.join(" "));
+}
+
+/**
+ * A match spec: groups of alternative patterns; a place must hit at least
+ * one pattern from EVERY group.
+ */
+export type TermGroups = string[][];
+
+/**
+ * Looser and looser match specs for a query, for when the exact phrase finds
+ * nothing:
+ *   "natural wine bar" → the phrase
+ *                      → "natural wine" (venue nouns dropped)
+ *                      → "natural" AND "wine", anywhere on the place
+ */
+export function relaxedTermSets(query: string | undefined): TermGroups[] {
+  const words = queryWords(query);
+  if (words.length === 0) return [[]];
+  const specs: TermGroups[] = [[withPlurals(words.join(" "))]];
+  const core = words.filter((w) => !VENUE.has(w));
+  if (core.length > 0 && core.length < words.length) specs.push([withPlurals(core.join(" "))]);
+  const meaningful = core.filter((w) => w.length >= 3);
+  if (meaningful.length > 1) specs.push(meaningful.map(withPlurals));
+  return specs;
+}
+
+function describeSpec(spec: TermGroups): string {
+  return spec.map((g) => g[0]).join(" + ");
 }
 
 // ── Creator scope ───────────────────────────────────────────────────────────
@@ -135,29 +176,32 @@ function reviewScope(scope: CreatorScope, alias = "r"): Prisma.Sql {
  * weigh most, captions next, AI summaries least. Tag slugs are compared with
  * - and _ read as spaces ("dive-bar", "late_night").
  */
-function matchedPlacesCte(terms: string[], scope: CreatorScope): Prisma.Sql {
-  const pats = terms.map((t) => `%${t}%`);
-  const arr = Prisma.sql`ARRAY[${Prisma.join(pats)}]::text[]`;
+function matchedPlacesCte(groups: TermGroups, scope: CreatorScope): Prisma.Sql {
+  const rows = groups.flatMap((g, gi) => g.map((t) => Prisma.sql`(${gi}::int, ${`%${t}%`}::text)`));
   return Prisma.sql`
-    terms AS (SELECT unnest(${arr}) AS pat),
+    terms AS (SELECT * FROM (VALUES ${Prisma.join(rows)}) AS v(grp, pat)),
     hits AS (
-      SELECT pt.place_id, 4 AS w
+      SELECT pt.place_id, 4 AS w, terms.grp
         FROM place_tags pt JOIN tags t ON t.id = pt.tag_id, terms
        WHERE regexp_replace(t.slug, '[-_]', ' ', 'g') ILIKE terms.pat OR t.display_name ILIKE terms.pat
       UNION ALL
-      SELECT a.place_id, 4 AS w
+      SELECT a.place_id, 4 AS w, terms.grp
         FROM place_tag_aggregates a JOIN tags t ON t.id = a.tag_id, terms
        WHERE NOT a.is_suppressed
          AND (regexp_replace(t.slug, '[-_]', ' ', 'g') ILIKE terms.pat OR t.display_name ILIKE terms.pat)
       UNION ALL
-      SELECT p.id AS place_id, 5 AS w FROM places p, terms WHERE p.name ILIKE terms.pat
+      SELECT p.id AS place_id, 5 AS w, terms.grp FROM places p, terms WHERE p.name ILIKE terms.pat
       UNION ALL
-      SELECT r.place_id, 3 AS w FROM reviews r, terms
+      SELECT r.place_id, 3 AS w, terms.grp FROM reviews r, terms
        WHERE r.social_post_caption ILIKE terms.pat ${reviewScope(scope)}
       UNION ALL
-      SELECT p.id AS place_id, 1 AS w FROM places p, terms WHERE p.ai_summary ILIKE terms.pat
+      SELECT p.id AS place_id, 1 AS w, terms.grp FROM places p, terms WHERE p.ai_summary ILIKE terms.pat
     ),
-    matched AS (SELECT place_id, max(w) AS score FROM hits GROUP BY place_id)`;
+    matched AS (
+      SELECT place_id, max(w) AS score FROM hits
+       GROUP BY place_id
+      HAVING count(DISTINCT grp) = ${groups.length}
+    )`;
 }
 
 // ── findPlaces ──────────────────────────────────────────────────────────────
@@ -187,17 +231,37 @@ type CandidateRow = {
   total: number;
 };
 
-export async function findPlaces(opts: FindPlacesOptions): Promise<{ places: PlaceRow[]; total: number }> {
-  const terms = matchTerms(opts.query);
+/**
+ * Search, loosening the query until something matches (see relaxedTermSets).
+ * `matchedOn` says which wording hit, so the tool can tell the model.
+ */
+export async function findPlaces(
+  opts: FindPlacesOptions,
+): Promise<{ places: PlaceRow[]; total: number; matchedOn?: string }> {
+  const specs = relaxedTermSets(opts.query);
+  for (let i = 0; i < specs.length; i++) {
+    const res = await findPlacesWithTerms(opts, specs[i]);
+    if (res.total > 0 || i === specs.length - 1) {
+      return { ...res, ...(i > 0 ? { matchedOn: describeSpec(specs[i]) } : {}) };
+    }
+  }
+  return { places: [], total: 0 };
+}
+
+async function findPlacesWithTerms(
+  opts: FindPlacesOptions,
+  groups: TermGroups,
+): Promise<{ places: PlaceRow[]; total: number }> {
+  const hasTerms = groups.length > 0;
   const scoped = opts.scope.kind !== "all";
   // With a creator scope a place must have a post in scope; otherwise
   // unposted places (imported via someone's save) can still match, ranked
   // below posted ones.
   const statsJoin = scoped ? Prisma.sql`JOIN` : Prisma.sql`LEFT JOIN`;
 
-  const matchCtes = terms.length > 0 ? Prisma.sql`${matchedPlacesCte(terms, opts.scope)},` : Prisma.empty;
-  const matchJoin = terms.length > 0 ? Prisma.sql`JOIN matched m ON m.place_id = p.id` : Prisma.empty;
-  const matchScore = terms.length > 0 ? Prisma.sql`m.score` : Prisma.sql`0`;
+  const matchCtes = hasTerms ? Prisma.sql`${matchedPlacesCte(groups, opts.scope)},` : Prisma.empty;
+  const matchJoin = hasTerms ? Prisma.sql`JOIN matched m ON m.place_id = p.id` : Prisma.empty;
+  const matchScore = hasTerms ? Prisma.sql`m.score` : Prisma.sql`0`;
 
   const order =
     opts.sort === "trending"
@@ -269,7 +333,7 @@ export async function findCreators(opts: {
   limit: number;
 }): Promise<CreatorHit[]> {
   const terms = matchTerms(opts.query);
-  const matchCtes = terms.length > 0 ? Prisma.sql`WITH ${matchedPlacesCte(terms, { kind: "all" })}` : Prisma.empty;
+  const matchCtes = terms.length > 0 ? Prisma.sql`WITH ${matchedPlacesCte([terms], { kind: "all" })}` : Prisma.empty;
   const matchJoin = terms.length > 0 ? Prisma.sql`JOIN matched m ON m.place_id = p.id` : Prisma.empty;
 
   const rows = await prisma.$queryRaw<
@@ -397,7 +461,7 @@ export async function hydratePlaceRows(
   const places = await prisma.place.findMany({
     where: { id: { in: ids } },
     select: {
-      id: true, googlePlaceId: true, name: true, neighborhood: true, locality: true,
+      id: true, googlePlaceId: true, name: true, formattedAddress: true, neighborhood: true, locality: true,
       lat: true, lng: true, primaryType: true, types: true, priceLevel: true, photoRefs: true,
     },
   });
@@ -490,12 +554,13 @@ export async function hydratePlaceRows(
       placeId: p.id,
       googlePlaceId: p.googlePlaceId,
       name: p.name,
+      address: p.formattedAddress,
       emoji: save?.emoji ?? null,
       category: getChatCategory(p.primaryType, toStringArray(p.types)) || undefined,
       neighborhood: p.neighborhood ?? p.locality ?? null,
       lat: p.lat,
       lng: p.lng,
-      priceLevel: p.priceLevel,
+      priceLevel: formatPriceLevel(p.priceLevel),
       photoRef,
       tags: (tagsBy.get(id) ?? []).map((t) => ({ slug: t.slug, displayName: t.display_name })),
       creators: cs.slice(0, 5).map((c) => ({

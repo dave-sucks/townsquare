@@ -10,6 +10,8 @@ export type PlaceRow = {
   placeId: string | null;
   googlePlaceId: string;
   name: string;
+  /** Google formatted address (the save controls need it). */
+  address?: string;
   emoji?: string | null;
   /** Humanized primaryType (lib/places/category.ts). */
   category?: string;
