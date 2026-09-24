@@ -16,7 +16,7 @@
  * script in chat.
  */
 
-import { forwardRef, useState } from "react";
+import { forwardRef, useMemo, useState } from "react";
 import Link from "next/link";
 import { formatDistanceToNowStrict } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
@@ -188,10 +188,22 @@ function PostPreview({ post }: { post: NonNullable<PlaceRow["latestPost"]> }) {
 
 export const PlaceRowCard = forwardRef<
   HTMLDivElement,
-  { place: PlaceRow; selected: boolean; onSelect: () => void }
->(function PlaceRowCard({ place, selected, onSelect }, ref) {
+  {
+    place: PlaceRow;
+    selected: boolean;
+    onSelect: () => void;
+    /** The deep-dive view shows the post feed below instead. */
+    hidePost?: boolean;
+  }
+>(function PlaceRowCard({ place, selected, onSelect, hidePost = false }, ref) {
   const live = useSavedPlace(place.googlePlaceId);
   const emoji = live.emoji ?? place.emoji;
+  // SaveToListDropdown syncs its optimistic list state from this prop in an
+  // effect keyed on the array itself, so hand it one stable array per set of
+  // ids — a fresh array each render re-runs that effect every render (seen
+  // 2026-09-24 as "Maximum update depth exceeded" mid-stream).
+  const listIdsKey = (live.listIds ?? place.mySave?.listIds ?? []).join(",");
+  const listIds = useMemo(() => (listIdsKey ? listIdsKey.split(",") : []), [listIdsKey]);
   const meta = [place.category, formatPriceLevel(place.priceLevel), place.neighborhood, place.distanceMi != null ? `${place.distanceMi} mi` : null]
     .filter(Boolean)
     .join(" · ");
@@ -240,7 +252,7 @@ export const PlaceRowCard = forwardRef<
                 photoRefs: place.photoRef ? [place.photoRef] : null,
               }}
               savedPlace={live.savedPlace}
-              listsContainingPlace={live.listIds ?? place.mySave?.listIds ?? []}
+              listsContainingPlace={listIds}
               showLabel={false}
               variant="ghost"
               size="icon"
@@ -262,7 +274,7 @@ export const PlaceRowCard = forwardRef<
             ))}
           </div>
         )}
-        {place.latestPost && <PostPreview post={place.latestPost} />}
+        {place.latestPost && !hidePost && <PostPreview post={place.latestPost} />}
       </div>
     </div>
   );

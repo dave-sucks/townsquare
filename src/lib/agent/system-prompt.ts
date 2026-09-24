@@ -27,6 +27,11 @@ function staticPrompt(toolNames: Set<string>): string {
       "Our place database isn't connected to this chat yet. Don't invent places or creators, and don't claim to have searched Townsquare's posts. For place questions, use the web and say that's where the answer came from.",
     );
   }
+  if (has("get_place") || has("get_creator")) {
+    order.push(
+      "For one named place, `get_place` shows what creators said about it; for one creator, `get_creator` shows where they've been. Use the placeIds from earlier results when following up.",
+    );
+  }
   if (has("search_google_places")) {
     order.push("Use `search_google_places` only when our database has nothing good for the ask.");
   }
@@ -43,7 +48,7 @@ ${order.map((l) => `- ${l}`).join("\n")}
 "This area", "around here" and "near me" mean the map view and location the tools already have. Don't ask where the user is when a map area exists.
 
 ## Questions
-Ask a clarifying question only when the request can't be run at all. Otherwise search, show results, and offer to narrow.
+Ask a clarifying question only when the request can't be run at all. Otherwise search, show results, and offer to narrow.${has("ask_question") ? " When you do ask, use `ask_question` with 2–5 quick replies instead of listing options in prose; your turn ends there." : ""}
 
 ## Writing
 - After a place list renders, write 2–3 sentences that add what the list can't show: who posted it, what they said, why it fits. Don't restate the list and never output JSON.

@@ -25,6 +25,7 @@ import { pastTense } from "@/components/chat/chain-of-thought";
 import { PlaceRowCard } from "@/components/chat/place-row-card";
 import { PlaceMapCarousel } from "@/components/chat/place-map-carousel";
 import { SaveAllToListButton } from "@/components/chat/save-all-to-list-button";
+import { CreatorHeaderCard, PlaceBuzz } from "@/components/chat/place-detail-parts";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -100,6 +101,8 @@ export function PlaceListRenderer({ toolName, toolCallId, args, result, loading 
     );
   }
 
+  // get_place: one place, its summary and posts — no toggle, no list chrome.
+  const isDetail = places.length === 1 && Array.isArray(data?.posts);
   const shown = expanded ? places : places.slice(0, PAGE);
   const hidden = places.length - shown.length;
   const count = data?.total && data.total > places.length ? `${places.length} of ${data.total}` : `${places.length}`;
@@ -138,7 +141,7 @@ export function PlaceListRenderer({ toolName, toolCallId, args, result, loading 
             <path d="M6 9l6 6 6-6" />
           </svg>
         </button>
-        {open && (
+        {open && !isDetail && (
           <div className="flex shrink-0 items-center rounded-lg bg-muted p-0.5" role="tablist" aria-label="View">
             {(["list", "map"] as const).map((v) => (
               <button
@@ -160,8 +163,24 @@ export function PlaceListRenderer({ toolName, toolCallId, args, result, loading 
         )}
       </div>
 
-      {open && (
+      {open && isDetail && (
+        <div className="flex flex-col gap-1.5">
+          <div className="-mx-2">
+            <PlaceRowCard
+              ref={(el) => registerRow(setId, places[0].googlePlaceId, el)}
+              place={places[0]}
+              selected={isActive && selectedKey === places[0].googlePlaceId}
+              onSelect={() => select(places[0], "list")}
+              hidePost
+            />
+          </div>
+          <PlaceBuzz aiSummary={data?.aiSummary} posts={data?.posts ?? []} />
+        </div>
+      )}
+
+      {open && !isDetail && (
         <>
+          {data?.creator && <CreatorHeaderCard creator={data.creator} />}
           {effectiveView === "map" ? (
             <PlaceMapCarousel
               places={places}

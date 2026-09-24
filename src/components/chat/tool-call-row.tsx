@@ -7,16 +7,19 @@
  * Renderer surface is intentionally minimal:
  *   "tool-ui"      → ToolUIRenderer (the ONE generic renderer)
  *   "place-list"   → PlaceListRenderer (the loud one, synced with the map)
- *   "ask-question" → AskQuestionRenderer (phase 4; ToolUIRenderer until then)
+ *   "ask-question" → AskQuestionRenderer (Tool UI Question Flow)
  *
  * Do NOT add a new renderer for a list-shaped tool. Return `ui: "tool-ui"`
  * and `data.items: ToolUIItem[]` from the tool and let ToolUIRenderer handle it.
  */
 
+import { useEffect, useRef } from "react";
 import type { ToolCallMessagePartComponent } from "@assistant-ui/react";
+import { queryClient } from "@/lib/query-client";
 import { normalizeToolResult, inferToolUI, type ToolResult } from "@/lib/agent/tool-result";
 import { ToolUIRenderer } from "@/components/chat/renderers/tool-ui-renderer";
 import { PlaceListRenderer } from "@/components/chat/renderers/place-list-renderer";
+import { AskQuestionRenderer } from "@/components/chat/renderers/ask-question-renderer";
 import { ToolErrorRow } from "@/components/chat/tool-error-row";
 import { isEmptyPlaceList } from "@/components/chat/chain-of-thought";
 
@@ -29,7 +32,30 @@ interface Props {
   loading: boolean;
 }
 
+/** Tools that write the user's saves/lists; the app's save state refreshes when they finish. */
+const WRITE_TOOLS = new Set(["save_place", "add_to_list"]);
+
+/**
+ * When a write tool finishes in this session (not on replay), refresh the
+ * queries every save control reads, so they update without a reload.
+ */
+function useRefreshAfterWrite(toolName: string, done: boolean) {
+  const sawRunning = useRef(!done);
+  useEffect(() => {
+    if (!done) {
+      sawRunning.current = true;
+      return;
+    }
+    if (!WRITE_TOOLS.has(toolName) || !sawRunning.current) return;
+    sawRunning.current = false;
+    for (const key of ["saved-places", "lists", "list", "collections", "place-detail", "user"]) {
+      queryClient.invalidateQueries({ queryKey: [key] });
+    }
+  }, [toolName, done]);
+}
+
 export function ToolCallRow({ toolName, toolCallId, args, rawResult, loading }: Props) {
+  useRefreshAfterWrite(toolName, rawResult != null);
   const result: ToolResult =
     rawResult != null
       ? normalizeToolResult(toolName, rawResult)
@@ -57,6 +83,7 @@ export function ToolCallRow({ toolName, toolCallId, args, rawResult, loading }: 
         <PlaceListRenderer toolName={toolName} toolCallId={toolCallId} args={args} result={result} loading={loading} />
       );
     case "ask-question":
+      return <AskQuestionRenderer toolName={toolName} result={result} loading={loading} />;
     case "tool-ui":
     default:
       return <ToolUIRenderer toolName={toolName} args={args} result={result} loading={loading} />;

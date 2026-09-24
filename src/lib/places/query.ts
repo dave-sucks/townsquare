@@ -619,3 +619,128 @@ export function summarizePlaces(places: PlaceRow[], lead: string): string {
   });
   return `${lead}:\n${lines.join("\n")}`;
 }
+
+// ── Deep dives: one place, one creator ──────────────────────────────────────
+
+/**
+ * A place by Townsquare id, Google id, or name (optionally in an area).
+ * Name matches prefer the most-posted place; `alternatives` names the next
+ * few so the model can ask "which one?" when it matters.
+ */
+export async function resolvePlace(opts: {
+  placeId?: string;
+  name?: string;
+  area?: ResolvedArea;
+}): Promise<{ id: string; alternatives: string[] } | null> {
+  if (opts.placeId) {
+    const p = await prisma.place.findFirst({
+      where: { OR: [{ id: opts.placeId }, { googlePlaceId: opts.placeId }] },
+      select: { id: true },
+    });
+    if (p) return { id: p.id, alternatives: [] };
+  }
+  const name = opts.name?.trim();
+  if (!name) return null;
+  const area = opts.area ?? { kind: "anywhere" as const, label: "anywhere" };
+  const rows = await prisma.$queryRaw<{ id: string; name: string; neighborhood: string | null }[]>(Prisma.sql`
+    SELECT p.id, p.name, p.neighborhood
+      FROM places p
+      LEFT JOIN (SELECT place_id, count(*) AS n FROM reviews GROUP BY place_id) s ON s.place_id = p.id
+     WHERE p.name ILIKE ${`%${name}%`} ${areaFilter(area)}
+     ORDER BY (lower(p.name) = lower(${name})) DESC, coalesce(s.n, 0) DESC, length(p.name)
+     LIMIT 4`);
+  if (rows.length === 0) return null;
+  return {
+    id: rows[0].id,
+    alternatives: rows.slice(1).map((r) => `${r.name}${r.neighborhood ? ` (${r.neighborhood})` : ""}`),
+  };
+}
+
+export type PostRow = {
+  reviewId: string;
+  creator: { id: string; username: string; avatar: string | null; isFollowed: boolean };
+  caption?: string;
+  mediaUrl?: string;
+  url?: string;
+  postedAt?: string;
+  likes?: number;
+};
+
+/** The latest creator posts about a place, newest first. */
+export async function getPlacePosts(placeId: string, viewerId: string, limit = 8): Promise<PostRow[]> {
+  const rows = await prisma.$queryRaw<
+    { review_id: string; user_id: string; username: string | null; first_name: string | null; avatar: string | null; followed: boolean; caption: string | null; media_url: string | null; url: string | null; posted_at: Date | null; likes: number | null }[]
+  >(Prisma.sql`
+    SELECT r.id AS review_id, u.id AS user_id, u.username, u.first_name, u.profile_image_url AS avatar,
+           EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = ${viewerId} AND f.following_id = u.id) AS followed,
+           r.social_post_caption AS caption, r.social_post_media_url AS media_url, r.instagram_url AS url,
+           coalesce(r.social_post_posted_at, r.created_at) AS posted_at, r.social_post_likes AS likes
+      FROM reviews r JOIN users u ON u.id = r.user_id
+     WHERE r.place_id = ${placeId}
+     ORDER BY coalesce(r.social_post_posted_at, r.created_at) DESC
+     LIMIT ${limit}`);
+  return rows.map((r) => ({
+    reviewId: r.review_id,
+    creator: { id: r.user_id, username: r.username ?? r.first_name ?? "creator", avatar: r.avatar, isFollowed: r.followed },
+    caption: r.caption ?? undefined,
+    mediaUrl: r.media_url ?? undefined,
+    url: r.url ?? undefined,
+    postedAt: r.posted_at ? new Date(r.posted_at).toISOString() : undefined,
+    likes: r.likes ?? undefined,
+  }));
+}
+
+/** A creator by @handle (username or Instagram handle), with their stats. */
+export async function getCreatorByHandle(handle: string, viewerId: string) {
+  const h = handle.trim().replace(/^@/, "");
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { username: { equals: h, mode: "insensitive" } },
+        { instagramHandle: { equals: h, mode: "insensitive" } },
+      ],
+    },
+    select: { id: true, username: true, firstName: true, lastName: true, profileImageUrl: true, bio: true },
+  });
+  if (!user) return null;
+  const [postCount, places, followerCount, followed] = await Promise.all([
+    prisma.review.count({ where: { userId: user.id } }),
+    prisma.review.findMany({ where: { userId: user.id }, distinct: ["placeId"], select: { placeId: true } }),
+    prisma.follow.count({ where: { followingId: user.id } }),
+    prisma.follow.findFirst({ where: { followerId: viewerId, followingId: user.id }, select: { id: true } }),
+  ]);
+  return {
+    id: user.id,
+    username: user.username ?? h,
+    displayName: [user.firstName, user.lastName].filter(Boolean).join(" ") || null,
+    avatar: user.profileImageUrl,
+    bio: user.bio,
+    isFollowed: Boolean(followed),
+    postCount,
+    placeCount: places.length,
+    followerCount,
+  };
+}
+
+/** A creator's places, most recently posted first. */
+export async function getCreatorPlaces(opts: {
+  creatorId: string;
+  viewerId: string;
+  area: ResolvedArea;
+  limit: number;
+  location?: LatLng;
+}): Promise<{ places: PlaceRow[]; total: number }> {
+  const rows = await prisma.$queryRaw<{ place_id: string; total: number }[]>(Prisma.sql`
+    SELECT r.place_id, (count(*) OVER ())::int AS total
+      FROM reviews r JOIN places p ON p.id = r.place_id
+     WHERE r.user_id = ${opts.creatorId} ${areaFilter(opts.area)}
+     GROUP BY r.place_id
+     ORDER BY max(coalesce(r.social_post_posted_at, r.created_at)) DESC
+     LIMIT ${opts.limit}`);
+  const places = await hydratePlaceRows(rows.map((r) => r.place_id), {
+    userId: opts.viewerId,
+    scope: { kind: "creator", creatorId: opts.creatorId },
+    location: opts.location,
+  });
+  return { places, total: rows[0]?.total ?? 0 };
+}
