@@ -1,14 +1,12 @@
 /**
  * Persisted chat → UIMessage[] for replaying a conversation via useChatRuntime.
  *
- * Ported from Hindsight lib/agent/convert-messages.ts. Two sources:
- *   - Conversation.uiMessages: the UIMessage[] /api/chat writes in onFinish.
- *     Hindsight persists [...clientUIMessages, ...responseModelMessages], so
- *     its converter also rebuilds UIMessages from ModelMessages; that branch
- *     is kept so a thread in either shape opens.
- *   - Legacy ChatMessage rows from the old /chat (flat text + a places blob):
- *     legacyChatMessagesToUIMessages() turns each places blob into a
- *     synthesized tool-search_places part so old chats render in the new UI.
+ * Ported from Hindsight lib/agent/convert-messages.ts. The source is
+ * Conversation.uiMessages, the UIMessage[] /api/chat writes in onFinish.
+ * Hindsight persists [...clientUIMessages, ...responseModelMessages], so its
+ * converter also rebuilds UIMessages from ModelMessages; that branch is kept
+ * so a thread in either shape opens. (Chats from the old /chat were
+ * backfilled into uiMessages before ChatMessage was dropped.)
  *
  * Output uses AI SDK v6 UIMessage format where tool parts are:
  *   { type: "tool-{toolName}", toolCallId, state: "output-available", input, output }
@@ -23,8 +21,6 @@
  */
 
 import type { UIMessage } from "ai";
-import type { PlaceRow } from "./place-row";
-import { getChatCategory } from "@/lib/places/category";
 
 /**
  * Ids for the messages the writer never gave one to.
@@ -275,91 +271,4 @@ export function convertPersistedToUIMessages(raw: unknown[]): UIMessage[] {
   }
 
   return result;
-}
-
-// ─── Legacy ChatMessage rows (old /chat) ─────────────────────────────────────
-
-/** A place as the old route stored it in ChatMessage.places. */
-type LegacyPlace = {
-  googlePlaceId: string;
-  name: string;
-  formattedAddress?: string;
-  lat: number;
-  lng: number;
-  types?: string[] | null;
-  primaryType?: string | null;
-  priceLevel?: string | null;
-  photoRef?: string | null;
-  photoRefs?: string[] | null;
-  emoji?: string | null;
-  dbId?: string | null;
-  neighborhood?: string | null;
-  tags?: { slug: string; displayName: string }[] | null;
-};
-
-function isLegacyPlace(p: unknown): p is LegacyPlace {
-  if (!p || typeof p !== "object") return false;
-  const o = p as Record<string, unknown>;
-  return typeof o.googlePlaceId === "string" && typeof o.name === "string" &&
-    typeof o.lat === "number" && typeof o.lng === "number";
-}
-
-function legacyPlaceToRow(p: LegacyPlace): PlaceRow {
-  return {
-    kind: "place",
-    placeId: p.dbId ?? null,
-    googlePlaceId: p.googlePlaceId,
-    name: p.name,
-    emoji: p.emoji ?? null,
-    category: getChatCategory(p.primaryType ?? null, p.types ?? []) || undefined,
-    neighborhood: p.neighborhood ?? null,
-    lat: p.lat,
-    lng: p.lng,
-    priceLevel: p.priceLevel ?? null,
-    photoRef: p.photoRef ?? p.photoRefs?.[0] ?? null,
-    tags: (p.tags ?? []).slice(0, 3).map((t) => ({ slug: t.slug, displayName: t.displayName })),
-    creators: [],
-  };
-}
-
-export type LegacyChatMessage = {
-  id: string;
-  role: string;
-  content: string;
-  places: unknown;
-};
-
-/**
- * Old conversations: `content` → a text part; `places` → a synthesized
- * tool-search_places part (output-available, place-list envelope) placed
- * before the text, the order the new agent produces them in.
- */
-export function legacyChatMessagesToUIMessages(rows: LegacyChatMessage[]): UIMessage[] {
-  return rows.map((row) => {
-    const parts: UIMessage["parts"] = [];
-    const places = Array.isArray(row.places) ? row.places.filter(isLegacyPlace) : [];
-    if (row.role === "assistant" && places.length > 0) {
-      const placeRows = places.map(legacyPlaceToRow);
-      parts.push(
-        makeToolPart({
-          toolName: "search_places",
-          toolCallId: `legacy-${row.id}`,
-          input: { query: "" },
-          state: "output-available",
-          output: {
-            ok: true,
-            ui: "place-list",
-            summary: placeRows.map((p) => `${p.name}${p.neighborhood ? ` (${p.neighborhood})` : ""}`).join("; "),
-            data: { query: "", scope: "legacy", places: placeRows, total: placeRows.length, truncated: false },
-          },
-        }),
-      );
-    }
-    if (row.content) parts.push({ type: "text", text: row.content });
-    return {
-      id: row.id,
-      role: row.role === "assistant" ? "assistant" : "user",
-      parts,
-    };
-  });
 }
