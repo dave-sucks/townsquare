@@ -1,6 +1,6 @@
 # Townsquare Engine — Master Build Spec
 
-> Snapshot of the living doc at https://claude.ai/code/artifact/ff427eb2-d67e-49c7-b27b-401f6f02e907 (rev 20). This file is the build source.
+> Snapshot of the living doc at https://claude.ai/code/artifact/ff427eb2-d67e-49c7-b27b-401f6f02e907 (rev 31). This file is the build source.
 
 Sep 25, 2026 · @Dave
 
@@ -17,6 +17,32 @@ What gets built:
 - **Search that uses it.** The chat agent and the map read the new structured data: per-place excerpts, controlled tags and real neighborhood boundaries.
 
 Nothing that works today may break, the UI clones existing patterns, and every phase ships as one verified PR.
+
+## V1 scope: build this now
+
+V1 rebuilds the existing pipeline into the best version of itself, in one session. This section overrides the rest of the doc: anything listed under Later is designed below but not built yet.
+
+**In V1**
+
+- **Reliable runtime.** Inngest, a run ledger with a trace of every stage, and cost per post.
+- **Rebuilt sync.** Asynchronous Apify with incremental daily syncs. Fixed media extraction (single-image posts, duplicated carousels). Images copied to storage so they keep loading. No video or audio processing.
+- **Text-only Read agent.** Caption, location tag, tagged accounts, @mentions, hashtags, Instagram's alt text, and the creator's own comment replies. No images or transcripts.
+- **The other stages.** Resolve (scored Google matching, agent when unsure), Tag, Aggregate, Summarize.
+- **Mentions.** One per place, each with its own excerpt, dishes, verdict and score.
+- **One tag source everywhere.** Taxonomy v2 seeded as data, with definitions, synonyms and merges.
+- **Admin role and admin mode.** Mention editor, place admin panel, creator sync strip.
+- **Internal pages.** Sources (replacing `/admin/import`), Runs with the trace view, a Review queue (Confirm place, Fix extraction, Failed run), and Agents (prompt editor with versions, a playground run on any post, promote and rollback).
+- **Corrections become examples.** Every correction is saved as an example, and examples feed the prompts as few-shots.
+- **Cutover.** The old worker and its six gpt-4o-mini prompts are retired.
+
+**Later (not in V1)**
+
+- The Media stage's video frames, the Transcribe stage, and images sent to Read.
+- Evals, golden set, spot checks and the promotion rule.
+- Taxonomy page and suggestions inbox.
+- Neighborhood polygons and the search rewrite in `query.ts` (the chat keeps its current search, reading the new tag source).
+
+Without images and transcripts, the estimated cost drops to about $0.015 per post. `OPENAI_API_KEY` isn't needed for V1.
 
 ## How to use this doc
 
@@ -123,7 +149,7 @@ Import by handle works as a proof of concept: 9 creators, 678 posts fetched, 408
 | Two summarizers overwrite each other | `autoSummaryPlace` and `REFRESH_PLACE_SUMMARY` both write `ai_summary`; errors are swallowed | Summarize stage |
 | Counters drift | Failed counts every attempt; jobs are marked complete before posts are processed | Run ledger |
 | Neighborhoods are unreliable | 169 places have none; "Manhattan" and "New York" appear as neighborhoods | Neighborhoods |
-| No admin role, weak guards | Any signed-in user can import; an open image proxy at `/api/proxy-image`; `next.config.ts` copies the server Maps key into the browser bundle | Phase 0 |
+| No admin role, weak guards | Any signed-in user can import; an open image proxy at `/api/proxy-image`; `next.config.ts` copies the server Maps key into the browser bundle | Phase 1 |
 | Nothing is visible or correctable | No run history, no prompt versions, no evals, no cost tracking; the only correction is picking a place for an unresolved post | The whole engine |
 
 The six current prompts are listed in the Appendix. All run on gpt-4o-mini through Replit-era OpenAI variables; the engine replaces every one of them.
@@ -182,7 +208,7 @@ Admin mode turns the product itself into the internal tool. It is the only way a
 - **Inline edits.** In admin mode, tag chips show a remove control on hover and a trailing "Add tag" chip that opens a taxonomy search popover. Long text (a summary, an excerpt) uses Edit, Cancel and Save around a textarea.
 - **Everything leaves a trail.** Every admin write goes through the single write function for that concept, which records an audit row and, when it corrects an agent, saves an Example.
 
-Phase 0 captures baseline screenshots of every product page into `docs/engine/screens/` (see Appendix). New screens must match them.
+Phase 1 captures baseline screenshots of every product page into `docs/engine/screens/` (see Appendix). New screens must match them.
 
 ## Architecture
 
@@ -273,7 +299,7 @@ All migrations are additive, and a mention is stored as a `reviews` row. Every p
 
 ### Migrations
 
-- **Phase 0 baselines Prisma Migrate.** Generate `prisma/migrations/0000_baseline` from the current schema with `prisma migrate diff --from-empty`, and add `scripts/migrate-deploy.mjs`. The script runs only when `VERCEL_ENV=production`: if `_prisma_migrations` is missing it marks the baseline applied, then runs `prisma migrate deploy`. The build becomes `node scripts/migrate-deploy.mjs && prisma generate && next build`.
+- **Phase 1 baselines Prisma Migrate.** Generate `prisma/migrations/0000_baseline` from the current schema with `prisma migrate diff --from-empty`, and add `scripts/migrate-deploy.mjs`. The script runs only when `VERCEL_ENV=production`: if `_prisma_migrations` is missing it marks the baseline applied, then runs `prisma migrate deploy`. The build becomes `node scripts/migrate-deploy.mjs && prisma generate && next build`.
 - **Additive only:** new tables, columns, enum values and indexes. Relaxing a unique constraint is allowed. Dropping or renaming is not.
 - **Guard Supabase-only SQL.** Anything that needs a Supabase-only extension goes in a `DO` block that checks `pg_available_extensions` first, so the same migrations also run on plain local Postgres.
 
@@ -551,19 +577,14 @@ The chat agent and the map read the engine's output through `src/lib/places/quer
 
 ## Build plan
 
-Nine phases, one PR each, in this order. Each phase lists what it ships and what must be shown in its PR before merging.
+V1 is four phases, one PR each, built in one session in this order. Each phase lists what it ships and what must be shown in its PR before merging.
 
 | # | Phase | Ships | Acceptance (shown in the PR) |
 | --- | --- | --- | --- |
-| 0 | Foundations | Dev login; `ADMIN_EMAILS` + `isAdmin` on every `/api/admin/*` and `/admin/*`; admin mode switch, provider, nav group and amber dot; `StatusDot` extracted; Prisma Migrate baseline + `migrate-deploy.mjs`; Inngest client and serve route; `@anthropic-ai/sdk`, `llm.ts`, `pricing.ts`; `audit_log`; `scripts/screenshots.mjs`; baseline screenshots of every page in `docs/engine/screens/` | Screenshots of admin mode on and off; a non-admin gets 403 from `/api/admin/*`; production build runs the migrate script as a no-op |
-| 1 | Sources, sync, media | `sources`, `post_media`, sync columns; `engine/source.sync` with async Apify; media stage with bucket, frames sheet and fixes for single-image and carousel posts; Sources page; `/admin/import` redirect; creator profile admin strip | A 5-post sync in dev from one source; mirrored images and a frame sheet in storage; the Sources page and profile strip at both widths |
-| 2 | Pipeline and runs | `engine_runs`, `engine_steps`, `agents`, `agent_versions` seeded with v1; stages 3 to 8; mention columns on `reviews` and the new unique; Runs pages with the trace view; field-contract test | The 60-post dev sample processed end to end with cost per post reported; a roundup post split into one mention per place; the run trace screenshot; every chat tool still answers |
-| 3 | Admin mode editing | Mention editor; place admin panel (edit, hide, merge, tags, summary); post pencils; all writes through `write/` with audit rows and examples | Edit a mention, change a place, merge two places, edit tags; audit rows and examples exist for each |
-| 4 | Review and golden set | `review_items`, `examples`; review rules; Review page; builder-drafted golden set for the 60-post sample; few-shot selection | Queue shows every kind; resolving an item saves an example; the 60 drafts wait as Confirm example items |
-| 5 | Agents, playground, evals | Agents pages, prompt editor, playground, `eval_runs`, `eval_results`, metrics, promote and rollback, live precision | An eval of each v1 agent on the draft golden set with scores; a draft prompt compared side by side; promote then roll back |
-| 6 | Taxonomy | Tag definitions, synonyms, status, merges; v2 seed; suggestions inbox; Taxonomy page; Tag prompt built from the database; re-tag action | v2 taxonomy live; a suggestion accepted and one mapped to a synonym; re-tag of the dev sample |
-| 7 | Neighborhoods and search | `neighborhoods` with NYC polygons; place assignment and backfill; `search_document`; `query.ts` rewrite; aggregates as the single tag source; excerpts in chat previews; known-for row on place pages | Search regression before and after; "burgers in the West Village" returns only places inside the polygon; every chat tool answers; place page screenshots |
-| 8 | Cutover | Admin actions "Refresh media" and "Re-process all" with progress and cost estimate; old worker, poller and job handlers removed; `persistGooglePlaces` sends `engine/place.changed`; `autoTagPlace` and `autoSummaryPlace` retired | The whole must-not-break checklist passes; the old pipeline code is gone; a Cutover note for Dave with the cost estimate and the button to press |
+| 1 | Foundations | Dev login; `ADMIN_EMAILS` + `isAdmin` on every `/api/admin/*` and `/admin/*`; admin mode switch, provider, nav group and amber dot; `StatusDot` extracted; Prisma Migrate baseline + `migrate-deploy.mjs`; Inngest client and serve route; `@anthropic-ai/sdk`, `llm.ts`, `pricing.ts`; `audit_log`; `scripts/screenshots.mjs` and baseline screenshots | Admin mode on and off; a non-admin gets 403 from `/api/admin/*`; production build runs the migrate script as a no-op |
+| 2 | Pipeline | `sources`, `post_media` (images only), `engine_runs`, `engine_steps`, `agents`, `agent_versions` seeded with v1; mention columns on `reviews` and the new unique; async incremental sync with the media fixes and image copying; text-only Read, Resolve, Tag, Aggregate, Summarize; taxonomy v2 as a data migration; aggregates plus manual overrides as the one tag source for map, place page and chat; excerpts in previews and a known-for row; field-contract test | The 60-post dev sample processed end to end with cost per post; a roundup split into one mention per place; the same tags on map, place page and chat; every chat tool still answers |
+| 3 | Admin tools | Sources page with `/admin/import` redirect; creator profile sync strip; Runs list and trace; mention editor; place admin panel; Review queue; Agents page with prompt editor, versions, playground, promote and rollback; examples saved on every correction and used as few-shots | Screenshots of each screen at both widths; an edited mention leaves an audit row and an example; a draft prompt run in the playground, promoted, then rolled back |
+| 4 | Cutover | "Refresh media" and "Re-process all" admin actions with progress and a cost estimate; old worker, poller and job handlers removed; `persistGooglePlaces` sends `engine/place.changed`; `autoTagPlace` and `autoSummaryPlace` retired | The whole must-not-break checklist passes; the old pipeline code is gone; a note for Dave with the cost estimate and which button to press |
 
 After each merge, reply in the PR with what Dave should look at and anything blocked on him.
 
@@ -628,21 +649,21 @@ You're building the Townsquare Engine: the system that turns creators' Instagram
 The full spec is docs/ENGINE_SPEC.md in this repo. Read all of it before writing code. It is decision-free on purpose: follow it as written, in phase order, and don't stop to ask me questions. Where it's silent, choose the option that reuses the most existing code and note the choice in the PR.
 
 How to work:
-- Run scripts/dev-db.sh first (Phase 0 creates it) and develop against the local copy. Production data is read-only for you.
+- Run scripts/dev-db.sh first (Phase 1 creates it) and develop against the local copy. Production data is read-only for you.
 - One PR per phase (branch engine/phase-N-<slug>). Merge a PR yourself once tsc, the build and the Vercel check pass and the PR shows the phase's acceptance checks with desktop and mobile screenshots taken with the dev login.
 - Run the must-not-break checklist before every merge. The chat at /chat must keep working the whole way through.
 - The design contract is strict. Clone existing components and patterns; add no new colors, fonts or UI libraries. Admin editing lives on the product pages in admin mode.
 - Budget: $50 of model and API spend across the build. Report spend in each PR. Never run re-processing, re-scraping or backfills against production; build the button and I'll press it.
 - If something needs me (a key, a setting), finish everything else, put the blocker at the top of the PR, and keep going with the next unblocked phase.
 
-Start with Phase 0.
+Build V1 only (see the "V1 scope" section; anything marked Later is out). Work through all four phases in this session, starting with Phase 1.
 ```
 
 ## Appendix
 
-### Baseline screenshots (Phase 0)
+### Baseline screenshots (Phase 1)
 
-`scripts/screenshots.mjs` captures each route at 1440×900 and 390×844 with the dev login into `docs/engine/screens/<route>-<width>.png`. It runs before Phase 0 changes anything and again in every PR that touches UI.
+`scripts/screenshots.mjs` captures each route at 1440×900 and 390×844 with the dev login into `docs/engine/screens/<route>-<width>.png`. It runs before Phase 1 changes anything and again in every PR that touches UI.
 
 Routes:
 
