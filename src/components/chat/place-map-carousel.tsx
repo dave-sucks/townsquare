@@ -11,6 +11,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { framingPoints } from "@/lib/geo/framing";
 import Link from "next/link";
 import type { PlaceRow } from "@/lib/agent/place-row";
 import { Map, MapMarker, MarkerContent, useMap } from "@/components/ui/map";
@@ -38,7 +39,7 @@ function FitAndStyle({ places, selectedKey }: { places: PlaceRow[]; selectedKey:
       return;
     }
     const b = new google.maps.LatLngBounds();
-    places.forEach((p) => b.extend({ lat: p.lat, lng: p.lng }));
+    framingPoints(places, (p) => p).forEach((p) => b.extend({ lat: p.lat, lng: p.lng }));
     // Bottom padding leaves room for the card row over the map.
     map.fitBounds(b, { top: 28, right: 28, bottom: 108, left: 28 });
     // eslint-disable-next-line react-hooks/exhaustive-deps

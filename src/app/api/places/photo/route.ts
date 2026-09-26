@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { refreshStalePhotoRef } from "@/lib/places/google";
 
 export async function GET(request: NextRequest) {
   const photoRef = request.nextUrl.searchParams.get("photoRef");
@@ -14,12 +15,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Google Maps API key not configured" }, { status: 500 });
     }
 
-    const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxWidth}&photo_reference=${encodeURIComponent(photoRef)}&key=${apiKey}`;
-    
-    const response = await fetch(photoUrl);
-    
+    const photoFor = (ref: string) =>
+      fetch(`https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxWidth}&photo_reference=${encodeURIComponent(ref)}&key=${apiKey}`);
+
+    let response = await photoFor(photoRef);
+
+    // Stored references expire; refresh the place's references and retry once.
     if (!response.ok) {
-      return NextResponse.json({ error: "Failed to fetch photo" }, { status: 500 });
+      const fresh = await refreshStalePhotoRef(photoRef).catch((e) => {
+        console.error("[places/photo] refresh failed:", e);
+        return null;
+      });
+      if (fresh) response = await photoFor(fresh);
+    }
+
+    if (!response.ok) {
+      return NextResponse.json({ error: "Failed to fetch photo" }, { status: 502 });
     }
 
     const imageBuffer = await response.arrayBuffer();

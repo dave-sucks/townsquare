@@ -277,6 +277,7 @@ function ChatResultsMap({ onBoundsChange }: { onBoundsChange: (b: MapBounds) => 
       selectedPlaceId={selectedKey}
       onMarkerClick={(id) => setSelected(id, "map")}
       showSettings
+      frameCluster
       onBoundsChange={onBoundsChange}
     />
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef, useMemo } from "react";
+import { framingPoints } from "@/lib/geo/framing";
 import { Map, MapMarker, MarkerContent, useMap, type MapRef } from "@/components/ui/map";
 import { MapControls } from "@/components/map/map-controls";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,8 @@ interface PlaceMapProps {
   onSettingsOpenChange?: (open: boolean) => void;
   showAvatars?: boolean;
   disableFitToPlaces?: boolean;
+  /** Fit the camera to the main cluster of pins instead of every pin (see lib/geo/framing). */
+  frameCluster?: boolean;
   /** Called with the visible bounds each time the map settles (idle). */
   onBoundsChange?: (bounds: MapBounds) => void;
 }
@@ -85,10 +88,12 @@ function saveMapView(center: [number, number], zoom: number) {
 function BoundsController({
   places,
   disableFitToPlaces,
+  frameCluster,
   onBoundsChangeRef,
 }: {
   places: SavedPlace[];
   disableFitToPlaces?: boolean;
+  frameCluster?: boolean;
   onBoundsChangeRef: React.MutableRefObject<((bounds: MapBounds) => void) | undefined>;
 }) {
   const { map, isLoaded } = useMap();
@@ -106,12 +111,13 @@ function BoundsController({
       m.setZoom(14);
     } else {
       const bounds = new google.maps.LatLngBounds();
-      placeList.forEach((sp) => {
+      const framed = frameCluster ? framingPoints(placeList, (sp) => sp.place) : placeList;
+      framed.forEach((sp) => {
         bounds.extend({ lat: sp.place.lat, lng: sp.place.lng });
       });
       m.fitBounds(bounds, { top: 60, right: 60, bottom: 220, left: 60 });
     }
-  }, []);
+  }, [frameCluster]);
 
   useEffect(() => {
     if (!map || !isLoaded || hasInitializedRef.current) return;
@@ -224,7 +230,7 @@ function StyleController() {
 }
 
 export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function PlaceMap(
-  { places, selectedPlaceId, onMarkerClick, showAvatars = false, disableFitToPlaces = false, onBoundsChange },
+  { places, selectedPlaceId, onMarkerClick, showAvatars = false, disableFitToPlaces = false, frameCluster = false, onBoundsChange },
   ref
 ) {
   const mapRef = useRef<MapRef>(null);
@@ -259,7 +265,7 @@ export const PlaceMap = forwardRef<PlaceMapHandle, PlaceMapProps>(function Place
         zoom={initialZoom}
         className="h-full w-full"
       >
-        <BoundsController places={places} disableFitToPlaces={disableFitToPlaces} onBoundsChangeRef={onBoundsChangeRef} />
+        <BoundsController places={places} disableFitToPlaces={disableFitToPlaces} frameCluster={frameCluster} onBoundsChangeRef={onBoundsChangeRef} />
         <StyleController />
         <MapControls places={places} />
         {places.map((savedPlace) => (

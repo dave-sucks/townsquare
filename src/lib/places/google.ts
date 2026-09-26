@@ -138,3 +138,44 @@ export async function persistGooglePlaces(results: GoogleResult[]): Promise<stri
   }
   return ids;
 }
+
+/**
+ * Google photo references expire. When one stops working, find the place that
+ * holds it, fetch fresh references from Place Details, save them, and return
+ * the fresh reference at the same position (so a place's first photo stays its
+ * first photo). Null when no place holds the reference or Google has none.
+ */
+// Old reference -> fresh one, for pages that loaded several references of a
+// place before the first request refreshed them all. Per instance, best effort.
+const refreshedRefs = new Map<string, string>();
+
+export async function refreshStalePhotoRef(staleRef: string): Promise<string | null> {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) return null;
+  const known = refreshedRefs.get(staleRef);
+  if (known) return known;
+
+  const rows = await prisma.$queryRaw<{ id: string; google_place_id: string; photo_refs: unknown }[]>`
+    SELECT id, google_place_id, photo_refs FROM places
+     WHERE photo_refs::jsonb @> jsonb_build_array(${staleRef}::text)
+     LIMIT 1`;
+  const place = rows[0];
+  if (!place) return null;
+
+  const res = await fetch(
+    `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(place.google_place_id)}&fields=photos&key=${apiKey}`,
+  );
+  const data = (await res.json()) as { status: string; result?: { photos?: { photo_reference: string }[] } };
+  const fresh = (data.result?.photos ?? []).slice(0, 5).map((p) => p.photo_reference);
+  if (data.status !== "OK" || fresh.length === 0) return null;
+
+  await prisma.place.update({ where: { id: place.id }, data: { photoRefs: fresh } });
+
+  const old = Array.isArray(place.photo_refs) ? (place.photo_refs as unknown[]) : [];
+  old.forEach((ref, i) => {
+    if (typeof ref === "string") refreshedRefs.set(ref, fresh[Math.min(i, fresh.length - 1)]);
+  });
+  if (refreshedRefs.size > 5000) refreshedRefs.clear();
+  const position = Math.max(0, old.indexOf(staleRef));
+  return fresh[Math.min(position, fresh.length - 1)];
+}

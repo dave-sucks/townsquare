@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const totalTags = await prisma.placeTag.count();
   const placesWithTags = await prisma.place.findMany({
     where: { placeTags: { some: {} } },
@@ -15,6 +20,10 @@ export async function GET() {
 }
 
 export async function POST() {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   try {
     const placesWithoutTags = await prisma.place.findMany({
       where: {
