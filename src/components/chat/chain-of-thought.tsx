@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 
 type ContentPart = {
   type: string;
+  text?: string;
   toolName?: string;
   args?: Record<string, unknown>;
   result?: unknown;
@@ -185,7 +186,7 @@ function Trace({ indices, children }: { indices: number[]; children?: ReactNode 
   const messageRunning = useMessage((m) => m.status?.type === "running");
   const isLastGroup = useMessage((m) => indices[indices.length - 1] === m.content.length - 1);
 
-  const { steps, label, working, hasItems } = useMemo(() => {
+  const { steps, label, working, hasItems, hasThought } = useMemo(() => {
     const parts = indices.map((i) => content[i]).filter(Boolean);
     const toolParts = parts.filter(
       (p) => p.type === "tool-call" && p.toolName && !HIDDEN_TOOLS.has(p.toolName),
@@ -209,11 +210,13 @@ function Trace({ indices, children }: { indices: number[]; children?: ReactNode 
       const items = r.ok ? (r.data as { items?: unknown[] } | null)?.items : undefined;
       return Array.isArray(items) && items.length > 0;
     });
+    const hasThought = parts.some((p) => p.type === "reasoning" && Boolean(p.text?.trim()));
     return {
       steps: labels,
       label: working ? activeLabel : null,
       working,
       hasItems,
+      hasThought,
     };
   }, [content, indices, messageRunning, isLastGroup]);
 
@@ -227,17 +230,28 @@ function Trace({ indices, children }: { indices: number[]; children?: ReactNode 
     }
   }, [working, seconds]);
 
+  // One step shows its own label in its row, so the header speaks for the thinking.
   const doneLabel =
-    steps.length === 0
+    steps.length <= 1
       ? seconds != null
         ? `Thought for ${seconds}s`
         : "Thought it through"
-      : `${pastTense(steps[0])}${steps.length > 1 ? ` · +${steps.length - 1} more` : ""}`;
+      : `${pastTense(steps[0])} · +${steps.length - 1} more`;
 
   // Beautiful UI's trace settles closed once done — except when a step's
   // items (creators found, saved places) are part of the answer.
   const [manual, setManual] = useState<boolean | null>(null);
   const expanded = manual ?? (working || hasItems);
+
+  // A lone step with no thinking is its own trace: a header over it would only
+  // repeat its label.
+  if (steps.length === 1 && !hasThought) {
+    return (
+      <div className="my-1 flex w-full flex-col">
+        <TraceContext.Provider value={true}>{children}</TraceContext.Provider>
+      </div>
+    );
+  }
 
   return (
     <div className="my-1 flex w-full flex-col">
