@@ -8,7 +8,7 @@ import { Location01Icon, CheckmarkBadge01Icon, Fire02Icon } from "@hugeicons/cor
 import { cn } from "@/lib/utils";
 import { SaveToListDropdown } from "./save-to-list-dropdown";
 import { EmojiPickerPopover } from "./emoji-picker-popover";
-import { TagInfo } from "./place-tags";
+import { TagInfo, besideCategory } from "./place-tags";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/query-client";
 
@@ -193,7 +193,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
       }
     };
 
-    const displayTags = savedPlace.place.topTags?.slice(0, 2) || [];
+    const displayTags = besideCategory(savedPlace.place.topTags ?? []).slice(0, 2);
     
     const lists = savedPlace.lists || [];
     const listDisplayText = lists.length === 1 

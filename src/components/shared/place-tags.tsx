@@ -158,6 +158,14 @@ interface TagsWithPopoverProps {
   className?: string;
 }
 
+/**
+ * Tags to show beside a place's category label ("Bar — Casual, Affordable"):
+ * the Venue tags would only repeat the label.
+ */
+export function besideCategory<T extends { categorySlug?: string }>(tags: T[]): T[] {
+  return tags.filter((t) => t.categorySlug !== "venue");
+}
+
 export function TagsWithPopover({ 
   category, 
   tags, 
@@ -165,7 +173,7 @@ export function TagsWithPopover({
   maxInlineTags = 2,
   className 
 }: TagsWithPopoverProps) {
-  const displayTags = tags.slice(0, maxInlineTags);
+  const displayTags = besideCategory(tags).slice(0, maxInlineTags);
   const tagNames = displayTags.map(t => t.displayName).join(", ");
   const hasMoreTags = tagGroups.length > 0 && tagGroups.some(g => g.tags.length > 0);
 
