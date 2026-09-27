@@ -41,10 +41,12 @@ export const placeChanged = eventType("engine/place.changed", {
   }),
 });
 
-/** An admin bulk action (re-process all posts, and so on). */
+/** An admin bulk action: re-process a source's posts, or every post. */
 export const backfill = eventType("engine/backfill", {
   schema: z.object({
     kind: z.enum(["reprocess_posts"]),
+    /** The audit row that records the request; its runs carry "backfill:<id>". */
+    backfillId: z.string(),
     requestedBy: z.string(),
     sourceId: z.string().optional(),
   }),

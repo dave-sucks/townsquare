@@ -97,6 +97,7 @@ function RunsList() {
   const kind = params.get("kind") ?? "";
   const source = params.get("source") ?? "";
   const place = params.get("place") ?? "";
+  const trigger = params.get("trigger") ?? "";
 
   const setParam = (key: string, value: string) => {
     const next = new URLSearchParams(params.toString());
@@ -105,7 +106,7 @@ function RunsList() {
     router.replace(`${pathname}${next.size ? `?${next}` : ""}`);
   };
 
-  const query = new URLSearchParams(Object.entries({ status, kind, source, place }).filter(([, v]) => v)).toString();
+  const query = new URLSearchParams(Object.entries({ status, kind, source, place, trigger }).filter(([, v]) => v)).toString();
   const { data, isLoading } = useQuery<{ runs: RunRow[]; sources: string[] }>({
     queryKey: ["admin-runs", query],
     queryFn: () => adminFetch(`/api/admin/runs${query ? `?${query}` : ""}`),
@@ -139,6 +140,12 @@ function RunsList() {
           {place && (
             <Button variant="secondary" size="sm" onClick={() => setParam("place", "")} data-testid="button-clear-place-filter">
               {placeName ?? "This place"}
+              <HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
+            </Button>
+          )}
+          {trigger && (
+            <Button variant="secondary" size="sm" onClick={() => setParam("trigger", "")} data-testid="button-clear-trigger-filter">
+              {trigger === "backfill" ? "Re-process all" : trigger.replace("_", " ")}
               <HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
             </Button>
           )}

@@ -3,8 +3,6 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createActivity } from "@/lib/activity";
 import { getDefaultEmoji } from "@/lib/default-emoji";
-import { autoTagPlace } from "@/lib/auto-tag-place";
-import { autoSummaryPlace } from "@/lib/auto-summary-place";
 
 interface PlaceData {
   googlePlaceId: string;
@@ -125,9 +123,6 @@ export async function POST(request: NextRequest) {
         });
         savedCount++;
       }
-
-      autoTagPlace(place.id).catch(() => {});
-      autoSummaryPlace(place.id).catch(() => {});
     }
 
     if (!listId) {

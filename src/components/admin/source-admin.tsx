@@ -22,6 +22,7 @@ import {
   PauseIcon,
   PlayIcon,
   RefreshIcon,
+  RepeatIcon,
   StarIcon,
   Tick01Icon,
 } from "@hugeicons/core-free-icons";
@@ -50,6 +51,7 @@ import { adminFetch } from "@/components/admin/admin-fetch";
 import { EditFieldDialog } from "@/components/admin/edit-field-dialog";
 import { MentionEditor } from "@/components/admin/mention-editor";
 import { SourceMetrics, lastSyncLabel, sourceStatus, type SourceSummary } from "@/components/admin/source-meta";
+import { ReprocessDialog, useBackfill } from "@/components/admin/reprocess";
 import { queryClient } from "@/lib/query-client";
 import { cn } from "@/lib/utils";
 
@@ -118,7 +120,9 @@ function useSourceWrite(userId: string, sourceId: string | undefined) {
 export function SourceSyncStrip({ userId }: { userId: string }) {
   const { data } = useCreatorSource(userId);
   const source = data?.source;
+  const { data: backfill } = useBackfill(source?.id ?? null, !!source);
   if (!source) return null;
+  const reprocess = backfill?.latest && !backfill.latest.finished ? backfill.latest : null;
   return (
     <div className="flex flex-col gap-1 px-3 pb-3" data-testid="strip-source-sync">
       <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -127,6 +131,12 @@ export function SourceSyncStrip({ userId }: { userId: string }) {
         {source.homeCity ? ` · ${source.homeCity}` : ""}
       </p>
       <SourceMetrics source={source} />
+      {reprocess && (
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground" data-testid="text-source-reprocess">
+          <StatusDot status="running" />
+          Re-processing {reprocess.done} of {reprocess.posts} posts
+        </p>
+      )}
     </div>
   );
 }
@@ -136,10 +146,10 @@ export function SourceAdminMenu({ userId }: { userId: string }) {
   const { data } = useCreatorSource(userId);
   const source = data?.source;
   const write = useSourceWrite(userId, source?.id);
-  const [editing, setEditing] = React.useState<null | "homeCity" | "notes" | "history">(null);
+  const [editing, setEditing] = React.useState<null | "homeCity" | "notes" | "history" | "reprocess">(null);
   if (!source) return null;
 
-  const openEditor = (which: "homeCity" | "notes" | "history") => setTimeout(() => setEditing(which), 100);
+  const openEditor = (which: "homeCity" | "notes" | "history" | "reprocess") => setTimeout(() => setEditing(which), 100);
   const patch = (body: Record<string, unknown>, done?: string) =>
     write.mutate(
       { method: "PATCH", body },
@@ -198,7 +208,11 @@ export function SourceAdminMenu({ userId }: { userId: string }) {
             </DropdownMenuSubContent>
           </DropdownMenuSub>
         </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <AdminMenuItem icon={RepeatIcon} label="Re-process all posts" onClick={() => openEditor("reprocess")} testId="button-source-reprocess" />
       </AdminMenu>
+
+      <ReprocessDialog source={source.id} label={`@${source.handle}'s posts`} open={editing === "reprocess"} onOpenChange={(o) => !o && setEditing(null)} />
 
       <EditFieldDialog
         open={editing === "homeCity"}

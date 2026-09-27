@@ -4,7 +4,7 @@
  * environment yet), the write still stands and the error is logged.
  */
 
-import { inngest, placeChanged, postReprocess, sourceSync } from "./inngest";
+import { backfill, inngest, placeChanged, postReprocess, sourceSync } from "./inngest";
 
 async function send(label: string, events: Parameters<typeof inngest.send>[0]) {
   try {
@@ -25,3 +25,9 @@ export const reprocessPost = (postId: string, opts: { requestedBy: string; fromS
   send("post.reprocess", postReprocess.create({ postId, requestedBy: opts.requestedBy, ...(opts.fromStage ? { fromStage: opts.fromStage } : {}) }));
 
 export const syncSourceNow = (sourceId: string) => send("source.sync", sourceSync.create({ sourceId }));
+
+export const startReprocessAll = (opts: { backfillId: string; requestedBy: string; sourceId: string | null }) =>
+  send(
+    "backfill",
+    backfill.create({ kind: "reprocess_posts", backfillId: opts.backfillId, requestedBy: opts.requestedBy, ...(opts.sourceId ? { sourceId: opts.sourceId } : {}) }),
+  );
