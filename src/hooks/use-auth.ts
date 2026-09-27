@@ -10,6 +10,7 @@ interface User {
   lastName: string | null;
   profileImageUrl: string | null;
   avatarEmoji: string | null;
+  isAdmin?: boolean;
 }
 
 interface AuthState {
