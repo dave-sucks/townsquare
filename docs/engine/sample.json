@@ -1,0 +1,302 @@
+[
+  {
+    "shortcode": "DTWJYQ9AcEg",
+    "handle": "beli_eats",
+    "why": "roundup: 12 bakeries in 8 cities (Dave's screenshot)"
+  },
+  {
+    "shortcode": "DTjdYa5jKtd",
+    "handle": "beli_eats",
+    "why": "roundup: 12 taquerias across the US"
+  },
+  {
+    "shortcode": "DUKJ3aMDPjw",
+    "handle": "beli_eats",
+    "why": "roundup: 3 LA bakeries"
+  },
+  {
+    "shortcode": "DTYPNpFkeX8",
+    "handle": "beli_eats",
+    "why": "roundup; the post stuck in 'new' since Feb 23"
+  },
+  {
+    "shortcode": "DT1ciaHDBMv",
+    "handle": "beli_eats",
+    "why": "roundup: 20 places, tagged 'Chicago, Illinois' (old import matched University Club)"
+  },
+  {
+    "shortcode": "DSQrqGigSbT",
+    "handle": "beli_eats",
+    "why": "old import: location tag match"
+  },
+  {
+    "shortcode": "DSgV5I9gZJ7",
+    "handle": "beli_eats",
+    "why": "old import: location tag match"
+  },
+  {
+    "shortcode": "DUbpyK9Ab3t",
+    "handle": "beli_eats",
+    "why": "old import: unresolved"
+  },
+  {
+    "shortcode": "DSA96xRgW7e",
+    "handle": "beli_eats",
+    "why": "old import: unresolved"
+  },
+  {
+    "shortcode": "DTbIedAkYhn",
+    "handle": "briancantstopeating",
+    "why": "old import: location tag match"
+  },
+  {
+    "shortcode": "DN6mJm8Dci5",
+    "handle": "briancantstopeating",
+    "why": "old import: location tag match"
+  },
+  {
+    "shortcode": "DPkIWr5DZjD",
+    "handle": "briancantstopeating",
+    "why": "old import: unresolved"
+  },
+  {
+    "shortcode": "DQ2e9oIEW-O",
+    "handle": "briancantstopeating",
+    "why": "old import: unresolved"
+  },
+  {
+    "shortcode": "DD5O-_4vJHb",
+    "handle": "burger_club_nyc",
+    "why": "old import: location tag match"
+  },
+  {
+    "shortcode": "DGZIcFOPna7",
+    "handle": "burger_club_nyc",
+    "why": "old import: location tag match"
+  },
+  {
+    "shortcode": "DPcTTZcDtvR",
+    "handle": "burger_club_nyc",
+    "why": "old import: matched by hand"
+  },
+  {
+    "shortcode": "DE3gfmfPkbR",
+    "handle": "burger_club_nyc",
+    "why": "old import: unresolved"
+  },
+  {
+    "shortcode": "DDLX9_tvpiL",
+    "handle": "burger_club_nyc",
+    "why": "old import: unresolved"
+  },
+  {
+    "shortcode": "DU6XKVckuEU",
+    "handle": "eatsbynyc",
+    "why": "old import: location tag match"
+  },
+  {
+    "shortcode": "DUOFgewDYqk",
+    "handle": "eatsbynyc",
+    "why": "old import: location tag match"
+  },
+  {
+    "shortcode": "DUG20SUkiGQ",
+    "handle": "eatsbynyc",
+    "why": "old import: matched by hand"
+  },
+  {
+    "shortcode": "DSLPDuHkapI",
+    "handle": "girlgottaeatz",
+    "why": "old import: location tag match"
+  },
+  {
+    "shortcode": "DR185POkSXR",
+    "handle": "girlgottaeatz",
+    "why": "old import: location tag match"
+  },
+  {
+    "shortcode": "DS7wRC-kYM5",
+    "handle": "girlgottaeatz",
+    "why": "old import: matched by hand"
+  },
+  {
+    "shortcode": "DRk_5N2EYQL",
+    "handle": "girlgottaeatz",
+    "why": "old import: unresolved"
+  },
+  {
+    "shortcode": "DPrlOolgY0G",
+    "handle": "johnnyeatsnyc",
+    "why": "old import: location tag match"
+  },
+  {
+    "shortcode": "DRzs8Z_kUlb",
+    "handle": "johnnyeatsnyc",
+    "why": "old import: location tag match"
+  },
+  {
+    "shortcode": "DSciiGCDaV4",
+    "handle": "johnnyeatsnyc",
+    "why": "old import: unresolved"
+  },
+  {
+    "shortcode": "DT_Fs_LAb1E",
+    "handle": "johnnyeatsnyc",
+    "why": "old import: unresolved"
+  },
+  {
+    "shortcode": "DPM_9aJAc2-",
+    "handle": "nyc.food",
+    "why": "old import: location tag match"
+  },
+  {
+    "shortcode": "DHKPNYjpwxs",
+    "handle": "nyc.food",
+    "why": "old import: location tag match"
+  },
+  {
+    "shortcode": "DHUcPZnJRNm",
+    "handle": "nyc.food",
+    "why": "old import: unresolved"
+  },
+  {
+    "shortcode": "DRLfrx0jJRp",
+    "handle": "nyc.food",
+    "why": "old import: unresolved"
+  },
+  {
+    "shortcode": "DUa6p5vjae6",
+    "handle": "nycfoodfaves",
+    "why": "old import: location tag match"
+  },
+  {
+    "shortcode": "DOn7oJ9DQ8d",
+    "handle": "nycfoodfaves",
+    "why": "old import: location tag match"
+  },
+  {
+    "shortcode": "DQ4JpZkjZrE",
+    "handle": "nycfoodfaves",
+    "why": "old import: matched by hand"
+  },
+  {
+    "shortcode": "DSZ_boSjazW",
+    "handle": "nycfoodfaves",
+    "why": "old import: unresolved"
+  },
+  {
+    "shortcode": "DTIXA09jb_J",
+    "handle": "nycfoodfaves",
+    "why": "old import: unresolved"
+  },
+  {
+    "shortcode": "DTtP9vgEffk",
+    "handle": "thecarboholic",
+    "why": "old import: location tag match"
+  },
+  {
+    "shortcode": "DUMUj1aEWGG",
+    "handle": "thecarboholic",
+    "why": "old import: location tag match"
+  },
+  {
+    "shortcode": "DS7matLEQ8U",
+    "handle": "thecarboholic",
+    "why": "old import: matched by hand"
+  },
+  {
+    "shortcode": "DT1G7cpEaVd",
+    "handle": "thecarboholic",
+    "why": "old import: unresolved"
+  },
+  {
+    "shortcode": "DUWfltvkVhf",
+    "handle": "thecarboholic",
+    "why": "old import: unresolved"
+  },
+  {
+    "shortcode": "DTB32DaDPlU",
+    "handle": "beli_eats",
+    "why": "old import: caption match"
+  },
+  {
+    "shortcode": "DMGNaNHR1Kf",
+    "handle": "johnnyeatsnyc",
+    "why": "old import: caption match"
+  },
+  {
+    "shortcode": "DUZlf8jDF4s",
+    "handle": "beli_eats",
+    "why": "old import: caption match"
+  },
+  {
+    "shortcode": "DUCXe3GlR0U",
+    "handle": "beli_eats",
+    "why": "old import: caption match"
+  },
+  {
+    "shortcode": "DTHOwSsDLe8",
+    "handle": "beli_eats",
+    "why": "old import: caption match"
+  },
+  {
+    "shortcode": "DLBGdXUJ-Ou",
+    "handle": "nyc.food",
+    "why": "old import: caption match"
+  },
+  {
+    "shortcode": "DM81FbXSCvj",
+    "handle": "briancantstopeating",
+    "why": "old import: caption match"
+  },
+  {
+    "shortcode": "DO586WKjTF_",
+    "handle": "nycfoodfaves",
+    "why": "old import: caption match"
+  },
+  {
+    "shortcode": "DT_2RlBjreo",
+    "handle": "beli_eats",
+    "why": "old import: caption match"
+  },
+  {
+    "shortcode": "DL0mFYFh4ii",
+    "handle": "johnnyeatsnyc",
+    "why": "old import: caption match"
+  },
+  {
+    "shortcode": "DOQ5-aRjcZG",
+    "handle": "nycfoodfaves",
+    "why": "old import: caption match"
+  },
+  {
+    "shortcode": "DSBSRiyDQRA",
+    "handle": "briancantstopeating",
+    "why": "old import: caption match"
+  },
+  {
+    "shortcode": "DQjheIckXao",
+    "handle": "briancantstopeating",
+    "why": "old import: caption match"
+  },
+  {
+    "shortcode": "DEle40ntqx-",
+    "handle": "briancantstopeating",
+    "why": "old import: caption match"
+  },
+  {
+    "shortcode": "DPzgxXaAU9H",
+    "handle": "johnnyeatsnyc",
+    "why": "old import: caption match"
+  },
+  {
+    "shortcode": "DTkvaJOEfh4",
+    "handle": "girlgottaeatz",
+    "why": "old import: caption match"
+  },
+  {
+    "shortcode": "DUEre8ckYv5",
+    "handle": "girlgottaeatz",
+    "why": "old import: caption match"
+  }
+]

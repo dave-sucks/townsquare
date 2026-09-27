@@ -21,6 +21,8 @@ export type GoogleResult = {
   primaryType: string | null;
   priceLevel: string | null;
   photoRefs: string[];
+  /** OPERATIONAL, CLOSED_TEMPORARILY, CLOSED_PERMANENTLY (or null when Google doesn't say). */
+  businessStatus: string | null;
 };
 
 type TextSearchResult = {
@@ -31,6 +33,7 @@ type TextSearchResult = {
   types?: string[];
   price_level?: number;
   photos?: { photo_reference: string }[];
+  business_status?: string;
 };
 
 /** Legacy Text Search, biased to a point when we have one. */
@@ -65,7 +68,66 @@ export async function googleTextSearch(
       primaryType: r.types?.[0] ?? null,
       priceLevel: r.price_level != null ? String(r.price_level) : null,
       photoRefs: (r.photos ?? []).slice(0, 5).map((p) => p.photo_reference),
+      businessStatus: r.business_status ?? null,
     }));
+}
+
+export type GooglePlaceDetails = {
+  googlePlaceId: string;
+  name: string;
+  formattedAddress: string;
+  neighborhood: string | null;
+  locality: string | null;
+  lat: number;
+  lng: number;
+  primaryType: string | null;
+  types: string[];
+  priceLevel: string | null;
+  photoRefs: string[];
+  businessStatus: string | null;
+};
+
+/**
+ * Legacy Place Details for one place. The neighborhood is Google's
+ * `neighborhood` component only: `sublocality` is the borough in New York
+ * ("Manhattan"), which isn't a neighborhood.
+ */
+export async function googlePlaceDetails(googlePlaceId: string): Promise<GooglePlaceDetails> {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) throw new Error("Google Maps API key not configured");
+  const fields = "place_id,name,formatted_address,geometry,types,price_level,address_components,photos,business_status";
+  const res = await fetch(
+    `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(googlePlaceId)}&fields=${fields}&key=${apiKey}`,
+  );
+  const data = (await res.json()) as {
+    status: string;
+    error_message?: string;
+    result?: TextSearchResult & { address_components?: { long_name: string; types: string[] }[] };
+  };
+  if (data.status !== "OK" || !data.result) {
+    throw new Error(`Google Place Details: ${data.status}${data.error_message ? ` — ${data.error_message}` : ""}`);
+  }
+  const r = data.result;
+  let neighborhood: string | null = null;
+  let locality: string | null = null;
+  for (const c of r.address_components ?? []) {
+    if (!neighborhood && c.types.includes("neighborhood")) neighborhood = c.long_name;
+    if (!locality && c.types.includes("locality")) locality = c.long_name;
+  }
+  return {
+    googlePlaceId: r.place_id,
+    name: r.name,
+    formattedAddress: r.formatted_address ?? "",
+    neighborhood,
+    locality,
+    lat: r.geometry?.location?.lat ?? 0,
+    lng: r.geometry?.location?.lng ?? 0,
+    primaryType: r.types?.[0] ?? null,
+    types: r.types ?? [],
+    priceLevel: r.price_level != null ? String(r.price_level) : null,
+    photoRefs: (r.photos ?? []).slice(0, 5).map((p) => p.photo_reference),
+    businessStatus: r.business_status ?? null,
+  };
 }
 
 /** Neighborhood + locality from Place Details address components. */

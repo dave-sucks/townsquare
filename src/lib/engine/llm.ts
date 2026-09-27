@@ -1,7 +1,7 @@
 /**
- * The engine's one way to call a model: structured output validated against
- * a zod schema, the agent version's system prompt as a cached prefix, and
- * exact usage converted to dollars. (The chat keeps the AI SDK; the engine
+ * The engine's one way to call a model: structured output (output_config
+ * with zodOutputFormat) validated against a zod schema, the agent version's
+ * system prompt as a cached prefix, and exact usage converted to dollars. (The chat keeps the AI SDK; the engine
  * uses the Anthropic SDK for exact usage and structured outputs.)
  */
 
@@ -18,7 +18,7 @@ function anthropic(): Anthropic {
 
 export type Effort = "low" | "medium" | "high" | "xhigh" | "max";
 
-export type LlmCall<S extends z.ZodType> = {
+export type LlmCall<S extends z.ZodType, P extends z.ZodType = S> = {
   model: string;
   /** The agent version's prompt. Sent as the cached prefix. */
   system: string;
@@ -31,6 +31,12 @@ export type LlmCall<S extends z.ZodType> = {
   /** Omit for models that don't take effort (Haiku 4.5 rejects it). */
   effort?: Effort | null;
   maxTokens: number;
+  /**
+   * Parse the answer with this looser schema instead of `schema` (which is
+   * still what the model is given). For big enums a model can step outside
+   * of: the stage's gate drops the stray values instead of the call failing.
+   */
+  parseWith?: P;
 };
 
 export type LlmUsage = {
@@ -62,21 +68,26 @@ export class LlmOutputError extends Error {
   }
 }
 
-export async function callStructured<S extends z.ZodType>(call: LlmCall<S>): Promise<LlmResult<z.infer<S>>> {
+export async function callStructured<S extends z.ZodType, P extends z.ZodType = S>(
+  call: LlmCall<S, P>,
+): Promise<LlmResult<z.infer<P>>> {
   if (!isEngineModel(call.model)) throw new Error(`Unpriced model ${call.model}: add it to pricing.ts`);
   const model = call.model;
 
-  const started = Date.now();
-  const response = await anthropic().messages.parse({
+  const params = {
     model,
     max_tokens: call.maxTokens,
-    system: [{ type: "text", text: call.system, cache_control: { type: "ephemeral" } }],
+    system: [{ type: "text" as const, text: call.system, cache_control: { type: "ephemeral" as const } }],
     messages: call.messages,
     output_config: {
       format: zodOutputFormat(call.schema),
       ...(call.effort ? { effort: call.effort } : {}),
     },
-  });
+  };
+  const started = Date.now();
+  // Validated here rather than by messages.parse, so a reply that fails the
+  // schema still reports what it cost.
+  const response = await anthropic().messages.create(params);
   const latencyMs = Date.now() - started;
 
   const u = response.usage;
@@ -92,9 +103,23 @@ export async function callStructured<S extends z.ZodType>(call: LlmCall<S>): Pro
     latencyMs,
   };
 
-  if (response.parsed_output == null) {
-    throw new LlmOutputError(`No valid output (stop_reason: ${response.stop_reason})`, usage, response.stop_reason);
-  }
   const rawText = response.content.map((b) => (b.type === "text" ? b.text : "")).join("");
-  return { ...usage, output: response.parsed_output, rawText };
+  // The model always gets the strict schema; parseWith only loosens our side.
+  let output: unknown = null;
+  let problem = "";
+  try {
+    const parsed = (call.parseWith ?? call.schema).safeParse(JSON.parse(rawText));
+    if (parsed.success) output = parsed.data;
+    else problem = parsed.error.issues.slice(0, 3).map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+  } catch (err) {
+    problem = `not JSON (${err instanceof Error ? err.message : "parse error"})`;
+  }
+  if (output == null) {
+    throw new LlmOutputError(
+      `No valid output (stop_reason: ${response.stop_reason}): ${problem} · reply starts: ${rawText.slice(0, 300)}`,
+      usage,
+      response.stop_reason,
+    );
+  }
+  return { ...usage, output: output as z.infer<P>, rawText };
 }
