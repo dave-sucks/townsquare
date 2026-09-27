@@ -3,8 +3,6 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createActivity } from "@/lib/activity";
 import { getDefaultEmoji } from "@/lib/default-emoji";
-import { autoTagPlace } from "@/lib/auto-tag-place";
-import { autoSummaryPlace } from "@/lib/auto-summary-place";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -233,9 +231,6 @@ export async function POST(request: NextRequest) {
       placeId: place.id,
       metadata: { placeName: place.name, rating: hasBeen ? rating : undefined },
     });
-
-    autoTagPlace(place.id).catch(() => {});
-    autoSummaryPlace(place.id).catch(() => {});
 
     return NextResponse.json({ savedPlace });
   } catch (error: any) {

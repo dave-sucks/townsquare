@@ -13,10 +13,11 @@ import { readSchema, type ReadOutput, type ReadPlace } from "../agents/read/sche
 import { CONFIDENCE_VALUE, ENGINE } from "../config";
 import { selectExamples } from "../examples";
 import { dismissOpenItems, openReviewItem } from "../review";
-import { isVerbatim, parseScore } from "../text";
+import { parseScore } from "../text";
 import { latestReviewerNote, setPostReading } from "../write/posts";
 import type { StepResult } from "../write/runs";
 import type { StageOptions } from "./options";
+import { checkRead, repairPlaces } from "./read-gates";
 
 export type ReadPlaceResult = ReadPlace & {
   index: number;
@@ -36,46 +37,9 @@ export type ReadResult = {
   retried: boolean;
   /** What the first answer got wrong, when it was sent back. */
   retryReasons: string[];
-  /** Gate failures still standing after the retry (their places were dropped). */
+  /** Gate failures still standing after the retry (the fields that broke them were cleared). */
   gateFailures: string[];
 };
-
-type GateFailure = { place: number | null; message: string };
-
-/** Layer 1: the rules code can check. */
-export function checkRead(out: ReadOutput, facts: ReadFacts): GateFailure[] {
-  const failures: GateFailure[] = [];
-  if (out.postType === "not_a_place" && out.places.length > 0) {
-    failures.push({
-      place: null,
-      message: "The post type is not_a_place, but places are listed. List no places, or choose the post type that fits.",
-    });
-  }
-  const tagged = new Set(facts.taggedAccounts);
-  out.places.forEach((p, i) => {
-    if (p.excerptSource === "transcript") {
-      failures.push({ place: i, message: `"${p.name}": this post has no transcript, so the excerpt must come from the caption.` });
-    } else if (!isVerbatim(p.excerpt, facts.caption)) {
-      failures.push({
-        place: i,
-        message: `"${p.name}": the excerpt is not copied word for word from the caption. Copy the caption's exact text (you may cut it short, but don't change or add words), or leave it empty if the caption says nothing about this place.`,
-      });
-    }
-    if (p.taggedAccount) {
-      const acct = p.taggedAccount.replace(/^@/, "").trim().toLowerCase();
-      if (!tagged.has(acct)) {
-        failures.push({
-          place: i,
-          message: `"${p.name}": @${acct} is not an account this post tags or mentions (${facts.taggedAccounts.length ? facts.taggedAccounts.map((a) => `@${a}`).join(", ") : "it tags none"}). Use one of those, or null.`,
-        });
-      }
-    }
-    if (p.score && !isVerbatim(p.score, facts.scoreSources)) {
-      failures.push({ place: i, message: `"${p.name}": the score "${p.score}" doesn't appear in the post. Copy it exactly as written, or null.` });
-    }
-  });
-  return failures;
-}
 
 export async function runRead(runId: string, postId: string, opts: StageOptions = {}): Promise<StepResult<ReadResult>> {
   const post = await prisma.ingestedPost.findUniqueOrThrow({
@@ -144,10 +108,8 @@ export async function runRead(runId: string, postId: string, opts: StageOptions 
     failures = checkRead(out, facts);
   }
 
-  // Whatever still fails is dropped and handed to a person.
-  const dropped = new Set(failures.map((f) => f.place).filter((i): i is number => i !== null));
-  const postLevel = failures.some((f) => f.place === null);
-  const kept = postLevel ? [] : out.places.filter((_, i) => !dropped.has(i));
+  // Whatever still fails goes to a person; the place keeps its name and loses the field that broke the rule.
+  const kept = repairPlaces(out, failures);
 
   const places: ReadPlaceResult[] = kept.map((p, index) => {
     const score = parseScore(p.score);

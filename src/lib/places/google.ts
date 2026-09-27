@@ -9,7 +9,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { enqueueJob } from "@/lib/worker/queue";
+import { refreshPlaces } from "@/lib/engine/events";
 
 export type GoogleResult = {
   googlePlaceId: string;
@@ -160,10 +160,11 @@ async function neighborhoodFor(googlePlaceId: string): Promise<{ neighborhood: s
 /**
  * Upsert Google results as Place rows. New places get their neighborhood
  * from Place Details; every place gets its photo refs refreshed (stored
- * refs expire) and an AI summary job. Returns Place ids in input order.
+ * refs expire), and new ones go to the engine. Returns Place ids in input order.
  */
 export async function persistGooglePlaces(results: GoogleResult[]): Promise<string[]> {
   const ids: string[] = [];
+  const created: string[] = [];
   for (const r of results) {
     const existing = await prisma.place.findUnique({
       where: { googlePlaceId: r.googlePlaceId },
@@ -192,12 +193,10 @@ export async function persistGooglePlaces(results: GoogleResult[]): Promise<stri
       select: { id: true },
     });
     ids.push(place.id);
-    if (!existing) {
-      await enqueueJob("REFRESH_PLACE_SUMMARY", { placeId: place.id }).catch((e) =>
-        console.error("[google] enqueue summary failed:", e),
-      );
-    }
+    if (!existing) created.push(place.id);
   }
+  // New places go to the engine (Aggregate, then Summarize once creators mention them).
+  if (created.length > 0) await refreshPlaces(created);
   return ids;
 }
 

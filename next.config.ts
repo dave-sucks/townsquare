@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const devOrigins: string[] = [];
@@ -7,7 +8,9 @@ if (process.env.REPLIT_DEV_DOMAIN) {
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: devOrigins,
-  turbopack: {},
+  // This directory is the root: a checkout nested in another (a git
+  // worktree) would otherwise build against the outer one's files.
+  turbopack: { root: path.resolve(__dirname) },
   webpack: (config, { dev }) => {
     if (dev) {
       config.watchOptions = {

@@ -32,7 +32,8 @@ export const postProcess = inngest.createFunction(
     const { postId } = event.data;
     const fromStage = "fromStage" in event.data ? (event.data.fromStage ?? null) : null;
     const requestedBy = "requestedBy" in event.data ? (event.data.requestedBy ?? null) : null;
-    const trigger = event.name === "engine/post.reprocess" ? (fromStage ? "rerun" : "reprocess") : "ingest";
+    const trigger =
+      event.name !== "engine/post.reprocess" ? "ingest" : requestedBy?.startsWith("backfill:") ? "backfill" : fromStage ? "rerun" : "reprocess";
 
     const runId = await step.run("start", () => startRun({ kind: "post", postId, trigger, fromStage, requestedBy }));
 
@@ -71,15 +72,17 @@ export const postProcess = inngest.createFunction(
           ),
         );
       }
+      // Only a complete reading may remove mentions it didn't find.
+      const complete = read.gateFailures.length === 0 && resolved.every((r) => r.outcome === "accepted");
       const written = await step.run("mentions", () =>
-        recordStep(runId, "mentions", "", { accepted: resolved.filter((r) => r.outcome === "accepted").length }, async () => {
+        recordStep(runId, "mentions", "", { accepted: resolved.filter((r) => r.outcome === "accepted").length, complete }, async () => {
           const mentions: MentionInput[] = read.places.flatMap((place, i) => {
             const r = resolved[i];
             return r.outcome === "accepted" && r.placeId && r.resolvedBy
               ? [{ read: place, placeId: r.placeId, resolvedBy: r.resolvedBy, confidence: r.confidence ?? place.confidenceValue }]
               : [];
           });
-          return { output: await replacePostMentions({ runId, postId, sponsored: read.sponsored, mentions }) };
+          return { output: await replacePostMentions({ runId, postId, sponsored: read.sponsored, mentions, removeStale: complete }) };
         }),
       );
       reviewIds = written.mentions.map((m) => m.reviewId);

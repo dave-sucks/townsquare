@@ -35,6 +35,12 @@ export async function replacePostMentions(opts: {
   postId: string;
   sponsored: boolean;
   mentions: MentionInput[];
+  /**
+   * Remove the post's mentions this run didn't find. Only a complete reading
+   * may: every place resolved and no rule broken. Otherwise a place waiting
+   * for a person, or one Read fumbled, would lose a mention that was right.
+   */
+  removeStale: boolean;
 }): Promise<{ mentions: WrittenMention[]; touchedPlaceIds: string[]; removed: number }> {
   const post = await prisma.ingestedPost.findUniqueOrThrow({
     where: { id: opts.postId },
@@ -139,15 +145,18 @@ export async function replacePostMentions(opts: {
     }
   }
 
-  // Mentions this run didn't find go, unless a person made them.
-  const keep = new Set(written.map((w) => w.reviewId));
-  const stale = existing.filter((r) => !keep.has(r.id));
+  // Mentions this run didn't find go, unless a person made them or the
+  // reading was incomplete.
+  const found = new Set(written.map((w) => w.reviewId));
+  const unfound = existing.filter((r) => !found.has(r.id));
+  const stale: typeof unfound = [];
   let removed = 0;
-  for (const r of stale) {
-    if (isProtected(r)) {
-      written.push({ reviewId: r.id, placeId: r.placeId, index: -1, protected: true });
+  for (const r of unfound) {
+    if (isProtected(r) || !opts.removeStale) {
+      written.push({ reviewId: r.id, placeId: r.placeId, index: -1, protected: isProtected(r) });
       continue;
     }
+    stale.push(r);
     await prisma.photo.deleteMany({ where: { reviewId: r.id } });
     await prisma.review.delete({ where: { id: r.id } });
     await writeAudit({ entity: "review", entityId: r.id, action: "delete", actor: "read", runId: opts.runId, fieldChanges: { placeId: { from: r.placeId, to: null } } });

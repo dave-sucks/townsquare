@@ -70,13 +70,6 @@ function routes({ listId, placeId, adminPlaceId, roundupId, runId }) {
     placeId && { name: "place", path: `/places/${placeId}`, settle: 3500 },
     { name: "profile", path: "/u/brotherlyburgers", settle: 3500 },
     { name: "chat", path: "/chat" },
-    { name: "admin-import", path: "/admin/import" },
-    {
-      name: "admin-import-job",
-      path: "/admin/import",
-      // The job detail view has no URL of its own: open the first job card.
-      before: (page) => page.locator('[data-testid^="card-job-"]').first().click(),
-    },
     adminPlaceId && { name: "admin-place", path: `/places/${adminPlaceId}`, admin: true, settle: 3500 },
     adminPlaceId && {
       name: "admin-place-menu",
@@ -96,6 +89,16 @@ function routes({ listId, placeId, adminPlaceId, roundupId, runId }) {
     },
     { name: "admin-review", path: "/admin/review", admin: true },
     { name: "admin-sources", path: "/admin/sources", admin: true },
+    {
+      name: "admin-reprocess",
+      path: "/admin/sources",
+      admin: true,
+      before: async (page) => {
+        await page.locator('[data-testid="button-sources-actions"]').click();
+        await page.locator('[data-testid="button-reprocess-all"]').click();
+        await page.locator('[data-testid="reprocess-estimate"]').waitFor({ timeout: 30_000 });
+      },
+    },
     { name: "admin-profile", path: "/u/girlgottaeatz", admin: true, settle: 3500 },
     {
       name: "admin-profile-menu",

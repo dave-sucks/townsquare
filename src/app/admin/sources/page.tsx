@@ -11,15 +11,17 @@ import Link from "next/link";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { UserMultipleIcon } from "@hugeicons/core-free-icons";
+import { MoreHorizontalIcon, RepeatIcon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { AppShell, PageHeader } from "@/components/layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusDot } from "@/components/shared/status-dot";
 import { SourceMetrics, lastSyncLabel, sourceStatus, type SourceSummary } from "@/components/admin/source-meta";
+import { BackfillProgressCard, ReprocessDialog } from "@/components/admin/reprocess";
 import { useAuth } from "@/hooks/use-auth";
 import { queryClient } from "@/lib/query-client";
 import { adminFetch } from "@/components/admin/admin-fetch";
@@ -65,6 +67,7 @@ function SourceCard({ source }: { source: SourceSummary }) {
 export default function SourcesPage() {
   const { user } = useAuth();
   const [handle, setHandle] = React.useState("");
+  const [reprocessing, setReprocessing] = React.useState(false);
   const { data, isLoading } = useQuery<{ sources: SourceSummary[] }>({
     queryKey: ["admin-sources"],
     queryFn: () => adminFetch("/api/admin/sources"),
@@ -109,9 +112,22 @@ export default function SourcesPage() {
             {add.isPending ? "Adding..." : "Add"}
           </Button>
         </form>
+        <DropdownMenu>
+          <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="More" data-testid="button-sources-actions" />}>
+            <HugeiconsIcon icon={MoreHorizontalIcon} className="size-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuItem onClick={() => setTimeout(() => setReprocessing(true), 100)} data-testid="button-reprocess-all">
+              <HugeiconsIcon icon={RepeatIcon} />
+              Re-process all posts
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </PageHeader>
+      <ReprocessDialog source={null} label="all posts" open={reprocessing} onOpenChange={setReprocessing} />
 
-      <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full pb-20 md:pb-4">
+      <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full pb-20 md:pb-4 space-y-3">
+        <BackfillProgressCard />
         {isLoading ? (
           <div className="space-y-3">
             {[0, 1, 2].map((i) => (
