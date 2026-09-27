@@ -402,11 +402,11 @@ function MentionCard({
           </NativeSelect>
         </div>
         <div className="space-y-1.5">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Dishes</p>
+          <p className="text-xs font-medium text-muted-foreground">Dishes</p>
           <DishChips dishes={draft.dishes} onChange={(dishes) => onChange({ dishes })} testId={`${testId}-dishes`} />
         </div>
         <div className="space-y-1.5">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tags</p>
+          <p className="text-xs font-medium text-muted-foreground">Tags</p>
           <EditableTagChips
             inline
             tags={draft.tags}
@@ -460,18 +460,18 @@ function ReviewItemCard({
     <div className="rounded-xl border p-3 space-y-2" data-testid={`review-item-${item.id}`}>
       <div className="flex items-center gap-2">
         <StatusDot status={item.kind === "failed_run" ? "failed" : "needs_review"} />
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{KIND_LABEL[item.kind]}</p>
+        <p className="text-xs font-medium text-muted-foreground">{KIND_LABEL[item.kind]}</p>
       </div>
       <p className="text-sm font-medium">{item.question}</p>
       {item.kind === "confirm_place" && candidates.length > 0 && (
-        <div className="-mx-1 divide-y">
+        <div className="-mx-2">
           {candidates.slice(0, 5).map((c) => (
             <button
               key={c.googlePlaceId}
               type="button"
               disabled={pending}
               onClick={() => onConfirm(c.googlePlaceId)}
-              className="flex w-full items-center gap-3 rounded-md px-1 py-2 text-left hover:bg-accent disabled:opacity-50"
+              className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left hover:bg-accent disabled:opacity-50"
               data-testid={`button-candidate-${c.googlePlaceId}`}
             >
               <div className="min-w-0 flex-1">
@@ -658,9 +658,9 @@ export function MentionEditor({
   const body = (
     <div className="flex min-h-0 flex-1 flex-col" data-testid="mention-editor">
       <div className="px-4 pt-4 pb-3 border-b">
-        <p className="font-semibold text-lg leading-tight">Edit post</p>
+        <p className="text-base leading-none font-medium">Edit post</p>
         {post && (
-          <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
+          <p className="mt-1.5 flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
             <StatusDot status={post.status} />
             <span className="truncate">
               @{post.handle}
@@ -709,7 +709,7 @@ export function MentionEditor({
             ))}
 
             <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <p className="text-xs font-medium text-muted-foreground">
                 {liveCount === 0 ? "No places" : liveCount === 1 ? "1 place" : `${liveCount} places`}
               </p>
               {drafts.map((d, i) => (
@@ -739,7 +739,7 @@ export function MentionEditor({
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 border-t px-4 py-3">
+      <div className="flex flex-wrap items-center gap-2 border-t bg-muted/50 px-4 py-3 sm:rounded-b-xl">
         <Button variant="outline" size="sm" disabled={!data || pending} onClick={() => setAdding(adding ? null : {})} data-testid="button-add-place">
           Add place
         </Button>

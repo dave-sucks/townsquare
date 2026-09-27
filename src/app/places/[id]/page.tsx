@@ -46,8 +46,8 @@ const FeedPost = dynamic(
 const EmojiPickerPopover = dynamic(
   () => import("@/components/shared/emoji-picker-popover").then(m => ({ default: m.EmojiPickerPopover })),
 );
-const PlaceAdminPanel = dynamic(
-  () => import("@/components/admin/place-admin").then(m => ({ default: m.PlaceAdminPanel })),
+const PlaceAdminMenu = dynamic(
+  () => import("@/components/admin/place-admin").then(m => ({ default: m.PlaceAdminMenu })),
 );
 const PlaceTagsAdmin = dynamic(
   () => import("@/components/admin/place-admin").then(m => ({ default: m.PlaceTagsAdmin })),
@@ -386,7 +386,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
         backHref="/"
         className="border-b-0"
       >
-        {adminMode && <PlaceAdminPanel googlePlaceId={place.googlePlaceId} />}
+        {adminMode && <PlaceAdminMenu googlePlaceId={place.googlePlaceId} />}
         <SaveToListDropdown
           ref={saveDropdownRef}
           place={place}

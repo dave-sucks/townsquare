@@ -75,7 +75,7 @@ function routes({ listId, placeId, adminPlaceId, roundupId }) {
     },
     adminPlaceId && { name: "admin-place", path: `/places/${adminPlaceId}`, admin: true, settle: 3500 },
     adminPlaceId && {
-      name: "admin-place-panel",
+      name: "admin-place-menu",
       path: `/places/${adminPlaceId}`,
       admin: true,
       before: (page) => page.locator('[data-testid="button-place-admin"]').click(),

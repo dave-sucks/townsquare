@@ -1,9 +1,6 @@
 "use client";
 
-/**
- * A one-field edit, cloned from SaveToListDropdown's "Create new list"
- * dialog: a title, one input (or textarea), Cancel and Save.
- */
+/** A one-field edit: the stock Dialog with a title, one input (or textarea), Cancel and Save. */
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
@@ -73,11 +70,11 @@ export function EditFieldDialog({
               data-testid={`input-${testId}`}
             />
           ))}
-        <DialogFooter className="flex-row gap-2">
-          <Button variant="ghost" className="flex-1 py-3 text-base" onClick={() => onOpenChange(false)}>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button className="flex-1 py-3 text-base" onClick={() => onSave(value)} disabled={saving} data-testid={`button-save-${testId}`}>
+          <Button onClick={() => onSave(value)} disabled={saving} data-testid={`button-save-${testId}`}>
             {saving ? "Saving..." : "Save"}
           </Button>
         </DialogFooter>
