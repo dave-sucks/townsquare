@@ -6,7 +6,8 @@
     "dev": "next dev --webpack",
     "build": "node scripts/migrate-deploy.mjs && prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --import tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.122",

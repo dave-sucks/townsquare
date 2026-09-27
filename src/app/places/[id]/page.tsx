@@ -58,6 +58,8 @@ interface Place {
   priceLevel: string | null;
   photoRefs: string[] | null;
   aiSummary?: string | null;
+  /** Dishes creators single out (the engine's Aggregate and Summarize). */
+  knownFor?: { name: string; count: number }[] | null;
 }
 
 interface SavedPlace {
@@ -491,6 +493,19 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                   <p className="text-base text-muted-foreground">
                     {place.aiSummary}
                   </p>
+                </div>
+              )}
+
+              {place?.knownFor && place.knownFor.length > 0 && (
+                <div className="space-y-2" data-testid="section-known-for">
+                  <h3 className="text-sm font-medium">Known for</h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {place.knownFor.map((dish) => (
+                      <Badge key={dish.name} variant="secondary" className="font-normal" data-testid={`badge-known-for-${dish.name}`}>
+                        {dish.name}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               )}
 

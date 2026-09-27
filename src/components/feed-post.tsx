@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -35,12 +36,36 @@ interface SocialPostData {
   author: string;
   authorImage?: string | null;
   caption?: string | null;
+  /** What the post says about this place (a roundup's own lines). */
+  excerpt?: string | null;
   mediaUrl?: string | null;
   mediaType?: string | null;
   likes?: number | null;
   postedAt?: string | null;
   permalink?: string | null;
   source?: 'instagram' | 'tiktok' | 'manual' | string | null;
+}
+
+/** A post's excerpt for this place, with More expanding to the whole caption. */
+function PostExcerpt({ excerpt, caption, id }: { excerpt: string; caption?: string | null; id: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasMore = !!caption && caption.trim() !== excerpt.trim();
+  return (
+    <p className="px-4 pb-2 text-sm text-muted-foreground whitespace-pre-line" data-testid={`text-post-excerpt-${id}`}>
+      {expanded ? caption : excerpt}
+      {hasMore && (
+        <Button
+          variant="link"
+          size="xs"
+          className="h-auto px-1 text-foreground"
+          onClick={() => setExpanded(!expanded)}
+          data-testid={`button-excerpt-more-${id}`}
+        >
+          {expanded ? "Less" : "More"}
+        </Button>
+      )}
+    </p>
+  );
 }
 
 interface Activity {
@@ -131,6 +156,10 @@ export function FeedPost({ activity }: FeedPostProps) {
               <HugeiconsIcon icon={Bookmark01Icon} className="h-5 w-5" />
             </Button>
           </div>
+        )}
+
+        {activity.socialPost!.excerpt && (
+          <PostExcerpt excerpt={activity.socialPost!.excerpt} caption={activity.socialPost!.caption} id={activity.id} />
         )}
 
         {/* Full-width Instagram embed */}

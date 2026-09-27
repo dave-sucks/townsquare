@@ -5,11 +5,11 @@
  * and find_creators all come through here, so matching, area math and the
  * PlaceRow shape are defined once and the tools stay thin.
  *
- * Matching: a query like "burger" or "natural wine" hits place tags (both
- * the per-place tags and the tag aggregates), the place name, the AI
- * summary, and creators' post captions. place_tags is the dense signal
- * (306 of 313 places tagged, 2026-09-23); place_tag_aggregates is sparse
- * (75 rows), so it only adds weight.
+ * Matching: a query like "burger" or "natural wine" hits place tags (slug,
+ * name or a synonym), the place name, the AI summary, and creators' post
+ * captions. Tags come from place_tags, the one tag source every surface
+ * reads: the engine's Aggregate stage writes each place's shown tags there,
+ * next to admin overrides.
  *
  * Ranking: distinct creators, then posts in the last 90 days, then all
  * posts, then match strength.
@@ -184,11 +184,7 @@ function matchedPlacesCte(groups: TermGroups, scope: CreatorScope): Prisma.Sql {
       SELECT pt.place_id, 4 AS w, terms.grp
         FROM place_tags pt JOIN tags t ON t.id = pt.tag_id, terms
        WHERE regexp_replace(t.slug, '[-_]', ' ', 'g') ILIKE terms.pat OR t.display_name ILIKE terms.pat
-      UNION ALL
-      SELECT a.place_id, 4 AS w, terms.grp
-        FROM place_tag_aggregates a JOIN tags t ON t.id = a.tag_id, terms
-       WHERE NOT a.is_suppressed
-         AND (regexp_replace(t.slug, '[-_]', ' ', 'g') ILIKE terms.pat OR t.display_name ILIKE terms.pat)
+          OR EXISTS (SELECT 1 FROM unnest(t.synonyms) syn WHERE syn ILIKE terms.pat)
       UNION ALL
       SELECT p.id AS place_id, 5 AS w, terms.grp FROM places p, terms WHERE p.name ILIKE terms.pat
       UNION ALL
@@ -466,18 +462,14 @@ export async function hydratePlaceRows(
     },
   });
 
+  // Admin overrides first, then the engine's most confident tags.
   const tags = await prisma.$queryRaw<{ place_id: string; slug: string; display_name: string }[]>(Prisma.sql`
     SELECT place_id, slug, display_name FROM (
-      SELECT x.place_id, t.slug, t.display_name,
-             row_number() OVER (PARTITION BY x.place_id ORDER BY max(x.rank) DESC, t.sort_order) AS n
-        FROM (
-          SELECT a.place_id, a.tag_id, 1 + a.confidence AS rank
-            FROM place_tag_aggregates a WHERE NOT a.is_suppressed AND a.place_id IN (${idList})
-          UNION ALL
-          SELECT pt.place_id, pt.tag_id, coalesce(pt.confidence, 0.5) AS rank
-            FROM place_tags pt WHERE pt.place_id IN (${idList})
-        ) x JOIN tags t ON t.id = x.tag_id
-       GROUP BY x.place_id, t.id, t.slug, t.display_name, t.sort_order
+      SELECT pt.place_id, t.slug, t.display_name,
+             row_number() OVER (PARTITION BY pt.place_id
+                                ORDER BY (pt.source = 'manual') DESC, coalesce(pt.confidence, 0.5) DESC, t.sort_order) AS n
+        FROM place_tags pt JOIN tags t ON t.id = pt.tag_id
+       WHERE pt.place_id IN (${idList})
     ) ranked WHERE n <= 3`);
 
   const creators = await prisma.$queryRaw<
@@ -495,7 +487,7 @@ export async function hydratePlaceRows(
     { place_id: string; review_id: string; caption: string | null; media_url: string | null; url: string | null; posted_at: Date | null; likes: number | null; username: string | null }[]
   >(Prisma.sql`
     SELECT DISTINCT ON (r.place_id)
-           r.place_id, r.id AS review_id, r.social_post_caption AS caption,
+           r.place_id, r.id AS review_id, coalesce(r.excerpt, r.social_post_caption) AS caption,
            r.social_post_media_url AS media_url, r.instagram_url AS url,
            coalesce(r.social_post_posted_at, r.created_at) AS posted_at,
            r.social_post_likes AS likes, u.username
@@ -673,7 +665,7 @@ export async function getPlacePosts(placeId: string, viewerId: string, limit = 8
   >(Prisma.sql`
     SELECT r.id AS review_id, u.id AS user_id, u.username, u.first_name, u.profile_image_url AS avatar,
            EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = ${viewerId} AND f.following_id = u.id) AS followed,
-           r.social_post_caption AS caption, r.social_post_media_url AS media_url, r.instagram_url AS url,
+           coalesce(r.excerpt, r.social_post_caption) AS caption, r.social_post_media_url AS media_url, r.instagram_url AS url,
            coalesce(r.social_post_posted_at, r.created_at) AS posted_at, r.social_post_likes AS likes
       FROM reviews r JOIN users u ON u.id = r.user_id
      WHERE r.place_id = ${placeId}

@@ -243,82 +243,60 @@ export async function GET(
         categorySlug: pt.tag.category.slug,
       }));
 
-    // Fetch all REVIEW_CREATED activities related to this place
-    const allActivitiesRaw = await prisma.activity.findMany({
-      where: {
+    // Every creator post that mentions this place, each with this place's own
+    // excerpt. (A roundup has one activity, at its primary place; the mention
+    // is what puts it on every place it names.)
+    const mentionActivities = reviews
+      .filter((r) => r.instagramUrl)
+      .map((r) => ({
+        id: `review-${r.id}`,
+        actorId: r.userId,
+        type: "REVIEW_CREATED" as const,
         placeId: place.id,
-        type: "REVIEW_CREATED",
-      },
-      include: {
-        actor: {
-          select: {
-            id: true,
-            username: true,
-            firstName: true,
-            lastName: true,
-            profileImageUrl: true,
-          },
-        },
+        listId: null,
+        metadata: { note: r.note, rating: r.rating },
+        dedupeKey: `review-${r.id}`,
+        createdAt: r.socialPostPostedAt ?? r.createdAt,
+        actor: r.user,
         place: {
-          select: {
-            id: true,
-            googlePlaceId: true,
-            name: true,
-            formattedAddress: true,
-            photoRefs: true,
-          },
+          id: place.id,
+          googlePlaceId: place.googlePlaceId,
+          name: place.name,
+          formattedAddress: place.formattedAddress,
+          photoRefs: place.photoRefs,
         },
-        list: {
-          select: {
-            id: true,
-            name: true,
-            visibility: true,
-            userId: true,
-          },
+        list: null,
+        socialPost: {
+          author: r.user.username || r.user.firstName || "User",
+          authorImage: r.user.profileImageUrl,
+          caption: r.socialPostCaption,
+          excerpt: r.excerpt,
+          mediaUrl: r.socialPostMediaUrl,
+          mediaType: r.socialPostMediaType,
+          permalink: r.instagramUrl,
+          source: "instagram" as const,
         },
+      }));
+
+    // Reviews written in the app (no Instagram post) keep their activity.
+    const mentionActors = new Set(mentionActivities.map((a) => a.actorId));
+    const appReviewActivities = await prisma.activity.findMany({
+      where: { placeId: place.id, type: "REVIEW_CREATED", actorId: { notIn: [...mentionActors] } },
+      include: {
+        actor: { select: { id: true, username: true, firstName: true, lastName: true, profileImageUrl: true } },
+        place: { select: { id: true, googlePlaceId: true, name: true, formattedAddress: true, photoRefs: true } },
+        list: { select: { id: true, name: true, visibility: true, userId: true } },
       },
       orderBy: { createdAt: "desc" },
       take: 50,
     });
 
-    // Fetch the associated review data for these activities
-    const reviewActivityActorIds = allActivitiesRaw.map(a => a.actorId);
-
-    const reviewsWithInstagram = await prisma.review.findMany({
-      where: {
-        placeId: place.id,
-        userId: { in: reviewActivityActorIds },
-        instagramUrl: { not: null },
-      },
-      select: {
-        userId: true,
-        instagramUrl: true,
-        instagramShortcode: true,
-        socialPostCaption: true,
-        socialPostMediaUrl: true,
-        socialPostMediaType: true,
-      },
-    });
-
-    // Create a map of userId -> review for quick lookup
-    const reviewByUserId = new Map(reviewsWithInstagram.map(r => [r.userId, r]));
-
-    // Transform activities to include socialPost data
-    const allActivities = allActivitiesRaw.map(activity => {
-      const review = reviewByUserId.get(activity.actorId);
-      return {
-        ...activity,
-        socialPost: review?.instagramUrl ? {
-          author: activity.actor.username || activity.actor.firstName || "User",
-          authorImage: activity.actor.profileImageUrl,
-          caption: review.socialPostCaption,
-          mediaUrl: review.socialPostMediaUrl,
-          mediaType: review.socialPostMediaType,
-          permalink: review.instagramUrl,
-          source: "instagram" as const,
-        } : null,
-      };
-    });
+    const allActivities = [
+      ...mentionActivities,
+      ...appReviewActivities.map((a) => ({ ...a, socialPost: null })),
+    ]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 50);
 
     // Filter activities from people the user follows (+ own activities)
     const followingSet = new Set([...followingIds, user.id]);
