@@ -25,6 +25,7 @@ import { apiRequest } from "@/lib/query-client";
 import { useAuth } from "@/hooks/use-auth";
 import { AppShell, PageHeader } from "@/components/layout";
 import { SocialPostCard } from "@/components/shared/social-post-card";
+import { StatusDot } from "@/components/shared/status-dot";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Loading03Icon,
@@ -81,25 +82,6 @@ interface SelectedPlace {
   placeId: string;
   name: string;
   address: string;
-}
-
-function StatusDot({ status }: { status: string }) {
-  const colorMap: Record<string, string> = {
-    processed: "bg-emerald-500",
-    completed: "bg-emerald-500",
-    running: "bg-blue-500",
-    unresolved: "bg-amber-500",
-    failed: "bg-red-500",
-    pending: "bg-stone-400",
-    queued: "bg-stone-400",
-    new: "bg-stone-400",
-  };
-  return (
-    <span
-      className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${colorMap[status] || "bg-stone-400"}`}
-      data-testid={`dot-status-${status}`}
-    />
-  );
 }
 
 function ImportPanel() {

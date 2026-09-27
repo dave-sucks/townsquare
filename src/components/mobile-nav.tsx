@@ -19,8 +19,12 @@ import {
   Notification02Icon,
   Moon02Icon,
   Sun03Icon,
+  UserShield01Icon,
 } from "@hugeicons/core-free-icons";
 import { useTheme } from "next-themes";
+import { Switch } from "@/components/ui/switch";
+import { useAdminMode } from "@/components/admin/admin-mode";
+import { ADMIN_NAV_ITEMS } from "@/components/admin/admin-nav";
 
 interface User {
   id: string;
@@ -50,6 +54,7 @@ const MENU_ITEMS_BOTTOM = [
 
 export function MobileNav({ user }: { user: User | null }) {
   const pathname = usePathname();
+  const adminMode = useAdminMode();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
@@ -131,6 +136,41 @@ export function MobileNav({ user }: { user: User | null }) {
               </Link>
             ))}
 
+            {adminMode.enabled &&
+              ADMIN_NAV_ITEMS.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2"
+                  data-testid={`mobile-menu-admin-${item.label.toLowerCase()}`}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <span className="text-base font-medium">{item.label}</span>
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted/60">
+                    <HugeiconsIcon icon={item.icon} className="size-5" />
+                  </div>
+                </Link>
+              ))}
+
+            {adminMode.isAdmin && (
+              <button
+                onClick={() => adminMode.setEnabled(!adminMode.enabled)}
+                className="flex items-center gap-3 rounded-xl px-3 py-2"
+                data-testid="mobile-menu-admin-mode"
+              >
+                <span className="text-base font-medium">Admin mode</span>
+                <Switch
+                  checked={adminMode.enabled}
+                  tabIndex={-1}
+                  aria-hidden
+                  className="pointer-events-none"
+                />
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted/60">
+                  <HugeiconsIcon icon={UserShield01Icon} className="size-5" />
+                </div>
+              </button>
+            )}
+
             {mounted && (
               <button
                 onClick={() => {
@@ -209,7 +249,15 @@ export function MobileNav({ user }: { user: User | null }) {
               )}
               data-testid="mobile-nav-menu"
             >
-              <HugeiconsIcon icon={menuOpen ? Cancel01Icon : LayoutAlignRightIcon} className="size-6" />
+              <span className="relative">
+                <HugeiconsIcon icon={menuOpen ? Cancel01Icon : LayoutAlignRightIcon} className="size-6" />
+                {adminMode.enabled && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-amber-500 ring-2 ring-background"
+                    data-testid="indicator-admin-mode-mobile"
+                  />
+                )}
+              </span>
             </button>
           </div>
         </nav>

@@ -9,6 +9,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuLinkItem,
   DropdownMenuSeparator,
@@ -37,10 +38,14 @@ import {
   Moon02Icon,
   Sun03Icon,
   Bookmark03Icon,
+  UserShield01Icon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { useTheme } from "next-themes";
 import { MobileNav } from "@/components/mobile-nav";
+import { useAdminMode } from "@/components/admin/admin-mode";
+import { ADMIN_NAV_ITEMS } from "@/components/admin/admin-nav";
 
 interface User {
   id: string;
@@ -96,8 +101,38 @@ function ThemeToggleButton() {
   );
 }
 
+type NavItem = { href: string; label: string; icon: typeof MapsSearchIcon };
+
+function SideNavLink({ item, pathname }: { item: NavItem; pathname: string }) {
+  const isActive =
+    pathname === item.href ||
+    (item.href !== "/" && pathname.startsWith(item.href));
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Link
+            href={item.href}
+            className={cn(
+              "flex items-center justify-center h-9 w-full rounded-lg transition-colors",
+              isActive
+                ? "bg-foreground text-background"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+            )}
+            data-testid={`nav-${item.label.toLowerCase().replace(" ", "-")}`}
+          />
+        }
+      >
+        <HugeiconsIcon icon={item.icon} className="h-5 w-5" />
+      </TooltipTrigger>
+      <TooltipContent side="right">{item.label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
 function DesktopSideNav({ user }: { user: User | null }) {
   const pathname = usePathname();
+  const adminMode = useAdminMode();
   const userName =
     user?.username || user?.firstName || user?.email?.split("@")[0] || "User";
   const userEmail = user?.email || "";
@@ -126,32 +161,17 @@ function DesktopSideNav({ user }: { user: User | null }) {
 
         {/* Nav items */}
         <div className="flex flex-col gap-0.5 flex-1 w-full px-2">
-          {NAV_ITEMS.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/" && pathname.startsWith(item.href));
-            return (
-              <Tooltip key={item.href}>
-                <TooltipTrigger
-                  render={
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "flex items-center justify-center h-9 w-full rounded-lg transition-colors",
-                        isActive
-                          ? "bg-foreground text-background"
-                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                      )}
-                      data-testid={`nav-${item.label.toLowerCase().replace(" ", "-")}`}
-                    />
-                  }
-                >
-                  <HugeiconsIcon icon={item.icon} className="h-5 w-5" />
-                </TooltipTrigger>
-                <TooltipContent side="right">{item.label}</TooltipContent>
-              </Tooltip>
-            );
-          })}
+          {NAV_ITEMS.map((item) => (
+            <SideNavLink key={item.href} item={item} pathname={pathname} />
+          ))}
+          {adminMode.enabled && (
+            <>
+              <div className="mx-1 my-1.5 border-t" data-testid="nav-admin-group" />
+              {ADMIN_NAV_ITEMS.map((item) => (
+                <SideNavLink key={item.href} item={item} pathname={pathname} />
+              ))}
+            </>
+          )}
         </div>
 
         {/* Footer: theme + user */}
@@ -163,12 +183,20 @@ function DesktopSideNav({ user }: { user: User | null }) {
                 className="flex items-center justify-center h-9 w-full rounded-lg hover:bg-accent transition-colors"
                 data-testid="button-user-menu"
               >
-                <Avatar className="h-7 w-7 rounded-md">
-                  <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
-                  <AvatarFallback className="rounded-md text-xs">
-                    {userName.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                <span className="relative">
+                  <Avatar className="h-7 w-7 rounded-md">
+                    <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
+                    <AvatarFallback className="rounded-md text-xs">
+                      {userName.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  {adminMode.enabled && (
+                    <span
+                      className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-amber-500 ring-2 ring-background"
+                      data-testid="indicator-admin-mode"
+                    />
+                  )}
+                </span>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 className="min-w-56 rounded-lg"
@@ -176,20 +204,22 @@ function DesktopSideNav({ user }: { user: User | null }) {
                 align="end"
                 sideOffset={8}
               >
-                <DropdownMenuLabel className="p-0 font-normal">
-                  <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                    <Avatar className="h-8 w-8 rounded-md">
-                      <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
-                      <AvatarFallback className="rounded-md">
-                        {userName.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">{userName}</span>
-                      <span className="truncate text-xs text-muted-foreground">{userEmail}</span>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="p-0 font-normal">
+                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                      <Avatar className="h-8 w-8 rounded-md">
+                        <AvatarImage src={user.profileImageUrl || ""} alt={userName} />
+                        <AvatarFallback className="rounded-md">
+                          {userName.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="grid flex-1 text-left text-sm leading-tight">
+                        <span className="truncate font-semibold">{userName}</span>
+                        <span className="truncate text-xs text-muted-foreground">{userEmail}</span>
+                      </div>
                     </div>
-                  </div>
-                </DropdownMenuLabel>
+                  </DropdownMenuLabel>
+                </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                   <DropdownMenuLinkItem render={<Link href="/upgrade" />}>
@@ -215,6 +245,28 @@ function DesktopSideNav({ user }: { user: User | null }) {
                     Notifications
                   </DropdownMenuLinkItem>
                 </DropdownMenuGroup>
+                {adminMode.isAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem
+                        closeOnClick={false}
+                        onClick={() => adminMode.setEnabled(!adminMode.enabled)}
+                        data-testid="button-admin-mode"
+                      >
+                        <HugeiconsIcon icon={UserShield01Icon} className="size-4" />
+                        Admin mode
+                        <Switch
+                          size="sm"
+                          checked={adminMode.enabled}
+                          tabIndex={-1}
+                          aria-hidden
+                          className="ml-auto pointer-events-none"
+                        />
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                  </>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuLinkItem href="/api/logout" data-testid="button-logout">
                   <HugeiconsIcon icon={Logout02Icon} className="size-4" />
