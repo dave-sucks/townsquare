@@ -12,10 +12,12 @@ import { callStructured, type LlmUsage } from "../llm";
 import { activeVersion } from "../agents/registry";
 import { resolveSchema, type ResolveOutput } from "../agents/resolve/schema";
 import { ENGINE } from "../config";
+import { renderExamples, selectExamples } from "../examples";
 import { openReviewItem } from "../review";
 import { distanceKm, nameSimilarity } from "../text";
 import { ensurePlace } from "../write/places";
 import type { StepResult } from "../write/runs";
+import type { StageOptions } from "./options";
 import type { ReadPlaceResult } from "./read";
 
 type Point = { lat: number; lng: number };
@@ -130,6 +132,7 @@ export async function runResolve(
   postId: string,
   place: ReadPlaceResult,
   ctx: { handle: string; homeCity: string | null; locationName: string | null },
+  opts: StageOptions & { forceAgent?: boolean } = {},
 ): Promise<StepResult<ResolveResult>> {
   const cfg = ENGINE.resolve;
   const home = ctx.homeCity ? await geocode(ctx.homeCity) : null;
@@ -170,7 +173,9 @@ export async function runResolve(
 
   const base = { query, bias: biasLabel, candidates };
   const accept = async (c: Candidate, resolvedBy: "code" | "agent", confidence: number, agent: ResolveOutput | null) => {
-    const p = await ensurePlace(c.googlePlaceId, { runId, actor: resolvedBy === "code" ? "engine" : "resolve" });
+    const p = opts.dryRun
+      ? { id: null, name: c.name }
+      : await ensurePlace(c.googlePlaceId, { runId, actor: resolvedBy === "code" ? "engine" : "resolve" });
     return {
       outcome: "accepted" as const,
       resolvedBy,
@@ -187,6 +192,7 @@ export async function runResolve(
   // Code decides when one candidate clearly wins.
   const [top, next] = candidates;
   if (
+    !opts.forceAgent &&
     top &&
     top.score >= cfg.autoAccept.minScore &&
     top.score - (next?.score ?? 0) >= cfg.autoAccept.minLead &&
@@ -199,8 +205,16 @@ export async function runResolve(
   let agent: ResolveOutput | null = null;
   let agentVersionId: string | null = null;
   if (candidates.length > 0) {
-    const version = await activeVersion("resolve");
+    const version = opts.version ?? (await activeVersion("resolve"));
     agentVersionId = version.id;
+    const examples = await selectExamples({ agentKey: "resolve", excludePostId: postId, limit: 3 });
+    const exampleBlock = renderExamples(examples, (e) => {
+      const input = (e.input ?? {}) as { name?: string; areaHint?: string | null; candidates?: { googlePlaceId: string; name: string }[] };
+      const expected = (e.expected ?? {}) as { googlePlaceIds?: string[]; googlePlaceId?: string };
+      const chosen = (expected.googlePlaceIds ?? (expected.googlePlaceId ? [expected.googlePlaceId] : []))
+        .map((id) => input.candidates?.find((c) => c.googlePlaceId === id)?.name ?? id);
+      return `"${input.name ?? "?"}"${input.areaHint ? ` (${input.areaHint})` : ""} → a person chose ${chosen.length ? chosen.join(" and ") : "none of the candidates"}`;
+    });
     const res = await callStructured({
       model: version.model,
       system: version.systemPrompt,
@@ -222,6 +236,7 @@ export async function runResolve(
             `<candidates>`,
             describeCandidates(candidates),
             `</candidates>`,
+            exampleBlock ? `\n${exampleBlock}` : null,
           ]
             .filter((l) => l !== null)
             .join("\n"),
@@ -237,7 +252,9 @@ export async function runResolve(
   }
 
   // A person picks.
-  const item = await openReviewItem({
+  const item = opts.dryRun
+    ? null
+    : await openReviewItem({
     kind: "confirm_place",
     postId,
     runId,
@@ -254,7 +271,7 @@ export async function runResolve(
       placeName: null,
       confidence: null,
       agent,
-      reviewItemId: item.id,
+      reviewItemId: item?.id ?? null,
       ...base,
     },
     usage,

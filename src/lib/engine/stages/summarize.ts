@@ -12,15 +12,17 @@ import { activeVersion } from "../agents/registry";
 import { summarizeSchema } from "../agents/summarize/schema";
 import { ENGINE } from "../config";
 import { dishKey } from "../text";
+import { renderExamples, selectExamples } from "../examples";
 import { setPlaceSummary, type KnownForDish } from "../write/places";
 import type { StepResult } from "../write/runs";
+import type { StageOptions } from "./options";
 import { countDishes } from "./aggregate";
 
 export type SummarizeResult =
   | { skipped: true; reason: string; inputHash?: string }
   | { skipped: false; inputHash: string; summary: string; knownFor: KnownForDish[]; droppedKnownFor: string[] };
 
-export async function runSummarize(runId: string, placeId: string): Promise<StepResult<SummarizeResult>> {
+export async function runSummarize(runId: string, placeId: string, opts: StageOptions & { force?: boolean } = {}): Promise<StepResult<SummarizeResult>> {
   const place = await prisma.place.findUniqueOrThrow({
     where: { id: placeId },
     select: { name: true, types: true, priceLevel: true, neighborhood: true, locality: true, verdictCounts: true },
@@ -63,14 +65,14 @@ export async function runSummarize(runId: string, placeId: string): Promise<Step
     orderBy: { startedAt: "desc" },
     select: { output: true },
   });
-  if ((last?.output as { inputHash?: string } | null)?.inputHash === inputHash) {
+  if (!opts.force && !opts.dryRun && (last?.output as { inputHash?: string } | null)?.inputHash === inputHash) {
     return { output: { skipped: true, reason: "mentions unchanged", inputHash }, status: "skipped" };
   }
 
   const dishCounts = countDishes(reviews.map((r) => ({ dishes: r.dishes, postedAt: r.socialPostPostedAt ?? r.createdAt })));
   const verdicts = (place.verdictCounts ?? {}) as Record<string, number>;
   const types = (Array.isArray(place.types) ? place.types : []) as string[];
-  const version = await activeVersion("summarize");
+  const version = opts.version ?? (await activeVersion("summarize"));
   const message = [
     `<place>`,
     `${place.name} · ${types.filter((t) => t !== "point_of_interest" && t !== "establishment").slice(0, 4).join(", ")}`,
@@ -88,7 +90,13 @@ export async function runSummarize(runId: string, placeId: string): Promise<Step
     `<mentions>`,
     mentions.map((m) => `- @${m.handle} · ${m.date} · ${m.verdict}: "${m.text}"`).join("\n"),
     `</mentions>`,
-  ].join("\n");
+    renderExamples(await selectExamples({ agentKey: "summarize", limit: 3 }), (e) => {
+      const expected = (e.expected ?? {}) as { summary?: string };
+      return `A summary a person wrote: "${expected.summary ?? ""}"`;
+    }),
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   const res = await callStructured({
     model: version.model,
@@ -109,7 +117,7 @@ export async function runSummarize(runId: string, placeId: string): Promise<Step
     else droppedKnownFor.push(name);
   }
 
-  await setPlaceSummary(placeId, { summary: res.output.summary, knownFor }, { runId, actor: "summarize" });
+  if (!opts.dryRun) await setPlaceSummary(placeId, { summary: res.output.summary, knownFor }, { runId, actor: "summarize" });
   return {
     output: { skipped: false, inputHash, summary: res.output.summary, knownFor, droppedKnownFor },
     usage: [res],

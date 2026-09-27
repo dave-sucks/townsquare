@@ -16,6 +16,7 @@ import { dismissOpenItems, openReviewItem } from "../review";
 import { isVerbatim, parseScore } from "../text";
 import { latestReviewerNote, setPostReading } from "../write/posts";
 import type { StepResult } from "../write/runs";
+import type { StageOptions } from "./options";
 
 export type ReadPlaceResult = ReadPlace & {
   index: number;
@@ -76,7 +77,7 @@ export function checkRead(out: ReadOutput, facts: ReadFacts): GateFailure[] {
   return failures;
 }
 
-export async function runRead(runId: string, postId: string): Promise<StepResult<ReadResult>> {
+export async function runRead(runId: string, postId: string, opts: StageOptions = {}): Promise<StepResult<ReadResult>> {
   const post = await prisma.ingestedPost.findUniqueOrThrow({
     where: { id: postId },
     select: {
@@ -90,7 +91,7 @@ export async function runRead(runId: string, postId: string): Promise<StepResult
       source: { select: { handle: true, homeCity: true, notes: true } },
     },
   });
-  const version = await activeVersion("read");
+  const version = opts.version ?? (await activeVersion("read"));
   const examples = await selectExamples({
     agentKey: "read",
     sourceId: post.sourceId,
@@ -160,8 +161,8 @@ export async function runRead(runId: string, postId: string): Promise<StepResult
     };
   });
 
-  await dismissOpenItems(post.id, ["fix_extraction", "check_not_a_place", "confirm_place"], "the post was read again");
-  if (failures.length > 0) {
+  if (!opts.dryRun) await dismissOpenItems(post.id, ["fix_extraction", "check_not_a_place", "confirm_place"], "the post was read again");
+  if (!opts.dryRun && failures.length > 0) {
     await openReviewItem({
       kind: "fix_extraction",
       postId: post.id,
@@ -171,7 +172,7 @@ export async function runRead(runId: string, postId: string): Promise<StepResult
       priority: 1,
     });
   }
-  if (out.postType === "not_a_place" && facts.locationName) {
+  if (!opts.dryRun && out.postType === "not_a_place" && facts.locationName) {
     await openReviewItem({
       kind: "check_not_a_place",
       postId: post.id,
@@ -181,7 +182,7 @@ export async function runRead(runId: string, postId: string): Promise<StepResult
     });
   }
 
-  await setPostReading(post.id, { postType: out.postType, sponsored: out.sponsored }, runId);
+  if (!opts.dryRun) await setPostReading(post.id, { postType: out.postType, sponsored: out.sponsored }, runId);
 
   return {
     output: {

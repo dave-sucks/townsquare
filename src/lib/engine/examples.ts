@@ -36,3 +36,40 @@ export function renderExamples(rows: ExampleRow[], describe: (row: ExampleRow) =
   if (rows.length === 0) return "";
   return `<examples>\n${rows.map((r, i) => `Example ${i + 1}:\n${describe(r)}`).join("\n\n")}\n</examples>`;
 }
+
+/**
+ * Save a person's decision as an example for the agent whose output it
+ * confirms or corrects. The next calls of that agent can use it as a
+ * few-shot (and, later, as an eval case). The newest decision about a post
+ * (or one of its mentions) replaces earlier ones for that agent, so saving a
+ * post twice doesn't make it two examples; golden-set examples stay.
+ */
+export async function saveExample(opts: {
+  agentKey: AgentKey;
+  postId?: string | null;
+  reviewId?: string | null;
+  input: unknown;
+  expected: unknown;
+  source: "human_confirmed" | "human_corrected";
+  note?: string | null;
+  createdBy: string;
+}) {
+  if (opts.postId) {
+    await prisma.example.deleteMany({
+      where: { agentKey: opts.agentKey, postId: opts.postId, reviewId: opts.reviewId ?? null, inGoldenSet: false },
+    });
+  }
+  return prisma.example.create({
+    data: {
+      agentKey: opts.agentKey,
+      postId: opts.postId ?? null,
+      reviewId: opts.reviewId ?? null,
+      input: JSON.parse(JSON.stringify(opts.input ?? {})),
+      expected: JSON.parse(JSON.stringify(opts.expected ?? {})),
+      source: opts.source,
+      note: opts.note ?? null,
+      createdBy: opts.createdBy,
+    },
+    select: { id: true },
+  });
+}

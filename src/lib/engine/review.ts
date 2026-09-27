@@ -41,3 +41,12 @@ export async function dismissOpenItems(postId: string, kinds: review_item_kind[]
     data: { status: "dismissed", resolution: { reason }, resolvedAt: new Date(), resolvedBy: "engine" },
   });
 }
+
+/** A post waits on a person while it has a place to confirm (the pipeline's rule); otherwise it's processed. */
+export async function refreshPostStatus(postId: string) {
+  const post = await prisma.ingestedPost.findUnique({ where: { id: postId }, select: { status: true } });
+  if (!post || post.status === "failed") return;
+  const waiting = await prisma.reviewItem.count({ where: { postId, status: "open", kind: "confirm_place" } });
+  const status = waiting > 0 ? "unresolved" : "processed";
+  if (status !== post.status) await prisma.ingestedPost.update({ where: { id: postId }, data: { status } });
+}

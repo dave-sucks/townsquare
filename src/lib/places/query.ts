@@ -290,7 +290,7 @@ async function findPlacesWithTerms(
       FROM places p
       ${matchJoin}
       ${statsJoin} stats s ON s.place_id = p.id
-     WHERE true ${areaFilter(opts.area)}
+     WHERE NOT p.is_hidden ${areaFilter(opts.area)}
      ORDER BY ${order}
      LIMIT ${poolLimit}`);
 
@@ -345,7 +345,7 @@ export async function findCreators(opts: {
       JOIN users u ON u.id = r.user_id
       JOIN places p ON p.id = r.place_id
       ${matchJoin}
-     WHERE u.id <> ${opts.userId} ${areaFilter(opts.area)}
+     WHERE u.id <> ${opts.userId} AND NOT p.is_hidden ${areaFilter(opts.area)}
      GROUP BY u.id
      ORDER BY posts DESC, places DESC
      LIMIT ${opts.limit}`);
@@ -638,7 +638,7 @@ export async function resolvePlace(opts: {
     SELECT p.id, p.name, p.neighborhood
       FROM places p
       LEFT JOIN (SELECT place_id, count(*) AS n FROM reviews GROUP BY place_id) s ON s.place_id = p.id
-     WHERE p.name ILIKE ${`%${name}%`} ${areaFilter(area)}
+     WHERE p.name ILIKE ${`%${name}%`} AND NOT p.is_hidden ${areaFilter(area)}
      ORDER BY (lower(p.name) = lower(${name})) DESC, coalesce(s.n, 0) DESC, length(p.name)
      LIMIT 4`);
   if (rows.length === 0) return null;
@@ -725,7 +725,7 @@ export async function getCreatorPlaces(opts: {
   const rows = await prisma.$queryRaw<{ place_id: string; total: number }[]>(Prisma.sql`
     SELECT r.place_id, (count(*) OVER ())::int AS total
       FROM reviews r JOIN places p ON p.id = r.place_id
-     WHERE r.user_id = ${opts.creatorId} ${areaFilter(opts.area)}
+     WHERE r.user_id = ${opts.creatorId} AND NOT p.is_hidden ${areaFilter(opts.area)}
      GROUP BY r.place_id
      ORDER BY max(coalesce(r.social_post_posted_at, r.created_at)) DESC
      LIMIT ${opts.limit}`);

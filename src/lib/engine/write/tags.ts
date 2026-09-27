@@ -10,6 +10,7 @@
 
 import type { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import { writeAudit } from "./audit";
 
 export type MentionTag = { tagId: string; confidence: number; evidence: string };
 
@@ -64,4 +65,36 @@ export async function materializePlaceTags(placeId: string, shown: { tagId: stri
       create: { placeId, tagId: s.tagId, source: "ai", confidence: s.confidence },
     });
   }
+}
+
+/**
+ * A person's say on a place's tags. Adding makes a manual override (always
+ * shown); removing drops the override and suppresses the aggregate so the
+ * next Aggregate run doesn't bring it back.
+ */
+export async function setPlaceTagOverride(placeId: string, slug: string, show: boolean, opts: { actor: string; note?: string | null }) {
+  const tag = await prisma.tag.findUniqueOrThrow({ where: { slug }, select: { id: true, slug: true } });
+  if (show) {
+    await prisma.placeTag.upsert({
+      where: { placeId_tagId: { placeId, tagId: tag.id } },
+      update: { source: "manual", addedById: opts.actor, confidence: 1 },
+      create: { placeId, tagId: tag.id, source: "manual", addedById: opts.actor, confidence: 1 },
+    });
+    await prisma.placeTagAggregate.updateMany({ where: { placeId, tagId: tag.id }, data: { isSuppressed: false } });
+  } else {
+    await prisma.placeTag.deleteMany({ where: { placeId, tagId: tag.id } });
+    await prisma.placeTagAggregate.upsert({
+      where: { placeId_tagId: { placeId, tagId: tag.id } },
+      update: { isSuppressed: true },
+      create: { placeId, tagId: tag.id, confidence: 0, isSuppressed: true },
+    });
+  }
+  await writeAudit({
+    entity: "place",
+    entityId: placeId,
+    action: show ? "tag_add" : "tag_remove",
+    actor: opts.actor,
+    note: opts.note,
+    fieldChanges: { tag: { from: show ? null : slug, to: show ? slug : null } },
+  });
 }

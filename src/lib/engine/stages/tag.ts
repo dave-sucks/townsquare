@@ -15,6 +15,7 @@ import { renderExamples, selectExamples } from "../examples";
 import { evidenceHolds } from "../text";
 import { addTagSuggestions, setMentionTags } from "../write/tags";
 import type { StepResult } from "../write/runs";
+import type { StageOptions } from "./options";
 
 type TaxonomyTag = { id: string; slug: string; description: string | null; synonyms: string[]; category: { slug: string; displayName: string } };
 
@@ -42,7 +43,7 @@ export type TagResult = {
   suggestions: { label: string; category: string; evidence: string }[];
 };
 
-export async function runTag(runId: string, reviewId: string): Promise<StepResult<TagResult>> {
+export async function runTag(runId: string, reviewId: string, opts: StageOptions = {}): Promise<StepResult<TagResult>> {
   const review = await prisma.review.findUniqueOrThrow({
     where: { id: reviewId },
     select: {
@@ -56,7 +57,7 @@ export async function runTag(runId: string, reviewId: string): Promise<StepResul
       place: { select: { name: true, types: true, priceLevel: true, primaryType: true } },
     },
   });
-  const [version, taxonomy] = await Promise.all([activeVersion("tag"), loadTaxonomy()]);
+  const [version, taxonomy] = await Promise.all([opts.version ?? activeVersion("tag"), loadTaxonomy()]);
   const examples = await selectExamples({
     agentKey: "tag",
     sourceId: review.ingestedPost?.sourceId,
@@ -117,7 +118,7 @@ export async function runTag(runId: string, reviewId: string): Promise<StepResul
     else kept.push(t);
   }
 
-  await setMentionTags(
+  if (!opts.dryRun) await setMentionTags(
     review.id,
     kept.map((t) => ({
       tagId: bySlug.get(t.slug)!.id,
@@ -130,7 +131,7 @@ export async function runTag(runId: string, reviewId: string): Promise<StepResul
   const suggestions = res.output.suggestions
     .filter((s) => !known.has(s.label.toLowerCase().trim()))
     .map((s) => ({ ...s, category: taxonomy.categories.includes(s.category) ? s.category : "other" }));
-  await addTagSuggestions(suggestions, { postId: review.ingestedPostId, reviewId: review.id });
+  if (!opts.dryRun) await addTagSuggestions(suggestions, { postId: review.ingestedPostId, reviewId: review.id });
 
   return { output: { kept, dropped, suggestions }, usage: [res], agentVersionId: version.id };
 }

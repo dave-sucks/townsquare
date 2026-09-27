@@ -34,14 +34,9 @@ async function fetchAndCachePlaceFromGoogle(googlePlaceId: string) {
       priceLevel: result.price_level != null ? result.price_level.toString() : null,
       photoRefs: result.photos?.slice(0, 5).map((p: any) => p.photo_reference) || [],
     },
+    // An existing place only needs its photos: its name, pin, type and price
+    // may be admin edits (engine/write/places.ts), which Google mustn't undo.
     update: {
-      name: result.name,
-      formattedAddress: result.formatted_address,
-      lat: result.geometry.location.lat,
-      lng: result.geometry.location.lng,
-      types: result.types || [],
-      primaryType: result.types?.[0] || null,
-      priceLevel: result.price_level != null ? result.price_level.toString() : null,
       photoRefs: result.photos?.slice(0, 5).map((p: any) => p.photo_reference) || [],
     },
   });
@@ -79,6 +74,12 @@ export async function GET(
 
     if (!place) {
       return NextResponse.json({ error: "Place not found" }, { status: 404 });
+    }
+
+    // A merged place's page points at the place it was merged into.
+    if (place.mergedIntoId) {
+      const into = await prisma.place.findUnique({ where: { id: place.mergedIntoId }, select: { googlePlaceId: true } });
+      if (into) return NextResponse.json({ mergedInto: into.googlePlaceId });
     }
 
     const savedPlace = await prisma.savedPlace.findUnique({
@@ -271,6 +272,7 @@ export async function GET(
           authorImage: r.user.profileImageUrl,
           caption: r.socialPostCaption,
           excerpt: r.excerpt,
+          postId: r.ingestedPostId,
           mediaUrl: r.socialPostMediaUrl,
           mediaType: r.socialPostMediaType,
           permalink: r.instagramUrl,
