@@ -22,13 +22,13 @@ export const placeRefresh = inngest.createFunction(
     retries: ENGINE.runtime.retries,
   },
   async ({ event, step }) => {
-    const { placeId } = event.data;
+    const { placeId, force } = event.data;
     const exists = await step.run("check", async () => !!(await prisma.place.findUnique({ where: { id: placeId }, select: { id: true } })));
     if (!exists) return { skipped: "place no longer exists" };
 
     const runId = await step.run("start", () => startRun({ kind: "place", placeId, trigger: "place_changed" }));
     await step.run("aggregate", () => recordStep(runId, "aggregate", "", { placeId }, () => runAggregate(placeId)));
-    await step.run("summarize", () => recordStep(runId, "summarize", "", { placeId }, () => runSummarize(runId, placeId)));
+    await step.run("summarize", () => recordStep(runId, "summarize", "", { placeId }, () => runSummarize(runId, placeId, { force })));
     return step.run("finish", () => finishRun(runId));
   },
 );

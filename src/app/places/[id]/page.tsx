@@ -1,8 +1,9 @@
 "use client";
 
-import { use, useState, useRef } from "react";
+import { use, useEffect, useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,6 +29,8 @@ import { AppShell, PageHeader } from "@/components/layout";
 import { GroupedTags, InlineTags, TagCategoryGroup, TagInfo, TagsWithPopover } from "@/components/shared/place-tags";
 import { SiGooglemaps } from "react-icons/si";
 import { ListChip } from "@/components/shared/list-chip";
+import { useAdminMode } from "@/components/admin/admin-mode";
+import { PlaceSummary } from "@/components/admin/place-summary";
 import dynamic from "next/dynamic";
 
 const ReviewDialog = dynamic(
@@ -42,6 +45,12 @@ const FeedPost = dynamic(
 );
 const EmojiPickerPopover = dynamic(
   () => import("@/components/shared/emoji-picker-popover").then(m => ({ default: m.EmojiPickerPopover })),
+);
+const PlaceAdminPanel = dynamic(
+  () => import("@/components/admin/place-admin").then(m => ({ default: m.PlaceAdminPanel })),
+);
+const PlaceTagsAdmin = dynamic(
+  () => import("@/components/admin/place-admin").then(m => ({ default: m.PlaceTagsAdmin })),
 );
 
 interface Place {
@@ -60,6 +69,8 @@ interface Place {
   aiSummary?: string | null;
   /** Dishes creators single out (the engine's Aggregate and Summarize). */
   knownFor?: { name: string; count: number }[] | null;
+  /** Hidden by an admin: off the map, search and chat. */
+  isHidden?: boolean;
 }
 
 interface SavedPlace {
@@ -152,6 +163,8 @@ interface Activity {
 }
 
 interface PlaceDetailData {
+  /** Set when this place was merged into another; the page redirects there. */
+  mergedInto?: string;
   place: Place;
   savedPlace: SavedPlace | null;
   listsContainingPlace: ListData[];
@@ -268,6 +281,8 @@ function ReviewCard({ review, isOwn, onEdit, onDelete, isDeleting }: {
 export default function PlaceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: placeId } = use(params);
   const { user, isAuthenticated } = useAuth();
+  const router = useRouter();
+  const { enabled: adminMode } = useAdminMode();
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const saveDropdownRef = useRef<SaveToListDropdownHandle>(null);
 
@@ -277,6 +292,11 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
     queryFn: () => apiRequest(`/api/places/${placeId}`),
     enabled: isAuthenticated,
   });
+
+  const mergedInto = data?.mergedInto;
+  useEffect(() => {
+    if (mergedInto) router.replace(`/places/${mergedInto}`);
+  }, [mergedInto, router]);
 
   const place = data?.place;
   const savedPlace = data?.savedPlace;
@@ -333,7 +353,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
     );
   }
 
-  if (isLoading) {
+  if (isLoading || mergedInto) {
     return (
       <AppShell user={user}>
         <div className="p-4 space-y-4">
@@ -366,6 +386,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
         backHref="/"
         className="border-b-0"
       >
+        {adminMode && <PlaceAdminPanel googlePlaceId={place.googlePlaceId} />}
         <SaveToListDropdown
           ref={saveDropdownRef}
           place={place}
@@ -417,6 +438,9 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                     </TooltipContent>
                   </Tooltip>
                 )}
+                {adminMode && place.isHidden && (
+                  <Badge variant="outline" className="font-normal font-sans" data-testid="badge-place-hidden">Hidden</Badge>
+                )}
               </h1>
             </div>
             
@@ -427,6 +451,12 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
               tagGroups={tags}
               maxInlineTags={2}
             />
+            {adminMode && (
+              <PlaceTagsAdmin
+                googlePlaceId={place.googlePlaceId}
+                tags={tags.flatMap((g) => g.tags).map((t) => ({ slug: t.slug, displayName: t.displayName }))}
+              />
+            )}
 
             {friendsWhoSaved.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
@@ -487,14 +517,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
             </TabsList>
 
             <TabsContent value="overview" className="pt-0 space-y-6">
-              {place?.aiSummary && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium">About</h3>
-                  <p className="text-base text-muted-foreground">
-                    {place.aiSummary}
-                  </p>
-                </div>
-              )}
+              <PlaceSummary googlePlaceId={place.googlePlaceId} summary={place.aiSummary} />
 
               {place?.knownFor && place.knownFor.length > 0 && (
                 <div className="space-y-2" data-testid="section-known-for">

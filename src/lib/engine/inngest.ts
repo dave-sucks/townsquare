@@ -34,7 +34,11 @@ export const postReprocess = eventType("engine/post.reprocess", {
 
 /** A place's mentions changed: re-run Aggregate and Summarize for it. */
 export const placeChanged = eventType("engine/place.changed", {
-  schema: z.object({ placeId: z.string() }),
+  schema: z.object({
+    placeId: z.string(),
+    /** Re-run Summarize even when the mentions haven't changed (admin "Re-run summary"). */
+    force: z.boolean().optional(),
+  }),
 });
 
 /** An admin bulk action (re-process all posts, and so on). */

@@ -8,6 +8,11 @@ import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { FavouriteIcon, Comment01Icon, Bookmark01Icon, AddToListIcon } from "@hugeicons/core-free-icons";
 import { SocialPostCard } from "@/components/shared/social-post-card";
+import { useAdminMode } from "@/components/admin/admin-mode";
+import dynamic from "next/dynamic";
+
+// The mention editor loads only for admins in admin mode.
+const PostEditButton = dynamic(() => import("@/components/admin/mention-editor").then((m) => ({ default: m.PostEditButton })));
 
 interface ActivityActor {
   id: string;
@@ -38,6 +43,8 @@ interface SocialPostData {
   caption?: string | null;
   /** What the post says about this place (a roundup's own lines). */
   excerpt?: string | null;
+  /** The ingested post behind it (the mention editor's key). */
+  postId?: string | null;
   mediaUrl?: string | null;
   mediaType?: string | null;
   likes?: number | null;
@@ -105,6 +112,7 @@ interface FeedPostProps {
 }
 
 export function FeedPost({ activity }: FeedPostProps) {
+  const { enabled: adminMode } = useAdminMode();
   const actorName = activity.actor.firstName && activity.actor.lastName
     ? `${activity.actor.firstName} ${activity.actor.lastName}`
     : activity.actor.username || "User";
@@ -128,7 +136,7 @@ export function FeedPost({ activity }: FeedPostProps) {
     const igBorder = '#dbdbdb';
 
     return (
-      <article className="bg-card border-0" data-testid={`feed-post-${activity.id}`}>
+      <article className="group/post bg-card border-0" data-testid={`feed-post-${activity.id}`}>
         {/* Tab-style location header with inverted corner radii */}
         {activity.place && (
           <div className="flex items-end pl-4" data-testid={`feed-place-${activity.id}`}>
@@ -152,6 +160,12 @@ export function FeedPost({ activity }: FeedPostProps) {
               style={{ background: `radial-gradient(circle at 100% 0, transparent 10px, ${igBorder} 10px)` }}
             />
             <div className="flex-1" />
+            {adminMode && activity.socialPost?.postId && (
+              <PostEditButton
+                postId={activity.socialPost.postId}
+                className="mb-[-2px] text-muted-foreground md:opacity-0 md:group-hover/post:opacity-100 md:focus-visible:opacity-100"
+              />
+            )}
             <Button variant="ghost" size="icon" className="mb-[-2px] mr-1 text-muted-foreground" data-testid={`feed-save-${activity.id}`}>
               <HugeiconsIcon icon={Bookmark01Icon} className="h-5 w-5" />
             </Button>

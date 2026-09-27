@@ -5,6 +5,9 @@
  *
  *   node scripts/screenshots.mjs [--base http://localhost:3001] [--out dir] [--only feed,place]
  *
+ * Routes marked `admin` are captured with admin mode on (the dev login must
+ * be in ADMIN_EMAILS).
+ *
  * Needs a running `next dev` with DEV_LOGIN_EMAIL set, and Google Chrome
  * installed (playwright-core drives it; no browser download).
  */
@@ -43,13 +46,16 @@ async function lookupIds() {
     const list = me ? await one("SELECT id FROM lists WHERE user_id = $1 ORDER BY created_at LIMIT 1", [me.id]) : null;
     // Place pages are keyed by Google place id.
     const place = await one("SELECT google_place_id AS id FROM places WHERE name ILIKE 'Hamburger America%' ORDER BY created_at LIMIT 1");
-    return { listId: list?.id ?? null, placeId: place?.id ?? null };
+    // Admin screens: a place on a roundup that still has places to confirm.
+    const adminPlace = await one("SELECT google_place_id AS id FROM places WHERE name = 'Radio Bakery' LIMIT 1");
+    const roundup = await one("SELECT id FROM ingested_posts WHERE canonical_post_id = 'DS7wRC-kYM5'");
+    return { listId: list?.id ?? null, placeId: place?.id ?? null, adminPlaceId: adminPlace?.id ?? null, roundupId: roundup?.id ?? null };
   } finally {
     await db.end();
   }
 }
 
-function routes({ listId, placeId }) {
+function routes({ listId, placeId, adminPlaceId, roundupId }) {
   return [
     { name: "explore", path: "/", settle: 4000 },
     { name: "feed", path: "/feed" },
@@ -66,6 +72,23 @@ function routes({ listId, placeId }) {
       path: "/admin/import",
       // The job detail view has no URL of its own: open the first job card.
       before: (page) => page.locator('[data-testid^="card-job-"]').first().click(),
+    },
+    adminPlaceId && { name: "admin-place", path: `/places/${adminPlaceId}`, admin: true, settle: 3500 },
+    adminPlaceId && {
+      name: "admin-place-panel",
+      path: `/places/${adminPlaceId}`,
+      admin: true,
+      before: (page) => page.locator('[data-testid="button-place-admin"]').click(),
+    },
+    adminPlaceId && roundupId && {
+      name: "admin-mention-editor",
+      path: `/places/${adminPlaceId}`,
+      admin: true,
+      settle: 2500,
+      before: async (page) => {
+        await page.locator('[data-testid="tab-feed"]').click();
+        await page.locator(`[data-testid="button-edit-post-${roundupId}"]`).last().click();
+      },
     },
   ].filter(Boolean);
 }
@@ -90,7 +113,9 @@ async function main() {
 
   const browser = await chromium.launch({ channel: "chrome", headless: true });
   try {
-    for (const vp of VIEWPORTS) {
+    for (const [vp, admin] of VIEWPORTS.flatMap((vp) => [[vp, false], [vp, true]])) {
+      const batch = list.filter((r) => !!r.admin === admin);
+      if (batch.length === 0) continue;
       const context = await browser.newContext({
         viewport: { width: vp.width, height: vp.height },
         deviceScaleFactor: vp.deviceScaleFactor,
@@ -101,8 +126,9 @@ async function main() {
         geolocation: { latitude: 40.7359, longitude: -73.9911 },
         permissions: ["geolocation"],
       });
+      if (admin) await context.addInitScript(() => window.localStorage.setItem("twnsq-admin-mode", "1"));
       const page = await context.newPage();
-      for (const r of list) {
+      for (const r of batch) {
         const file = join(OUT, `${r.name}-${vp.width}.png`);
         try {
           await page.goto(`${BASE}${r.path}`, { waitUntil: "domcontentloaded", timeout: 60_000 });
