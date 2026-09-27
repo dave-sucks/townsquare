@@ -134,6 +134,7 @@ export async function GET(request: NextRequest) {
 
       const places = await prisma.place.findMany({
         where: {
+          isHidden: false,
           lat: { gte: lat - latDelta, lte: lat + latDelta },
           lng: { gte: lng - lngDelta, lte: lng + lngDelta },
           ...(tags.length > 0 ? { placeTags: { some: { tag: { slug: { in: tags } } } } } : {}),
@@ -197,7 +198,7 @@ export async function GET(request: NextRequest) {
 
       if (postCounts.length === 0) {
         // Fallback: most saved places overall
-        const fallbackWhere: any = { ...tagFilter, ...priceFilter };
+        const fallbackWhere: any = { isHidden: false, ...tagFilter, ...priceFilter };
         if (lat && lng) {
           const { latDelta, lngDelta } = getBoundingBox(lat, lng, radius);
           fallbackWhere.lat = { gte: lat - latDelta, lte: lat + latDelta };
@@ -227,7 +228,7 @@ export async function GET(request: NextRequest) {
       const trendingPlaceIds = postCounts.map((r) => r.placeId);
       const countMap = new Map(postCounts.map((r) => [r.placeId, r._count.id]));
 
-      const whereClause: any = { id: { in: trendingPlaceIds }, ...tagFilter, ...priceFilter };
+      const whereClause: any = { isHidden: false, id: { in: trendingPlaceIds }, ...tagFilter, ...priceFilter };
       if (lat && lng) {
         const { latDelta, lngDelta } = getBoundingBox(lat, lng, radius);
         whereClause.lat = { gte: lat - latDelta, lte: lat + latDelta };
@@ -301,6 +302,7 @@ export async function GET(request: NextRequest) {
       ];
 
       const whereClause: any = {
+        isHidden: false,
         ...(savedIds.length > 0 ? { id: { notIn: savedIds } } : {}),
         ...(topTagIds.length > 0
           ? { placeTags: { some: { tagId: { in: topTagIds } } } }

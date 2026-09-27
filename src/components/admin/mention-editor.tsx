@@ -35,7 +35,8 @@ import { useAdminMode } from "@/components/admin/admin-mode";
 import { PlaceSearch, type PickedPlace } from "@/components/admin/place-search";
 import { EditableTagChips, type ChipTag } from "@/components/admin/tag-picker";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { apiRequest, queryClient } from "@/lib/query-client";
+import { queryClient } from "@/lib/query-client";
+import { adminFetch } from "@/components/admin/admin-fetch";
 import type { PlaceRow } from "@/lib/agent/place-row";
 import { cn } from "@/lib/utils";
 
@@ -444,6 +445,8 @@ function ReviewItemCard({
   pending,
   onConfirm,
   onNoneOfThese,
+  onNotAPlace,
+  onAddPlace,
   onDismiss,
   onRerun,
 }: {
@@ -451,6 +454,8 @@ function ReviewItemCard({
   pending: boolean;
   onConfirm: (googlePlaceId: string) => void;
   onNoneOfThese: () => void;
+  onNotAPlace: () => void;
+  onAddPlace: () => void;
   onDismiss: () => void;
   onRerun: () => void;
 }) {
@@ -496,6 +501,16 @@ function ReviewItemCard({
             None of these
           </Button>
         )}
+        {item.kind === "check_not_a_place" && (
+          <>
+            <Button variant="ghost" size="sm" onClick={onNotAPlace} disabled={pending} data-testid={`button-confirm-not-a-place-${item.id}`}>
+              Not a place
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onAddPlace} disabled={pending} data-testid={`button-add-place-${item.id}`}>
+              Add place
+            </Button>
+          </>
+        )}
         {item.kind === "failed_run" && (
           <Button variant="ghost" size="sm" onClick={onRerun} disabled={pending} data-testid={`button-rerun-item-${item.id}`}>
             Re-run
@@ -527,7 +542,7 @@ export function MentionEditor({
   const isMobile = useIsMobile();
   const { data, isLoading, error } = useQuery<EditorData>({
     queryKey: ["admin-post", postId],
-    queryFn: () => apiRequest(`/api/admin/posts/${postId}`),
+    queryFn: () => adminFetch(`/api/admin/posts/${postId}`),
     enabled: open && !!postId,
   });
   const [drafts, setDrafts] = React.useState<Draft[]>([]);
@@ -550,12 +565,12 @@ export function MentionEditor({
   const { edits, changed } = React.useMemo(() => editsFor(drafts, data?.mentions ?? []), [drafts, data]);
 
   const postAction = useMutation({
-    mutationFn: (body: Record<string, unknown>) => apiRequest<{ ok: boolean }>(`/api/admin/posts/${post!.id}`, { method: "POST", body: JSON.stringify(body) }),
+    mutationFn: (body: Record<string, unknown>) => adminFetch<{ ok: boolean }>(`/api/admin/posts/${post!.id}`, { method: "POST", json: body }),
     onError: (err: Error) => toast.error(err.message || "Couldn't save"),
   });
   const itemAction = useMutation({
     mutationFn: ({ itemId, body }: { itemId: string; body: Record<string, unknown> }) =>
-      apiRequest<{ ok: boolean }>(`/api/admin/review/${itemId}`, { method: "POST", body: JSON.stringify(body) }),
+      adminFetch<{ ok: boolean }>(`/api/admin/review/${itemId}`, { method: "POST", json: body }),
     onError: (err: Error) => toast.error(err.message || "Couldn't save"),
   });
   const pending = postAction.isPending || itemAction.isPending;
@@ -577,8 +592,10 @@ export function MentionEditor({
     );
   };
 
-  const markNotAPlace = () => {
-    if (!confirmNotAPlace) return setConfirmNotAPlace(true);
+  /** Two clicks when it removes places; one when there are none. */
+  const markNotAPlace = (confirmed = false) => {
+    const removes = drafts.some((d) => d.reviewId && !d.removed);
+    if (removes && !confirmed && !confirmNotAPlace) return setConfirmNotAPlace(true);
     postAction.mutate(
       { action: "not_a_place", note: note.trim() || null },
       { onSuccess: () => finish("Marked not a place") },
@@ -703,6 +720,8 @@ export function MentionEditor({
                 pending={pending}
                 onConfirm={(g) => confirmCandidate(item, g)}
                 onNoneOfThese={() => setAdding({ forItem: item })}
+                onNotAPlace={() => markNotAPlace()}
+                onAddPlace={() => setAdding({})}
                 onDismiss={() => dismissItem(item)}
                 onRerun={() => dismissItem(item, true)}
               />
@@ -747,7 +766,7 @@ export function MentionEditor({
           variant={confirmNotAPlace ? "destructive" : "ghost"}
           size="sm"
           disabled={!data || pending}
-          onClick={markNotAPlace}
+          onClick={() => markNotAPlace()}
           data-testid="button-not-a-place"
         >
           {confirmNotAPlace ? "Remove all places?" : "Not a place"}

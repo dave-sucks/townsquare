@@ -4,7 +4,8 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { apiRequest, queryClient } from "@/lib/query-client";
+import { queryClient } from "@/lib/query-client";
+import { adminFetch } from "@/components/admin/admin-fetch";
 
 export function adminPlaceKey(googlePlaceId: string) {
   return ["admin-place", googlePlaceId];
@@ -14,10 +15,7 @@ export function adminPlaceKey(googlePlaceId: string) {
 export function usePlaceWrite(googlePlaceId: string) {
   return useMutation({
     mutationFn: ({ method, body }: { method: "PATCH" | "POST"; body: Record<string, unknown> }) =>
-      apiRequest<{ ok: boolean; intoGooglePlaceId?: string }>(`/api/admin/places/${googlePlaceId}`, {
-        method,
-        body: JSON.stringify(body),
-      }),
+      adminFetch<{ ok: boolean; intoGooglePlaceId?: string }>(`/api/admin/places/${googlePlaceId}`, { method, json: body }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["place-detail", googlePlaceId] });
       queryClient.invalidateQueries({ queryKey: adminPlaceKey(googlePlaceId) });

@@ -13,7 +13,8 @@ export async function GET(request: NextRequest) {
     const lng = parseFloat(searchParams.get("lng") || "0");
     const radius = parseFloat(searchParams.get("radius") || "50");
 
-    const whereClause: any = {};
+    // Hidden places (an admin's call) stay out of search.
+    const whereClause: any = { isHidden: false };
 
     if (q) {
       whereClause.OR = [

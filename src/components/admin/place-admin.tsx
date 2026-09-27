@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { StatusDot } from "@/components/shared/status-dot";
 import { formatPriceLevel } from "@/lib/places/format";
-import { apiRequest } from "@/lib/query-client";
+import { adminFetch } from "@/components/admin/admin-fetch";
 import { useAdminMode } from "@/components/admin/admin-mode";
 import { AdminMenu, AdminMenuItem } from "@/components/admin/admin-menu";
 import { EditFieldDialog } from "@/components/admin/edit-field-dialog";
@@ -91,7 +91,7 @@ function useAdminPlace(googlePlaceId: string) {
   const { enabled } = useAdminMode();
   return useQuery<AdminPlaceData>({
     queryKey: adminPlaceKey(googlePlaceId),
-    queryFn: () => apiRequest(`/api/admin/places/${googlePlaceId}`),
+    queryFn: () => adminFetch(`/api/admin/places/${googlePlaceId}`),
     enabled,
   });
 }

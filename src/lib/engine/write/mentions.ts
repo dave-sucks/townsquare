@@ -456,7 +456,10 @@ export async function saveMentionEdits(opts: {
   return { touchedPlaceIds: [...touched] };
 }
 
-/** A person says the post isn't about a place: its mentions go, and Read learns from it. */
+/**
+ * A person says the post isn't about a place: its mentions go, and Read
+ * learns from it (a confirmation when Read had said so too).
+ */
 export async function markNotAPlace(opts: { postId: string; actor: string; note?: string | null }): Promise<{ touchedPlaceIds: string[] }> {
   const { post, creator } = await loadEditablePost(opts.postId);
   const mentions = await prisma.review.findMany({ where: { ingestedPostId: post.id }, select: { id: true, placeId: true } });
@@ -479,7 +482,7 @@ export async function markNotAPlace(opts: { postId: string; actor: string; note?
     postId: post.id,
     input: readExampleInput(post),
     expected: { postType: "not_a_place", places: [] },
-    source: "human_corrected",
+    source: post.postType === "not_a_place" && mentions.length === 0 ? "human_confirmed" : "human_corrected",
     note: opts.note,
     createdBy: opts.actor,
   });

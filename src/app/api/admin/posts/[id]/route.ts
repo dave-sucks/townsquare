@@ -6,7 +6,7 @@ import { hydratePlaceRows } from "@/lib/places/query";
 import { markNotAPlace, saveMentionEdits } from "@/lib/engine/write/mentions";
 import { writeAudit } from "@/lib/engine/write/audit";
 import { refreshPlaces, reprocessPost } from "@/lib/engine/events";
-import { dismissOpenItems, refreshPostStatus } from "@/lib/engine/review";
+import { refreshPostStatus } from "@/lib/engine/review";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -120,7 +120,10 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
     if (body.action === "not_a_place") {
       const { touchedPlaceIds } = await markNotAPlace({ postId: id, actor: user.id, note: body.note });
-      await dismissOpenItems(id, ["confirm_place", "check_not_a_place", "fix_extraction", "failed_run"], "marked not a place");
+      // The admin answered "is this a place?"; questions about its places no longer apply.
+      const closed = { resolvedBy: user.id, resolvedAt: new Date(), resolution: { action: "not_a_place", note: body.note ?? null } };
+      await prisma.reviewItem.updateMany({ where: { postId: id, status: "open", kind: { in: ["check_not_a_place", "fix_extraction"] } }, data: { status: "resolved", ...closed } });
+      await prisma.reviewItem.updateMany({ where: { postId: id, status: "open", kind: { in: ["confirm_place", "failed_run", "spot_check"] } }, data: { status: "dismissed", ...closed } });
       await refreshPostStatus(id);
       await refreshPlaces(touchedPlaceIds);
       return NextResponse.json({ ok: true, touchedPlaceIds });

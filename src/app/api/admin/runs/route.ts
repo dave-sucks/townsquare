@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 const STATUSES: engine_run_status[] = ["queued", "running", "completed", "needs_review", "failed"];
 
-/** Recent runs, newest first, filtered by status, source or place. */
+/** Recent runs, newest first, filtered by status, kind, source or place. */
 export async function GET(req: NextRequest) {
   const { error } = await requireAdmin();
   if (error) return error;
@@ -18,8 +18,12 @@ export async function GET(req: NextRequest) {
     ...(status ? { status } : {}),
     ...(kind ? { kind } : {}),
     ...(source ? { post: { source: { handle: source } } } : {}),
-    ...(placeId ? { place: { OR: [{ id: placeId }, { googlePlaceId: placeId }] } } : {}),
   };
+  // A place's runs: its own (Aggregate, Summarize) and those of the posts that mention it.
+  if (placeId) {
+    const place = { OR: [{ id: placeId }, { googlePlaceId: placeId }] };
+    where.OR = [{ place }, { post: { mentions: { some: { place } } } }];
+  }
   const runs = await prisma.engineRun.findMany({
     where,
     orderBy: { startedAt: "desc" },

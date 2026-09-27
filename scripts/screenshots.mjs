@@ -49,13 +49,17 @@ async function lookupIds() {
     // Admin screens: a place on a roundup that still has places to confirm.
     const adminPlace = await one("SELECT google_place_id AS id FROM places WHERE name = 'Radio Bakery' LIMIT 1");
     const roundup = await one("SELECT id FROM ingested_posts WHERE canonical_post_id = 'DS7wRC-kYM5'");
-    return { listId: list?.id ?? null, placeId: place?.id ?? null, adminPlaceId: adminPlace?.id ?? null, roundupId: roundup?.id ?? null };
+    // The run trace: the post run with the most steps.
+    const run = await one(
+      "SELECT r.id FROM engine_runs r JOIN engine_steps s ON s.run_id = r.id WHERE r.kind = 'post' GROUP BY r.id ORDER BY count(*) DESC, max(r.started_at) DESC LIMIT 1",
+    );
+    return { listId: list?.id ?? null, placeId: place?.id ?? null, adminPlaceId: adminPlace?.id ?? null, roundupId: roundup?.id ?? null, runId: run?.id ?? null };
   } finally {
     await db.end();
   }
 }
 
-function routes({ listId, placeId, adminPlaceId, roundupId }) {
+function routes({ listId, placeId, adminPlaceId, roundupId, runId }) {
   return [
     { name: "explore", path: "/", settle: 4000 },
     { name: "feed", path: "/feed" },
@@ -88,6 +92,50 @@ function routes({ listId, placeId, adminPlaceId, roundupId }) {
       before: async (page) => {
         await page.locator('[data-testid="tab-feed"]').click();
         await page.locator(`[data-testid="button-edit-post-${roundupId}"]`).last().click();
+      },
+    },
+    { name: "admin-review", path: "/admin/review", admin: true },
+    { name: "admin-sources", path: "/admin/sources", admin: true },
+    { name: "admin-profile", path: "/u/girlgottaeatz", admin: true, settle: 3500 },
+    {
+      name: "admin-profile-menu",
+      path: "/u/girlgottaeatz",
+      admin: true,
+      before: (page) => page.locator('[data-testid="button-source-admin"]:visible').click(),
+    },
+    {
+      name: "admin-profile-posts",
+      path: "/u/girlgottaeatz",
+      admin: true,
+      before: async (page) => {
+        // Mobile renders the profile twice (the hidden desktop panel and the bottom sheet).
+        await page.locator('[data-testid="tab-feed"]:visible').click();
+        await page.locator('[data-testid="select-post-filter"]:visible').click();
+        await page.locator('[data-testid="option-post-filter-all"]').click();
+        await page.locator('[data-testid="list-source-posts"]:visible').waitFor({ timeout: 20_000 });
+      },
+    },
+    { name: "admin-runs", path: "/admin/runs", admin: true },
+    runId && {
+      name: "admin-run",
+      path: `/admin/runs/${runId}`,
+      admin: true,
+      // Open the Read step to show its input and output.
+      before: (page) => page.locator('[data-testid="list-run-steps"] button').first().click(),
+    },
+    { name: "admin-agents", path: "/admin/agents", admin: true },
+    {
+      name: "admin-agent",
+      path: "/admin/agents/summarize",
+      admin: true,
+      settle: 1000,
+      // v2 (the archived draft) run next to the active v1: two calls, about $0.004.
+      before: async (page) => {
+        await page.locator('[data-testid="select-version"]').click();
+        await page.locator('[data-testid="option-version-2"]').click();
+        await page.locator('[data-testid="input-playground-target"]').fill("ChIJw2RCuSZZwokRVt7nWZNROm0");
+        await page.locator('[data-testid="button-run-playground"]').click();
+        await page.locator('[data-testid="playground-results"]').waitFor({ timeout: 60_000 });
       },
     },
   ].filter(Boolean);

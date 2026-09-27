@@ -3,11 +3,15 @@ import { Prisma } from "@/generated/prisma";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 
-/** Each agent with its active version and the last 7 days of calls and cost. */
+/**
+ * Each agent with its active version, the last 7 days of calls and cost, and
+ * live precision: of the outputs a person checked in the last 30 days, the
+ * share they confirmed rather than corrected.
+ */
 export async function GET() {
   const { error } = await requireAdmin();
   if (error) return error;
-  const [agents, stats] = await Promise.all([
+  const [agents, stats, checks] = await Promise.all([
     prisma.agent.findMany({
       orderBy: { key: "asc" },
       include: {
@@ -21,7 +25,13 @@ export async function GET() {
         FROM engine_steps s JOIN agent_versions v ON v.id = s.agent_version_id
        WHERE s.started_at > now() - interval '7 days'
        GROUP BY v.agent_key`),
+    prisma.example.groupBy({
+      by: ["agentKey", "source"],
+      where: { createdAt: { gt: new Date(Date.now() - 30 * 86_400_000) } },
+      _count: true,
+    }),
   ]);
+  const checked = (key: string, source: string) => checks.find((c) => c.agentKey === key && c.source === source)?._count ?? 0;
   const byKey = new Map(stats.map((s) => [s.agent_key, s]));
   const order = ["read", "resolve", "tag", "summarize"];
   return NextResponse.json({
@@ -36,6 +46,8 @@ export async function GET() {
         calls7d: byKey.get(a.key)?.calls ?? 0,
         cost7d: byKey.get(a.key)?.cost ?? 0,
         failed7d: byKey.get(a.key)?.failed ?? 0,
+        confirmed30d: checked(a.key, "human_confirmed"),
+        corrected30d: checked(a.key, "human_corrected"),
       })),
   });
 }
