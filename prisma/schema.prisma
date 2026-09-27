@@ -34,6 +34,7 @@ model User {
   photos             Photo[]
   reviews            Review[]
   savedPlaces        SavedPlace[]
+  sources            Source[]
 
   @@map("users")
 }
@@ -63,9 +64,18 @@ model Place {
   aiSummary        String?            @map("ai_summary")
   aiSummaryUpdatedAt DateTime?        @map("ai_summary_updated_at") @db.Timestamp(6)
   topChips         Json?              @map("top_chips")
+  /// Up to 3 dish names creators single out (Aggregate, then Summarize).
+  knownFor         Json?              @map("known_for")
+  /// { loved, liked, mixed, disliked } across the place's mentions.
+  verdictCounts    Json?              @map("verdict_counts")
+  /// A = name, B = tags + synonyms + known-for, C = latest excerpts, D = area.
+  searchDocument   Unsupported("tsvector")? @map("search_document")
+  isHidden         Boolean            @default(false) @map("is_hidden")
+  mergedIntoId     String?            @map("merged_into_id") @db.VarChar(36)
   createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt        DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
   activities       Activity[]
+  engineRuns       EngineRun[]
   listPlaces       ListPlace[]
   photos           Photo[]
   placeTags        PlaceTag[]
@@ -73,6 +83,7 @@ model Place {
   reviews          Review[]
   savedPlaces      SavedPlace[]
 
+  @@index([searchDocument], type: Gin)
   @@map("places")
 }
 
@@ -165,7 +176,7 @@ model Review {
   createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt          DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
   instagramEmbedHtml String?       @map("instagram_embed_html")
-  instagramPostId    String?       @unique @map("instagram_post_id")
+  instagramPostId    String?       @map("instagram_post_id")
   instagramShortcode String?       @map("instagram_shortcode")
   instagramUrl       String?       @map("instagram_url")
   source             review_source @default(manual)
@@ -174,12 +185,30 @@ model Review {
   socialPostMediaType   String?    @map("social_post_media_type")
   socialPostLikes       Int?       @map("social_post_likes")
   socialPostPostedAt    DateTime?  @map("social_post_posted_at") @db.Timestamp(6)
+  /// The post this mention came from (engine mentions and backfilled imports).
+  ingestedPostId     String?          @map("ingested_post_id") @db.VarChar(36)
+  /// The creator's words about this place, verbatim from the caption.
+  excerpt            String?
+  /// [{ name, sentiment }]
+  dishes             Json?
+  verdict            mention_verdict?
+  creatorScore       Float?           @map("creator_score")
+  creatorScoreMax    Float?           @map("creator_score_max")
+  role               mention_role?
+  confidence         Float?
+  status             mention_status?
+  resolvedBy         resolved_by?     @map("resolved_by")
+  isSponsored        Boolean?         @map("is_sponsored")
   photos             Photo[]
   reviewTags         ReviewTag[]
-  ingestedPosts      IngestedPost[]
+  ingestedPosts      IngestedPost[] @relation("LegacyPostReview")
+  ingestedPost       IngestedPost?  @relation("PostMentions", fields: [ingestedPostId], references: [id], onDelete: SetNull)
+  reviewItems        ReviewItem[]
   place              Place         @relation(fields: [placeId], references: [id], onDelete: Cascade)
   user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([instagramPostId, placeId])
+  @@index([ingestedPostId])
   @@index([placeId])
   @@index([instagramPostId])
   @@index([source])
@@ -222,8 +251,14 @@ model ImportJob {
   createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
   startedAt       DateTime?       @map("started_at") @db.Timestamp(6)
   completedAt     DateTime?       @map("completed_at") @db.Timestamp(6)
+  sourceId        String?         @map("source_id") @db.VarChar(36)
+  apifyRunId      String?         @map("apify_run_id")
+  /// Only posts newer than this were requested (incremental sync).
+  since           DateTime?       @db.Timestamp(6)
   ingestedPosts   IngestedPost[]
+  source          Source?         @relation(fields: [sourceId], references: [id], onDelete: SetNull)
 
+  @@index([sourceId, createdAt(sort: Desc)])
   @@index([platform, status, createdAt])
   @@map("import_jobs")
 }
@@ -250,9 +285,19 @@ model IngestedPost {
   error                String?
   createdAt            DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt            DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  sourceId             String?         @map("source_id") @db.VarChar(36)
+  postType             post_type?      @map("post_type")
+  isPlaceContent       Boolean?        @map("is_place_content")
+  isSponsored          Boolean?        @map("is_sponsored")
+  lastRunId            String?         @map("last_run_id") @db.VarChar(36)
   importJob            ImportJob       @relation(fields: [importJobId], references: [id], onDelete: Cascade)
-  review               Review?         @relation(fields: [reviewId], references: [id])
+  review               Review?         @relation("LegacyPostReview", fields: [reviewId], references: [id])
+  source               Source?         @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  mentions             Review[]        @relation("PostMentions")
+  runs                 EngineRun[]
+  reviewItems          ReviewItem[]
 
+  @@index([sourceId, postedAt(sort: Desc)])
   @@unique([platform, canonicalPostId])
   @@index([status])
   @@index([authorHandle])
@@ -282,6 +327,9 @@ model ReviewTag {
   tagId      String     @map("tag_id") @db.VarChar(36)
   source     tag_source @default(ai)
   confidence Float
+  /// The line in the mention that supports the tag.
+  evidence   String?
+  runId      String?    @map("run_id") @db.VarChar(36)
   createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
   review     Review     @relation(fields: [reviewId], references: [id], onDelete: Cascade)
   tag        Tag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
@@ -346,6 +394,10 @@ model Tag {
   description       String?
   iconName          String?             @map("icon_name")
   sortOrder         Int                 @default(0) @map("sort_order")
+  /// Other words for the tag: search matches them, the Tag agent reads them.
+  synonyms          String[]            @default([])
+  status            tag_status          @default(active)
+  mergedIntoId      String?             @map("merged_into_id") @db.VarChar(36)
   category          TagCategory         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   placeTags         PlaceTag[]
   reviewTags        ReviewTag[]
@@ -370,6 +422,209 @@ model PlaceTag {
   @@index([placeId])
   @@index([tagId])
   @@map("place_tags")
+}
+
+/// A creator account the engine follows (today: an Instagram handle).
+model Source {
+  id           String          @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  platform     import_platform @default(instagram)
+  handle       String
+  /// The creator's User.
+  userId       String?         @map("user_id") @db.VarChar(36)
+  status       source_status   @default(active)
+  homeCity     String?         @map("home_city")
+  /// Notes the Read agent gets with every post (e.g. the creator's rating scale).
+  notes        String?
+  trustWeight  Float           @default(1.0) @map("trust_weight")
+  lastSyncedAt DateTime?       @map("last_synced_at") @db.Timestamp(6)
+  lastPostAt   DateTime?       @map("last_post_at") @db.Timestamp(6)
+  createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  user         User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  syncs        ImportJob[]
+  posts        IngestedPost[]
+
+  @@unique([platform, handle])
+  @@map("sources")
+}
+
+/// One execution of the pipeline: for a post (stages read → tag) or a place
+/// (aggregate, summarize). Status is derived from its steps.
+model EngineRun {
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  kind        engine_run_kind   @default(post)
+  postId      String?           @map("post_id") @db.VarChar(36)
+  placeId     String?           @map("place_id") @db.VarChar(36)
+  /// ingest, reprocess, rerun, backfill, place_changed
+  trigger     String
+  /// Earlier stages reuse the last run's stored output.
+  fromStage   String?           @map("from_stage")
+  requestedBy String?           @map("requested_by")
+  status      engine_run_status @default(queued)
+  costUsd     Float             @default(0) @map("cost_usd")
+  error       String?
+  startedAt   DateTime          @default(now()) @map("started_at") @db.Timestamp(6)
+  finishedAt  DateTime?         @map("finished_at") @db.Timestamp(6)
+  post        IngestedPost?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  place       Place?            @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  steps       EngineStep[]
+
+  @@index([postId, startedAt(sort: Desc)])
+  @@index([placeId, startedAt(sort: Desc)])
+  @@index([status, startedAt(sort: Desc)])
+  @@index([startedAt(sort: Desc)])
+  @@map("engine_runs")
+}
+
+/// One stage of a run, with what went in, what came out, and what it cost.
+model EngineStep {
+  id             String             @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  runId          String             @map("run_id") @db.VarChar(36)
+  /// sync, media, read, resolve, tag, aggregate, summarize
+  stage          String
+  /// Tells repeated stages in one run apart (the mention index for resolve and tag).
+  key            String             @default("")
+  status         engine_step_status @default(running)
+  input          Json?
+  output         Json?
+  agentVersionId String?            @map("agent_version_id") @db.VarChar(36)
+  model          String?
+  tokensIn       Int                @default(0) @map("tokens_in")
+  tokensOut      Int                @default(0) @map("tokens_out")
+  tokensCached   Int                @default(0) @map("tokens_cached")
+  costUsd        Float              @default(0) @map("cost_usd")
+  latencyMs      Int?               @map("latency_ms")
+  error          String?
+  attempt        Int                @default(1)
+  startedAt      DateTime           @default(now()) @map("started_at") @db.Timestamp(6)
+  finishedAt     DateTime?          @map("finished_at") @db.Timestamp(6)
+  run            EngineRun          @relation(fields: [runId], references: [id], onDelete: Cascade)
+  agentVersion   AgentVersion?      @relation(fields: [agentVersionId], references: [id], onDelete: SetNull)
+
+  @@unique([runId, stage, key])
+  @@index([agentVersionId, startedAt(sort: Desc)])
+  @@index([stage, startedAt(sort: Desc)])
+  @@map("engine_steps")
+}
+
+/// A pipeline stage that calls a model: read, resolve, tag, summarize.
+model Agent {
+  key             String         @id
+  name            String
+  description     String?
+  activeVersionId String?        @unique @map("active_version_id") @db.VarChar(36)
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  activeVersion   AgentVersion?  @relation("ActiveVersion", fields: [activeVersionId], references: [id], onDelete: SetNull)
+  versions        AgentVersion[] @relation("AgentVersions")
+
+  @@map("agents")
+}
+
+/// A versioned prompt + model settings. The database is the source of truth
+/// after the v1 seed; output schemas stay in code.
+model AgentVersion {
+  id           String               @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  agentKey     String               @map("agent_key")
+  version      Int
+  systemPrompt String               @map("system_prompt")
+  model        String
+  effort       String?
+  maxTokens    Int                  @map("max_tokens")
+  notes        String?
+  status       agent_version_status @default(draft)
+  evalSummary  Json?                @map("eval_summary")
+  createdBy    String?              @map("created_by")
+  createdAt    DateTime             @default(now()) @map("created_at") @db.Timestamp(6)
+  agent        Agent                @relation("AgentVersions", fields: [agentKey], references: [key], onDelete: Cascade)
+  activeFor    Agent?               @relation("ActiveVersion")
+  steps        EngineStep[]
+
+  @@unique([agentKey, version])
+  @@map("agent_versions")
+}
+
+/// A human-approved input and output: few-shots for prompts, later evals.
+model Example {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  agentKey    String         @map("agent_key")
+  postId      String?        @map("post_id") @db.VarChar(36)
+  reviewId    String?        @map("review_id") @db.VarChar(36)
+  input       Json
+  expected    Json
+  source      example_source
+  inGoldenSet Boolean        @default(false) @map("in_golden_set")
+  note        String?
+  createdBy   String?        @map("created_by")
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@index([agentKey, createdAt(sort: Desc)])
+  @@index([postId])
+  @@map("examples")
+}
+
+/// A result waiting for a human decision.
+model ReviewItem {
+  id         String             @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  kind       review_item_kind
+  postId     String?            @map("post_id") @db.VarChar(36)
+  reviewId   String?            @map("review_id") @db.VarChar(36)
+  runId      String?            @map("run_id") @db.VarChar(36)
+  question   String
+  payload    Json?
+  status     review_item_status @default(open)
+  resolution Json?
+  resolvedBy String?            @map("resolved_by")
+  resolvedAt DateTime?          @map("resolved_at") @db.Timestamp(6)
+  priority   Int                @default(0)
+  createdAt  DateTime           @default(now()) @map("created_at") @db.Timestamp(6)
+  post       IngestedPost?      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  review     Review?            @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+
+  @@index([status, kind, createdAt(sort: Desc)])
+  @@index([postId])
+  @@map("review_items")
+}
+
+/// A tag the Tag agent wished the taxonomy had, merged by normalized label.
+model TagSuggestion {
+  id              String                @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  label           String
+  normalizedLabel String                @unique @map("normalized_label")
+  categorySlug    String?               @map("category_slug")
+  /// [{ quote, postId, reviewId }]
+  evidence        Json                  @default("[]")
+  count           Int                   @default(1)
+  status          tag_suggestion_status @default(open)
+  tagId           String?               @map("tag_id") @db.VarChar(36)
+  createdAt       DateTime              @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  @@map("tag_suggestions")
+}
+
+/// Area names geocoded once (Resolve biases its search to them).
+model GeocodeCache {
+  query     String   @id
+  lat       Float
+  lng       Float
+  /// A city, neighborhood or region (not a venue).
+  isArea    Boolean? @map("is_area")
+  label     String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("geocode_cache")
+}
+
+/// Google Text Search results, kept a few days so re-running a post doesn't
+/// pay Google again (Google allows temporary caching).
+model GoogleSearchCache {
+  key       String   @id
+  query     String
+  results   Json
+  fetchedAt DateTime @default(now()) @map("fetched_at") @db.Timestamp(6)
+
+  @@map("google_search_cache")
 }
 
 /// Every admin or agent write to a product entity, written only by the
@@ -469,4 +724,103 @@ enum import_status {
   processing
   completed
   failed
+}
+
+enum source_status {
+  active
+  paused
+}
+
+enum post_type {
+  single_place
+  roundup
+  guide
+  not_a_place
+  other
+}
+
+enum mention_verdict {
+  loved
+  liked
+  mixed
+  disliked
+  none
+}
+
+enum mention_role {
+  primary
+  list_item
+  passing
+}
+
+enum mention_status {
+  auto
+  confirmed
+  rejected
+}
+
+enum resolved_by {
+  code
+  agent
+  human
+}
+
+enum engine_run_kind {
+  post
+  place
+}
+
+enum engine_run_status {
+  queued
+  running
+  completed
+  needs_review
+  failed
+}
+
+enum engine_step_status {
+  running
+  completed
+  failed
+  skipped
+}
+
+enum agent_version_status {
+  draft
+  active
+  archived
+}
+
+enum example_source {
+  human_confirmed
+  human_corrected
+  builder_draft
+  seed
+}
+
+enum review_item_kind {
+  confirm_place
+  check_not_a_place
+  fix_extraction
+  failed_run
+  spot_check
+  confirm_example
+}
+
+enum review_item_status {
+  open
+  resolved
+  dismissed
+}
+
+enum tag_status {
+  active
+  deprecated
+}
+
+enum tag_suggestion_status {
+  open
+  accepted
+  mapped
+  rejected
 }
