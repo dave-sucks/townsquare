@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -103,7 +104,9 @@ export function SaveAllToListButton({ places }: { places: PlaceRow[] }) {
           {saving ? "Saving…" : "Save all to list"}
         </DropdownMenuTrigger>
         <DropdownMenuContent side="top" align="start" className="w-56">
-          <DropdownMenuLabel className="text-xs text-muted-foreground">Save {places.length} places to…</DropdownMenuLabel>
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-xs text-muted-foreground">Save {places.length} places to…</DropdownMenuLabel>
+          </DropdownMenuGroup>
           <DropdownMenuSeparator />
           {!listsData && (
             <div className="flex justify-center px-2 py-3">

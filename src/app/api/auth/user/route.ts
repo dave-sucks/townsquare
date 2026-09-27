@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { isAdmin } from "@/lib/admin";
 
 export async function GET() {
   try {
@@ -18,6 +19,7 @@ export async function GET() {
         lastName: user.lastName,
         profileImageUrl: user.profileImageUrl,
         avatarEmoji: user.avatarEmoji,
+        isAdmin: isAdmin(user),
       },
     });
   } catch (error: any) {

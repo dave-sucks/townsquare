@@ -372,6 +372,28 @@ model PlaceTag {
   @@map("place_tags")
 }
 
+/// Every admin or agent write to a product entity, written only by the
+/// engine's write/ functions (src/lib/engine/write).
+model AuditLog {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(36)
+  /// review, place, source, tag, agent_version, …
+  entity       String
+  entityId     String   @map("entity_id")
+  /// create, update, delete, merge, …
+  action       String
+  /// { field: { from, to } }
+  fieldChanges Json?    @map("field_changes")
+  /// A user id, or an agent key (read, resolve, tag, summarize)
+  actor        String
+  runId        String?  @map("run_id") @db.VarChar(36)
+  note         String?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@index([entity, entityId, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_log")
+}
+
 enum list_visibility {
   PRIVATE
   PUBLIC
