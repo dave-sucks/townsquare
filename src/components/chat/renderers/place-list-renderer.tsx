@@ -133,26 +133,26 @@ export function PlaceListRenderer({ toolName, toolCallId, args, result, loading 
           type="button"
           onClick={() => setOpenOverride(!open)}
           aria-expanded={open}
-          className="-mx-1 flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-1 py-1 text-left hover:bg-muted"
+          className="group/toggle flex min-w-0 flex-1 items-center gap-1 py-1 text-left text-muted-foreground transition-colors duration-150 hover:text-foreground"
         >
-          <span className="min-w-0 truncate text-[13px] font-medium text-muted-foreground">
+          <span className="min-w-0 truncate text-[13px]">
             {doneLabel}
             <span className="tabular-nums"> · {count} {places.length === 1 ? "place" : "places"}</span>
           </span>
           <svg
-            width="14"
-            height="14"
+            width="12"
+            height="12"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth="2.2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="shrink-0 text-muted-foreground/70 transition-transform duration-300"
-            style={{ transform: open ? "rotate(180deg)" : "rotate(0)" }}
+            className="shrink-0 opacity-70 transition-transform duration-200"
+            style={{ transform: open ? "rotate(90deg)" : "rotate(0)" }}
             aria-hidden
           >
-            <path d="M6 9l6 6 6-6" />
+            <path d="M9 6l6 6-6 6" />
           </svg>
         </button>
         {open && !isDetail && (

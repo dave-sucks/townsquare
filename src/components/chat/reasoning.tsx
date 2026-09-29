@@ -28,22 +28,18 @@ export function Reasoning({ children, isStreaming = false }: ReasoningProps) {
 
 function ReasoningStep({ children, isStreaming }: ReasoningProps) {
   const [open, setOpen] = useState(false);
+  // Plain text, clamped to three lines; a click shows the rest.
   return (
-    <button
-      type="button"
+    <p
       onClick={() => setOpen((o) => !o)}
-      className="rounded-md px-1.5 py-1 text-left transition-colors duration-150 hover:bg-muted animate-in fade-in duration-300"
+      className={cn(
+        "cursor-pointer text-[13px] leading-relaxed whitespace-pre-wrap text-muted-foreground animate-in fade-in duration-300",
+        !open && "line-clamp-3",
+        isStreaming && "text-muted-foreground/80",
+      )}
     >
-      <span
-        className={cn(
-          "block text-[12.5px] leading-relaxed whitespace-pre-wrap text-muted-foreground",
-          !open && "line-clamp-3",
-          isStreaming && "text-muted-foreground/80",
-        )}
-      >
-        {children}
-      </span>
-    </button>
+      {children}
+    </p>
   );
 }
 
