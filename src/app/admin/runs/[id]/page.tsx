@@ -12,17 +12,19 @@ import { use } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
 import { toast } from "sonner";
-import { AppShell, PageHeader } from "@/components/layout";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { PencilEdit01Icon } from "@hugeicons/core-free-icons";
+import { AdminShell } from "@/components/admin/admin-shell";
+import { PostEmbed } from "@/components/admin/post-embed";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TraceStep } from "@/components/chat/chain-of-thought";
-import { FallbackImg } from "@/components/chat/trace-items";
 import { StatusDot } from "@/components/shared/status-dot";
 import { adminFetch } from "@/components/admin/admin-fetch";
 import { MentionEditor } from "@/components/admin/mention-editor";
 import { STAGE_LABEL, formatCost, formatDuration, shortModel } from "@/components/admin/run-format";
-import { useAuth } from "@/hooks/use-auth";
 import { queryClient } from "@/lib/query-client";
+import { cn } from "@/lib/utils";
 
 type Step = {
   id: string;
@@ -59,8 +61,18 @@ type Run = {
 
 const RERUNNABLE = new Set(["read", "resolve", "tag", "aggregate", "summarize"]);
 
+/** Why the run happened, in words. */
+const TRIGGER_LABEL: Record<string, string> = {
+  ingest: "new post",
+  reprocess: "re-run",
+  rerun: "re-run from a step",
+  backfill: "re-process all",
+  place_changed: "place refresh",
+};
+
 type Json = Record<string, unknown>;
 const obj = (v: unknown): Json => (v && typeof v === "object" && !Array.isArray(v) ? (v as Json) : {});
+const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 
 /** A step's name, with the place it was about when there is one. */
 function stepLabel(step: Step, names: Map<string, string>) {
@@ -96,6 +108,41 @@ function stepOutcome(step: Step): string | null {
   }
 }
 
+const humanize = (slug: string) => slug.replace(/_/g, " ");
+
+/** What a step did, in plain words. */
+function stepSummary(step: Step, names: Map<string, string>): string | null {
+  const out = obj(step.output);
+  if (step.status === "failed") return step.error ? `Failed: ${step.error}` : "Failed";
+  if (step.status === "skipped" || out.skipped) return `Skipped: ${String(out.reason ?? "nothing changed")}`;
+  switch (step.stage) {
+    case "read": {
+      if (out.postType === "not_a_place") return `Decided the post isn't about a place${out.notPlaceReason ? `: ${String(out.notPlaceReason)}` : ""}.`;
+      const places = arr(out.places).map((p) => String(obj(p).name));
+      return places.length ? `Found ${places.length === 1 ? "1 place" : `${places.length} places`}: ${places.join(", ")}.` : "Found no places.";
+    }
+    case "resolve":
+      return out.outcome === "accepted"
+        ? `Matched it to ${String(out.placeName ?? "a place")}${out.resolvedBy === "agent" ? " (the agent picked)" : ""}.`
+        : `Wasn't sure which place this is, so it asked a person${arr(out.candidates).length ? ` (${arr(out.candidates).length} candidates)` : ""}.`;
+    case "mentions": {
+      const saved = arr(out.mentions).length;
+      const removed = Number(out.removed ?? 0);
+      return `Saved ${saved === 1 ? "1 place" : `${saved} places`} on the post${removed ? `, removed ${removed}` : ""}.`;
+    }
+    case "tag": {
+      const kept = arr(out.kept).map((t) => humanize(String(obj(t).slug)));
+      return kept.length ? `Tagged ${names.get(step.key) ?? "the place"}: ${kept.join(", ")}.` : "Added no tags.";
+    }
+    case "aggregate":
+      return "Recounted the place's tags and dishes from every post.";
+    case "summarize":
+      return out.summary ? `Wrote the summary: “${String(out.summary)}”` : null;
+    default:
+      return null;
+  }
+}
+
 function JsonBlock({ label, value }: { label: string; value: unknown }) {
   if (value == null) return null;
   return (
@@ -108,7 +155,6 @@ function JsonBlock({ label, value }: { label: string; value: unknown }) {
 
 export default function RunPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { user } = useAuth();
   const [editing, setEditing] = React.useState(false);
   const { data, isLoading, error } = useQuery<{ run: Run }>({
     queryKey: ["admin-run", id],
@@ -148,46 +194,41 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
     return map;
   }, [run]);
 
-  const mediaUrl = run?.post ? (Array.isArray(run.post.media) ? (run.post.media as { url: string }[]) : [])[0]?.url ?? null : null;
   const duration = run?.finishedAt ? new Date(run.finishedAt).getTime() - new Date(run.startedAt).getTime() : null;
 
   return (
-    <AppShell user={user}>
-      <PageHeader title="Run">
-        <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/admin/runs" />} data-testid="link-all-runs">
-          All runs
-        </Button>
-      </PageHeader>
-      <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full pb-20 md:pb-4">
-        {isLoading ? (
-          <div className="space-y-3">
-            <Skeleton className="h-20 w-full rounded-xl" />
-            <Skeleton className="h-64 w-full rounded-xl" />
-          </div>
-        ) : !run ? (
-          <p className="py-16 text-center text-sm text-muted-foreground">{(error as Error | null)?.message ?? "Run not found"}</p>
-        ) : (
-          <div className="space-y-4">
-            {run.post ? (
-              <div className="flex gap-3" data-testid="run-subject-post">
-                {mediaUrl && <FallbackImg src={mediaUrl} referrerPolicy="no-referrer" className="size-16 shrink-0 rounded-md object-cover" fallback={null} />}
-                <div className="min-w-0 flex-1 space-y-1">
-                  <p className="line-clamp-3 text-sm text-muted-foreground whitespace-pre-line">{run.post.caption || "No caption."}</p>
-                  <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
-                    <span>@{run.post.authorHandle}</span>
-                    {run.post.postedAt && <span>posted {formatDistanceToNowStrict(new Date(run.post.postedAt), { addSuffix: true })}</span>}
-                    {run.post.url && (
-                      <a href={run.post.url} target="_blank" rel="noopener noreferrer" className="font-medium text-foreground hover:underline">
-                        View post ↗
-                      </a>
-                    )}
-                    <button type="button" className="font-medium text-foreground hover:underline" onClick={() => setEditing(true)} data-testid="button-run-edit-post">
-                      Edit post
-                    </button>
-                  </p>
-                </div>
-              </div>
-            ) : run.place ? (
+    <AdminShell wide>
+      <nav className="mb-4 text-sm text-muted-foreground">
+        <Link href="/admin/runs" className="hover:text-foreground hover:underline" data-testid="link-all-runs">
+          History
+        </Link>
+        <span className="px-1.5">/</span>
+        <span className="text-foreground">{run?.post ? `@${run.post.authorHandle}'s post` : run?.place?.name ?? "Run"}</span>
+      </nav>
+      {isLoading ? (
+        <div className="grid gap-6 lg:grid-cols-[400px_minmax(0,1fr)]">
+          <Skeleton className="h-96 w-full rounded-xl" />
+          <Skeleton className="h-64 w-full rounded-xl" />
+        </div>
+      ) : !run ? (
+        <p className="py-16 text-center text-sm text-muted-foreground">{(error as Error | null)?.message ?? "Run not found"}</p>
+      ) : (
+        <div className={run.post ? "grid gap-6 lg:grid-cols-[400px_minmax(0,1fr)] lg:items-start" : ""}>
+          {run.post ? (
+            <PostEmbed
+              permalink={run.post.url}
+              author={run.post.authorHandle}
+              label={`Posted ${run.post.postedAt ? formatDistanceToNowStrict(new Date(run.post.postedAt), { addSuffix: true }) : ""}`.trim()}
+              actions={
+                <Button variant="ghost" size="icon-sm" aria-label="Edit this post's places" className="text-muted-foreground" onClick={() => setEditing(true)} data-testid="button-run-edit-post">
+                  <HugeiconsIcon icon={PencilEdit01Icon} className="size-4" />
+                </Button>
+              }
+              className="lg:sticky lg:top-0"
+            />
+          ) : null}
+          <div className="min-w-0 space-y-4">
+            {run.place ? (
               <div data-testid="run-subject-place">
                 <Link href={`/places/${run.place.googlePlaceId}`} className="font-brand text-[15px] font-semibold hover:underline">
                   {run.place.name}
@@ -199,7 +240,7 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
             <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground" data-testid="text-run-summary">
               <StatusDot status={run.status} />
               <span className="text-foreground">{run.status.replace("_", " ")}</span>
-              <span>· {run.trigger.replace("_", " ")}</span>
+              <span>· {TRIGGER_LABEL[run.trigger] ?? run.trigger.replace("_", " ")}</span>
               {run.fromStage && <span>· from {STAGE_LABEL[run.fromStage] ?? run.fromStage}</span>}
               <span>· {formatDistanceToNowStrict(new Date(run.startedAt), { addSuffix: true })}</span>
               {duration != null && <span>· {formatDuration(duration)}</span>}
@@ -221,7 +262,7 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
                     running={s.status === "running"}
                     failed={s.status === "failed"}
                   >
-                    {s.error && <p className="py-1 text-xs text-destructive">{s.error}</p>}
+                    {stepSummary(s, names) && <p className={cn("py-1 text-sm", s.status === "failed" ? "text-destructive" : "text-foreground/90")}>{stepSummary(s, names)}</p>}
                     {(s.tokensIn > 0 || s.agentVersion) && (
                       <p className="py-1 text-xs text-muted-foreground">
                         {[
@@ -234,8 +275,10 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
                           .join(" · ")}
                       </p>
                     )}
-                    <JsonBlock label="Input" value={s.input} />
-                    <JsonBlock label="Output" value={s.output} />
+                    <TraceStep label="Raw data">
+                      <JsonBlock label="Input" value={s.input} />
+                      <JsonBlock label="Output" value={s.output} />
+                    </TraceStep>
                     {RERUNNABLE.has(s.stage) && (run.post || s.stage === "aggregate" || s.stage === "summarize") && (
                       <div className="py-1">
                         <Button variant="outline" size="sm" disabled={rerun.isPending} onClick={() => rerun.mutate(s.stage)} data-testid={`button-rerun-${s.stage}-${s.key || "0"}`}>
@@ -248,9 +291,9 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
               )}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
       {run?.post && <MentionEditor postId={run.post.id} open={editing} onOpenChange={setEditing} />}
-    </AppShell>
+    </AdminShell>
   );
 }

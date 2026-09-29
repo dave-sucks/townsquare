@@ -16,7 +16,7 @@ import { formatDistanceToNowStrict } from "date-fns";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArchiveIcon, ArrowDown01Icon, RocketIcon, Tick01Icon } from "@hugeicons/core-free-icons";
-import { AppShell, PageHeader } from "@/components/layout";
+import { AdminShell } from "@/components/admin/admin-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -37,7 +37,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { TraceStep } from "@/components/chat/chain-of-thought";
 import { adminFetch } from "@/components/admin/admin-fetch";
 import { formatCost, formatDuration, shortModel } from "@/components/admin/run-format";
-import { useAuth } from "@/hooks/use-auth";
 import { queryClient } from "@/lib/query-client";
 import { cn } from "@/lib/utils";
 
@@ -187,7 +186,6 @@ function ResultColumn({ title, agentKey, result }: { title: string; agentKey: st
 
 export default function AgentPage({ params }: { params: Promise<{ key: string }> }) {
   const { key } = use(params);
-  const { user } = useAuth();
   const { data, isLoading, error } = useQuery<AgentData>({
     queryKey: ["admin-agent", key],
     queryFn: () => adminFetch(`/api/admin/agents/${key}`),
@@ -269,12 +267,10 @@ export default function AgentPage({ params }: { params: Promise<{ key: string }>
   const rollback = selected && active && selected.version < active.version;
 
   return (
-    <AppShell user={user}>
-      <PageHeader title={data?.agent.name ?? "Agent"}>
-        <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/admin/agents" />} data-testid="link-all-agents">
-          All agents
-        </Button>
-        {selected && (
+    <AdminShell
+      wide
+      actions={
+        selected && (
           <DropdownMenu>
             <DropdownMenuTrigger render={<Button variant="outline" size="sm" data-testid="button-agent-actions" />}>
               Actions
@@ -303,10 +299,17 @@ export default function AgentPage({ params }: { params: Promise<{ key: string }>
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
-        )}
-      </PageHeader>
-
-      <div className="flex-1 overflow-auto p-4 max-w-6xl mx-auto w-full pb-20 md:pb-4">
+        )
+      }
+    >
+      <nav className="mb-4 text-sm text-muted-foreground">
+        <Link href="/admin/agents" className="hover:text-foreground hover:underline" data-testid="link-all-agents">
+          Agents
+        </Link>
+        <span className="px-1.5">/</span>
+        <span className="text-foreground">{data?.agent.name ?? key}</span>
+      </nav>
+      <div>
         {isLoading || !form || !selected ? (
           error ? (
             <p className="py-16 text-center text-sm text-muted-foreground">{(error as Error).message}</p>
@@ -485,6 +488,6 @@ export default function AgentPage({ params }: { params: Promise<{ key: string }>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AppShell>
+    </AdminShell>
   );
 }

@@ -183,7 +183,7 @@ export function PlaceAdminMenu({ googlePlaceId }: { googlePlaceId: string }) {
           <AdminMenuItem icon={ArrowReloadHorizontalIcon} label="Re-run summary" onClick={refresh} testId="button-place-admin-refresh" />
           <AdminMenuItem
             icon={Activity01Icon}
-            label="View runs"
+            label="History"
             value={
               lastRun ? (
                 <span className="inline-flex items-center gap-1.5">

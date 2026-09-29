@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 const STATUSES: engine_run_status[] = ["queued", "running", "completed", "needs_review", "failed"];
 
-/** Recent runs, newest first, filtered by status, kind, trigger, source or place. */
+/** Recent runs, newest first, filtered by status, kind, trigger, source, post or place. */
 export async function GET(req: NextRequest) {
   const { error } = await requireAdmin();
   if (error) return error;
@@ -13,13 +13,23 @@ export async function GET(req: NextRequest) {
   const status = STATUSES.find((s) => s === sp.get("status"));
   const source = sp.get("source");
   const placeId = sp.get("place");
+  const post = sp.get("post");
   const kind = sp.get("kind") === "place" ? "place" : sp.get("kind") === "post" ? "post" : undefined;
   const trigger = ["ingest", "reprocess", "rerun", "backfill", "place_changed"].find((t) => t === sp.get("trigger"));
   const where: Prisma.EngineRunWhereInput = {
     ...(status ? { status } : {}),
     ...(kind ? { kind } : {}),
     ...(trigger ? { trigger } : {}),
-    ...(source ? { post: { source: { handle: source } } } : {}),
+    ...(source || post
+      ? {
+          post: {
+            AND: [
+              ...(source ? [{ source: { handle: source } }] : []),
+              ...(post ? [{ OR: [{ id: post }, { canonicalPostId: post }] }] : []),
+            ],
+          },
+        }
+      : {}),
   };
   // A place's runs: its own (Aggregate, Summarize) and those of the posts that mention it.
   if (placeId) {

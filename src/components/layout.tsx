@@ -38,7 +38,7 @@ import {
   Moon02Icon,
   Sun03Icon,
   Bookmark03Icon,
-  UserShield01Icon,
+  PencilEdit01Icon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -164,7 +164,7 @@ function DesktopSideNav({ user }: { user: User | null }) {
           {NAV_ITEMS.map((item) => (
             <SideNavLink key={item.href} item={item} pathname={pathname} />
           ))}
-          {adminMode.enabled && (
+          {adminMode.isAdmin && (
             <>
               <div className="mx-1 my-1.5 border-t" data-testid="nav-admin-group" />
               {ADMIN_NAV_ITEMS.map((item) => (
@@ -254,8 +254,8 @@ function DesktopSideNav({ user }: { user: User | null }) {
                         onClick={() => adminMode.setEnabled(!adminMode.enabled)}
                         data-testid="button-admin-mode"
                       >
-                        <HugeiconsIcon icon={UserShield01Icon} className="size-4" />
-                        Admin mode
+                        <HugeiconsIcon icon={PencilEdit01Icon} className="size-4" />
+                        Edit mode
                         <Switch
                           size="sm"
                           checked={adminMode.enabled}

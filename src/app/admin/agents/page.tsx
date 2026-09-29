@@ -10,12 +10,11 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { AiBrain01Icon } from "@hugeicons/core-free-icons";
-import { AppShell, PageHeader } from "@/components/layout";
+import { AdminShell } from "@/components/admin/admin-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { adminFetch } from "@/components/admin/admin-fetch";
 import { formatCost, shortModel } from "@/components/admin/run-format";
-import { useAuth } from "@/hooks/use-auth";
 
 type AgentRow = {
   key: string;
@@ -37,16 +36,15 @@ function precision(a: AgentRow) {
 }
 
 export default function AgentsPage() {
-  const { user } = useAuth();
   const { data, isLoading } = useQuery<{ agents: AgentRow[] }>({
     queryKey: ["admin-agents"],
     queryFn: () => adminFetch("/api/admin/agents"),
   });
 
   return (
-    <AppShell user={user}>
-      <PageHeader title="Agents" />
-      <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full pb-20 md:pb-4">
+    <AdminShell>
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">The AI steps that read each post, match its places, tag them and write summaries. Open one to change its prompt and test it before it goes live.</p>
         {isLoading ? (
           <div className="space-y-3">
             {[0, 1, 2, 3].map((i) => (
@@ -93,6 +91,6 @@ export default function AgentsPage() {
           </div>
         )}
       </div>
-    </AppShell>
+    </AdminShell>
   );
 }

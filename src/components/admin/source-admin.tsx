@@ -86,30 +86,30 @@ const TRUST = [
   { value: "2", label: "Top", detail: "2×" },
 ];
 
-/** The creator's source (null when the engine doesn't follow them). Admin mode only. */
-function useCreatorSource(userId: string) {
-  const { enabled } = useAdminMode();
+/** A creator's source by user id or handle (null when the engine doesn't follow them). Admins only. */
+export function useCreatorSource(sourceKey: string) {
+  const { isAdmin } = useAdminMode();
   return useQuery<SourceData | null>({
-    queryKey: ["admin-source", userId],
+    queryKey: ["admin-source", sourceKey],
     queryFn: async () => {
       try {
-        return await adminFetch<SourceData>(`/api/admin/sources/${userId}`);
+        return await adminFetch<SourceData>(`/api/admin/sources/${sourceKey}`);
       } catch {
         return null;
       }
     },
-    enabled,
+    enabled: isAdmin,
     // While a sync runs, keep the strip current.
     refetchInterval: (q) => (["pending", "queued", "running"].includes(q.state.data?.source?.lastSync?.status ?? "") ? 10_000 : false),
   });
 }
 
-function useSourceWrite(userId: string, sourceId: string | undefined) {
+function useSourceWrite(sourceKey: string, sourceId: string | undefined) {
   return useMutation({
     mutationFn: ({ method, body }: { method: "PATCH" | "POST"; body?: Record<string, unknown> }) =>
       adminFetch<{ ok: boolean; queued?: boolean }>(`/api/admin/sources/${sourceId}`, { method, json: body ?? {} }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-source", userId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-source", sourceKey] });
       queryClient.invalidateQueries({ queryKey: ["admin-sources"] });
     },
     onError: (err: Error) => toast.error(err.message),
@@ -142,10 +142,10 @@ export function SourceSyncStrip({ userId }: { userId: string }) {
 }
 
 /** The pencil menu beside Follow. */
-export function SourceAdminMenu({ userId }: { userId: string }) {
-  const { data } = useCreatorSource(userId);
+export function SourceAdminMenu({ sourceKey, onAdminPage = false }: { sourceKey: string; onAdminPage?: boolean }) {
+  const { data } = useCreatorSource(sourceKey);
   const source = data?.source;
-  const write = useSourceWrite(userId, source?.id);
+  const write = useSourceWrite(sourceKey, source?.id);
   const [editing, setEditing] = React.useState<null | "homeCity" | "notes" | "history" | "reprocess">(null);
   if (!source) return null;
 
@@ -164,7 +164,7 @@ export function SourceAdminMenu({ userId }: { userId: string }) {
 
   return (
     <>
-      <AdminMenu label="Edit source" testId="source-admin">
+      <AdminMenu label="Creator settings" testId="source-admin" onAdminPage={onAdminPage}>
         <DropdownMenuGroup>
           <DropdownMenuLabel>Sync</DropdownMenuLabel>
           <AdminMenuItem

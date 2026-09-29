@@ -46,6 +46,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       take: 60,
       select: {
         id: true, canonicalPostId: true, url: true, caption: true, postedAt: true, postType: true, status: true, media: true,
+        mentions: { select: { role: true, place: { select: { name: true } } }, orderBy: [{ role: "asc" }, { createdAt: "asc" }], take: 20 },
         _count: { select: { mentions: true, reviewItems: { where: { status: "open" } } } },
       },
     });
@@ -58,6 +59,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       postType: p.postType,
       status: p._count.reviewItems > 0 ? "needs_review" : p.status === "processed" ? "completed" : p.status === "new" ? "queued" : p.status,
       mentions: p._count.mentions,
+      places: p.mentions.map((m) => m.place.name),
       mediaUrl: (Array.isArray(p.media) ? (p.media as { url: string }[]) : [])[0]?.url ?? null,
     }));
   }

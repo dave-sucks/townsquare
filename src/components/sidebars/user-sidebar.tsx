@@ -281,7 +281,7 @@ export function UserSidebar({
     <div className="h-full flex flex-col bg-background" data-testid="user-sidebar">
       <div className="flex items-center gap-2 p-3 border-b shrink-0">
         <span className="font-semibold text-sm flex-1 truncate font-brand">{displayName}</span>
-        {adminMode && <SourceAdminMenu userId={user.id} />}
+        {adminMode && <SourceAdminMenu sourceKey={user.id} />}
         {!isOwnProfile && (
           <Button
             variant={localIsFollowing ? "outline" : "default"}
