@@ -27,7 +27,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState, type R
 import { useMessage } from "@assistant-ui/react";
 import { normalizeToolResult, inferToolUI } from "@/lib/agent/tool-result";
 import { toolLabel } from "@/lib/agent/tool-labels";
-import { SparkleIcon } from "@/components/chat/thinking-trace";
+import { TextToggle } from "@/components/chat/text-toggle";
 import { cn } from "@/lib/utils";
 
 // ── Grouping ────────────────────────────────────────────────────────────────
@@ -255,40 +255,12 @@ function Trace({ indices, children }: { indices: number[]; children?: ReactNode 
 
   return (
     <div className="my-1 flex w-full flex-col">
-      <button
-        type="button"
-        aria-expanded={expanded}
+      <TextToggle
+        label={working ? label : doneLabel}
+        working={working}
+        open={expanded}
         onClick={() => setManual(!expanded)}
-        className="-mx-1.5 flex w-fit max-w-full items-center gap-2 rounded-md px-1.5 py-1 transition-colors duration-100 hover:bg-muted"
-      >
-        <span className={cn("flex shrink-0", working ? "text-muted-foreground" : "text-muted-foreground/70")}>
-          <SparkleIcon />
-        </span>
-        <span role="status" className="min-w-0 truncate">
-          {working ? (
-            <span className="shimmer-text text-[13px] font-medium">{label}</span>
-          ) : (
-            <span className="text-[13px] font-medium text-muted-foreground animate-in fade-in duration-300">
-              {doneLabel}
-            </span>
-          )}
-        </span>
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="shrink-0 text-muted-foreground/70 transition-transform duration-300"
-          style={{ transform: expanded ? "rotate(180deg)" : "rotate(0)" }}
-          aria-hidden
-        >
-          <path d="M6 9l6 6 6-6" />
-        </svg>
-      </button>
+      />
 
       <div
         className="grid transition-[grid-template-rows,opacity] duration-400"
@@ -299,11 +271,8 @@ function Trace({ indices, children }: { indices: number[]; children?: ReactNode 
         }}
       >
         <div className="overflow-hidden">
-          <div className="relative mt-1 ml-[5px] pl-4">
-            <span aria-hidden className="absolute top-0 bottom-1 left-[3px] w-px bg-border" />
-            <div className="flex flex-col gap-0.5 py-1">
-              <TraceContext.Provider value={true}>{children}</TraceContext.Provider>
-            </div>
+          <div className="mt-1 flex flex-col gap-1.5 border-l pl-3">
+            <TraceContext.Provider value={true}>{children}</TraceContext.Provider>
           </div>
         </div>
       </div>
@@ -314,7 +283,6 @@ function Trace({ indices, children }: { indices: number[]; children?: ReactNode 
 // ── TraceStep (one row in a trace) ──────────────────────────────────────────
 
 export function TraceStep({
-  icon,
   label,
   secondary,
   running = false,
@@ -322,8 +290,10 @@ export function TraceStep({
   defaultOpen = false,
   children,
 }: {
+  /** Accepted for older call sites; steps are text only now. */
   icon?: ReactNode;
   label: ReactNode;
+  /** Shown only when the step has nothing to expand (e.g. "nothing yet"). */
   secondary?: ReactNode;
   running?: boolean;
   failed?: boolean;
@@ -333,55 +303,20 @@ export function TraceStep({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const hasBody = Boolean(children);
-  const lead = running ? (
-    <span className="size-3 shrink-0 animate-spin rounded-full border-[1.5px] border-border border-t-muted-foreground" />
-  ) : failed ? (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="shrink-0 text-muted-foreground/70" aria-hidden>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 8v5M12 16h.01" strokeLinecap="round" />
-    </svg>
-  ) : (
-    icon ?? (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-muted-foreground/70" aria-hidden>
-        <path d="M20 6L9 17l-5-5" />
-      </svg>
-    )
-  );
+  const text =
+    !hasBody && (secondary != null || failed) ? (
+      <>
+        {label}
+        {secondary != null && <span className="opacity-70"> · {secondary}</span>}
+      </>
+    ) : (
+      label
+    );
 
   return (
-    <div className="flex flex-col animate-in fade-in slide-in-from-bottom-1 duration-300">
-      <button
-        type="button"
-        disabled={!hasBody}
-        onClick={() => setOpen((o) => !o)}
-        className="flex min-h-7 w-full min-w-0 items-center gap-2 rounded-md px-1.5 py-0.5 text-left transition-colors duration-150 enabled:hover:bg-muted"
-      >
-        <span className="flex size-3.5 shrink-0 items-center justify-center text-muted-foreground/70">{lead}</span>
-        <span className={cn("min-w-0 truncate text-[12.5px] font-medium", running ? "text-foreground" : "text-foreground/90")}>
-          {label}
-        </span>
-        {secondary != null && (
-          <span className="shrink-0 text-[11.5px] tabular-nums text-muted-foreground/70">{secondary}</span>
-        )}
-        {hasBody && (
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="ml-auto shrink-0 text-muted-foreground/60 transition-transform duration-200"
-            style={{ transform: open ? "rotate(180deg)" : "rotate(0)" }}
-            aria-hidden
-          >
-            <path d="M6 9l6 6 6-6" />
-          </svg>
-        )}
-      </button>
-      {hasBody && open && <div className="flex flex-col gap-0.5 pb-1 pl-5">{children}</div>}
+    <div className="flex flex-col animate-in fade-in duration-300">
+      <TextToggle label={text} working={running} open={open} onClick={() => setOpen((o) => !o)} collapsible={hasBody} />
+      {hasBody && open && <div className="flex flex-col gap-1 pt-1 pb-0.5">{children}</div>}
     </div>
   );
 }
