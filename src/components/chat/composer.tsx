@@ -9,9 +9,8 @@
  *     lands as plain "@username" text; the agent resolves it with get_creator.
  *   - Quick-ask chips stand in for Hindsight's slash commands: wrapped in
  *     the welcome on an empty thread, one scrolling row above the bar after.
- *   - Short drafts sit inline between the controls; once the text wraps it
- *     takes the full row and the controls drop below (the Prompt Bar's
- *     measured layout).
+ *   - Stacked like assistant-ui's composer: the text on top (grows to 8
+ *     rows, then scrolls), @ at bottom left, send at bottom right.
  *
  * Dropped from the Prompt Bar: attachments, model picker, dictation, and
  * the glimm sweep.
@@ -70,13 +69,10 @@ export const Composer: FC<{ placeholder?: string }> = ({ placeholder = "Ask anyt
 
   const anchorRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const controlsRef = useRef<HTMLDivElement>(null);
-  const measureRef = useRef<HTMLSpanElement>(null);
 
   const [caret, setCaret] = useState(0);
   const [dismissed, setDismissed] = useState(false);
   const [active, setActive] = useState(0);
-  const [wide, setWide] = useState(false);
 
   const mention = dismissed ? null : parseMention(text.slice(0, caret));
   const menuOpen = mention !== null;
@@ -102,15 +98,6 @@ export const Composer: FC<{ placeholder?: string }> = ({ placeholder = "Ask anyt
     document.addEventListener("pointerdown", close);
     return () => document.removeEventListener("pointerdown", close);
   }, [menuOpen]);
-
-  // Inline while the draft fits between the controls; full width once it doesn't.
-  useLayoutEffect(() => {
-    const controls = controlsRef.current;
-    const measure = measureRef.current;
-    if (!controls || !measure) return;
-    const inlineWidth = controls.clientWidth - 28 * 2 - 4 * 2;
-    setWide(text.includes("\n") || measure.offsetWidth + 8 > inlineWidth);
-  }, [text]);
 
   const syncCaret = () => setCaret(inputRef.current?.selectionStart ?? 0);
 
@@ -181,18 +168,38 @@ export const Composer: FC<{ placeholder?: string }> = ({ placeholder = "Ask anyt
         )}
 
         <ComposerPrimitive.Root
-          className="aui-composer-root relative flex w-full flex-col gap-1.5 rounded-[14px] border border-input bg-background p-1.5 shadow-xs transition-[border-color] duration-150 focus-within:border-ring/60"
+          // A click anywhere in the box (not on a button) puts the caret in the text.
+          onClick={(e) => {
+            if (!(e.target as HTMLElement).closest("button")) inputRef.current?.focus();
+          }}
+          className="aui-composer-root flex w-full cursor-text flex-col gap-2 rounded-2xl border border-foreground/10 bg-background p-2.5 shadow-xs transition-[border-color] duration-150 focus-within:border-foreground/25"
           data-testid="chat-composer"
         >
-          <span
-            ref={measureRef}
-            aria-hidden="true"
-            className="pointer-events-none invisible absolute whitespace-pre text-base leading-5 md:text-sm"
-          >
-            {text}
-          </span>
+          <ComposerPrimitive.Input
+            ref={inputRef}
+            placeholder={placeholder}
+            rows={1}
+            maxRows={8}
+            autoFocus={!isMobile}
+            cancelOnEscape={!menuOpen}
+            onKeyDown={onKeyDown}
+            onChange={(e) => {
+              setCaret(e.target.selectionStart ?? e.target.value.length);
+              setDismissed(false);
+            }}
+            onSelect={syncCaret}
+            onClick={syncCaret}
+            role="combobox"
+            aria-expanded={menuOpen}
+            aria-controls={menuOpen ? "chat-mention-menu" : undefined}
+            aria-autocomplete="list"
+            // 16px keeps iOS Safari from zooming the page on focus.
+            className="aui-composer-input min-h-10 w-full resize-none bg-transparent px-1.5 py-1 text-base leading-5 outline-none [overflow-wrap:anywhere] placeholder:text-muted-foreground/80 md:text-sm"
+            aria-label="Message"
+            data-testid="input-chat-message"
+          />
 
-          <div ref={controlsRef} className="grid grid-cols-[28px_minmax(0,1fr)_28px] items-end gap-x-1 gap-y-1.5">
+          <div className="flex items-center justify-between">
             <button
               type="button"
               onMouseDown={(e) => e.preventDefault()}
@@ -200,67 +207,37 @@ export const Composer: FC<{ placeholder?: string }> = ({ placeholder = "Ask anyt
               aria-label="Mention a creator"
               title="Mention a creator"
               className={cn(
-                "flex size-7 items-center justify-center rounded-[8px] text-muted-foreground transition-[background-color,color,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.94]",
+                "flex size-8 items-center justify-center rounded-full text-muted-foreground transition-[background-color,color,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.94]",
                 menuOpen && "bg-muted text-foreground",
-                wide ? "col-start-1 row-start-2" : "col-start-1 row-start-1",
               )}
               data-testid="button-mention"
             >
               <HugeiconsIcon icon={AtIcon} className="size-4" strokeWidth={2} />
             </button>
 
-            <ComposerPrimitive.Input
-              ref={inputRef}
-              placeholder={placeholder}
-              rows={1}
-              maxRows={6}
-              autoFocus={!isMobile}
-              cancelOnEscape={!menuOpen}
-              onKeyDown={onKeyDown}
-              onChange={(e) => {
-                setCaret(e.target.selectionStart ?? e.target.value.length);
-                setDismissed(false);
-              }}
-              onSelect={syncCaret}
-              onClick={syncCaret}
-              role="combobox"
-              aria-expanded={menuOpen}
-              aria-controls={menuOpen ? "chat-mention-menu" : undefined}
-              aria-autocomplete="list"
-              // 16px keeps iOS Safari from zooming the page on focus.
-              className={cn(
-                "aui-composer-input min-h-7 w-full min-w-0 resize-none bg-transparent px-1 py-1 text-base leading-5 outline-none [overflow-wrap:anywhere] placeholder:text-muted-foreground md:text-sm",
-                wide ? "col-span-full col-start-1 row-start-1" : "col-start-2 row-start-1",
-              )}
-              aria-label="Message"
-              data-testid="input-chat-message"
-            />
-
-            <div className={cn(wide ? "col-start-3 row-start-2" : "col-start-3 row-start-1")}>
-              {isRunning ? (
-                <ComposerPrimitive.Cancel asChild>
-                  <button
-                    type="button"
-                    aria-label="Stop"
-                    className="flex size-7 items-center justify-center rounded-[8px] bg-foreground text-background transition-transform duration-150 active:scale-[0.94]"
-                    data-testid="button-stop"
-                  >
-                    <HugeiconsIcon icon={StopIcon} className="size-3.5 fill-current" />
-                  </button>
-                </ComposerPrimitive.Cancel>
-              ) : (
-                <ComposerPrimitive.Send asChild>
-                  <button
-                    type="button"
-                    aria-label="Send"
-                    className="flex size-7 items-center justify-center rounded-[8px] bg-foreground text-background transition-[background-color,color,transform] duration-200 enabled:active:scale-[0.94] disabled:bg-muted disabled:text-muted-foreground"
-                    data-testid="button-send-message"
-                  >
-                    <HugeiconsIcon icon={ArrowUp02Icon} className="size-4" strokeWidth={2.4} />
-                  </button>
-                </ComposerPrimitive.Send>
-              )}
-            </div>
+            {isRunning ? (
+              <ComposerPrimitive.Cancel asChild>
+                <button
+                  type="button"
+                  aria-label="Stop"
+                  className="flex size-8 items-center justify-center rounded-full bg-foreground text-background transition-transform duration-150 active:scale-[0.94]"
+                  data-testid="button-stop"
+                >
+                  <HugeiconsIcon icon={StopIcon} className="size-3.5 fill-current" />
+                </button>
+              </ComposerPrimitive.Cancel>
+            ) : (
+              <ComposerPrimitive.Send asChild>
+                <button
+                  type="button"
+                  aria-label="Send"
+                  className="flex size-8 items-center justify-center rounded-full bg-foreground text-background transition-[background-color,color,transform] duration-200 enabled:active:scale-[0.94] disabled:bg-muted disabled:text-muted-foreground"
+                  data-testid="button-send-message"
+                >
+                  <HugeiconsIcon icon={ArrowUp02Icon} className="size-4" strokeWidth={2.4} />
+                </button>
+              </ComposerPrimitive.Send>
+            )}
           </div>
         </ComposerPrimitive.Root>
       </div>

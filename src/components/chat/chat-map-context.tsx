@@ -1,17 +1,17 @@
 "use client";
 
 /**
- * ChatMapProvider — shared state between place-list tool results and the map
- * (docs/AGENT_CHAT_REBUILD.md §8).
+ * ChatMapProvider — shared state between the chat's place lists, the chat
+ * panel and the map (docs/AGENT_CHAT_REBUILD.md §8).
  *
- *   resultSets    toolCallId → PlaceRow[], registered by each PlaceListRenderer
- *   activeSetId   the set the map shows: the newest registered, or whichever
- *                 older list the user last hovered/touched
+ *   resultSets    toolCallId → a list the agent made, registered by each
+ *                 PlaceListRenderer (its card in the chat)
+ *   activeSetId   the list the map shows: the newest, or whichever the user
+ *                 last hovered or opened
+ *   stack         what the panel shows over the chat, the way the app's list
+ *                 pages go list → place: [] is the chat, then a list, then a
+ *                 place. Back pops one.
  *   selectedKey   the selected place (googlePlaceId), from a row or a marker
- *
- * Clicking a row selects it and pans the map (via the registered pan
- * function); clicking a marker selects it and scrolls its row into view (via
- * the registered row elements).
  */
 
 import {
@@ -24,21 +24,34 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { PlaceRow } from "@/lib/agent/place-row";
+import type { CreatorHeader, PlaceRow } from "@/lib/agent/place-row";
 
-type SelectSource = "map" | "list" | "carousel";
+export type ResultSet = {
+  places: PlaceRow[];
+  /** The list's name, e.g. "Burgers in West Village". */
+  title: string;
+  /** What the agent did, e.g. "Searched Townsquare for burgers". */
+  label: string;
+  total: number;
+  creator?: CreatorHeader;
+};
+
+export type PanelView = { kind: "list"; setId: string } | { kind: "place"; setId: string; key: string };
 
 type ChatMapValue = {
-  resultSets: Map<string, PlaceRow[]>;
+  resultSets: Map<string, ResultSet>;
   activeSetId: string | null;
   activePlaces: PlaceRow[];
+  stack: PanelView[];
   selectedKey: string | null;
-  selectSource: SelectSource | null;
-  registerResultSet: (id: string, places: PlaceRow[]) => void;
+  registerResultSet: (id: string, set: ResultSet) => void;
   activateSet: (id: string) => void;
-  setSelected: (key: string | null, source: SelectSource) => void;
-  /** Row elements, keyed `${setId}:${googlePlaceId}`, for scroll-into-view. */
-  registerRow: (setId: string, key: string, el: HTMLElement | null) => void;
+  setSelected: (key: string | null) => void;
+  /** Open a list over the chat. */
+  openList: (setId: string) => void;
+  /** Open a place's detail over its list (over the chat when it's a lone place). */
+  openPlace: (setId: string, key: string) => void;
+  back: () => void;
   /** The big map's pan function (ChatShell registers PlaceMap's handle). */
   setPanHandler: (fn: ((lat: number, lng: number) => void) | null) => void;
   panTo: (lat: number, lng: number) => void;
@@ -47,59 +60,61 @@ type ChatMapValue = {
 const ChatMapContext = createContext<ChatMapValue | null>(null);
 
 export function ChatMapProvider({ children, resetKey }: { children: ReactNode; resetKey?: string }) {
-  const [resultSets, setResultSets] = useState<Map<string, PlaceRow[]>>(() => new Map());
+  const [resultSets, setResultSets] = useState<Map<string, ResultSet>>(() => new Map());
   const [activeSetId, setActiveSetId] = useState<string | null>(null);
+  const [stack, setStack] = useState<PanelView[]>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [selectSource, setSelectSource] = useState<SelectSource | null>(null);
-  const rows = useRef(new Map<string, HTMLElement>());
   const panRef = useRef<((lat: number, lng: number) => void) | null>(null);
+  const setsRef = useRef(resultSets);
+  useEffect(() => {
+    setsRef.current = resultSets;
+  }, [resultSets]);
 
-  // A different conversation starts with an empty map.
+  // A different conversation starts with an empty map, back on the chat.
   useEffect(() => {
     setResultSets(new Map());
     setActiveSetId(null);
+    setStack([]);
     setSelectedKey(null);
-    rows.current.clear();
   }, [resetKey]);
 
-  const registerResultSet = useCallback((id: string, places: PlaceRow[]) => {
+  const registerResultSet = useCallback((id: string, set: ResultSet) => {
     setResultSets((prev) => {
       const existing = prev.get(id);
-      if (existing && existing.length === places.length && existing.every((p, i) => p.googlePlaceId === places[i].googlePlaceId)) {
+      if (
+        existing &&
+        existing.title === set.title &&
+        existing.places.length === set.places.length &&
+        existing.places.every((p, i) => p.googlePlaceId === set.places[i].googlePlaceId)
+      ) {
         return prev;
       }
       const next = new Map(prev);
-      next.set(id, places);
+      next.set(id, set);
       return next;
     });
-    // Newest set wins: renderers mount in thread order, so the last one
+    // Newest list wins: renderers mount in thread order, so the last one
     // registered is the latest answer.
-    if (places.length > 0) setActiveSetId(id);
+    if (set.places.length > 0) setActiveSetId(id);
   }, []);
 
-  const activateSet = useCallback((id: string) => {
-    setActiveSetId((cur) => (cur === id ? cur : id));
+  const activateSet = useCallback((id: string) => setActiveSetId(id), []);
+  const setSelected = useCallback((key: string | null) => setSelectedKey(key), []);
+
+  const openList = useCallback((setId: string) => {
+    setActiveSetId(setId);
+    setSelectedKey(null);
+    setStack([{ kind: "list", setId }]);
   }, []);
 
-  const setSelected = useCallback((key: string | null, source: SelectSource) => {
+  const openPlace = useCallback((setId: string, key: string) => {
+    setActiveSetId(setId);
     setSelectedKey(key);
-    setSelectSource(source);
-    if (key && source === "map") {
-      // Scroll the matching row (in the active set) into view.
-      for (const [k, el] of rows.current) {
-        if (k.endsWith(`:${key}`)) {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
-          break;
-        }
-      }
-    }
+    const lone = (setsRef.current.get(setId)?.places.length ?? 0) <= 1;
+    setStack(lone ? [{ kind: "place", setId, key }] : [{ kind: "list", setId }, { kind: "place", setId, key }]);
   }, []);
 
-  const registerRow = useCallback((setId: string, key: string, el: HTMLElement | null) => {
-    const k = `${setId}:${key}`;
-    if (el) rows.current.set(k, el);
-    else rows.current.delete(k);
-  }, []);
+  const back = useCallback(() => setStack((s) => s.slice(0, -1)), []);
 
   const setPanHandler = useCallback((fn: ((lat: number, lng: number) => void) | null) => {
     panRef.current = fn;
@@ -113,17 +128,19 @@ export function ChatMapProvider({ children, resetKey }: { children: ReactNode; r
     () => ({
       resultSets,
       activeSetId,
-      activePlaces: (activeSetId && resultSets.get(activeSetId)) || [],
+      activePlaces: (activeSetId && resultSets.get(activeSetId)?.places) || [],
+      stack,
       selectedKey,
-      selectSource,
       registerResultSet,
       activateSet,
       setSelected,
-      registerRow,
+      openList,
+      openPlace,
+      back,
       setPanHandler,
       panTo,
     }),
-    [resultSets, activeSetId, selectedKey, selectSource, registerResultSet, activateSet, setSelected, registerRow, setPanHandler, panTo],
+    [resultSets, activeSetId, stack, selectedKey, registerResultSet, activateSet, setSelected, openList, openPlace, back, setPanHandler, panTo],
   );
 
   return <ChatMapContext.Provider value={value}>{children}</ChatMapContext.Provider>;
@@ -139,12 +156,14 @@ const INERT: ChatMapValue = {
   resultSets: new Map(),
   activeSetId: null,
   activePlaces: [],
+  stack: [],
   selectedKey: null,
-  selectSource: null,
   registerResultSet: () => {},
   activateSet: () => {},
   setSelected: () => {},
-  registerRow: () => {},
+  openList: () => {},
+  openPlace: () => {},
+  back: () => {},
   setPanHandler: () => {},
   panTo: () => {},
 };

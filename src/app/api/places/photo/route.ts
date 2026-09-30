@@ -4,6 +4,8 @@ import { refreshStalePhotoRef } from "@/lib/places/google";
 export async function GET(request: NextRequest) {
   const photoRef = request.nextUrl.searchParams.get("photoRef");
   const maxWidth = request.nextUrl.searchParams.get("maxWidth") || "400";
+  // The place's Google id, so a reference the place no longer stores can still heal.
+  const placeId = request.nextUrl.searchParams.get("placeId");
 
   if (!photoRef) {
     return NextResponse.json({ error: "photoRef is required" }, { status: 400 });
@@ -22,11 +24,18 @@ export async function GET(request: NextRequest) {
 
     // Stored references expire; refresh the place's references and retry once.
     if (!response.ok) {
-      const fresh = await refreshStalePhotoRef(photoRef).catch((e) => {
-        console.error("[places/photo] refresh failed:", e);
-        return null;
-      });
+      const refresh = (force: boolean) =>
+        refreshStalePhotoRef(photoRef, placeId, force).catch((e) => {
+          console.error("[places/photo] refresh failed:", e);
+          return null;
+        });
+      const fresh = await refresh(false);
       if (fresh) response = await photoFor(fresh);
+      // The place's current references were stale too: fetch new ones.
+      if (!response.ok && placeId) {
+        const forced = await refresh(true);
+        if (forced) response = await photoFor(forced);
+      }
     }
 
     if (!response.ok) {

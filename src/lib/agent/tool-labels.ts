@@ -59,3 +59,27 @@ export function toolLabel(toolName: string, args: Args | undefined): string {
   }
   return toolName.replace(/_/g, " ");
 }
+
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/**
+ * The name a place list goes by once it's made: its card in the chat and
+ * its header when opened, e.g. "Burgers in West Village".
+ */
+export function listTitle(toolName: string, args: Args | undefined, query?: string): string {
+  const a = args ?? {};
+  const q = str(a.query) ?? str(query);
+  switch (toolName) {
+    case "search_places":
+    case "search_google_places":
+      return `${cap(q ?? "places")}${areaPhrase(a.area)}`;
+    case "places_from_people_i_follow":
+      return `${cap(q ?? "places")} from people you follow${areaPhrase(a.area)}`;
+    case "get_creator":
+      return `@${(str(a.handle) ?? str(query) ?? "creator").replace(/^@/, "")}'s places`;
+    case "get_my_places":
+      return cap(str(query) ?? "Your saved places");
+    default:
+      return cap(q ?? toolLabel(toolName, a));
+  }
+}

@@ -210,33 +210,61 @@ export async function persistGooglePlaces(results: GoogleResult[]): Promise<stri
 // place before the first request refreshed them all. Per instance, best effort.
 const refreshedRefs = new Map<string, string>();
 
-export async function refreshStalePhotoRef(staleRef: string): Promise<string | null> {
+/** Fresh photo references for a place from Place Details, saved on the place. */
+export async function refreshPlacePhotos(place: { id: string; google_place_id: string }): Promise<string[] | null> {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) return null;
-  const known = refreshedRefs.get(staleRef);
-  if (known) return known;
-
-  const rows = await prisma.$queryRaw<{ id: string; google_place_id: string; photo_refs: unknown }[]>`
-    SELECT id, google_place_id, photo_refs FROM places
-     WHERE photo_refs::jsonb @> jsonb_build_array(${staleRef}::text)
-     LIMIT 1`;
-  const place = rows[0];
-  if (!place) return null;
-
   const res = await fetch(
     `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(place.google_place_id)}&fields=photos&key=${apiKey}`,
   );
   const data = (await res.json()) as { status: string; result?: { photos?: { photo_reference: string }[] } };
   const fresh = (data.result?.photos ?? []).slice(0, 5).map((p) => p.photo_reference);
   if (data.status !== "OK" || fresh.length === 0) return null;
-
   await prisma.place.update({ where: { id: place.id }, data: { photoRefs: fresh } });
+  return fresh;
+}
+
+/**
+ * A working reference for one that failed. Found by the reference itself
+ * when a place still stores it; otherwise by `googlePlaceId` (pages and
+ * saved chats can hold references a place has since replaced). `force`
+ * re-fetches even when the place's current references look fresh.
+ */
+export async function refreshStalePhotoRef(
+  staleRef: string,
+  googlePlaceId?: string | null,
+  force = false,
+): Promise<string | null> {
+  if (!force) {
+    const known = refreshedRefs.get(staleRef);
+    if (known) return known;
+  }
+
+  const byRef = await prisma.$queryRaw<{ id: string; google_place_id: string; photo_refs: unknown }[]>`
+    SELECT id, google_place_id, photo_refs FROM places
+     WHERE photo_refs::jsonb @> jsonb_build_array(${staleRef}::text)
+     LIMIT 1`;
+  let place = byRef[0];
+
+  if (!place && googlePlaceId) {
+    const byId = await prisma.$queryRaw<{ id: string; google_place_id: string; photo_refs: unknown }[]>`
+      SELECT id, google_place_id, photo_refs FROM places WHERE google_place_id = ${googlePlaceId} LIMIT 1`;
+    place = byId[0];
+    if (!place) return null;
+    const current = Array.isArray(place.photo_refs) ? (place.photo_refs as unknown[]).filter((r): r is string => typeof r === "string") : [];
+    // The place was refreshed since this reference was handed out; use what it has now.
+    if (!force && current.length > 0) return current[0];
+  }
+  if (!place) return null;
+
+  const fresh = await refreshPlacePhotos(place);
+  if (!fresh) return null;
 
   const old = Array.isArray(place.photo_refs) ? (place.photo_refs as unknown[]) : [];
   old.forEach((ref, i) => {
     if (typeof ref === "string") refreshedRefs.set(ref, fresh[Math.min(i, fresh.length - 1)]);
   });
+  refreshedRefs.set(staleRef, fresh[Math.min(Math.max(0, old.indexOf(staleRef)), fresh.length - 1)]);
   if (refreshedRefs.size > 5000) refreshedRefs.clear();
-  const position = Math.max(0, old.indexOf(staleRef));
-  return fresh[Math.min(position, fresh.length - 1)];
+  return refreshedRefs.get(staleRef) ?? fresh[0];
 }

@@ -4,9 +4,13 @@
  * /chat — the agent chat inside the map shell.
  *
  * Layout kept from the old chat-dashboard: a full-bleed PlaceMap, with the
- * chat in a floating 22rem panel on desktop and a BottomSheet on mobile.
+ * chat in a floating 25rem panel on desktop (MapLayout's width) and a BottomSheet on mobile.
  * Only one of the two is mounted (useIsMobile) so there is one thread and
  * one composer.
+ *
+ * The panel is a stack, like a list page: the chat, then a list the agent
+ * made (opened from its card), then a place. The chat stays mounted under
+ * them so an answer keeps streaming.
  *
  * Conversations: the client mints the id (the first message creates the
  * row in /api/chat) and mirrors it into ?c=<id> so a reload resumes. A
@@ -14,7 +18,7 @@
  * ChatRuntime keyed by id — the runtime takes messages at mount time.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { UIMessage } from "ai";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -32,6 +36,7 @@ import { PlaceMap, type MapBounds, type PlaceMapHandle } from "@/components/plac
 import { ChatMapProvider, useChatMap } from "@/components/chat/chat-map-context";
 import type { PlaceRow } from "@/lib/agent/place-row";
 import { BottomSheet } from "@/components/bottom-sheet";
+import { ChatListView } from "@/components/chat/chat-list-view";
 import { Button } from "@/components/ui/button";
 import { ChatRuntime } from "@/components/chat/chat-runtime";
 import { Thread, type WelcomeConfig } from "@/components/chat/thread";
@@ -240,11 +245,13 @@ export function ChatShell({ user }: { user: UserData }) {
         <ChatResultsMap onBoundsChange={setMapBounds} />
 
         {isMobile ? (
-          <BottomSheet defaultSnapPoint="expanded">{panel}</BottomSheet>
+          <MobileSheet>
+            <PanelStack chat={panel} />
+          </MobileSheet>
         ) : (
-          <div className="pointer-events-none absolute top-0 bottom-0 left-0 z-10 w-[22rem] p-3">
+          <div className="pointer-events-none absolute top-0 bottom-0 left-0 z-10 w-[25rem] p-3">
             <div className="pointer-events-auto h-full overflow-hidden rounded-2xl border bg-background shadow-2xl">
-              {panel}
+              <PanelStack chat={panel} />
             </div>
           </div>
         )}
@@ -254,13 +261,38 @@ export function ChatShell({ user }: { user: UserData }) {
   );
 }
 
+/** The chat, or the list / place open over it. */
+function PanelStack({ chat }: { chat: ReactNode }) {
+  const { stack } = useChatMap();
+  const top = stack.at(-1);
+  return (
+    <>
+      <div className={cn("h-full", top && "hidden")}>{chat}</div>
+      {top && <ChatListView key={`${top.setId}:${top.kind}`} view={top} />}
+    </>
+  );
+}
+
 /**
- * The full-bleed map, showing the active place-list result set's pins
- * (docs/AGENT_CHAT_REBUILD.md §8). Marker click selects the place and
- * scrolls its row into view; a row click pans here via the registered pan.
+ * Mobile: the panel in a bottom sheet, left wherever the user drags it. Opening
+ * a place lifts it to at least mid, as a marker tap does on the list pages.
+ */
+function MobileSheet({ children }: { children: ReactNode }) {
+  const { stack } = useChatMap();
+  return (
+    <BottomSheet defaultSnapPoint="expanded" requestedSnapPoint={stack.at(-1)?.kind === "place" ? "mid" : null}>
+      {children}
+    </BottomSheet>
+  );
+}
+
+/**
+ * The full-bleed map, showing the active list's pins (docs/AGENT_CHAT_REBUILD.md
+ * §8). A marker opens its place over the list, as on a list page; a row
+ * click pans here via the registered pan.
  */
 function ChatResultsMap({ onBoundsChange }: { onBoundsChange: (b: MapBounds) => void }) {
-  const { activePlaces, selectedKey, setSelected, setPanHandler } = useChatMap();
+  const { activeSetId, activePlaces, selectedKey, openPlace, setPanHandler } = useChatMap();
   const mapRef = useRef<PlaceMapHandle>(null);
 
   useEffect(() => {
@@ -275,7 +307,12 @@ function ChatResultsMap({ onBoundsChange }: { onBoundsChange: (b: MapBounds) => 
       ref={mapRef}
       places={places}
       selectedPlaceId={selectedKey}
-      onMarkerClick={(id) => setSelected(id, "map")}
+      onMarkerClick={(id) => {
+        if (!activeSetId) return;
+        openPlace(activeSetId, id);
+        const p = activePlaces.find((x) => x.googlePlaceId === id);
+        if (p) mapRef.current?.panTo(p.lat, p.lng);
+      }}
       showSettings
       frameCluster
       onBoundsChange={onBoundsChange}
