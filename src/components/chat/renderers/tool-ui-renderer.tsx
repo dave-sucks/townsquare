@@ -5,9 +5,9 @@
  * from Hindsight components/agent/renderers/ToolUIRenderer.tsx).
  *
  * Contract: the tool returns `data.items: ToolUIItem[]`. This renders a
- * chain-of-thought step — label, count — whose body lists the items as
- * place / person / generic rows. Steps whose items are part of the answer
- * (creators found, saved places) start open.
+ * chain-of-thought step (a text toggle) whose body lists the items as
+ * place / person / generic rows. Steps start collapsed, like Claude's and
+ * Grok's; the answer text carries what matters.
  *
  * Also the loading and fallback view for "place-list" results until the
  * place list renderer takes them: data.places become place items.
@@ -58,14 +58,12 @@ export function ToolUIRenderer({ toolName, args, result, loading, secondary }: P
   const items = loading ? [] : deriveItems(result.data, result.summary);
   const gerund = result.progressLabel ?? toolLabel(toolName, args);
   const label = loading ? gerund : pastTense(gerund);
-  const answerItems = items.some((i) => i.kind !== "generic");
 
   return (
     <TraceStep
       running={loading}
       label={label}
       secondary={secondary ?? countLabel(items)}
-      defaultOpen={answerItems}
     >
       {items.length > 0 ? items.map((it, i) => <TraceItem key={i} item={it} />) : null}
     </TraceStep>

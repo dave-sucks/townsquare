@@ -30,7 +30,7 @@ export const findCreatorsTool = defineTool({
       username: c.username,
       avatar: c.avatar,
       isFollowed: c.isFollowed,
-      text: `${c.posts} ${c.posts === 1 ? "post" : "posts"}${c.topPlaces.length ? ` · ${c.topPlaces.join(", ")}` : ""}`,
+      text: `${c.posts} ${c.posts === 1 ? "post" : "posts"}`,
     }));
 
     const summary =

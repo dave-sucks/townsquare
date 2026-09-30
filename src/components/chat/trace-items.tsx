@@ -52,7 +52,7 @@ export function placePhotoUrl(photoRef: string, maxWidth = 96): string {
 
 function Row({ lead, href, children }: { lead: React.ReactNode; href?: string; children: React.ReactNode }) {
   return (
-    <div className="group/row relative flex min-h-6 min-w-0 items-center gap-2 pr-6 text-[13px] text-muted-foreground">
+    <div className="group/row relative flex min-h-6 min-w-0 items-center gap-2 pr-6 text-[13px] text-muted-foreground/75">
       <span className="flex size-4 shrink-0 items-center justify-center">{lead}</span>
       <span className="min-w-0 truncate">{children}</span>
       {href && (

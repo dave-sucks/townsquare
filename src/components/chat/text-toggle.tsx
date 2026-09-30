@@ -33,7 +33,7 @@ export function TextToggle({
       aria-expanded={collapsible ? open : undefined}
       onClick={onClick}
       className={cn(
-        "group/toggle inline-flex max-w-full items-center gap-1 py-0.5 text-left text-[13px] text-muted-foreground transition-colors duration-150 enabled:hover:text-foreground",
+        "group/toggle inline-flex max-w-full items-center gap-1 py-0.5 text-left text-[13px] text-muted-foreground/75 transition-colors duration-150 enabled:hover:text-foreground",
         className,
       )}
     >

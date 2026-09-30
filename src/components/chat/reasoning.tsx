@@ -33,9 +33,9 @@ function ReasoningStep({ children, isStreaming }: ReasoningProps) {
     <p
       onClick={() => setOpen((o) => !o)}
       className={cn(
-        "cursor-pointer text-[13px] leading-relaxed whitespace-pre-wrap text-muted-foreground animate-in fade-in duration-300",
+        "cursor-pointer text-[13px] leading-relaxed whitespace-pre-wrap text-muted-foreground/75 animate-in fade-in duration-300",
         !open && "line-clamp-3",
-        isStreaming && "text-muted-foreground/80",
+        isStreaming && "text-muted-foreground/60",
       )}
     >
       {children}

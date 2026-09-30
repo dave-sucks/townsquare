@@ -186,7 +186,7 @@ function Trace({ indices, children }: { indices: number[]; children?: ReactNode 
   const messageRunning = useMessage((m) => m.status?.type === "running");
   const isLastGroup = useMessage((m) => indices[indices.length - 1] === m.content.length - 1);
 
-  const { steps, label, working, hasItems, hasThought } = useMemo(() => {
+  const { steps, label, working, hasThought } = useMemo(() => {
     const parts = indices.map((i) => content[i]).filter(Boolean);
     const toolParts = parts.filter(
       (p) => p.type === "tool-call" && p.toolName && !HIDDEN_TOOLS.has(p.toolName),
@@ -204,18 +204,11 @@ function Trace({ indices, children }: { indices: number[]; children?: ReactNode 
       const r = p.result != null ? normalizeToolResult(p.toolName!, p.result) : null;
       return r?.ok && r.progressLabel ? r.progressLabel : toolLabel(p.toolName!, p.args);
     });
-    const hasItems = toolParts.some((p) => {
-      if (p.toolName === "web_search" || p.result == null) return false;
-      const r = normalizeToolResult(p.toolName!, p.result);
-      const items = r.ok ? (r.data as { items?: unknown[] } | null)?.items : undefined;
-      return Array.isArray(items) && items.length > 0;
-    });
     const hasThought = parts.some((p) => p.type === "reasoning" && Boolean(p.text?.trim()));
     return {
       steps: labels,
       label: working ? activeLabel : null,
       working,
-      hasItems,
       hasThought,
     };
   }, [content, indices, messageRunning, isLastGroup]);
@@ -241,7 +234,7 @@ function Trace({ indices, children }: { indices: number[]; children?: ReactNode 
   // Beautiful UI's trace settles closed once done — except when a step's
   // items (creators found, saved places) are part of the answer.
   const [manual, setManual] = useState<boolean | null>(null);
-  const expanded = manual ?? (working || hasItems);
+  const expanded = manual ?? working;
 
   // A lone step with no thinking is its own trace: a header over it would only
   // repeat its label.
