@@ -1,43 +1,29 @@
 "use client";
 
 /**
- * PlaceListRenderer — ui: "place-list". The one loud component: the place
- * answer the user came for (docs/AGENT_CHAT_REBUILD.md §9).
+ * PlaceListRenderer — ui: "place-list". A list the agent made shows in the
+ * chat as one card; the list itself opens in the panel (ChatListView), the
+ * same way a list page shows a list, while its pins go on the big map.
  *
- *   Searching Townsquare for burgers · 7 places        [List | Map]  ›
- *   ┌ PlaceCard (the app's row) × 5, then "Show N more" (List)
- *   └ PlaceMapCarousel: pins + swipeable cards        (Map)
- *   [Show on map]   [Save all to list]
+ *   [▣▣▣]  Burgers in West Village          ›
+ *          7 places · 3 creators
  *
- * Registers its places with ChatMapProvider (the big map shows the newest
- * set, or whichever list was touched last) and shares selection with it.
- * Mobile defaults to the Map view — the big map is behind the bottom sheet.
- *
- * When a later list lands in the same answer (a retry with looser terms,
- * a get_place after a search, a second ask), this one folds to its header
- * so the answer reads as one result, not a stack of them.
+ * get_place is one place, not a list: its row and buzz render inline.
  */
 
-import { useEffect, useState } from "react";
-import { useAuiState } from "@assistant-ui/react";
+import { useEffect } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { MapsLocation01Icon, LeftToRightListBulletIcon } from "@hugeicons/core-free-icons";
+import { ArrowRight01Icon, Location01Icon } from "@hugeicons/core-free-icons";
 import type { ToolResult } from "@/lib/agent/tool-result";
 import type { PlaceListData, PlaceRow } from "@/lib/agent/place-row";
-import { toolLabel } from "@/lib/agent/tool-labels";
+import { listTitle, toolLabel } from "@/lib/agent/tool-labels";
 import { useChatMap } from "@/components/chat/chat-map-context";
-import { isFilledPlaceList, pastTense } from "@/components/chat/chain-of-thought";
+import { pastTense } from "@/components/chat/chain-of-thought";
 import { ChatPlaceCard } from "@/components/chat/chat-place-card";
-import { TextToggle } from "@/components/chat/text-toggle";
-import { PlaceMapCarousel } from "@/components/chat/place-map-carousel";
-import { SaveAllToListButton } from "@/components/chat/save-all-to-list-button";
-import { CreatorHeaderCard, PlaceBuzz } from "@/components/chat/place-detail-parts";
-import { Button } from "@/components/ui/button";
+import { PlaceBuzz } from "@/components/chat/place-detail-parts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-
-const PAGE = 5;
 
 interface Props {
   toolName: string;
@@ -57,173 +43,116 @@ export function PlaceListRenderer({ toolName, toolCallId, args, result, loading 
   const data = isPlaceListData(result.data) ? result.data : null;
   const places: PlaceRow[] = data?.places ?? [];
   const label = result.progressLabel ?? toolLabel(toolName, args);
-  const doneLabel = pastTense(label);
+  const isDetail = places.length === 1 && Array.isArray(data?.posts);
+  const title = isDetail ? places[0].name : listTitle(toolName, args, data?.query);
 
-  const { registerResultSet, activateSet, activeSetId, selectedKey, setSelected, registerRow, panTo } = useChatMap();
-  const [view, setView] = useState<"list" | "map" | null>(null);
-  const [expanded, setExpanded] = useState(false);
-  // null = follow the default: open, unless a later list in this message supersedes it.
-  const [openOverride, setOpenOverride] = useState<boolean | null>(null);
-  const superseded = useAuiState((s) => {
-    if (!toolCallId) return false;
-    const msg = s.message as unknown as { parts?: readonly unknown[]; content?: readonly unknown[] };
-    const parts = msg.parts ?? msg.content ?? [];
-    const i = parts.findIndex((p) => (p as { toolCallId?: string }).toolCallId === toolCallId);
-    return i >= 0 && parts.slice(i + 1).some(isFilledPlaceList);
-  });
-  const open = openOverride ?? !superseded;
-  const effectiveView = view ?? (isMobile ? "map" : "list");
-  const isActive = activeSetId === setId;
+  const { registerResultSet, activateSet, activeSetId, selectedKey, openList, openPlace } = useChatMap();
 
   useEffect(() => {
-    if (!loading && places.length > 0) registerResultSet(setId, places);
+    if (loading || places.length === 0) return;
+    registerResultSet(setId, {
+      places,
+      title,
+      label: pastTense(label),
+      total: data?.total ?? places.length,
+      creator: data?.creator,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, setId, places.map((p) => p.googlePlaceId).join("|")]);
+  }, [loading, setId, title, places.map((p) => p.googlePlaceId).join("|")]);
 
-  const select = (p: PlaceRow, source: "list" | "carousel" | "map") => {
-    activateSet(setId);
-    setSelected(p.googlePlaceId, source === "map" ? "map" : "list");
-    if (source !== "map") panTo(p.lat, p.lng);
-  };
-
-  // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="my-2 flex flex-col gap-2" data-testid="place-list-loading">
-        <div className="flex items-center gap-2 px-0.5">
-          <span className="shimmer-text text-[13px] font-medium">{label}</span>
+      <div className="my-2 flex items-center gap-3 rounded-xl border p-2" data-testid="place-list-loading">
+        <Skeleton className="size-10 rounded-md" />
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <span className="shimmer-text truncate text-[13px]">{label}</span>
+          <Skeleton className="h-3 w-1/3" />
         </div>
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="flex gap-3 p-2">
-            <Skeleton className="size-12 rounded-lg" />
-            <div className="flex flex-1 flex-col gap-1.5 py-0.5">
-              <Skeleton className="h-4 w-2/3" />
-              <Skeleton className="h-3 w-1/2" />
-              <Skeleton className="h-3 w-1/3" />
-            </div>
-          </div>
-        ))}
       </div>
     );
   }
 
-  // ── Empty ─────────────────────────────────────────────────────────────────
   if (places.length === 0) {
     return (
-      <p className="my-2 px-0.5 text-[13px] text-muted-foreground">
-        {label} — nothing on Townsquare matches yet.
+      <p className="my-2 px-0.5 text-[13px] text-muted-foreground/75">
+        {pastTense(label)} · nothing on Townsquare matches yet
       </p>
     );
   }
 
-  // get_place: one place, its summary and posts — no toggle, no list chrome.
-  const isDetail = places.length === 1 && Array.isArray(data?.posts);
-  const shown = expanded ? places : places.slice(0, PAGE);
-  const hidden = places.length - shown.length;
-  const count = data?.total && data.total > places.length ? `${places.length} of ${data.total}` : `${places.length}`;
+  if (isDetail) {
+    const p = places[0];
+    return (
+      <div className="my-2 flex flex-col gap-1.5" onPointerEnter={() => !isMobile && activateSet(setId)}>
+        <div className="-mx-1">
+          <ChatPlaceCard
+            place={p}
+            selected={activeSetId === setId && selectedKey === p.googlePlaceId}
+            onSelect={() => openPlace(setId, p.googlePlaceId)}
+          />
+        </div>
+        <PlaceBuzz aiSummary={data?.aiSummary} posts={data?.posts ?? []} />
+      </div>
+    );
+  }
+
+  const total = data?.total && data.total > places.length ? `${places.length} of ${data.total}` : `${places.length}`;
+  // A creator's own list doesn't need "· 1 creator".
+  const creators = data?.creator ? 0 : new Set(places.flatMap((p) => (p.creators ?? []).map((c) => c.id))).size;
 
   return (
-    <div
-      className="my-2 flex flex-col gap-1.5"
+    <button
+      type="button"
+      onClick={() => openList(setId)}
       onPointerEnter={() => !isMobile && activateSet(setId)}
-      data-testid="place-list"
+      className="group my-2 flex w-full items-center gap-3 rounded-xl border bg-background p-2 text-left transition-colors hover:bg-accent"
+      data-testid="place-list-card"
     >
-      {/* Header — muted, collapsible; the view toggle sits on the right. */}
-      <div className="flex items-center gap-2">
-        <TextToggle
-          label={
-            <>
-              {doneLabel}
-              <span className="tabular-nums"> · {count} {places.length === 1 ? "place" : "places"}</span>
-            </>
-          }
-          open={open}
-          onClick={() => setOpenOverride(!open)}
-          className="min-w-0 flex-1 py-1"
-        />
-        {open && !isDetail && (
-          <div className="flex shrink-0 items-center rounded-lg bg-muted p-0.5" role="tablist" aria-label="View">
-            {(["list", "map"] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                role="tab"
-                aria-selected={effectiveView === v}
-                aria-label={v === "list" ? "List" : "Map"}
-                onClick={() => setView(v)}
-                className={cn(
-                  "flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors",
-                  effectiveView === v && "bg-background text-foreground shadow-xs",
-                )}
-              >
-                <HugeiconsIcon icon={v === "list" ? LeftToRightListBulletIcon : MapsLocation01Icon} className="size-3.5" />
-              </button>
-            ))}
-          </div>
-        )}
+      <Thumbs places={places} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-brand text-sm font-semibold">{title}</p>
+        <p className="truncate text-xs text-muted-foreground tabular-nums">
+          {total} {places.length === 1 ? "place" : "places"}
+          {creators > 0 && ` · ${creators} ${creators === 1 ? "creator" : "creators"}`}
+        </p>
       </div>
+      <HugeiconsIcon
+        icon={ArrowRight01Icon}
+        className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+      />
+    </button>
+  );
+}
 
-      {open && isDetail && (
-        <div className="flex flex-col gap-1.5">
-          <div className="-mx-1">
-            <ChatPlaceCard
-              ref={(el) => registerRow(setId, places[0].googlePlaceId, el)}
-              place={places[0]}
-              selected={isActive && selectedKey === places[0].googlePlaceId}
-              onSelect={() => select(places[0], "list")}
-            />
-          </div>
-          <PlaceBuzz aiSummary={data?.aiSummary} posts={data?.posts ?? []} />
-        </div>
-      )}
-
-      {open && !isDetail && (
-        <>
-          {data?.creator && <CreatorHeaderCard creator={data.creator} />}
-          {effectiveView === "map" ? (
-            <PlaceMapCarousel
-              places={places}
-              selectedKey={isActive ? selectedKey : null}
-              onSelect={(p, source) => select(p, source)}
-            />
-          ) : (
-            <div className={cn("-mx-1 flex flex-col gap-1", !isActive && "opacity-90")}>
-              {shown.map((p) => (
-                <ChatPlaceCard
-                  key={p.googlePlaceId}
-                  ref={(el) => registerRow(setId, p.googlePlaceId, el)}
-                  place={p}
-                  selected={isActive && selectedKey === p.googlePlaceId}
-                  onSelect={() => select(p, "list")}
-                />
-              ))}
-              {hidden > 0 && (
-                <Button variant="ghost" size="sm" className="mx-2 justify-start text-muted-foreground" onClick={() => setExpanded(true)}>
-                  Show {hidden} more
-                </Button>
-              )}
-            </div>
+/** Up to three of the list's photos, stacked. */
+function Thumbs({ places }: { places: PlaceRow[] }) {
+  const shown = places.slice(0, 3);
+  return (
+    <div className="flex shrink-0 -space-x-5">
+      {shown.map((p, i) => (
+        <div
+          key={p.googlePlaceId}
+          className={cn(
+            "flex size-10 items-center justify-center overflow-hidden rounded-md bg-muted ring-2 ring-background",
+            i > 0 && "shadow-sm",
           )}
-
-          <div className="flex flex-wrap items-center gap-2 pt-0.5">
-            {!isMobile && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  activateSet(setId);
-                  setSelected(null, "list");
-                }}
-                disabled={isActive && !selectedKey}
-              >
-                <HugeiconsIcon icon={MapsLocation01Icon} />
-                {isActive ? "On the map" : "Show on map"}
-              </Button>
-            )}
-            <SaveAllToListButton places={places} />
-          </div>
-        </>
-      )}
+          style={{ zIndex: shown.length - i }}
+        >
+          {p.photoRef ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`/api/places/photo?photoRef=${encodeURIComponent(p.photoRef)}&placeId=${encodeURIComponent(p.googlePlaceId)}&maxWidth=96`}
+              alt=""
+              className="size-full object-cover"
+              loading="lazy"
+            />
+          ) : p.emoji ? (
+            <span className="text-lg">{p.emoji}</span>
+          ) : (
+            <HugeiconsIcon icon={Location01Icon} className="size-4 text-muted-foreground" />
+          )}
+        </div>
+      ))}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * "Save all to list" for a place-list result. Ported from the old
+ * "Save all to list" for a place-list result — an icon in the list's header. Ported from the old
  * chat-dashboard's SaveAllToListButton; posts to /api/chat/save-all-to-list
  * and refreshes the saves and lists queries.
  */
@@ -10,7 +10,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Bookmark01Icon, CheckmarkBadge01Icon, Loading03Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
+import { Bookmark01Icon, CheckmarkBadge01Icon, FolderAddIcon, Loading03Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
 import type { PlaceRow } from "@/lib/agent/place-row";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,9 +87,8 @@ export function SaveAllToListButton({ places }: { places: PlaceRow[] }) {
 
   if (savedListName) {
     return (
-      <Button variant="secondary" size="sm" disabled data-testid="button-save-all-to-list">
-        <HugeiconsIcon icon={CheckmarkBadge01Icon} />
-        Saved to &ldquo;{savedListName}&rdquo;
+      <Button variant="ghost" size="icon" disabled title={`Saved to "${savedListName}"`} data-testid="button-save-all-to-list">
+        <HugeiconsIcon icon={CheckmarkBadge01Icon} className="h-4 w-4" />
       </Button>
     );
   }
@@ -98,12 +97,20 @@ export function SaveAllToListButton({ places }: { places: PlaceRow[] }) {
     <>
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger
-          render={<Button variant="outline" size="sm" disabled={saving} data-testid="button-save-all-to-list" />}
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={saving}
+              title="Save all to list"
+              aria-label="Save all to list"
+              data-testid="button-save-all-to-list"
+            />
+          }
         >
-          <HugeiconsIcon icon={saving ? Loading03Icon : Bookmark01Icon} className={saving ? "animate-spin" : undefined} />
-          {saving ? "Saving…" : "Save all to list"}
+          <HugeiconsIcon icon={saving ? Loading03Icon : FolderAddIcon} className={saving ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
         </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" align="start" className="w-56">
+        <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuGroup>
             <DropdownMenuLabel className="text-xs text-muted-foreground">Save {places.length} places to…</DropdownMenuLabel>
           </DropdownMenuGroup>
