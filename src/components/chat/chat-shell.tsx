@@ -4,7 +4,7 @@
  * /chat — the agent chat inside the map shell.
  *
  * Layout kept from the old chat-dashboard: a full-bleed PlaceMap, with the
- * chat in a floating 22rem panel on desktop and a BottomSheet on mobile.
+ * chat in a floating 25rem panel on desktop (MapLayout's width) and a BottomSheet on mobile.
  * Only one of the two is mounted (useIsMobile) so there is one thread and
  * one composer.
  *
@@ -249,7 +249,7 @@ export function ChatShell({ user }: { user: UserData }) {
             <PanelStack chat={panel} />
           </MobileSheet>
         ) : (
-          <div className="pointer-events-none absolute top-0 bottom-0 left-0 z-10 w-[22rem] p-3">
+          <div className="pointer-events-none absolute top-0 bottom-0 left-0 z-10 w-[25rem] p-3">
             <div className="pointer-events-auto h-full overflow-hidden rounded-2xl border bg-background shadow-2xl">
               <PanelStack chat={panel} />
             </div>

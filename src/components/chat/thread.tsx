@@ -5,7 +5,7 @@
  *
  * Kept: the assistant-ui primitives, turnAnchor="top", the sticky
  * ViewportFooter mask, scroll-to-bottom, welcome, message components.
- * Changed for townsquare: the thread lives in a 22rem floating panel (and
+ * Changed for townsquare: the thread lives in a 25rem floating panel (and
  * the mobile bottom sheet), so it runs full-width at a tighter gutter; the
  * composer is the trimmed Composer; no attachments.
  *
@@ -76,7 +76,7 @@ export const Thread: FC<ThreadProps> = ({ hideWelcome = false, welcomeConfig }) 
       // No bg here on purpose — inherit the panel's surface.
       className="aui-root aui-thread-root @container flex h-full flex-col"
       style={{
-        // The panel is 22rem wide (and phone-width on mobile): let messages
+        // The panel is 25rem wide (and phone-width on mobile): let messages
         // use all of it rather than centering a 48rem column.
         ["--thread-max-width" as string]: "100%",
       }}
