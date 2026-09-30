@@ -46,7 +46,7 @@ type SavedPlaceApi = {
  * anywhere (or by the agent's save tools, which invalidate it) shows here
  * without a reload. TanStack dedupes it across every row.
  */
-function useSavedPlace(googlePlaceId: string) {
+export function useSavedPlace(googlePlaceId: string) {
   const { data } = useQuery<{ savedPlaces: SavedPlaceApi[] }>({
     queryKey: ["saved-places"],
     queryFn: () => apiRequest("/api/saved-places"),

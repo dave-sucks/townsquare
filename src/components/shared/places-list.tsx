@@ -205,7 +205,7 @@ export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
     function renderThumbnail() {
       const photoElement = savedPlace.place.photoRefs && savedPlace.place.photoRefs.length > 0 ? (
         <img 
-          src={`/api/places/photo?photoRef=${savedPlace.place.photoRefs[0]}&maxWidth=96`}
+          src={`/api/places/photo?photoRef=${encodeURIComponent(savedPlace.place.photoRefs[0])}&placeId=${encodeURIComponent(savedPlace.place.googlePlaceId)}&maxWidth=96`}
           alt={savedPlace.place.name}
           className="w-full h-full object-cover"
         />

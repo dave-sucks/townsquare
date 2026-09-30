@@ -5,7 +5,7 @@
  * answer the user came for (docs/AGENT_CHAT_REBUILD.md §9).
  *
  *   Searching Townsquare for burgers · 7 places        [List | Map]  ›
- *   ┌ PlaceRowCard × 5, then "Show N more"            (List)
+ *   ┌ PlaceCard (the app's row) × 5, then "Show N more" (List)
  *   └ PlaceMapCarousel: pins + swipeable cards        (Map)
  *   [Show on map]   [Save all to list]
  *
@@ -27,7 +27,7 @@ import type { PlaceListData, PlaceRow } from "@/lib/agent/place-row";
 import { toolLabel } from "@/lib/agent/tool-labels";
 import { useChatMap } from "@/components/chat/chat-map-context";
 import { isFilledPlaceList, pastTense } from "@/components/chat/chain-of-thought";
-import { PlaceRowCard } from "@/components/chat/place-row-card";
+import { ChatPlaceCard } from "@/components/chat/chat-place-card";
 import { TextToggle } from "@/components/chat/text-toggle";
 import { PlaceMapCarousel } from "@/components/chat/place-map-carousel";
 import { SaveAllToListButton } from "@/components/chat/save-all-to-list-button";
@@ -165,13 +165,12 @@ export function PlaceListRenderer({ toolName, toolCallId, args, result, loading 
 
       {open && isDetail && (
         <div className="flex flex-col gap-1.5">
-          <div className="-mx-2">
-            <PlaceRowCard
+          <div className="-mx-1">
+            <ChatPlaceCard
               ref={(el) => registerRow(setId, places[0].googlePlaceId, el)}
               place={places[0]}
               selected={isActive && selectedKey === places[0].googlePlaceId}
               onSelect={() => select(places[0], "list")}
-              hidePost
             />
           </div>
           <PlaceBuzz aiSummary={data?.aiSummary} posts={data?.posts ?? []} />
@@ -188,9 +187,9 @@ export function PlaceListRenderer({ toolName, toolCallId, args, result, loading 
               onSelect={(p, source) => select(p, source)}
             />
           ) : (
-            <div className={cn("-mx-2 flex flex-col", !isActive && "opacity-90")}>
+            <div className={cn("-mx-1 flex flex-col gap-1", !isActive && "opacity-90")}>
               {shown.map((p) => (
-                <PlaceRowCard
+                <ChatPlaceCard
                   key={p.googlePlaceId}
                   ref={(el) => registerRow(setId, p.googlePlaceId, el)}
                   place={p}
