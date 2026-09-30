@@ -13,7 +13,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
 import type { ToolUIItem } from "@/lib/agent/tool-result";
 
 /**
@@ -61,7 +61,7 @@ function Row({ lead, href, children }: { lead: React.ReactNode; href?: string; c
           aria-label="Open"
           className="absolute right-0 flex size-5 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/row:opacity-100 hover:text-foreground focus-visible:opacity-100"
         >
-          <HugeiconsIcon icon={ArrowRight01Icon} className="size-3.5" />
+          <HugeiconsIcon icon={ArrowUpRight01Icon} className="size-3.5" />
         </Link>
       )}
     </div>
@@ -101,7 +101,8 @@ export function PersonItem({ item }: { item: Extract<ToolUIItem, { kind: "person
   return (
     <Row lead={lead} href={`/u/${item.username}`}>
       <span className="font-medium">@{item.username}</span>
-      {item.text ? ` — ${item.text}` : null}
+      {/* Post count only; chats saved before this also carried top places. */}
+      {item.text ? ` — ${item.text.split(" · ")[0]}` : null}
     </Row>
   );
 }

@@ -28,6 +28,7 @@ import { toolLabel } from "@/lib/agent/tool-labels";
 import { useChatMap } from "@/components/chat/chat-map-context";
 import { isFilledPlaceList, pastTense } from "@/components/chat/chain-of-thought";
 import { PlaceRowCard } from "@/components/chat/place-row-card";
+import { TextToggle } from "@/components/chat/text-toggle";
 import { PlaceMapCarousel } from "@/components/chat/place-map-carousel";
 import { SaveAllToListButton } from "@/components/chat/save-all-to-list-button";
 import { CreatorHeaderCard, PlaceBuzz } from "@/components/chat/place-detail-parts";
@@ -129,32 +130,17 @@ export function PlaceListRenderer({ toolName, toolCallId, args, result, loading 
     >
       {/* Header — muted, collapsible; the view toggle sits on the right. */}
       <div className="flex items-center gap-2">
-        <button
-          type="button"
+        <TextToggle
+          label={
+            <>
+              {doneLabel}
+              <span className="tabular-nums"> · {count} {places.length === 1 ? "place" : "places"}</span>
+            </>
+          }
+          open={open}
           onClick={() => setOpenOverride(!open)}
-          aria-expanded={open}
-          className="group/toggle flex min-w-0 flex-1 items-center gap-1 py-1 text-left text-muted-foreground transition-colors duration-150 hover:text-foreground"
-        >
-          <span className="min-w-0 truncate text-[13px]">
-            {doneLabel}
-            <span className="tabular-nums"> · {count} {places.length === 1 ? "place" : "places"}</span>
-          </span>
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="shrink-0 opacity-70 transition-transform duration-200"
-            style={{ transform: open ? "rotate(90deg)" : "rotate(0)" }}
-            aria-hidden
-          >
-            <path d="M9 6l6 6-6 6" />
-          </svg>
-        </button>
+          className="min-w-0 flex-1 py-1"
+        />
         {open && !isDetail && (
           <div className="flex shrink-0 items-center rounded-lg bg-muted p-0.5" role="tablist" aria-label="View">
             {(["list", "map"] as const).map((v) => (
