@@ -19,7 +19,7 @@ import {
   Notification02Icon,
   Moon02Icon,
   Sun03Icon,
-  UserShield01Icon,
+  PencilEdit01Icon,
 } from "@hugeicons/core-free-icons";
 import { useTheme } from "next-themes";
 import { Switch } from "@/components/ui/switch";
@@ -136,7 +136,7 @@ export function MobileNav({ user }: { user: User | null }) {
               </Link>
             ))}
 
-            {adminMode.enabled &&
+            {adminMode.isAdmin &&
               ADMIN_NAV_ITEMS.map((item) => (
                 <Link
                   key={item.href}
@@ -158,7 +158,7 @@ export function MobileNav({ user }: { user: User | null }) {
                 className="flex items-center gap-3 rounded-xl px-3 py-2"
                 data-testid="mobile-menu-admin-mode"
               >
-                <span className="text-base font-medium">Admin mode</span>
+                <span className="text-base font-medium">Edit mode</span>
                 <Switch
                   checked={adminMode.enabled}
                   tabIndex={-1}
@@ -166,7 +166,7 @@ export function MobileNav({ user }: { user: User | null }) {
                   className="pointer-events-none"
                 />
                 <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted/60">
-                  <HugeiconsIcon icon={UserShield01Icon} className="size-5" />
+                  <HugeiconsIcon icon={PencilEdit01Icon} className="size-5" />
                 </div>
               </button>
             )}

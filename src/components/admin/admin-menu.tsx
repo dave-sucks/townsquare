@@ -11,7 +11,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { PencilEdit01Icon } from "@hugeicons/core-free-icons";
+import { MoreHorizontalIcon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLinkItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAdminMode } from "@/components/admin/admin-mode";
@@ -35,19 +35,35 @@ export function AdminMenu({
   label,
   testId,
   align = "end",
+  onAdminPage = false,
   children,
 }: {
-  /** The pencil's accessible label. */
+  /** The trigger's accessible label. */
   label: string;
   testId: string;
   align?: "start" | "center" | "end";
+  /**
+   * On the Admin page the menu is always there for admins, behind a "⋯"
+   * button; on product pages it's the pencil, shown in Edit mode.
+   */
+  onAdminPage?: boolean;
   children: React.ReactNode;
 }) {
-  const { enabled } = useAdminMode();
-  if (!enabled) return null;
+  const { enabled, isAdmin } = useAdminMode();
+  if (onAdminPage ? !isAdmin : !enabled) return null;
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<AdminEditButton label={label} data-testid={`button-${testId}`} />} />
+      <DropdownMenuTrigger
+        render={
+          onAdminPage ? (
+            <Button variant="ghost" size="icon-sm" aria-label={label} data-testid={`button-${testId}`}>
+              <HugeiconsIcon icon={MoreHorizontalIcon} className="size-4" />
+            </Button>
+          ) : (
+            <AdminEditButton label={label} data-testid={`button-${testId}`} />
+          )
+        }
+      />
       <DropdownMenuContent align={align} className="w-60" data-testid={testId}>
         {children}
       </DropdownMenuContent>

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** The old import page: Sources replaced it. */
+/** The old import page: Admin → Creators replaced it. */
 export default function ImportPage() {
-  redirect("/admin/sources");
+  redirect("/admin/creators");
 }

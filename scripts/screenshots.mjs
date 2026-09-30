@@ -88,10 +88,28 @@ function routes({ listId, placeId, adminPlaceId, roundupId, runId }) {
       },
     },
     { name: "admin-review", path: "/admin/review", admin: true },
-    { name: "admin-sources", path: "/admin/sources", admin: true },
+    {
+      name: "admin-review-dialog",
+      path: "/admin/review",
+      admin: true,
+      settle: 4000,
+      // The first item, with Instagram's embed loaded.
+      before: async (page) => {
+        await page.locator('[data-testid^="row-review-"]').first().click();
+        await page.locator('[data-testid="dialog-review"] iframe').first().waitFor({ timeout: 30_000 }).catch(() => {});
+      },
+    },
+    { name: "admin-creators", path: "/admin/creators", admin: true },
+    {
+      name: "admin-creator",
+      path: "/admin/creators/girlgottaeatz",
+      admin: true,
+      settle: 5000,
+      before: (page) => page.locator('[data-testid="list-creator-posts"] iframe').first().waitFor({ timeout: 30_000 }).catch(() => {}),
+    },
     {
       name: "admin-reprocess",
-      path: "/admin/sources",
+      path: "/admin/creators",
       admin: true,
       before: async (page) => {
         await page.locator('[data-testid="button-sources-actions"]').click();
@@ -123,7 +141,8 @@ function routes({ listId, placeId, adminPlaceId, roundupId, runId }) {
       name: "admin-run",
       path: `/admin/runs/${runId}`,
       admin: true,
-      // Open the Read step to show its input and output.
+      settle: 4000,
+      // Open the Read step to show what it did.
       before: (page) => page.locator('[data-testid="list-run-steps"] button').first().click(),
     },
     { name: "admin-agents", path: "/admin/agents", admin: true },

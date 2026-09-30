@@ -15,11 +15,12 @@
  */
 
 import * as React from "react";
+import Link from "next/link";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01Icon, Location01Icon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
+import { Cancel01Icon, Location01Icon, PencilEdit01Icon, PinOffIcon, RefreshIcon } from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -29,9 +30,10 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { PlaceRowCard } from "@/components/chat/place-row-card";
-import { FallbackImg } from "@/components/chat/trace-items";
 import { StatusDot } from "@/components/shared/status-dot";
 import { useAdminMode } from "@/components/admin/admin-mode";
+import { IconAction } from "@/components/admin/icon-action";
+import { PostEmbed } from "@/components/admin/post-embed";
 import { PlaceSearch, type PickedPlace } from "@/components/admin/place-search";
 import { EditableTagChips, type ChipTag } from "@/components/admin/tag-picker";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -112,14 +114,6 @@ type MentionEdit = {
   remove?: boolean;
 };
 
-const KIND_LABEL: Record<ReviewItemData["kind"], string> = {
-  confirm_place: "Confirm place",
-  check_not_a_place: "Not a place?",
-  fix_extraction: "Fix extraction",
-  failed_run: "Failed run",
-  spot_check: "Spot check",
-  confirm_example: "Confirm example",
-};
 
 const VERDICTS: { value: Verdict; label: string }[] = [
   { value: "loved", label: "Loved" },
@@ -440,90 +434,6 @@ function MentionCard({
   );
 }
 
-function ReviewItemCard({
-  item,
-  pending,
-  onConfirm,
-  onNoneOfThese,
-  onNotAPlace,
-  onAddPlace,
-  onDismiss,
-  onRerun,
-}: {
-  item: ReviewItemData;
-  pending: boolean;
-  onConfirm: (googlePlaceId: string) => void;
-  onNoneOfThese: () => void;
-  onNotAPlace: () => void;
-  onAddPlace: () => void;
-  onDismiss: () => void;
-  onRerun: () => void;
-}) {
-  const candidates = item.payload?.candidates ?? [];
-  const agentPick = item.payload?.agent?.choice;
-  return (
-    <div className="rounded-xl border p-3 space-y-2" data-testid={`review-item-${item.id}`}>
-      <div className="flex items-center gap-2">
-        <StatusDot status={item.kind === "failed_run" ? "failed" : "needs_review"} />
-        <p className="text-xs font-medium text-muted-foreground">{KIND_LABEL[item.kind]}</p>
-      </div>
-      <p className="text-sm font-medium">{item.question}</p>
-      {item.kind === "confirm_place" && candidates.length > 0 && (
-        <div className="-mx-2">
-          {candidates.slice(0, 5).map((c) => (
-            <button
-              key={c.googlePlaceId}
-              type="button"
-              disabled={pending}
-              onClick={() => onConfirm(c.googlePlaceId)}
-              className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left hover:bg-accent disabled:opacity-50"
-              data-testid={`button-candidate-${c.googlePlaceId}`}
-            >
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium truncate">{c.name}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {c.address}
-                  {c.distanceKm != null ? ` · ${c.distanceKm < 1 ? `${Math.round(c.distanceKm * 1000)} m` : `${c.distanceKm.toFixed(1)} km`}` : ""}
-                </p>
-              </div>
-              {c.id === agentPick && (
-                <Badge variant="secondary" className="font-normal shrink-0">
-                  Agent&apos;s pick
-                </Badge>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-      <div className="flex flex-wrap gap-1 -mx-2">
-        {item.kind === "confirm_place" && (
-          <Button variant="ghost" size="sm" onClick={onNoneOfThese} disabled={pending} data-testid={`button-none-of-these-${item.id}`}>
-            None of these
-          </Button>
-        )}
-        {item.kind === "check_not_a_place" && (
-          <>
-            <Button variant="ghost" size="sm" onClick={onNotAPlace} disabled={pending} data-testid={`button-confirm-not-a-place-${item.id}`}>
-              Not a place
-            </Button>
-            <Button variant="ghost" size="sm" onClick={onAddPlace} disabled={pending} data-testid={`button-add-place-${item.id}`}>
-              Add place
-            </Button>
-          </>
-        )}
-        {item.kind === "failed_run" && (
-          <Button variant="ghost" size="sm" onClick={onRerun} disabled={pending} data-testid={`button-rerun-item-${item.id}`}>
-            Re-run
-          </Button>
-        )}
-        <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={onDismiss} disabled={pending} data-testid={`button-dismiss-${item.id}`}>
-          Dismiss
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 export function MentionEditor({
   postId,
   open,
@@ -547,14 +457,14 @@ export function MentionEditor({
   });
   const [drafts, setDrafts] = React.useState<Draft[]>([]);
   const [note, setNote] = React.useState("");
-  const [adding, setAdding] = React.useState<null | { forItem?: ReviewItemData }>(null);
+  const [adding, setAdding] = React.useState(false);
   const [confirmNotAPlace, setConfirmNotAPlace] = React.useState(false);
   const newKey = React.useRef(0);
 
   React.useEffect(() => {
     if (!data) return;
     setDrafts(data.mentions.map(toDraft));
-    setAdding(null);
+    setAdding(false);
     setConfirmNotAPlace(false);
   }, [data]);
   React.useEffect(() => {
@@ -568,12 +478,7 @@ export function MentionEditor({
     mutationFn: (body: Record<string, unknown>) => adminFetch<{ ok: boolean }>(`/api/admin/posts/${post!.id}`, { method: "POST", json: body }),
     onError: (err: Error) => toast.error(err.message || "Couldn't save"),
   });
-  const itemAction = useMutation({
-    mutationFn: ({ itemId, body }: { itemId: string; body: Record<string, unknown> }) =>
-      adminFetch<{ ok: boolean }>(`/api/admin/review/${itemId}`, { method: "POST", json: body }),
-    onError: (err: Error) => toast.error(err.message || "Couldn't save"),
-  });
-  const pending = postAction.isPending || itemAction.isPending;
+  const pending = postAction.isPending;
 
   /** After a write that ends the editing: the Review queue moves on, anywhere else the editor closes. */
   const finish = (message: string) => {
@@ -588,7 +493,7 @@ export function MentionEditor({
     const ids = [...new Set([...openItems, ...(reviewItemId ? [reviewItemId] : [])])];
     postAction.mutate(
       { action: "save", edits, note: note.trim() || null, resolveItemIds: ids },
-      { onSuccess: () => finish(changed ? `Saved ${changed} change${changed === 1 ? "" : "s"}` : "Confirmed") },
+      { onSuccess: () => finish(changed ? `Saved ${changed} change${changed === 1 ? "" : "s"}` : "Marked as right") },
     );
   };
 
@@ -608,43 +513,7 @@ export function MentionEditor({
       { onSuccess: () => finish("Re-run queued. The post updates in a minute or so.") },
     );
 
-  // Confirming reloads the post (the new mention appears), which would drop unsaved edits.
-  const confirmCandidate = (item: ReviewItemData, googlePlaceId: string) => {
-    if (changed > 0) {
-      toast.error("Save your edits first");
-      return;
-    }
-    itemAction.mutate(
-      { itemId: item.id, body: { action: "confirm_places", googlePlaceIds: [googlePlaceId], note: note.trim() || null } },
-      {
-        onSuccess: () => {
-          toast.success("Place confirmed");
-          invalidateAfterWrite(postId!);
-          if (item.id === reviewItemId) onDone?.();
-        },
-      },
-    );
-  };
-
-  const dismissItem = (item: ReviewItemData, rerunIt = false) =>
-    itemAction.mutate(
-      { itemId: item.id, body: { action: rerunIt ? "rerun" : "dismiss", note: note.trim() || null } },
-      {
-        onSuccess: () => {
-          toast.success(rerunIt ? "Re-run queued" : "Dismissed");
-          invalidateAfterWrite(postId!);
-          if (item.id === reviewItemId) onDone?.();
-        },
-      },
-    );
-
   const addPlace = (p: PickedPlace) => {
-    // "None of these": the pick answers the review item, as a candidate would.
-    if (adding?.forItem) {
-      confirmCandidate(adding.forItem, p.googlePlaceId);
-      setAdding(null);
-      return;
-    }
     if (drafts.some((d) => !d.removed && (d.picked?.googlePlaceId ?? d.place?.googlePlaceId) === p.googlePlaceId)) {
       toast.error("That place is already on this post");
       return;
@@ -664,7 +533,7 @@ export function MentionEditor({
         removed: false,
       },
     ]);
-    setAdding(null);
+    setAdding(false);
   };
 
   const update = (key: string, next: Partial<Draft>) => setDrafts((ds) => ds.map((d) => (d.key === key ? { ...d, ...next } : d)));
@@ -704,28 +573,18 @@ export function MentionEditor({
           )
         ) : (
           <>
-            <div className="flex gap-3">
-              {post?.mediaUrl && (
-                <FallbackImg src={post.mediaUrl} referrerPolicy="no-referrer" className="size-16 shrink-0 rounded-md object-cover" fallback={null} />
-              )}
-              <div className="min-w-0 flex-1">
-                {post?.caption ? <HighlightedCaption caption={post.caption} excerpts={excerpts} /> : <p className="text-sm text-muted-foreground">No caption.</p>}
-              </div>
-            </div>
+            {/* On desktop the post sits beside the editor; on mobile its caption does, excerpts marked. */}
+            {isMobile && (post?.caption ? <HighlightedCaption caption={post.caption} excerpts={excerpts} /> : <p className="text-sm text-muted-foreground">No caption.</p>)}
 
-            {openItems.map((item) => (
-              <ReviewItemCard
-                key={item.id}
-                item={item}
-                pending={pending}
-                onConfirm={(g) => confirmCandidate(item, g)}
-                onNoneOfThese={() => setAdding({ forItem: item })}
-                onNotAPlace={() => markNotAPlace()}
-                onAddPlace={() => setAdding({})}
-                onDismiss={() => dismissItem(item)}
-                onRerun={() => dismissItem(item, true)}
-              />
-            ))}
+            {openItems.length > 0 && !reviewItemId && (
+              <p className="flex flex-wrap items-center gap-1.5 rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground" data-testid="text-open-questions">
+                <StatusDot status="needs_review" />
+                {openItems.length === 1 ? "The engine has 1 question about this post." : `The engine has ${openItems.length} questions about this post.`}
+                <Link href="/admin/review" className="font-medium text-foreground hover:underline">
+                  Answer in Review
+                </Link>
+              </p>
+            )}
 
             <div className="space-y-2">
               <p className="text-xs font-medium text-muted-foreground">
@@ -738,9 +597,9 @@ export function MentionEditor({
 
             {adding && (
               <div className="rounded-xl border p-3 space-y-2" data-testid="add-place">
-                <p className="text-sm font-medium">{adding.forItem ? `Find "${adding.forItem.payload?.place?.name ?? "the place"}"` : "Add a place this post mentions"}</p>
-                <PlaceSearch inline autoFocus initialQuery={adding.forItem?.payload?.place?.name ?? ""} testId="add-place" onPick={addPlace} />
-                <Button variant="ghost" size="sm" className="-mx-2" onClick={() => setAdding(null)}>
+                <p className="text-sm font-medium">Add a place this post mentions</p>
+                <PlaceSearch inline autoFocus testId="add-place" onPick={addPlace} />
+                <Button variant="ghost" size="sm" className="-mx-2" onClick={() => setAdding(false)}>
                   Cancel
                 </Button>
               </div>
@@ -758,24 +617,21 @@ export function MentionEditor({
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 border-t bg-muted/50 px-4 py-3 sm:rounded-b-xl">
-        <Button variant="outline" size="sm" disabled={!data || pending} onClick={() => setAdding(adding ? null : {})} data-testid="button-add-place">
+      <div className="flex flex-wrap items-center gap-1 border-t bg-muted/50 px-4 py-3 sm:rounded-br-xl">
+        <Button variant="outline" size="sm" className="mr-1" disabled={!data || pending} onClick={() => setAdding((a) => !a)} data-testid="button-add-place">
           Add place
         </Button>
-        <Button
-          variant={confirmNotAPlace ? "destructive" : "ghost"}
-          size="sm"
+        <IconAction
+          label={confirmNotAPlace ? "Click again: removes every place on this post" : "The post isn't about a place"}
+          icon={PinOffIcon}
+          danger={confirmNotAPlace}
           disabled={!data || pending}
           onClick={() => markNotAPlace()}
-          data-testid="button-not-a-place"
-        >
-          {confirmNotAPlace ? "Remove all places?" : "Not a place"}
-        </Button>
-        <Button variant="ghost" size="sm" disabled={!data || pending} onClick={rerun} data-testid="button-rerun-post">
-          Re-run
-        </Button>
+          testId="button-not-a-place"
+        />
+        <IconAction label="Run the engine on this post again" icon={RefreshIcon} disabled={!data || pending} onClick={rerun} testId="button-rerun-post" />
         <Button size="sm" className="ml-auto" disabled={!data || pending || (edits.length === 0 && changed === 0)} onClick={save} data-testid="button-save-mentions">
-          {postAction.isPending ? "Saving..." : changed ? "Save" : "Confirm"}
+          {postAction.isPending ? "Saving..." : changed ? "Save" : "Looks right"}
         </Button>
       </div>
     </div>
@@ -793,9 +649,12 @@ export function MentionEditor({
   }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[85vh] flex-col gap-0 p-0 sm:max-w-lg" data-testid="mention-editor-dialog">
+      <DialogContent className="flex max-h-[88vh] flex-row gap-0 p-0 sm:max-w-4xl" data-testid="mention-editor-dialog">
         <DialogTitle className="sr-only">Edit post</DialogTitle>
-        {body}
+        <div className="w-[380px] shrink-0 overflow-y-auto border-r p-4" data-testid="mention-editor-post">
+          {post ? <PostEmbed permalink={post.url} author={post.handle ?? ""} label={`@${post.handle}`} /> : <Skeleton className="h-96 w-full" />}
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col">{body}</div>
       </DialogContent>
     </Dialog>
   );

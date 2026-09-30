@@ -12,16 +12,14 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Activity01Icon, ArrowDown01Icon, Cancel01Icon, Image01Icon, Location01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
-import { AppShell, PageHeader } from "@/components/layout";
+import { Activity01Icon, ArrowDown01Icon, Cancel01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
+import { AdminShell } from "@/components/admin/admin-shell";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FallbackImg, placePhotoUrl } from "@/components/chat/trace-items";
 import { StatusDot } from "@/components/shared/status-dot";
 import { adminFetch } from "@/components/admin/admin-fetch";
 import { formatCost, formatDuration, type RunRow } from "@/components/admin/run-format";
-import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 
 const STATUSES = [
@@ -74,21 +72,6 @@ function FilterMenu({
   );
 }
 
-function RunThumb({ run }: { run: RunRow }) {
-  const src = run.post?.mediaUrl ?? (run.place?.photoRef ? placePhotoUrl(run.place.photoRef) : null);
-  const icon = run.kind === "place" ? Location01Icon : Image01Icon;
-  const fallback = (
-    <span className="flex size-full items-center justify-center">
-      <HugeiconsIcon icon={icon} className="size-4 text-muted-foreground" />
-    </span>
-  );
-  return (
-    <div className="size-10 shrink-0 overflow-hidden rounded-md bg-muted">
-      {src ? <FallbackImg src={src} referrerPolicy="no-referrer" className="size-full object-cover" fallback={fallback} /> : fallback}
-    </div>
-  );
-}
-
 function RunsList() {
   const router = useRouter();
   const pathname = usePathname();
@@ -98,6 +81,7 @@ function RunsList() {
   const source = params.get("source") ?? "";
   const place = params.get("place") ?? "";
   const trigger = params.get("trigger") ?? "";
+  const post = params.get("post") ?? "";
 
   const setParam = (key: string, value: string) => {
     const next = new URLSearchParams(params.toString());
@@ -106,7 +90,7 @@ function RunsList() {
     router.replace(`${pathname}${next.size ? `?${next}` : ""}`);
   };
 
-  const query = new URLSearchParams(Object.entries({ status, kind, source, place, trigger }).filter(([, v]) => v)).toString();
+  const query = new URLSearchParams(Object.entries({ status, kind, source, place, trigger, post }).filter(([, v]) => v)).toString();
   const { data, isLoading } = useQuery<{ runs: RunRow[]; sources: string[] }>({
     queryKey: ["admin-runs", query],
     queryFn: () => adminFetch(`/api/admin/runs${query ? `?${query}` : ""}`),
@@ -117,7 +101,8 @@ function RunsList() {
 
   return (
     <>
-      <PageHeader title="Runs">
+      <p className="mb-3 text-sm text-muted-foreground">Every time the engine read a post or refreshed a place: what it decided, what it cost. Open one to see each step.</p>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <FilterMenu
           label={STATUSES.find((s) => s.value === status)?.label ?? "Any status"}
           options={STATUSES}
@@ -126,30 +111,32 @@ function RunsList() {
           testId="select-run-status"
         />
         <FilterMenu
-          label={source ? `@${source}` : "Any source"}
-          options={[{ value: "", label: "Any source" }, ...(data?.sources ?? []).map((h) => ({ value: h, label: `@${h}` }))]}
+          label={source ? `@${source}` : "Any creator"}
+          options={[{ value: "", label: "Any creator" }, ...(data?.sources ?? []).map((h) => ({ value: h, label: `@${h}` }))]}
           value={source}
           onChange={(v) => setParam("source", v)}
           testId="select-run-source"
         />
-      </PageHeader>
-
-      <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full pb-20 md:pb-4">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <FilterMenu label={KINDS.find((k) => k.value === kind)?.label ?? "Posts and places"} options={KINDS} value={kind} onChange={(v) => setParam("kind", v)} testId="select-run-kind" />
-          {place && (
-            <Button variant="secondary" size="sm" onClick={() => setParam("place", "")} data-testid="button-clear-place-filter">
-              {placeName ?? "This place"}
-              <HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
-            </Button>
-          )}
-          {trigger && (
-            <Button variant="secondary" size="sm" onClick={() => setParam("trigger", "")} data-testid="button-clear-trigger-filter">
-              {trigger === "backfill" ? "Re-process all" : trigger.replace("_", " ")}
-              <HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
+        <FilterMenu label={KINDS.find((k) => k.value === kind)?.label ?? "Posts and places"} options={KINDS} value={kind} onChange={(v) => setParam("kind", v)} testId="select-run-kind" />
+        {place && (
+          <Button variant="secondary" size="sm" onClick={() => setParam("place", "")} data-testid="button-clear-place-filter">
+            {placeName ?? "This place"}
+            <HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
+          </Button>
+        )}
+        {post && (
+          <Button variant="secondary" size="sm" onClick={() => setParam("post", "")} data-testid="button-clear-post-filter">
+            This post
+            <HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
+          </Button>
+        )}
+        {trigger && (
+          <Button variant="secondary" size="sm" onClick={() => setParam("trigger", "")} data-testid="button-clear-trigger-filter">
+            {trigger === "backfill" ? "Re-process all" : trigger.replace("_", " ")}
+            <HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
+          </Button>
+        )}
+      </div>
 
         {isLoading ? (
           <div className="space-y-2">
@@ -164,10 +151,9 @@ function RunsList() {
             <p className="text-sm text-muted-foreground mt-1">{query ? "Nothing matches these filters." : "Runs show up here as posts go through the engine."}</p>
           </div>
         ) : (
-          <div className="flex flex-col" data-testid="list-runs">
+          <div className="flex flex-col divide-y" data-testid="list-runs">
             {runs.map((r) => (
-              <Link key={r.id} href={`/admin/runs/${r.id}`} className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted" data-testid={`row-run-${r.id}`}>
-                <RunThumb run={r} />
+              <Link key={r.id} href={`/admin/runs/${r.id}`} className="flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-muted" data-testid={`row-run-${r.id}`}>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">
                     {r.kind === "place" ? r.place?.name ?? "A place" : `@${r.post?.handle ?? "unknown"}`}
@@ -190,18 +176,19 @@ function RunsList() {
             ))}
           </div>
         )}
-      </div>
     </>
   );
 }
 
 export default function RunsPage() {
-  const { user } = useAuth();
   return (
-    <AppShell user={user}>
-      <React.Suspense fallback={<PageHeader title="Runs" />}>
+    <AdminShell>
+      <nav className="mb-4 text-sm text-muted-foreground">
+        <span className="text-foreground">History</span>
+      </nav>
+      <React.Suspense fallback={null}>
         <RunsList />
       </React.Suspense>
-    </AppShell>
+    </AdminShell>
   );
 }
