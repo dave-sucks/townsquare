@@ -21,7 +21,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const [row, runs, suppressed] = await Promise.all([
     prisma.place.findUnique({
       where: { id: place.id },
-      select: { id: true, googlePlaceId: true, name: true, lat: true, lng: true, neighborhood: true, locality: true, priceLevel: true, primaryType: true, isHidden: true, mergedIntoId: true, aiSummaryUpdatedAt: true },
+      select: { id: true, googlePlaceId: true, name: true, lat: true, lng: true, neighborhood: true, locality: true, priceLevel: true, primaryType: true, types: true, isHidden: true, mergedIntoId: true, aiSummaryUpdatedAt: true },
     }),
     prisma.engineRun.findMany({ where: { placeId: place.id }, orderBy: { startedAt: "desc" }, take: 5, select: { id: true, status: true, startedAt: true, costUsd: true } }),
     prisma.placeTagAggregate.findMany({ where: { placeId: place.id, isSuppressed: true }, select: { tag: { select: { slug: true, displayName: true } } } }),

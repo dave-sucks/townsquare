@@ -19,6 +19,7 @@ const SECTIONS = [
   { value: "review", label: "Review", href: "/admin/review" },
   { value: "creators", label: "Creators", href: "/admin/creators" },
   { value: "agents", label: "Agents", href: "/admin/agents" },
+  { value: "history", label: "History", href: "/admin/runs" },
 ] as const;
 
 type ReviewCounts = { total: number };
@@ -37,7 +38,6 @@ export function AdminShell({
   const { user } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
-  // History pages (a run, the runs list) sit under Admin without a tab of their own.
   const section = SECTIONS.find((s) => pathname.startsWith(s.href))?.value ?? "none";
   // Shares the Review tab's "all" query, so the count costs nothing extra there.
   const { data: review } = useQuery<ReviewCounts>({

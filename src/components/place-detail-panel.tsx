@@ -28,6 +28,7 @@ import { FeedPost } from "./feed-post";
 import { EmojiPickerPopover } from "./shared/emoji-picker-popover";
 import { ListChip } from "./shared/list-chip";
 import { GroupedTags, InlineTags, TagCategoryGroup, TagInfo, TagsWithPopover } from "./shared/place-tags";
+import { placeCategory } from "@/lib/places/category";
 import { SiGooglemaps } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/query-client";
 import { useMutation } from "@tanstack/react-query";
@@ -140,15 +141,6 @@ interface PlaceDetailPanelProps {
   isDeleting?: boolean;
 }
 
-function formatPlaceType(type: string | null): string {
-  if (!type) return "";
-  return type
-    .replace(/_/g, " ")
-    .split(" ")
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
-}
-
 const RATING_LABELS: Record<number, string> = {
   1: "ehh",
   2: "okay",
@@ -237,7 +229,7 @@ export function PlaceDetailPanel({
   if (!savedPlace) return null;
 
   const place = savedPlace.place;
-  const placeType = formatPlaceType(place.primaryType);
+  const placeType = placeCategory(place.primaryType, place.types);
   const locationDisplay = place.neighborhood || place.locality || "";
   const listsForThisPlace = fetchedLists;
 

@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Location01Icon, CheckmarkBadge01Icon, Fire02Icon } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
+import { placeCategory } from "@/lib/places/category";
 import { SaveToListDropdown } from "./save-to-list-dropdown";
 import { EmojiPickerPopover } from "./emoji-picker-popover";
 import { TagInfo, besideCategory } from "./place-tags";
@@ -101,57 +102,10 @@ interface PlaceCardProps {
   showSavedBy?: boolean;
 }
 
-const CATEGORY_PRIORITY = [
-  "restaurant",
-  "bar", 
-  "cafe",
-  "bakery",
-  "coffee_shop",
-  "night_club",
-  "food",
-  "meal_takeaway",
-  "meal_delivery",
-];
-
-function getBestCategory(primaryType: string | null, types: string[] | null): string {
-  if (primaryType && CATEGORY_PRIORITY.includes(primaryType)) {
-    return formatCategoryName(primaryType);
-  }
-
-  if (types && types.length > 0) {
-    for (const category of CATEGORY_PRIORITY) {
-      if (types.includes(category)) {
-        return formatCategoryName(category);
-      }
-    }
-    const nonGenericTypes = types.filter(t => 
-      !["establishment", "point_of_interest", "food", "store"].includes(t)
-    );
-    if (nonGenericTypes.length > 0) {
-      return formatCategoryName(nonGenericTypes[0]);
-    }
-  }
-  
-  if (primaryType && !["establishment", "point_of_interest", "food"].includes(primaryType)) {
-    return formatCategoryName(primaryType);
-  }
-  
-  if (types?.includes("restaurant")) return "Restaurant";
-  
-  return "";
-}
-
-function formatCategoryName(type: string): string {
-  if (!type) return "";
-  return type
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (l) => l.toUpperCase());
-}
-
 export const PlaceCard = forwardRef<HTMLDivElement, PlaceCardProps>(
   ({ savedPlace, isSelected, showStatus = true, showSaveDropdown = false, hideDropdownUntilHover = false, listsContainingPlace = [], actionButton, onClick, thumbnailMode = "photo", emojiEditable = false, currentUserData, showSavedBy = false }, ref) => {
     const queryClient = useQueryClient();
-    const category = getBestCategory(savedPlace.place.primaryType, savedPlace.place.types);
+    const category = placeCategory(savedPlace.place.primaryType, savedPlace.place.types);
     const locationDisplay = savedPlace.place.neighborhood
       || savedPlace.place.locality
       || savedPlace.place.formattedAddress.split(",")[0];

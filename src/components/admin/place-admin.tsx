@@ -46,6 +46,7 @@ import { EditFieldDialog } from "@/components/admin/edit-field-dialog";
 import { PlaceSearch, type PickedPlace } from "@/components/admin/place-search";
 import { EditableTagChips, type ChipTag } from "@/components/admin/tag-picker";
 import { adminPlaceKey, usePlaceWrite } from "@/components/admin/place-write";
+import { placeCategory } from "@/lib/places/category";
 
 type AdminPlace = {
   id: string;
@@ -54,6 +55,7 @@ type AdminPlace = {
   neighborhood: string | null;
   priceLevel: string | null;
   primaryType: string | null;
+  types: string[] | null;
   isHidden: boolean;
 };
 
@@ -76,15 +78,6 @@ const PRICES = [
 function priceValue(level: string | null): string {
   const shown = formatPriceLevel(level);
   return shown ? String(shown.length) : "none";
-}
-
-function formatType(type: string | null): string {
-  if (!type) return "";
-  return type
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(" ");
 }
 
 function useAdminPlace(googlePlaceId: string) {
@@ -171,7 +164,7 @@ export function PlaceAdminMenu({ googlePlaceId }: { googlePlaceId: string }) {
           <AdminMenuItem
             icon={Building03Icon}
             label="Type"
-            value={formatType(place?.primaryType ?? null) || "Not set"}
+            value={(place && placeCategory(place.primaryType, place.types)) || "Not set"}
             onClick={() => openEditor("type")}
             disabled={!place}
             testId="button-place-admin-type"
@@ -233,7 +226,7 @@ export function PlaceAdminMenu({ googlePlaceId }: { googlePlaceId: string }) {
             open={editing === "type"}
             onOpenChange={(o) => !o && setEditing(null)}
             title="Type"
-            initialValue={place.primaryType ?? ""}
+            initialValue={placeCategory(place.primaryType, place.types)}
             placeholder="e.g. bakery, wine_bar"
             saving={write.isPending}
             onSave={(v) => patch({ primaryType: v.trim().toLowerCase().replace(/\s+/g, "_") || null })}
