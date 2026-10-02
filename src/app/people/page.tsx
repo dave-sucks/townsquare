@@ -10,7 +10,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Search01Icon, UserMultiple02Icon, GridViewIcon, LeftToRightListBulletIcon } from "@hugeicons/core-free-icons";
 import { apiRequest } from "@/lib/query-client";
 import { useAuth } from "@/hooks/use-auth";
-import { AppShell, PageHeader } from "@/components/layout";
+import { AppShell, ContentContainer, PageHeader } from "@/components/layout";
 import { PersonCard } from "@/components/person-card";
 
 interface UserData {
@@ -89,13 +89,13 @@ export default function PeoplePage() {
     return (
       <AppShell user={user}>
         <PageHeader title="People" />
-        <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full pb-20 md:pb-4">
+        <ContentContainer maxWidth="3xl">
           <div className="flex flex-col items-center justify-center py-16">
             <HugeiconsIcon icon={UserMultiple02Icon} className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="font-medium">Please sign in</p>
             <Button className="mt-4" nativeButton={false} render={<Link href="/" />}>Go to Home</Button>
           </div>
-        </div>
+        </ContentContainer>
       </AppShell>
     );
   }
@@ -103,7 +103,7 @@ export default function PeoplePage() {
   return (
     <AppShell user={user}>
       <PageHeader title="People" />
-      <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full pb-20 md:pb-4">
+      <ContentContainer maxWidth="3xl">
         {/* Search and View Toggle */}
         <div className="flex items-center gap-2 mb-4">
           <div className="relative flex-1">
@@ -211,7 +211,7 @@ export default function PeoplePage() {
             ))}
           </div>
         )}
-      </div>
+      </ContentContainer>
     </AppShell>
   );
 }

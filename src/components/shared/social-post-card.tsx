@@ -61,7 +61,7 @@ export function SocialPostCard({
 
   if (source === 'instagram') {
     return (
-      <div ref={containerRef} className={cn("overflow-hidden", className)}>
+      <div ref={containerRef} className={cn("relative overflow-hidden", className)}>
         <blockquote
           className="instagram-media"
           data-instgrm-captioned

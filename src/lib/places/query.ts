@@ -17,7 +17,7 @@
 
 import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
-import { getChatCategory } from "@/lib/places/category";
+import { placeCategory } from "@/lib/places/category";
 import { formatPriceLevel } from "@/lib/places/format";
 import type { PlaceRow } from "@/lib/agent/place-row";
 import type { LatLng, MapBounds, ToolContext } from "@/lib/agent/tool-context";
@@ -548,7 +548,7 @@ export async function hydratePlaceRows(
       name: p.name,
       address: p.formattedAddress,
       emoji: save?.emoji ?? null,
-      category: getChatCategory(p.primaryType, toStringArray(p.types)) || undefined,
+      category: placeCategory(p.primaryType, toStringArray(p.types)) || undefined,
       neighborhood: p.neighborhood ?? p.locality ?? null,
       lat: p.lat,
       lng: p.lng,

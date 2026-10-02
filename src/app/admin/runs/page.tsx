@@ -183,9 +183,6 @@ function RunsList() {
 export default function RunsPage() {
   return (
     <AdminShell>
-      <nav className="mb-4 text-sm text-muted-foreground">
-        <span className="text-foreground">History</span>
-      </nav>
       <React.Suspense fallback={null}>
         <RunsList />
       </React.Suspense>

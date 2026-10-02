@@ -106,7 +106,7 @@ export default function CreatorPage({ params }: { params: Promise<{ handle: stri
   const paused = source?.status === "paused";
 
   return (
-    <AdminShell actions={source ? <SourceAdminMenu sourceKey={handle} onAdminPage /> : null}>
+    <AdminShell>
       <nav className="mb-4 text-sm text-muted-foreground">
         <Link href="/admin/creators" className="hover:text-foreground hover:underline">
           Creators
@@ -144,6 +144,7 @@ export default function CreatorPage({ params }: { params: Promise<{ handle: stri
                 </a>
               </p>
             </div>
+            <SourceAdminMenu sourceKey={handle} onAdminPage />
           </div>
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <StatusDot status={sourceStatus(source)} />

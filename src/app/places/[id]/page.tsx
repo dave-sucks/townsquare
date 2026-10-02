@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { AppShell, PageHeader } from "@/components/layout";
 import { GroupedTags, InlineTags, TagCategoryGroup, TagInfo, TagsWithPopover } from "@/components/shared/place-tags";
+import { placeCategory } from "@/lib/places/category";
 import { SiGooglemaps } from "react-icons/si";
 import { ListChip } from "@/components/shared/list-chip";
 import { useAdminMode } from "@/components/admin/admin-mode";
@@ -177,15 +178,6 @@ interface PlaceDetailData {
   activities?: Activity[];
 }
 
-function formatPlaceType(type: string | null): string {
-  if (!type) return "";
-  return type
-    .replace(/_/g, " ")
-    .split(" ")
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
-}
-
 const RATING_LABELS: Record<number, string> = {
   1: "ehh",
   2: "okay",
@@ -309,7 +301,7 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
   const tags = data?.tags || [];
   const topTags = data?.topTags || [];
 
-  const placeType = formatPlaceType(place?.primaryType || null);
+  const placeType = placeCategory(place?.primaryType, place?.types);
   const locationDisplay = place?.neighborhood || place?.locality || "";
 
   const deleteReviewMutation = useMutation({
