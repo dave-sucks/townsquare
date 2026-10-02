@@ -267,10 +267,16 @@ export default function AgentPage({ params }: { params: Promise<{ key: string }>
   const rollback = selected && active && selected.version < active.version;
 
   return (
-    <AdminShell
-      wide
-      actions={
-        selected && (
+    <AdminShell wide>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <nav className="text-sm text-muted-foreground">
+          <Link href="/admin/agents" className="hover:text-foreground hover:underline" data-testid="link-all-agents">
+            Agents
+          </Link>
+          <span className="px-1.5">/</span>
+          <span className="text-foreground">{data?.agent.name ?? key}</span>
+        </nav>
+        {selected && (
           <DropdownMenu>
             <DropdownMenuTrigger render={<Button variant="outline" size="sm" data-testid="button-agent-actions" />}>
               Actions
@@ -299,16 +305,8 @@ export default function AgentPage({ params }: { params: Promise<{ key: string }>
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
-        )
-      }
-    >
-      <nav className="mb-4 text-sm text-muted-foreground">
-        <Link href="/admin/agents" className="hover:text-foreground hover:underline" data-testid="link-all-agents">
-          Agents
-        </Link>
-        <span className="px-1.5">/</span>
-        <span className="text-foreground">{data?.agent.name ?? key}</span>
-      </nav>
+        )}
+      </div>
       <div>
         {isLoading || !form || !selected ? (
           error ? (

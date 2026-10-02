@@ -355,19 +355,25 @@ export function PageHeader({
   );
 }
 
-const contentContainerVariants = cva("flex-1 overflow-auto", {
+/**
+ * A page's scrolling body. The full width scrolls, so the wheel works anywhere
+ * on the page and the scrollbar sits at the window edge; the content is a
+ * centered column inside it.
+ */
+const contentContainerVariants = cva("mx-auto w-full pb-20", {
   variants: {
     variant: {
-      default: "p-4",
-      flush: "",
-      padded: "p-6",
+      default: "p-4 md:pb-4",
+      flush: "md:pb-0",
+      padded: "p-6 md:pb-6",
     },
     maxWidth: {
       default: "",
-      sm: "max-w-xl mx-auto",
-      md: "max-w-2xl mx-auto",
-      "3xl": "max-w-3xl mx-auto",
-      lg: "max-w-4xl mx-auto",
+      sm: "max-w-xl",
+      md: "max-w-2xl",
+      "3xl": "max-w-3xl",
+      lg: "max-w-4xl",
+      xl: "max-w-6xl",
     },
   },
   defaultVariants: {
@@ -388,8 +394,10 @@ export function ContentContainer({
   className,
 }: ContentContainerProps) {
   return (
-    <div className={cn(contentContainerVariants({ variant, maxWidth }), className)}>
-      {children}
+    <div className="flex-1 overflow-auto">
+      <div className={cn(contentContainerVariants({ variant, maxWidth }), className)}>
+        {children}
+      </div>
     </div>
   );
 }
