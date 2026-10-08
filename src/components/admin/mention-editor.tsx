@@ -185,7 +185,7 @@ function editsFor(drafts: Draft[], original: MentionData[]): { edits: MentionEdi
 
 /** Everything the editor's writes can change on screen. */
 function invalidateAfterWrite(postId: string) {
-  for (const key of ["admin-post", "place-detail", "feed", "user-profile", "admin-review", "admin-sources", "admin-source", "admin-runs"]) {
+  for (const key of ["admin-post", "place-detail", "feed", "user-profile", "admin-review", "admin-sources", "admin-source", "admin-posts", "admin-post-runs"]) {
     queryClient.invalidateQueries({ queryKey: key === "admin-post" ? [key, postId] : [key] });
   }
 }

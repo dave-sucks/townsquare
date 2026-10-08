@@ -193,14 +193,28 @@ function HistoryList() {
   // The open post: by id, or by the URL's ?open= (an id or shortcode).
   const [openId, setOpenId] = React.useState<string | null>(openParam);
   React.useEffect(() => setOpenId(openParam), [openParam]);
-  const openIndex = rows.findIndex((r) => r.id === openId || r.shortcode === openId);
+  // Next walks the list as it was when a post was opened, so answered posts
+  // dropping out of a filter (or rows refetching) don't skip or repeat any.
+  const [order, setOrder] = React.useState<string[]>([]);
+  const open = (id: string) => {
+    setOrder(rows.map((r) => r.id));
+    setOpenId(id);
+  };
   const close = () => {
     setOpenId(null);
+    setOrder([]);
     if (openParam) setParam("open", null);
   };
-  const next = () => {
-    const following = rows[openIndex + 1];
-    if (following) setOpenId(following.id);
+  const position = openId ? order.indexOf(openId) : -1;
+  const next = async () => {
+    let following = order[position + 1];
+    if (!following && hasNextPage) {
+      const res = await fetchNextPage();
+      const more = (res.data?.pages.flatMap((p) => p.posts) ?? []).map((r) => r.id).filter((id) => !order.includes(id));
+      setOrder((o) => [...o, ...more]);
+      following = more[0];
+    }
+    if (following) setOpenId(following);
     else close();
   };
 
@@ -242,7 +256,7 @@ function HistoryList() {
             <button
               key={p.id}
               type="button"
-              onClick={() => setOpenId(p.id)}
+              onClick={() => open(p.id)}
               className="flex flex-col gap-0.5 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-muted"
               data-testid={`row-post-${p.shortcode}`}
             >
@@ -274,10 +288,10 @@ function HistoryList() {
       )}
 
       <PostModal
-        postId={openIndex >= 0 ? rows[openIndex].id : openId}
+        postId={openId}
         open={!!openId}
         onOpenChange={(o) => !o && close()}
-        onNext={openIndex >= 0 ? next : undefined}
+        onNext={position >= 0 ? next : undefined}
       />
     </div>
   );

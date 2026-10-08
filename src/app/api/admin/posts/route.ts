@@ -24,19 +24,21 @@ export async function GET(req: NextRequest) {
   const and: Prisma.IngestedPostWhereInput[] = [];
   if (creator) and.push({ source: { OR: [{ id: creator }, { handle: { equals: creator, mode: "insensitive" } }] } });
   if (place) and.push({ mentions: { some: { place: { OR: [{ id: place }, { googlePlaceId: place }] } } } });
-  const open = { some: { status: "open" as const } };
-  if (status === "needs_review") and.push({ reviewItems: open });
-  if (status === "failed") and.push({ status: "failed", reviewItems: { none: { status: "open" } } });
-  if (status === "not_a_place") and.push({ postType: "not_a_place" });
-  if (status === "unread") and.push({ lastRunId: null });
-  if (status === "completed")
-    and.push({ lastRunId: { not: null }, status: { not: "failed" }, reviewItems: { none: { status: "open" } }, OR: [{ postType: null }, { postType: { not: "not_a_place" } }] });
+  // Each filter matches exactly the rows labelled with it: needs you, then failed, then not a place, then read or not.
+  const noQuestions: Prisma.IngestedPostWhereInput = { reviewItems: { none: { status: "open" } } };
+  const notFailed: Prisma.IngestedPostWhereInput = { status: { not: "failed" } };
+  const aPlace: Prisma.IngestedPostWhereInput = { OR: [{ postType: null }, { postType: { not: "not_a_place" } }] };
+  if (status === "needs_review") and.push({ reviewItems: { some: { status: "open" } } });
+  if (status === "failed") and.push({ status: "failed" }, noQuestions);
+  if (status === "not_a_place") and.push({ postType: "not_a_place" }, noQuestions, notFailed);
+  if (status === "unread") and.push({ lastRunId: null }, noQuestions, notFailed, aPlace);
+  if (status === "completed") and.push({ lastRunId: { not: null } }, noQuestions, notFailed, aPlace);
   const where: Prisma.IngestedPostWhereInput = and.length ? { AND: and } : {};
 
   const [rows, total, placeRow] = await Promise.all([
     prisma.ingestedPost.findMany({
       where,
-      orderBy: [{ postedAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
+      orderBy: [{ postedAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }, { id: "desc" }],
       skip: offset,
       take: PAGE,
       select: {

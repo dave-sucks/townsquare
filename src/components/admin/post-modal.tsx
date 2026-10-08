@@ -132,7 +132,7 @@ export function PostModal({
     setChoice(active?.kind === "check_not_a_place" ? "not_a_place" : agentPick ?? "");
     setPicked(null);
     setConfirmingNotAPlace(false);
-  }, [active?.id, active?.kind, agentPick]);
+  }, [postId, active?.id, active?.kind, agentPick]);
 
   const leave = () => (onNext ? onNext() : onOpenChange(false));
   /** After an answer: the post's next question, or the next post. */
@@ -185,16 +185,16 @@ export function PostModal({
     if ((data?.mentions.length ?? 0) > 0 && !confirmingNotAPlace) return setConfirmingNotAPlace(true);
     postAction.mutate({ action: "not_a_place" }, { onSuccess: () => finished("Marked not a place") });
   };
-  /** Re-run stays on the post and switches to Steps, where the new run shows up. */
+  /** Re-run stays on the post and switches to Steps, which waits for the new run. */
+  const [rerunToken, setRerunToken] = React.useState(0);
   const rerun = () =>
     postAction.mutate(
       { action: "rerun" },
       {
         onSuccess: () => {
-          toast.success("Re-run started. It shows up under Steps in a few seconds.");
+          toast.success("Re-run started. It shows up under Steps when it begins.");
           setTab("steps");
-          const id = data?.post.id;
-          setTimeout(() => queryClient.invalidateQueries({ queryKey: ["admin-post-runs", id] }), 2000);
+          setRerunToken((n) => n + 1);
         },
       },
     );
@@ -216,10 +216,9 @@ export function PostModal({
           : "Looks right"
         : `Save${next}`;
 
-  // Enter saves, unless focus is in a field, on a button or link, or in a menu.
+  // ⌘/Ctrl+Enter saves from anywhere in the window; plain Enter belongs to whatever has focus.
   const onKeyDown = (e: React.KeyboardEvent) => {
-    const t = e.target as HTMLElement;
-    if (e.key === "Enter" && canSave && !["INPUT", "TEXTAREA", "BUTTON", "A"].includes(t.tagName) && !t.closest("[role=listbox],[role=menu],[role=tab]")) {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && canSave) {
       e.preventDefault();
       save();
     }
@@ -264,7 +263,7 @@ export function PostModal({
               {!data || isLoading ? (
                 <Skeleton className="h-40 w-full" />
               ) : tab === "steps" ? (
-                <RunSteps postId={data.post.id} onReadNow={rerun} reading={postAction.isPending} />
+                <RunSteps postId={data.post.id} onReadNow={rerun} reading={postAction.isPending} rerunToken={rerunToken} />
               ) : (
                 <div className="space-y-5">
                   {active && (
@@ -401,7 +400,7 @@ export function PostModal({
               <IconAction label="Run the engine on this post again" icon={RefreshIcon} onClick={rerun} disabled={pending || !data} testId="button-post-rerun" />
               {onNext && <IconAction label="Skip for now" icon={NextIcon} onClick={onNext} disabled={pending} testId="button-post-skip" />}
               <span className="flex-1" />
-              <Button onClick={save} disabled={!canSave} data-testid="button-post-save">
+              <Button onClick={save} disabled={!canSave} title="⌘ Enter" data-testid="button-post-save">
                 {pending ? "Saving..." : saveLabel}
               </Button>
             </div>
@@ -416,7 +415,6 @@ export function PostModal({
           onOpenChange={setEditing}
           onDone={() => {
             setEditing(false);
-            toast.success("Saved");
             refreshAll();
           }}
         />

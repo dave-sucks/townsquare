@@ -178,17 +178,50 @@ function StepRow({ step, names, onRerun, rerunning }: { step: Step; names: Map<s
   );
 }
 
-export function RunSteps({ postId, onReadNow, reading }: { postId: string; onReadNow: () => void; reading: boolean }) {
+export function RunSteps({
+  postId,
+  onReadNow,
+  reading,
+  rerunToken = 0,
+}: {
+  postId: string;
+  onReadNow: () => void;
+  reading: boolean;
+  /** Bumped when the post is re-run from outside: wait for the new run. */
+  rerunToken?: number;
+}) {
   // null: the latest run.
   const [runId, setRunId] = React.useState<string | null>(null);
-  React.useEffect(() => setRunId(null), [postId]);
+  // After a re-run: the newest run before it, until a newer one appears (for up to 90s).
+  const [waiting, setWaiting] = React.useState<{ from: string | null; until: number } | null>(null);
+  React.useEffect(() => {
+    setRunId(null);
+    setWaiting(null);
+  }, [postId]);
 
   const { data: list, isLoading: loadingList } = useQuery<{ runs: RunRow[] }>({
     queryKey: ["admin-post-runs", postId],
     queryFn: () => adminFetch(`/api/admin/runs?post=${postId}&kind=post`),
-    refetchInterval: (q) => (["queued", "running"].includes(q.state.data?.runs[0]?.status ?? "") ? 3000 : false),
+    refetchInterval: (q) => {
+      const newest = q.state.data?.runs[0];
+      if (["queued", "running"].includes(newest?.status ?? "")) return 3000;
+      return waiting && (newest?.id ?? null) === waiting.from && Date.now() < waiting.until ? 2000 : false;
+    },
   });
   const runs = list?.runs ?? [];
+  const newestId = runs[0]?.id ?? null;
+  const expect = React.useCallback(() => {
+    setRunId(null);
+    setWaiting({ from: newestId, until: Date.now() + 90_000 });
+  }, [newestId]);
+  React.useEffect(() => {
+    if (rerunToken) expect();
+    // Only a new token starts a wait.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rerunToken]);
+  React.useEffect(() => {
+    if (waiting && newestId !== waiting.from) setWaiting(null);
+  }, [newestId, waiting]);
   const shownId = runId ?? runs[0]?.id ?? null;
   const index = runs.findIndex((r) => r.id === shownId);
 
@@ -213,8 +246,7 @@ export function RunSteps({ postId, onReadNow, reading }: { postId: string; onRea
     mutationFn: (fromStage: string) => adminFetch<{ queued: boolean }>(`/api/admin/runs/${shownId}`, { method: "POST", json: { fromStage } }),
     onSuccess: (r, fromStage) => {
       toast.success(r.queued ? `Re-running from “${STAGE_LABEL[fromStage] ?? fromStage}”` : "The runner isn't reachable; try again");
-      setRunId(null);
-      setTimeout(() => queryClient.invalidateQueries({ queryKey: ["admin-post-runs", postId] }), 1500);
+      if (r.queued) expect();
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -282,6 +314,7 @@ export function RunSteps({ postId, onReadNow, reading }: { postId: string; onRea
             <span>· {formatCost(run.costUsd)}</span>
           </>
         )}
+        {waiting && <span className="text-foreground">· waiting for the new run…</span>}
       </div>
       {run?.error && <p className="pt-2 text-xs text-destructive">{run.error}</p>}
       {isLoading || !run ? (

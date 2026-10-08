@@ -21,8 +21,6 @@ import { PlacesList } from "@/components/shared/places-list";
 import { FeedPost } from "@/components/feed-post";
 import type { SidebarInjectedProps } from "@/components/map/map-layout";
 
-// Admin mode's source controls load only for admins in admin mode.
-
 interface Place {
   id: string;
   googlePlaceId: string;
@@ -335,7 +333,7 @@ export function UserSidebar({
                       onClick={() => { setSelectedStatusFilter("been"); setSelectedListId("all"); }}
                       data-active={combinedFilterValue === "been"}
                     >
-                      Places they've been
+                      Places they&apos;ve been
                       <HugeiconsIcon icon={Tick01Icon} className={`ml-auto h-4 w-4 ${combinedFilterValue === "been" ? "opacity-100" : "opacity-0"}`} />
                     </DropdownMenuItem>
                     {publicLists.length > 0 && <DropdownMenuSeparator />}

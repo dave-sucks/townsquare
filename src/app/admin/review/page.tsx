@@ -45,7 +45,9 @@ function isTyping(target: EventTarget | null) {
 export default function ReviewPage() {
   const [kind, setKind] = React.useState<ReviewKind | "all">("all");
   const [selected, setSelected] = React.useState(0);
-  const [openId, setOpenId] = React.useState<string | null>(null);
+  // The open post (rows are posts), and the list's order when it was opened.
+  const [openPostId, setOpenPostId] = React.useState<string | null>(null);
+  const [order, setOrder] = React.useState<string[]>([]);
   const rowRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
 
   const { data, isLoading } = useQuery<ReviewData>({
@@ -63,20 +65,27 @@ export default function ReviewPage() {
     }
     return [...byPost.values()];
   }, [data]);
-  const openIndex = items.findIndex((i) => i.id === openId);
-  // Keep the open item while the list refetches without it.
+  // Keep the open row while the list refetches without it.
   const [lastOpen, setLastOpen] = React.useState<Row | null>(null);
-  const current = openIndex >= 0 ? items[openIndex] : null;
+  const current = items.find((i) => i.postId === openPostId) ?? null;
   React.useEffect(() => {
     if (current) setLastOpen(current);
   }, [current]);
-  const openItem = openId ? (current ?? lastOpen) : null;
+  const openItem = openPostId ? (current ?? lastOpen) : null;
+
+  const open = (index: number) => {
+    const row = items[index];
+    if (!row?.postId) return;
+    setSelected(index);
+    setOrder(items.map((i) => i.postId!));
+    setOpenPostId(row.postId);
+  };
 
   React.useEffect(() => setSelected(0), [kind]);
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (openId || isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (openPostId || isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === "j" || e.key === "k") {
         e.preventDefault();
         setSelected((s) => {
@@ -86,22 +95,27 @@ export default function ReviewPage() {
         });
       } else if (e.key === "Enter" && items[selected]) {
         e.preventDefault();
-        setOpenId(items[selected].id);
+        open(selected);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [items, selected, openId]);
+  });
 
-  /** The item after the open one (answered items drop out of the list as it refetches). */
+  /**
+   * The next post still waiting, in the order the list had when a post was
+   * opened (answered posts drop out, and a post's row moves as its first
+   * question changes); then any skipped one from the top.
+   */
   const next = () => {
-    const from = openIndex >= 0 ? openIndex : Math.min(selected, items.length - 1);
-    const following = items.slice(from + 1).find((i) => i.id !== openId) ?? items.slice(0, from).find((i) => i.id !== openId) ?? null;
+    const waiting = new Set(items.map((i) => i.postId));
+    const from = order.indexOf(openPostId ?? "");
+    const following = order.slice(from + 1).find((id) => waiting.has(id)) ?? items.find((i) => i.postId !== openPostId)?.postId ?? null;
     if (following) {
-      setSelected(items.indexOf(following));
-      setOpenId(following.id);
+      setSelected(Math.max(0, items.findIndex((i) => i.postId === following)));
+      setOpenPostId(following);
     } else {
-      setOpenId(null);
+      setOpenPostId(null);
     }
   };
 
@@ -159,10 +173,7 @@ export default function ReviewPage() {
                   rowRefs.current[i] = el;
                 }}
                 type="button"
-                onClick={() => {
-                  setSelected(i);
-                  setOpenId(item.id);
-                }}
+                onClick={() => open(i)}
                 onMouseEnter={() => setSelected(i)}
                 className={cn("flex flex-col gap-0.5 rounded-lg px-2 py-2.5 text-left transition-colors", i === selected && "bg-muted")}
                 data-testid={`row-review-${item.id}`}
@@ -195,11 +206,11 @@ export default function ReviewPage() {
       )}
 
       <PostModal
-        postId={openItem?.postId ?? null}
+        postId={openPostId}
         itemId={openItem?.id ?? null}
-        position={{ index: Math.max(0, openIndex >= 0 ? openIndex : selected), total: items.length }}
-        open={!!openId}
-        onOpenChange={(o) => !o && setOpenId(null)}
+        position={{ index: Math.max(0, order.indexOf(openPostId ?? "")), total: order.length }}
+        open={!!openPostId}
+        onOpenChange={(o) => !o && setOpenPostId(null)}
         onNext={next}
       />
     </AdminShell>
