@@ -89,6 +89,7 @@ function stepSummary(step: Step): string | null {
     case "mentions": {
       const saved = arr(out.mentions).length;
       const removed = Number(out.removed ?? 0);
+      if (!saved && !removed) return "Nothing to save.";
       return `Saved ${saved === 1 ? "1 place" : `${saved} places`} to the map${removed ? `, removed ${removed}` : ""}.`;
     }
     case "tag": {
@@ -198,6 +199,15 @@ export function RunSteps({ postId, onReadNow, reading }: { postId: string; onRea
     refetchInterval: (q) => (["queued", "running"].includes(q.state.data?.run.status ?? "") ? 3000 : false),
   });
   const run = data?.run;
+
+  const live = ["queued", "running"].includes(run?.status ?? "");
+  const wasLive = React.useRef(false);
+  React.useEffect(() => {
+    if (wasLive.current && !live) {
+      for (const key of ["admin-post", "admin-posts", "admin-review", "admin-post-runs"]) queryClient.invalidateQueries({ queryKey: [key] });
+    }
+    wasLive.current = live;
+  }, [live]);
 
   const rerun = useMutation({
     mutationFn: (fromStage: string) => adminFetch<{ queued: boolean }>(`/api/admin/runs/${shownId}`, { method: "POST", json: { fromStage } }),

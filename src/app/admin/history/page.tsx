@@ -40,7 +40,7 @@ type Row = {
   questions: { id: string; kind: string; question: string }[];
   lastRun: { startedAt: string; costUsd: number } | null;
 };
-type Page = { posts: Row[]; total: number; hasMore: boolean };
+type Page = { posts: Row[]; total: number; hasMore: boolean; place: { name: string } | null };
 
 const STATUSES = [
   { value: "", label: "Any status" },
@@ -60,7 +60,7 @@ function headline(p: Row) {
   if (p.questions.length) return p.questions[0].question + (p.questions.length > 1 ? ` (+${p.questions.length - 1} more)` : "");
   if (p.status === "failed") return "The engine couldn't finish this post";
   if (p.status === "not_a_place") return "Not a place";
-  if (!p.places.length) return "No places found";
+  if (!p.places.length) return p.status === "unread" ? "No places yet" : "No places found";
   return p.places.length > 3 ? `${p.places.slice(0, 3).join(", ")} + ${p.places.length - 3} more` : p.places.join(", ");
 }
 
@@ -219,7 +219,7 @@ function HistoryList() {
         <FilterMenu label={STATUSES.find((s) => s.value === status)?.label ?? "Any status"} options={STATUSES} value={status} onChange={(v) => setParam("status", v || null)} testId="select-history-status" />
         {place && (
           <Button variant="secondary" size="sm" onClick={() => setParam("place", null)} data-testid="chip-history-place">
-            Mentions one place
+            Mentions {data?.pages[0]?.place?.name ?? "one place"}
             <HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
           </Button>
         )}

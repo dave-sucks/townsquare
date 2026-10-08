@@ -125,8 +125,9 @@ export function ReprocessDialog({
 /** The latest re-process of any scope, while it runs and for a day after. */
 export function BackfillProgressCard() {
   const { data } = useBackfill(null, true, true);
+  const [now] = React.useState(() => Date.now());
   const b = data?.latest;
-  if (!b || (b.finished && Date.now() - new Date(b.startedAt).getTime() > 24 * 3600_000)) return null;
+  if (!b || (b.finished && now - new Date(b.startedAt).getTime() > 24 * 3600_000)) return null;
   const label = b.handle ? `@${b.handle}'s posts` : "all posts";
   const pct = b.posts ? Math.min(100, Math.round((b.done / b.posts) * 100)) : 100;
   return (

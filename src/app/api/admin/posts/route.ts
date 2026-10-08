@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     and.push({ lastRunId: { not: null }, status: { not: "failed" }, reviewItems: { none: { status: "open" } }, OR: [{ postType: null }, { postType: { not: "not_a_place" } }] });
   const where: Prisma.IngestedPostWhereInput = and.length ? { AND: and } : {};
 
-  const [rows, total] = await Promise.all([
+  const [rows, total, placeRow] = await Promise.all([
     prisma.ingestedPost.findMany({
       where,
       orderBy: [{ postedAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
@@ -48,6 +48,7 @@ export async function GET(req: NextRequest) {
       },
     }),
     prisma.ingestedPost.count({ where }),
+    place ? prisma.place.findFirst({ where: { OR: [{ id: place }, { googlePlaceId: place }] }, select: { name: true } }) : null,
   ]);
 
   const runIds = rows.map((r) => r.lastRunId).filter((id): id is string => !!id);
@@ -63,6 +64,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     total,
+    place: placeRow,
     hasMore: offset + rows.length < total,
     posts: rows.map((p) => ({
       id: p.id,

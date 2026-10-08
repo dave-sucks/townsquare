@@ -32,6 +32,8 @@ type Item = {
 };
 
 type ReviewData = { items: Item[]; counts: Partial<Record<ReviewKind, number>>; total: number };
+/** One row per post: its first question, and how many more it has. */
+type Row = Item & { more: number };
 
 const KINDS: ReviewKind[] = ["confirm_place", "check_not_a_place", "fix_extraction", "failed_run", "spot_check", "confirm_example"];
 
@@ -50,10 +52,20 @@ export default function ReviewPage() {
     queryKey: ["admin-review", kind],
     queryFn: () => adminFetch(`/api/admin/review${kind === "all" ? "" : `?kind=${kind}`}`),
   });
-  const items = React.useMemo(() => (data?.items ?? []).filter((i) => i.postId), [data]);
+  // The post window answers every question on a post, so the list is one row per post.
+  const items = React.useMemo(() => {
+    const byPost = new Map<string, Row>();
+    for (const i of data?.items ?? []) {
+      if (!i.postId) continue;
+      const first = byPost.get(i.postId);
+      if (first) first.more += 1;
+      else byPost.set(i.postId, { ...i, more: 0 });
+    }
+    return [...byPost.values()];
+  }, [data]);
   const openIndex = items.findIndex((i) => i.id === openId);
   // Keep the open item while the list refetches without it.
-  const [lastOpen, setLastOpen] = React.useState<Item | null>(null);
+  const [lastOpen, setLastOpen] = React.useState<Row | null>(null);
   const current = openIndex >= 0 ? items[openIndex] : null;
   React.useEffect(() => {
     if (current) setLastOpen(current);
@@ -155,7 +167,10 @@ export default function ReviewPage() {
               >
                 <span className="flex min-w-0 items-center gap-2">
                   <StatusDot status={item.kind === "failed_run" ? "failed" : "needs_review"} />
-                  <span className="truncate text-sm font-medium">{item.question}</span>
+                  <span className="truncate text-sm font-medium">
+                    {item.question}
+                    {item.more > 0 && <span className="font-normal text-muted-foreground"> (+{item.more} more)</span>}
+                  </span>
                 </span>
                 <span className="truncate pl-4 text-xs text-muted-foreground">
                   {[

@@ -32,7 +32,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { PlaceRowCard } from "@/components/chat/place-row-card";
 import { StatusDot } from "@/components/shared/status-dot";
 import { IconAction } from "@/components/admin/icon-action";
-import { PostEmbed } from "@/components/admin/post-embed";
 import { PlaceSearch, type PickedPlace } from "@/components/admin/place-search";
 import { EditableTagChips, type ChipTag } from "@/components/admin/tag-picker";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -616,7 +615,7 @@ export function MentionEditor({
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-1 border-t bg-muted/50 px-4 py-3 sm:rounded-br-xl">
+      <div className="flex flex-wrap items-center gap-1 border-t bg-muted/50 px-4 py-3 sm:rounded-b-xl">
         <Button variant="outline" size="sm" className="mr-1" disabled={!data || pending} onClick={() => setAdding((a) => !a)} data-testid="button-add-place">
           Add place
         </Button>
@@ -648,12 +647,9 @@ export function MentionEditor({
   }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[88vh] flex-row gap-0 p-0 sm:max-w-4xl" data-testid="mention-editor-dialog">
-        <DialogTitle className="sr-only">Edit post</DialogTitle>
-        <div className="w-[380px] shrink-0 overflow-y-auto border-r p-4" data-testid="mention-editor-post">
-          {post ? <PostEmbed permalink={post.url} author={post.handle ?? ""} label={`@${post.handle}`} /> : <Skeleton className="h-96 w-full" />}
-        </div>
-        <div className="flex min-w-0 flex-1 flex-col">{body}</div>
+      <DialogContent className="flex max-h-[88vh] flex-col gap-0 p-0 sm:max-w-2xl" data-testid="mention-editor-dialog">
+        <DialogTitle className="sr-only">Edit places</DialogTitle>
+        {body}
       </DialogContent>
     </Dialog>
   );

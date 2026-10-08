@@ -185,7 +185,19 @@ export function PostModal({
     if ((data?.mentions.length ?? 0) > 0 && !confirmingNotAPlace) return setConfirmingNotAPlace(true);
     postAction.mutate({ action: "not_a_place" }, { onSuccess: () => finished("Marked not a place") });
   };
-  const rerun = () => postAction.mutate({ action: "rerun" }, { onSuccess: () => finished("Re-run started") });
+  /** Re-run stays on the post and switches to Steps, where the new run shows up. */
+  const rerun = () =>
+    postAction.mutate(
+      { action: "rerun" },
+      {
+        onSuccess: () => {
+          toast.success("Re-run started. It shows up under Steps in a few seconds.");
+          setTab("steps");
+          const id = data?.post.id;
+          setTimeout(() => queryClient.invalidateQueries({ queryKey: ["admin-post-runs", id] }), 2000);
+        },
+      },
+    );
 
   const canSave =
     !pending &&
@@ -204,10 +216,10 @@ export function PostModal({
           : "Looks right"
         : `Save${next}`;
 
-  // Enter saves (outside the search box and an open dropdown).
+  // Enter saves, unless focus is in a field, on a button or link, or in a menu.
   const onKeyDown = (e: React.KeyboardEvent) => {
     const t = e.target as HTMLElement;
-    if (e.key === "Enter" && canSave && !["INPUT", "TEXTAREA"].includes(t.tagName) && !t.closest("[role=listbox]")) {
+    if (e.key === "Enter" && canSave && !["INPUT", "TEXTAREA", "BUTTON", "A"].includes(t.tagName) && !t.closest("[role=listbox],[role=menu],[role=tab]")) {
       e.preventDefault();
       save();
     }
@@ -387,7 +399,6 @@ export function PostModal({
                 testId="button-post-not-a-place"
               />
               <IconAction label="Run the engine on this post again" icon={RefreshIcon} onClick={rerun} disabled={pending || !data} testId="button-post-rerun" />
-              <IconAction label="Edit this post's places" icon={PencilEdit01Icon} onClick={() => setEditing(true)} disabled={!data} testId="button-post-edit" />
               {onNext && <IconAction label="Skip for now" icon={NextIcon} onClick={onNext} disabled={pending} testId="button-post-skip" />}
               <span className="flex-1" />
               <Button onClick={save} disabled={!canSave} data-testid="button-post-save">
