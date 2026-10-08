@@ -111,7 +111,9 @@ export default function ReviewPage() {
   return (
     <AdminShell>
       <div className="mb-3 flex items-center justify-between gap-2">
-        <p className="text-sm text-muted-foreground">Posts the engine wasn&apos;t sure about. Answer one and the next opens.</p>
+        <p className="text-sm text-muted-foreground">
+          Posts the engine wasn&apos;t sure about{items.length ? `: ${count(kind)} ${count(kind) === 1 ? "question" : "questions"} on ${items.length} ${items.length === 1 ? "post" : "posts"}` : ""}. Answer one and the next opens.
+        </p>
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="outline" size="sm" className="shrink-0" data-testid="select-review-kind" />}>
             {kindLabel} <span className="text-muted-foreground tabular-nums">{count(kind)}</span>
