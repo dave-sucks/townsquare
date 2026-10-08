@@ -4,6 +4,9 @@
  * the source of truth for prompts (edited on the Agents page).
  *
  *   npx tsx scripts/agents-v1.ts > prisma/migrations/0005_agents_v1/migration.sql
+ *
+ * The names here are the v1 seed's; 0009_product_names renamed the agents
+ * (Post reader, Place finder, Tagger, Summary writer).
  */
 
 import { readFileSync } from "node:fs";

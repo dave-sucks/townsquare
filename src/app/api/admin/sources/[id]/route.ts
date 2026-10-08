@@ -17,10 +17,8 @@ async function findSource(key: string) {
   });
 }
 
-const FILTERS = ["all", "needs_review", "not_a_place", "failed"] as const;
-
-/** The source's card data, its sync history and (optionally) its posts under a filter. */
-export async function GET(req: NextRequest, { params }: Params) {
+/** The source's card data and its sync history. */
+export async function GET(_req: NextRequest, { params }: Params) {
   const { error } = await requireAdmin();
   if (error) return error;
   const found = await findSource((await params).id);
@@ -33,37 +31,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     select: { id: true, status: true, createdAt: true, completedAt: true, postsFetched: true, since: true, error: true },
   });
 
-  const filter = FILTERS.find((f) => f === req.nextUrl.searchParams.get("posts"));
-  let posts: unknown[] | undefined;
-  if (filter) {
-    const where: Prisma.IngestedPostWhereInput = { sourceId: found.id };
-    if (filter === "needs_review") where.reviewItems = { some: { status: "open" } };
-    if (filter === "not_a_place") where.postType = "not_a_place";
-    if (filter === "failed") where.status = "failed";
-    const rows = await prisma.ingestedPost.findMany({
-      where,
-      orderBy: { postedAt: "desc" },
-      take: 60,
-      select: {
-        id: true, canonicalPostId: true, url: true, caption: true, postedAt: true, postType: true, status: true, media: true,
-        mentions: { select: { role: true, place: { select: { name: true } } }, orderBy: [{ role: "asc" }, { createdAt: "asc" }], take: 20 },
-        _count: { select: { mentions: true, reviewItems: { where: { status: "open" } } } },
-      },
-    });
-    posts = rows.map((p) => ({
-      id: p.id,
-      shortcode: p.canonicalPostId,
-      url: p.url,
-      caption: p.caption?.slice(0, 160) ?? null,
-      postedAt: p.postedAt,
-      postType: p.postType,
-      status: p._count.reviewItems > 0 ? "needs_review" : p.status === "processed" ? "completed" : p.status === "new" ? "queued" : p.status,
-      mentions: p._count.mentions,
-      places: p.mentions.map((m) => m.place.name),
-      mediaUrl: (Array.isArray(p.media) ? (p.media as { url: string }[]) : [])[0]?.url ?? null,
-    }));
-  }
-  return NextResponse.json({ source, syncs, posts });
+  return NextResponse.json({ source, syncs });
 }
 
 const editSchema = z.object({

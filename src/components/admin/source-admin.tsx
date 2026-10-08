@@ -1,11 +1,9 @@
 "use client";
 
 /**
- * A creator's profile in admin mode: the sync strip under the header, the
- * source menu beside Follow (sync now, pause, home city, notes for the Read
- * agent, trust weight, sync history), and the admin post list behind the
- * Feed tab's filter (every ingested post with its status, each opening the
- * mention editor).
+ * A creator's admin controls, on History when it's filtered to them: the
+ * source query and the settings menu (sync now, pause, home city, notes for
+ * the engine, trust weight, sync history, re-process).
  */
 
 import * as React from "react";
@@ -14,9 +12,7 @@ import { formatDistanceToNowStrict } from "date-fns";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  ArrowDown01Icon,
   Clock01Icon,
-  Image01Icon,
   Location01Icon,
   Note01Icon,
   PauseIcon,
@@ -24,15 +20,10 @@ import {
   RefreshIcon,
   RepeatIcon,
   StarIcon,
-  Tick01Icon,
 } from "@hugeicons/core-free-icons";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuGroup,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -40,44 +31,18 @@ import {
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
-import { FallbackImg } from "@/components/chat/trace-items";
 import { StatusDot } from "@/components/shared/status-dot";
 import { useAdminMode } from "@/components/admin/admin-mode";
 import { AdminMenu, AdminMenuItem } from "@/components/admin/admin-menu";
 import { adminFetch } from "@/components/admin/admin-fetch";
 import { EditFieldDialog } from "@/components/admin/edit-field-dialog";
-import { MentionEditor } from "@/components/admin/mention-editor";
-import { SourceMetrics, lastSyncLabel, sourceStatus, type SourceSummary } from "@/components/admin/source-meta";
-import { ReprocessDialog, useBackfill } from "@/components/admin/reprocess";
+import { lastSyncLabel, type SourceSummary } from "@/components/admin/source-meta";
+import { ReprocessDialog } from "@/components/admin/reprocess";
 import { queryClient } from "@/lib/query-client";
-import { cn } from "@/lib/utils";
 
 type Sync = { id: string; status: string; createdAt: string; completedAt: string | null; postsFetched: number; since: string | null; error: string | null };
-type PostRow = {
-  id: string;
-  shortcode: string;
-  url: string | null;
-  caption: string | null;
-  postedAt: string | null;
-  postType: string | null;
-  status: string;
-  mentions: number;
-  mediaUrl: string | null;
-};
-type SourceData = { source: SourceSummary | null; syncs: Sync[]; posts?: PostRow[] };
-
-export type PostFilter = "feed" | "all" | "needs_review" | "not_a_place" | "failed";
-
-export const POST_FILTERS: { value: PostFilter; label: string }[] = [
-  { value: "feed", label: "Feed" },
-  { value: "all", label: "All posts" },
-  { value: "needs_review", label: "Needs review" },
-  { value: "not_a_place", label: "Not a place" },
-  { value: "failed", label: "Failed" },
-];
+type SourceData = { source: SourceSummary | null; syncs: Sync[] };
 
 const TRUST = [
   { value: "0.5", label: "Low", detail: "0.5×" },
@@ -116,32 +81,7 @@ function useSourceWrite(sourceKey: string, sourceId: string | undefined) {
   });
 }
 
-/** Under the profile header: status dot, last sync, and the metrics line. */
-export function SourceSyncStrip({ userId }: { userId: string }) {
-  const { data } = useCreatorSource(userId);
-  const source = data?.source;
-  const { data: backfill } = useBackfill(source?.id ?? null, !!source);
-  if (!source) return null;
-  const reprocess = backfill?.latest && !backfill.latest.finished ? backfill.latest : null;
-  return (
-    <div className="flex flex-col gap-1 px-3 pb-3" data-testid="strip-source-sync">
-      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <StatusDot status={sourceStatus(source)} />
-        {source.status === "paused" ? "Syncing paused" : lastSyncLabel(source)}
-        {source.homeCity ? ` · ${source.homeCity}` : ""}
-      </p>
-      <SourceMetrics source={source} />
-      {reprocess && (
-        <p className="flex items-center gap-1.5 text-xs text-muted-foreground" data-testid="text-source-reprocess">
-          <StatusDot status="running" />
-          Re-processing {reprocess.done} of {reprocess.posts} posts
-        </p>
-      )}
-    </div>
-  );
-}
-
-/** The pencil menu beside Follow. */
+/** A creator's settings menu: sync, pause, home city, notes for the engine, trust, sync history, re-process. */
 export function SourceAdminMenu({ sourceKey, onAdminPage = false }: { sourceKey: string; onAdminPage?: boolean }) {
   const { data } = useCreatorSource(sourceKey);
   const source = data?.source;
@@ -253,109 +193,6 @@ export function SourceAdminMenu({ sourceKey, onAdminPage = false }: { sourceKey:
           </div>
         </DialogContent>
       </Dialog>
-    </>
-  );
-}
-
-/** The Feed tab's admin filter: the product feed, or every ingested post under a filter. */
-export function PostFilterMenu({ value, onChange }: { value: PostFilter; onChange: (v: PostFilter) => void }) {
-  const label = POST_FILTERS.find((f) => f.value === value)?.label ?? "Feed";
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="outline" size="sm" data-testid="select-post-filter" />}>
-        {label}
-        <HugeiconsIcon icon={ArrowDown01Icon} className="h-3 w-3 text-muted-foreground" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[180px]">
-        {POST_FILTERS.map((f, i) => (
-          <React.Fragment key={f.value}>
-            {i === 1 && <DropdownMenuSeparator />}
-            <DropdownMenuItem onClick={() => onChange(f.value)} data-testid={`option-post-filter-${f.value}`}>
-              {f.label}
-              <HugeiconsIcon icon={Tick01Icon} className={cn("ml-auto h-4 w-4", value === f.value ? "opacity-100" : "opacity-0")} />
-            </DropdownMenuItem>
-          </React.Fragment>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-/** Every ingested post under the filter, as dense rows with a status dot; a row opens the mention editor. */
-export function SourcePostList({ userId, filter }: { userId: string; filter: Exclude<PostFilter, "feed"> }) {
-  const [open, setOpen] = React.useState<string | null>(null);
-  const { data, isLoading } = useQuery<SourceData | null>({
-    queryKey: ["admin-source", userId, "posts", filter],
-    queryFn: async () => {
-      try {
-        return await adminFetch<SourceData>(`/api/admin/sources/${userId}?posts=${filter}`);
-      } catch {
-        return null;
-      }
-    },
-  });
-  const posts = data?.posts ?? [];
-
-  if (isLoading) {
-    return (
-      <div className="space-y-2 p-3">
-        {[0, 1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-14 w-full rounded-lg" />
-        ))}
-      </div>
-    );
-  }
-  if (!data?.source) {
-    return <p className="px-4 py-12 text-center text-sm text-muted-foreground">The engine doesn&apos;t follow this creator.</p>;
-  }
-  if (posts.length === 0) {
-    return <p className="px-4 py-12 text-center text-sm text-muted-foreground" data-testid="text-no-posts">No posts here.</p>;
-  }
-  return (
-    <>
-      <div className="flex flex-col p-1.5" data-testid="list-source-posts">
-        {posts.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            onClick={() => setOpen(p.id)}
-            className="flex items-center gap-3 rounded-lg px-1.5 py-2 text-left transition-colors hover:bg-muted"
-            data-testid={`row-post-${p.shortcode}`}
-          >
-            <div className="size-10 shrink-0 overflow-hidden rounded-md bg-muted">
-              {p.mediaUrl ? (
-                <FallbackImg
-                  src={p.mediaUrl}
-                  referrerPolicy="no-referrer"
-                  className="size-full object-cover"
-                  fallback={
-                    <span className="flex size-full items-center justify-center">
-                      <HugeiconsIcon icon={Image01Icon} className="size-4 text-muted-foreground" />
-                    </span>
-                  }
-                />
-              ) : (
-                <span className="flex size-full items-center justify-center">
-                  <HugeiconsIcon icon={Image01Icon} className="size-4 text-muted-foreground" />
-                </span>
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm">{p.caption?.replace(/\s+/g, " ").trim() || "No caption"}</p>
-              <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
-                <StatusDot status={p.status} />
-                {[
-                  p.postType === "not_a_place" ? "Not a place" : p.mentions === 1 ? "1 place" : `${p.mentions} places`,
-                  p.postedAt ? formatDistanceToNowStrict(new Date(p.postedAt), { addSuffix: true }) : null,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </p>
-            </div>
-          </button>
-        ))}
-      </div>
-      <MentionEditor postId={open} open={!!open} onOpenChange={(o) => !o && setOpen(null)} />
     </>
   );
 }

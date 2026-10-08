@@ -49,17 +49,17 @@ async function lookupIds() {
     // Admin screens: a place on a roundup that still has places to confirm.
     const adminPlace = await one("SELECT google_place_id AS id FROM places WHERE name = 'Radio Bakery' LIMIT 1");
     const roundup = await one("SELECT id FROM ingested_posts WHERE canonical_post_id = 'DS7wRC-kYM5'");
-    // The run trace: the post run with the most steps.
+    // The post window's Steps tab: the post whose latest run has the most steps.
     const run = await one(
-      "SELECT r.id FROM engine_runs r JOIN engine_steps s ON s.run_id = r.id WHERE r.kind = 'post' GROUP BY r.id ORDER BY count(*) DESC, max(r.started_at) DESC LIMIT 1",
+      "SELECT p.id FROM ingested_posts p JOIN engine_steps s ON s.run_id = p.last_run_id GROUP BY p.id ORDER BY count(*) DESC LIMIT 1",
     );
-    return { listId: list?.id ?? null, placeId: place?.id ?? null, adminPlaceId: adminPlace?.id ?? null, roundupId: roundup?.id ?? null, runId: run?.id ?? null };
+    return { listId: list?.id ?? null, placeId: place?.id ?? null, adminPlaceId: adminPlace?.id ?? null, roundupId: roundup?.id ?? null, runPostId: run?.id ?? null };
   } finally {
     await db.end();
   }
 }
 
-function routes({ listId, placeId, adminPlaceId, roundupId, runId }) {
+function routes({ listId, placeId, adminPlaceId, roundupId, runPostId }) {
   return [
     { name: "explore", path: "/", settle: 4000 },
     { name: "feed", path: "/feed" },
@@ -78,7 +78,7 @@ function routes({ listId, placeId, adminPlaceId, roundupId, runId }) {
       before: (page) => page.locator('[data-testid="button-place-admin"]').click(),
     },
     adminPlaceId && roundupId && {
-      name: "admin-mention-editor",
+      name: "admin-post-from-place",
       path: `/places/${adminPlaceId}`,
       admin: true,
       settle: 2500,
@@ -96,16 +96,14 @@ function routes({ listId, placeId, adminPlaceId, roundupId, runId }) {
       // The first item, with Instagram's embed loaded.
       before: async (page) => {
         await page.locator('[data-testid^="row-review-"]').first().click();
-        await page.locator('[data-testid="dialog-review"] iframe').first().waitFor({ timeout: 30_000 }).catch(() => {});
+        await page.locator('[data-testid="dialog-post"] iframe').first().waitFor({ timeout: 30_000 }).catch(() => {});
       },
     },
     { name: "admin-creators", path: "/admin/creators", admin: true },
     {
-      name: "admin-creator",
-      path: "/admin/creators/girlgottaeatz",
+      name: "admin-history-creator",
+      path: "/admin/history?creator=girlgottaeatz",
       admin: true,
-      settle: 5000,
-      before: (page) => page.locator('[data-testid="list-creator-posts"] iframe').first().waitFor({ timeout: 30_000 }).catch(() => {}),
     },
     {
       name: "admin-reprocess",
@@ -117,33 +115,17 @@ function routes({ listId, placeId, adminPlaceId, roundupId, runId }) {
         await page.locator('[data-testid="reprocess-estimate"]').waitFor({ timeout: 30_000 });
       },
     },
-    { name: "admin-profile", path: "/u/girlgottaeatz", admin: true, settle: 3500 },
-    {
-      name: "admin-profile-menu",
-      path: "/u/girlgottaeatz",
+    { name: "admin-history", path: "/admin/history", admin: true },
+    runPostId && {
+      name: "admin-post-steps",
+      path: `/admin/history?open=${runPostId}`,
       admin: true,
-      before: (page) => page.locator('[data-testid="button-source-admin"]:visible').click(),
-    },
-    {
-      name: "admin-profile-posts",
-      path: "/u/girlgottaeatz",
-      admin: true,
+      settle: 3000,
+      // The Steps tab, with the first step's details open.
       before: async (page) => {
-        // Mobile renders the profile twice (the hidden desktop panel and the bottom sheet).
-        await page.locator('[data-testid="tab-feed"]:visible').click();
-        await page.locator('[data-testid="select-post-filter"]:visible').click();
-        await page.locator('[data-testid="option-post-filter-all"]').click();
-        await page.locator('[data-testid="list-source-posts"]:visible').waitFor({ timeout: 20_000 });
+        await page.locator('[data-testid="tab-post-steps"]').click();
+        await page.locator('[data-testid="list-run-steps"] button').first().click();
       },
-    },
-    { name: "admin-runs", path: "/admin/runs", admin: true },
-    runId && {
-      name: "admin-run",
-      path: `/admin/runs/${runId}`,
-      admin: true,
-      settle: 4000,
-      // Open the Read step to show what it did.
-      before: (page) => page.locator('[data-testid="list-run-steps"] button').first().click(),
     },
     { name: "admin-agents", path: "/admin/agents", admin: true },
     {

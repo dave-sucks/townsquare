@@ -125,8 +125,9 @@ export function ReprocessDialog({
 /** The latest re-process of any scope, while it runs and for a day after. */
 export function BackfillProgressCard() {
   const { data } = useBackfill(null, true, true);
+  const [now] = React.useState(() => Date.now());
   const b = data?.latest;
-  if (!b || (b.finished && Date.now() - new Date(b.startedAt).getTime() > 24 * 3600_000)) return null;
+  if (!b || (b.finished && now - new Date(b.startedAt).getTime() > 24 * 3600_000)) return null;
   const label = b.handle ? `@${b.handle}'s posts` : "all posts";
   const pct = b.posts ? Math.min(100, Math.round((b.done / b.posts) * 100)) : 100;
   return (
@@ -149,8 +150,8 @@ export function BackfillProgressCard() {
           {b.needsReview > 0 && <span className="text-amber-600">{b.needsReview} need review</span>}
           {b.failed > 0 && <span className="text-red-600">{b.failed} failed</span>}
           <span>started {formatDistanceToNowStrict(new Date(b.startedAt), { addSuffix: true })}</span>
-          <Link href="/admin/runs?trigger=backfill" className="font-medium text-foreground hover:underline">
-            View runs
+          <Link href="/admin/history" className="font-medium text-foreground hover:underline">
+            View history
           </Link>
         </div>
       </CardContent>

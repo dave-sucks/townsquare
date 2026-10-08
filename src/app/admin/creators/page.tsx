@@ -2,7 +2,7 @@
 
 /**
  * Admin → Creators: the Instagram accounts Townsquare pulls posts from.
- * Add one by handle; each row opens that creator's posts.
+ * Add one by handle; each row opens History filtered to that creator.
  */
 
 import * as React from "react";
@@ -27,7 +27,7 @@ function CreatorRow({ source }: { source: SourceSummary }) {
   const name = source.user?.name;
   return (
     <Link
-      href={`/admin/creators/${source.handle}`}
+      href={`/admin/history?creator=${source.handle}`}
       className="flex items-center gap-3 px-3 py-3 transition-colors hover:bg-muted"
       data-testid={`row-creator-${source.handle}`}
     >
@@ -79,17 +79,19 @@ export default function CreatorsPage() {
   const sources = data?.sources ?? [];
 
   return (
-    <AdminShell
-      actions={
-        <>
+    <AdminShell>
+      <ReprocessDialog source={null} label="all posts" open={reprocessing} onOpenChange={setReprocessing} />
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">The Instagram accounts Townsquare pulls posts from. New posts sync every morning; open a creator to see theirs.</p>
+        <div className="flex items-center gap-2">
           <form
             onSubmit={(e) => {
               e.preventDefault();
               if (handle.trim()) add.mutate(handle.trim());
             }}
-            className="flex items-center gap-2"
+            className="flex flex-1 items-center gap-2"
           >
-            <Input value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="@handle" className="h-8 w-32 sm:w-48" data-testid="input-source-handle" />
+            <Input value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="@handle" className="h-8 max-w-56" data-testid="input-source-handle" />
             <Button type="submit" size="sm" disabled={!handle.trim() || add.isPending} data-testid="button-add-source">
               {add.isPending ? "Adding..." : "Add creator"}
             </Button>
@@ -105,12 +107,7 @@ export default function CreatorsPage() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </>
-      }
-    >
-      <ReprocessDialog source={null} label="all posts" open={reprocessing} onOpenChange={setReprocessing} />
-      <div className="space-y-3">
-        <p className="text-sm text-muted-foreground">The Instagram accounts Townsquare pulls posts from. New posts sync every morning; open a creator to see theirs.</p>
+        </div>
         <BackfillProgressCard />
         {isLoading ? (
           <Skeleton className="h-64 w-full rounded-xl" />

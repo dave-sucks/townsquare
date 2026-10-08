@@ -69,7 +69,6 @@ export function PlaceSearch({
 
   React.useEffect(() => {
     if (initialQuery) search(initialQuery);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery]);
 
   const open = query.trim().length >= 2;

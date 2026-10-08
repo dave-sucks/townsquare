@@ -28,15 +28,36 @@ export function formatDuration(ms: number | null | undefined) {
   return s < 60 ? `${s.toFixed(1)}s` : `${Math.floor(s / 60)}m ${Math.round(s % 60)}s`;
 }
 
+/** Each step, named for what it does. */
 export const STAGE_LABEL: Record<string, string> = {
-  sync: "Sync",
-  media: "Media",
-  read: "Read",
-  resolve: "Resolve",
-  mentions: "Mentions",
-  tag: "Tag",
-  aggregate: "Aggregate",
-  summarize: "Summarize",
+  sync: "Check for new posts",
+  media: "Save the photos",
+  read: "Read the post",
+  resolve: "Find the place",
+  mentions: "Save to the map",
+  tag: "Tag the place",
+  aggregate: "Recount tags",
+  summarize: "Write the summary",
+};
+
+/** Why a run happened. */
+export const TRIGGER_LABEL: Record<string, string> = {
+  ingest: "New post",
+  reprocess: "Re-run",
+  rerun: "Re-run from a step",
+  backfill: "Re-process all",
+  place_changed: "Place refresh",
+};
+
+/** How a run or a post stands. */
+export const STATUS_LABEL: Record<string, string> = {
+  completed: "Done",
+  needs_review: "Needs you",
+  failed: "Failed",
+  running: "Running",
+  queued: "Waiting",
+  not_a_place: "Not a place",
+  unread: "Not read yet",
 };
 
 /** "claude-sonnet-5" → "Sonnet 5", "claude-haiku-4-5" → "Haiku 4.5". */

@@ -20,7 +20,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01Icon, Location01Icon, PencilEdit01Icon, PinOffIcon, RefreshIcon } from "@hugeicons/core-free-icons";
+import { Cancel01Icon, Location01Icon, PinOffIcon, RefreshIcon } from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -31,9 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { PlaceRowCard } from "@/components/chat/place-row-card";
 import { StatusDot } from "@/components/shared/status-dot";
-import { useAdminMode } from "@/components/admin/admin-mode";
 import { IconAction } from "@/components/admin/icon-action";
-import { PostEmbed } from "@/components/admin/post-embed";
 import { PlaceSearch, type PickedPlace } from "@/components/admin/place-search";
 import { EditableTagChips, type ChipTag } from "@/components/admin/tag-picker";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -187,7 +185,7 @@ function editsFor(drafts: Draft[], original: MentionData[]): { edits: MentionEdi
 
 /** Everything the editor's writes can change on screen. */
 function invalidateAfterWrite(postId: string) {
-  for (const key of ["admin-post", "place-detail", "feed", "user-profile", "admin-review", "admin-sources", "admin-source", "admin-runs"]) {
+  for (const key of ["admin-post", "place-detail", "feed", "user-profile", "admin-review", "admin-sources", "admin-source", "admin-posts", "admin-post-runs"]) {
     queryClient.invalidateQueries({ queryKey: key === "admin-post" ? [key, postId] : [key] });
   }
 }
@@ -617,7 +615,7 @@ export function MentionEditor({
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-1 border-t bg-muted/50 px-4 py-3 sm:rounded-br-xl">
+      <div className="flex flex-wrap items-center gap-1 border-t bg-muted/50 px-4 py-3 sm:rounded-b-xl">
         <Button variant="outline" size="sm" className="mr-1" disabled={!data || pending} onClick={() => setAdding((a) => !a)} data-testid="button-add-place">
           Add place
         </Button>
@@ -649,41 +647,10 @@ export function MentionEditor({
   }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[88vh] flex-row gap-0 p-0 sm:max-w-4xl" data-testid="mention-editor-dialog">
-        <DialogTitle className="sr-only">Edit post</DialogTitle>
-        <div className="w-[380px] shrink-0 overflow-y-auto border-r p-4" data-testid="mention-editor-post">
-          {post ? <PostEmbed permalink={post.url} author={post.handle ?? ""} label={`@${post.handle}`} /> : <Skeleton className="h-96 w-full" />}
-        </div>
-        <div className="flex min-w-0 flex-1 flex-col">{body}</div>
+      <DialogContent className="flex max-h-[88vh] flex-col gap-0 p-0 sm:max-w-2xl" data-testid="mention-editor-dialog">
+        <DialogTitle className="sr-only">Edit places</DialogTitle>
+        {body}
       </DialogContent>
     </Dialog>
-  );
-}
-
-/** The pencil on a post (admin mode only): opens the mention editor. */
-export function PostEditButton({ postId, className }: { postId: string; className?: string }) {
-  const { enabled } = useAdminMode();
-  const [open, setOpen] = React.useState(false);
-  // Mounted from the first open on, so closing can animate.
-  const [mounted, setMounted] = React.useState(false);
-  if (!enabled) return null;
-  return (
-    <>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        aria-label="Edit post"
-        className={className}
-        onClick={(e) => {
-          e.stopPropagation();
-          setMounted(true);
-          setOpen(true);
-        }}
-        data-testid={`button-edit-post-${postId}`}
-      >
-        <HugeiconsIcon icon={PencilEdit01Icon} className="size-4" />
-      </Button>
-      {mounted && <MentionEditor postId={postId} open={open} onOpenChange={setOpen} />}
-    </>
   );
 }

@@ -2,8 +2,8 @@
 
 /**
  * Admin → Review: what the engine wasn't sure about, highest priority and
- * oldest first. A row opens the post in the review dialog; answering moves
- * on to the next. J / K move and Enter opens.
+ * oldest first. A row opens the post window on that question; answering
+ * moves on to the next. J / K move and Enter opens.
  */
 
 import * as React from "react";
@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatusDot } from "@/components/shared/status-dot";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { adminFetch } from "@/components/admin/admin-fetch";
-import { KIND_LABEL, ReviewDialog, type ReviewKind } from "@/components/admin/review-dialog";
+import { KIND_LABEL, PostModal, type ReviewKind } from "@/components/admin/post-modal";
 import { cn } from "@/lib/utils";
 
 type Item = {
@@ -32,6 +32,8 @@ type Item = {
 };
 
 type ReviewData = { items: Item[]; counts: Partial<Record<ReviewKind, number>>; total: number };
+/** One row per post: its first question, and how many more it has. */
+type Row = Item & { more: number };
 
 const KINDS: ReviewKind[] = ["confirm_place", "check_not_a_place", "fix_extraction", "failed_run", "spot_check", "confirm_example"];
 
@@ -43,25 +45,47 @@ function isTyping(target: EventTarget | null) {
 export default function ReviewPage() {
   const [kind, setKind] = React.useState<ReviewKind | "all">("all");
   const [selected, setSelected] = React.useState(0);
-  const [openId, setOpenId] = React.useState<string | null>(null);
+  // The open post (rows are posts), and the list's order when it was opened.
+  const [openPostId, setOpenPostId] = React.useState<string | null>(null);
+  const [order, setOrder] = React.useState<string[]>([]);
   const rowRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
 
   const { data, isLoading } = useQuery<ReviewData>({
     queryKey: ["admin-review", kind],
     queryFn: () => adminFetch(`/api/admin/review${kind === "all" ? "" : `?kind=${kind}`}`),
   });
-  const items = React.useMemo(() => (data?.items ?? []).filter((i) => i.postId), [data]);
-  const openIndex = items.findIndex((i) => i.id === openId);
-  // Keep the open item while the list refetches without it.
-  const lastOpen = React.useRef<Item | null>(null);
-  if (openIndex >= 0) lastOpen.current = items[openIndex];
-  const openItem = openId ? (openIndex >= 0 ? items[openIndex] : lastOpen.current) : null;
+  // The post window answers every question on a post, so the list is one row per post.
+  const items = React.useMemo(() => {
+    const byPost = new Map<string, Row>();
+    for (const i of data?.items ?? []) {
+      if (!i.postId) continue;
+      const first = byPost.get(i.postId);
+      if (first) first.more += 1;
+      else byPost.set(i.postId, { ...i, more: 0 });
+    }
+    return [...byPost.values()];
+  }, [data]);
+  // Keep the open row while the list refetches without it.
+  const [lastOpen, setLastOpen] = React.useState<Row | null>(null);
+  const current = items.find((i) => i.postId === openPostId) ?? null;
+  React.useEffect(() => {
+    if (current) setLastOpen(current);
+  }, [current]);
+  const openItem = openPostId ? (current ?? lastOpen) : null;
+
+  const open = (index: number) => {
+    const row = items[index];
+    if (!row?.postId) return;
+    setSelected(index);
+    setOrder(items.map((i) => i.postId!));
+    setOpenPostId(row.postId);
+  };
 
   React.useEffect(() => setSelected(0), [kind]);
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (openId || isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (openPostId || isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === "j" || e.key === "k") {
         e.preventDefault();
         setSelected((s) => {
@@ -71,22 +95,27 @@ export default function ReviewPage() {
         });
       } else if (e.key === "Enter" && items[selected]) {
         e.preventDefault();
-        setOpenId(items[selected].id);
+        open(selected);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [items, selected, openId]);
+  });
 
-  /** The item after the open one (answered items drop out of the list as it refetches). */
+  /**
+   * The next post still waiting, in the order the list had when a post was
+   * opened (answered posts drop out, and a post's row moves as its first
+   * question changes); then any skipped one from the top.
+   */
   const next = () => {
-    const from = openIndex >= 0 ? openIndex : Math.min(selected, items.length - 1);
-    const following = items.slice(from + 1).find((i) => i.id !== openId) ?? items.slice(0, from).find((i) => i.id !== openId) ?? null;
+    const waiting = new Set(items.map((i) => i.postId));
+    const from = order.indexOf(openPostId ?? "");
+    const following = order.slice(from + 1).find((id) => waiting.has(id)) ?? items.find((i) => i.postId !== openPostId)?.postId ?? null;
     if (following) {
-      setSelected(items.indexOf(following));
-      setOpenId(following.id);
+      setSelected(Math.max(0, items.findIndex((i) => i.postId === following)));
+      setOpenPostId(following);
     } else {
-      setOpenId(null);
+      setOpenPostId(null);
     }
   };
 
@@ -96,7 +125,9 @@ export default function ReviewPage() {
   return (
     <AdminShell>
       <div className="mb-3 flex items-center justify-between gap-2">
-        <p className="text-sm text-muted-foreground">Posts the engine wasn&apos;t sure about. Answer one and the next opens.</p>
+        <p className="text-sm text-muted-foreground">
+          Posts the engine wasn&apos;t sure about{items.length ? `: ${count(kind)} ${count(kind) === 1 ? "question" : "questions"} on ${items.length} ${items.length === 1 ? "post" : "posts"}` : ""}. Answer one and the next opens.
+        </p>
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="outline" size="sm" className="shrink-0" data-testid="select-review-kind" />}>
             {kindLabel} <span className="text-muted-foreground tabular-nums">{count(kind)}</span>
@@ -142,17 +173,17 @@ export default function ReviewPage() {
                   rowRefs.current[i] = el;
                 }}
                 type="button"
-                onClick={() => {
-                  setSelected(i);
-                  setOpenId(item.id);
-                }}
+                onClick={() => open(i)}
                 onMouseEnter={() => setSelected(i)}
                 className={cn("flex flex-col gap-0.5 rounded-lg px-2 py-2.5 text-left transition-colors", i === selected && "bg-muted")}
                 data-testid={`row-review-${item.id}`}
               >
                 <span className="flex min-w-0 items-center gap-2">
                   <StatusDot status={item.kind === "failed_run" ? "failed" : "needs_review"} />
-                  <span className="truncate text-sm font-medium">{item.question}</span>
+                  <span className="truncate text-sm font-medium">
+                    {item.question}
+                    {item.more > 0 && <span className="font-normal text-muted-foreground"> (+{item.more} more)</span>}
+                  </span>
                 </span>
                 <span className="truncate pl-4 text-xs text-muted-foreground">
                   {[
@@ -174,11 +205,12 @@ export default function ReviewPage() {
         </>
       )}
 
-      <ReviewDialog
-        item={openItem}
-        position={{ index: Math.max(0, openIndex >= 0 ? openIndex : selected), total: items.length }}
-        open={!!openId}
-        onOpenChange={(o) => !o && setOpenId(null)}
+      <PostModal
+        postId={openPostId}
+        itemId={openItem?.id ?? null}
+        position={{ index: Math.max(0, order.indexOf(openPostId ?? "")), total: order.length }}
+        open={!!openPostId}
+        onOpenChange={(o) => !o && setOpenPostId(null)}
         onNext={next}
       />
     </AdminShell>

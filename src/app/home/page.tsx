@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { UserMultiple02Icon, Location01Icon } from "@hugeicons/core-free-icons";
 import { apiRequest } from "@/lib/query-client";
-import { AppShell, PageHeader } from "@/components/layout";
+import { AppShell, ContentContainer, PageHeader } from "@/components/layout";
 import dynamic from "next/dynamic";
 
 const FeedPost = dynamic(
@@ -202,7 +202,7 @@ export default function HomePage() {
   return (
     <AppShell user={user}>
       <PageHeader title="Feed" />
-      <div className="flex-1 overflow-auto max-w-xl mx-auto w-full pb-20 md:pb-0">
+      <ContentContainer variant="flush" maxWidth="sm">
         <div className="px-4 pt-2">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="justify-start flex-wrap gap-1" data-testid="feed-tabs">
@@ -251,7 +251,7 @@ export default function HomePage() {
             </TabsContent>
           </Tabs>
         </div>
-      </div>
+      </ContentContainer>
     </AppShell>
   );
 }

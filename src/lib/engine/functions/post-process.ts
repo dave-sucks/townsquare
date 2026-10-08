@@ -132,7 +132,7 @@ async function failPostRun(postId: string, error: string) {
     kind: "failed_run",
     postId,
     runId: run?.id ?? null,
-    question: "The pipeline failed on this post after retries.",
+    question: "Couldn't finish this post, even after retries.",
     payload: { error },
     priority: 1,
   });

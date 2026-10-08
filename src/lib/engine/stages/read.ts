@@ -129,7 +129,7 @@ export async function runRead(runId: string, postId: string, opts: StageOptions 
       kind: "fix_extraction",
       postId: post.id,
       runId,
-      question: "Read broke a rule twice; check what it got wrong.",
+      question: "Couldn't read this post cleanly. Check its places.",
       payload: { failures: failures.map((f) => f.message), output: out },
       priority: 1,
     });
@@ -139,7 +139,7 @@ export async function runRead(runId: string, postId: string, opts: StageOptions 
       kind: "check_not_a_place",
       postId: post.id,
       runId,
-      question: `Read says this isn't about a place, but it's tagged at "${facts.locationName}".`,
+      question: `Not about a place? It's tagged at "${facts.locationName}".`,
       payload: { reason: out.notPlaceReason, locationName: facts.locationName },
     });
   }
