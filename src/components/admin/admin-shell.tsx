@@ -18,7 +18,7 @@ const SECTIONS = [
   { value: "review", label: "Review", href: "/admin/review" },
   { value: "creators", label: "Creators", href: "/admin/creators" },
   { value: "agents", label: "Agents", href: "/admin/agents" },
-  { value: "history", label: "History", href: "/admin/runs" },
+  { value: "history", label: "History", href: "/admin/history" },
 ] as const;
 
 type ReviewCounts = { total: number };

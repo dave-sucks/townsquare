@@ -2,7 +2,7 @@
 
 /**
  * Admin → Creators: the Instagram accounts Townsquare pulls posts from.
- * Add one by handle; each row opens that creator's posts.
+ * Add one by handle; each row opens History filtered to that creator.
  */
 
 import * as React from "react";
@@ -27,7 +27,7 @@ function CreatorRow({ source }: { source: SourceSummary }) {
   const name = source.user?.name;
   return (
     <Link
-      href={`/admin/creators/${source.handle}`}
+      href={`/admin/history?creator=${source.handle}`}
       className="flex items-center gap-3 px-3 py-3 transition-colors hover:bg-muted"
       data-testid={`row-creator-${source.handle}`}
     >

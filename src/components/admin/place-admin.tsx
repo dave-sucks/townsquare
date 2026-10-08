@@ -185,7 +185,7 @@ export function PlaceAdminMenu({ googlePlaceId }: { googlePlaceId: string }) {
                 </span>
               ) : undefined
             }
-            href={`/admin/runs?place=${googlePlaceId}`}
+            href={`/admin/history?place=${googlePlaceId}`}
             testId="link-place-admin-runs"
           />
         </DropdownMenuGroup>

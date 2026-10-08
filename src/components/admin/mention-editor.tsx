@@ -20,7 +20,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01Icon, Location01Icon, PencilEdit01Icon, PinOffIcon, RefreshIcon } from "@hugeicons/core-free-icons";
+import { Cancel01Icon, Location01Icon, PinOffIcon, RefreshIcon } from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -31,7 +31,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { PlaceRowCard } from "@/components/chat/place-row-card";
 import { StatusDot } from "@/components/shared/status-dot";
-import { useAdminMode } from "@/components/admin/admin-mode";
 import { IconAction } from "@/components/admin/icon-action";
 import { PostEmbed } from "@/components/admin/post-embed";
 import { PlaceSearch, type PickedPlace } from "@/components/admin/place-search";
@@ -657,33 +656,5 @@ export function MentionEditor({
         <div className="flex min-w-0 flex-1 flex-col">{body}</div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-/** The pencil on a post (admin mode only): opens the mention editor. */
-export function PostEditButton({ postId, className }: { postId: string; className?: string }) {
-  const { enabled } = useAdminMode();
-  const [open, setOpen] = React.useState(false);
-  // Mounted from the first open on, so closing can animate.
-  const [mounted, setMounted] = React.useState(false);
-  if (!enabled) return null;
-  return (
-    <>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        aria-label="Edit post"
-        className={className}
-        onClick={(e) => {
-          e.stopPropagation();
-          setMounted(true);
-          setOpen(true);
-        }}
-        data-testid={`button-edit-post-${postId}`}
-      >
-        <HugeiconsIcon icon={PencilEdit01Icon} className="size-4" />
-      </Button>
-      {mounted && <MentionEditor postId={postId} open={open} onOpenChange={setOpen} />}
-    </>
   );
 }

@@ -20,15 +20,8 @@ import { toast } from "sonner";
 import { PlacesList } from "@/components/shared/places-list";
 import { FeedPost } from "@/components/feed-post";
 import type { SidebarInjectedProps } from "@/components/map/map-layout";
-import { useAdminMode } from "@/components/admin/admin-mode";
-import type { PostFilter } from "@/components/admin/source-admin";
-import dynamic from "next/dynamic";
 
 // Admin mode's source controls load only for admins in admin mode.
-const SourceAdminMenu = dynamic(() => import("@/components/admin/source-admin").then((m) => ({ default: m.SourceAdminMenu })));
-const SourceSyncStrip = dynamic(() => import("@/components/admin/source-admin").then((m) => ({ default: m.SourceSyncStrip })));
-const PostFilterMenu = dynamic(() => import("@/components/admin/source-admin").then((m) => ({ default: m.PostFilterMenu })));
-const SourcePostList = dynamic(() => import("@/components/admin/source-admin").then((m) => ({ default: m.SourcePostList })));
 
 interface Place {
   id: string;
@@ -184,8 +177,6 @@ export function UserSidebar({
   currentUserPlaceData,
 }: UserSidebarProps) {
   const queryClient = useQueryClient();
-  const { enabled: adminMode } = useAdminMode();
-  const [postFilter, setPostFilter] = useState<PostFilter>("feed");
   const [activeTab, setActiveTab] = useState<"places" | "feed">("places");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>("all");
   const [selectedListId, setSelectedListId] = useState<string>("all");
@@ -281,7 +272,6 @@ export function UserSidebar({
     <div className="h-full flex flex-col bg-background" data-testid="user-sidebar">
       <div className="flex items-center gap-2 p-3 border-b shrink-0">
         <span className="font-semibold text-sm flex-1 truncate font-brand">{displayName}</span>
-        {adminMode && <SourceAdminMenu sourceKey={user.id} />}
         {!isOwnProfile && (
           <Button
             variant={localIsFollowing ? "outline" : "default"}
@@ -307,7 +297,6 @@ export function UserSidebar({
           followerCount={localFollowerCount}
           followingCount={followingCount}
         />
-        {adminMode && <SourceSyncStrip userId={user.id} />}
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "places" | "feed")} className="flex flex-col gap-0">
           <div className="flex items-center justify-between gap-2 px-3 py-2 border-b sticky top-0 bg-background z-10">
@@ -325,8 +314,6 @@ export function UserSidebar({
               Feed
             </TabsTrigger>
           </TabsList>
-
-          {activeTab === "feed" && adminMode && <PostFilterMenu value={postFilter} onChange={setPostFilter} />}
 
           {activeTab === "places" && (
             <div className="flex gap-2">
@@ -433,9 +420,7 @@ export function UserSidebar({
           </TabsContent>
 
           <TabsContent value="feed" className="mt-0">
-            {adminMode && postFilter !== "feed" ? (
-              <SourcePostList userId={user.id} filter={postFilter} />
-            ) : activities.length === 0 ? (
+            {activities.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center px-4">
                 <HugeiconsIcon icon={Activity01Icon} className="mb-4 h-10 w-10 text-muted-foreground" />
                 <p className="text-sm font-medium">No activity yet</p>

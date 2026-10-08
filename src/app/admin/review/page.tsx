@@ -2,8 +2,8 @@
 
 /**
  * Admin → Review: what the engine wasn't sure about, highest priority and
- * oldest first. A row opens the post in the review dialog; answering moves
- * on to the next. J / K move and Enter opens.
+ * oldest first. A row opens the post window on that question; answering
+ * moves on to the next. J / K move and Enter opens.
  */
 
 import * as React from "react";
@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatusDot } from "@/components/shared/status-dot";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { adminFetch } from "@/components/admin/admin-fetch";
-import { KIND_LABEL, ReviewDialog, type ReviewKind } from "@/components/admin/review-dialog";
+import { KIND_LABEL, PostModal, type ReviewKind } from "@/components/admin/post-modal";
 import { cn } from "@/lib/utils";
 
 type Item = {
@@ -53,9 +53,12 @@ export default function ReviewPage() {
   const items = React.useMemo(() => (data?.items ?? []).filter((i) => i.postId), [data]);
   const openIndex = items.findIndex((i) => i.id === openId);
   // Keep the open item while the list refetches without it.
-  const lastOpen = React.useRef<Item | null>(null);
-  if (openIndex >= 0) lastOpen.current = items[openIndex];
-  const openItem = openId ? (openIndex >= 0 ? items[openIndex] : lastOpen.current) : null;
+  const [lastOpen, setLastOpen] = React.useState<Item | null>(null);
+  const current = openIndex >= 0 ? items[openIndex] : null;
+  React.useEffect(() => {
+    if (current) setLastOpen(current);
+  }, [current]);
+  const openItem = openId ? (current ?? lastOpen) : null;
 
   React.useEffect(() => setSelected(0), [kind]);
 
@@ -174,8 +177,9 @@ export default function ReviewPage() {
         </>
       )}
 
-      <ReviewDialog
-        item={openItem}
+      <PostModal
+        postId={openItem?.postId ?? null}
+        itemId={openItem?.id ?? null}
         position={{ index: Math.max(0, openIndex >= 0 ? openIndex : selected), total: items.length }}
         open={!!openId}
         onOpenChange={(o) => !o && setOpenId(null)}

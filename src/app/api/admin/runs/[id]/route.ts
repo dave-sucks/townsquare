@@ -13,7 +13,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const run = await prisma.engineRun.findUnique({
     where: { id: (await params).id },
     include: {
-      steps: { orderBy: { startedAt: "asc" }, include: { agentVersion: { select: { agentKey: true, version: true } } } },
+      steps: { orderBy: { startedAt: "asc" }, include: { agentVersion: { select: { agentKey: true, version: true, agent: { select: { name: true } } } } } },
       post: { select: { id: true, canonicalPostId: true, url: true, caption: true, postedAt: true, authorHandle: true, media: true, postType: true } },
       place: { select: { id: true, name: true, googlePlaceId: true, formattedAddress: true } },
     },

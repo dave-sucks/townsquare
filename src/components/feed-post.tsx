@@ -12,7 +12,7 @@ import { useAdminMode } from "@/components/admin/admin-mode";
 import dynamic from "next/dynamic";
 
 // The mention editor loads only for admins in admin mode.
-const PostEditButton = dynamic(() => import("@/components/admin/mention-editor").then((m) => ({ default: m.PostEditButton })));
+const PostEditButton = dynamic(() => import("@/components/admin/post-modal").then((m) => ({ default: m.PostEditButton })));
 
 interface ActivityActor {
   id: string;

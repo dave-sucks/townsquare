@@ -149,8 +149,8 @@ export function BackfillProgressCard() {
           {b.needsReview > 0 && <span className="text-amber-600">{b.needsReview} need review</span>}
           {b.failed > 0 && <span className="text-red-600">{b.failed} failed</span>}
           <span>started {formatDistanceToNowStrict(new Date(b.startedAt), { addSuffix: true })}</span>
-          <Link href="/admin/runs?trigger=backfill" className="font-medium text-foreground hover:underline">
-            View runs
+          <Link href="/admin/history" className="font-medium text-foreground hover:underline">
+            View history
           </Link>
         </div>
       </CardContent>
