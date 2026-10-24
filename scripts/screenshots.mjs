@@ -49,17 +49,19 @@ async function lookupIds() {
     // Admin screens: a place on a roundup that still has places to confirm.
     const adminPlace = await one("SELECT google_place_id AS id FROM places WHERE name = 'Radio Bakery' LIMIT 1");
     const roundup = await one("SELECT id FROM ingested_posts WHERE canonical_post_id = 'DS7wRC-kYM5'");
+    // A place with a booking link (the Book button).
+    const booked = await one("SELECT google_place_id AS id FROM places WHERE name = 'The Spaniard' AND booking_url IS NOT NULL LIMIT 1");
     // The post window's Steps tab: the post whose latest run has the most steps.
     const run = await one(
       "SELECT p.id FROM ingested_posts p JOIN engine_steps s ON s.run_id = p.last_run_id GROUP BY p.id ORDER BY count(*) DESC LIMIT 1",
     );
-    return { listId: list?.id ?? null, placeId: place?.id ?? null, adminPlaceId: adminPlace?.id ?? null, roundupId: roundup?.id ?? null, runPostId: run?.id ?? null };
+    return { listId: list?.id ?? null, placeId: place?.id ?? null, adminPlaceId: adminPlace?.id ?? null, roundupId: roundup?.id ?? null, runPostId: run?.id ?? null, bookedId: booked?.id ?? null };
   } finally {
     await db.end();
   }
 }
 
-function routes({ listId, placeId, adminPlaceId, roundupId, runPostId }) {
+function routes({ listId, placeId, adminPlaceId, roundupId, runPostId, bookedId }) {
   return [
     { name: "explore", path: "/", settle: 4000 },
     { name: "feed", path: "/feed" },
@@ -68,6 +70,7 @@ function routes({ listId, placeId, adminPlaceId, roundupId, runPostId }) {
     listId && { name: "list", path: `/lists/${listId}` },
     { name: "people", path: "/people" },
     placeId && { name: "place", path: `/places/${placeId}`, settle: 3500 },
+    bookedId && { name: "place-booking", path: `/places/${bookedId}`, settle: 3500 },
     { name: "profile", path: "/u/brotherlyburgers", settle: 3500 },
     { name: "chat", path: "/chat" },
     adminPlaceId && { name: "admin-place", path: `/places/${adminPlaceId}`, admin: true, settle: 3500 },

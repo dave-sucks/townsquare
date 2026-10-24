@@ -72,6 +72,17 @@ model Place {
   searchDocument   Unsupported("tsvector")? @map("search_document")
   isHidden         Boolean            @default(false) @map("is_hidden")
   mergedIntoId     String?            @map("merged_into_id") @db.VarChar(36)
+  /// The place's own website, from Google.
+  website          String?
+  /// Google: whether it takes reservations (null: Google doesn't say).
+  reservable       Boolean?
+  /// Its booking page (lib/places/booking.ts): resy, opentable, tock or sevenrooms.
+  bookingProvider  String?            @map("booking_provider")
+  bookingUrl       String?            @map("booking_url")
+  /// When the booking page was last looked for (it's re-checked monthly).
+  bookingCheckedAt DateTime?          @map("booking_checked_at") @db.Timestamp(6)
+  /// Set or cleared by an admin: the monthly check leaves it alone.
+  bookingManual    Boolean            @default(false) @map("booking_manual")
   createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt        DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
   activities       Activity[]

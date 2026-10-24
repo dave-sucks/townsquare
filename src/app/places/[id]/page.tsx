@@ -28,6 +28,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { AppShell, PageHeader } from "@/components/layout";
 import { GroupedTags, InlineTags, TagCategoryGroup, TagInfo, TagsWithPopover } from "@/components/shared/place-tags";
 import { placeCategory } from "@/lib/places/category";
+import { BookingBar } from "@/components/shared/booking-bar";
 import { SiGooglemaps } from "react-icons/si";
 import { ListChip } from "@/components/shared/list-chip";
 import { useAdminMode } from "@/components/admin/admin-mode";
@@ -72,6 +73,9 @@ interface Place {
   knownFor?: { name: string; count: number }[] | null;
   /** Hidden by an admin: off the map, search and chat. */
   isHidden?: boolean;
+  /** Its page on Resy, OpenTable, Tock or SevenRooms. */
+  bookingProvider?: string | null;
+  bookingUrl?: string | null;
 }
 
 interface SavedPlace {
@@ -449,6 +453,8 @@ export default function PlaceDetailPage({ params }: { params: Promise<{ id: stri
                 tags={tags.flatMap((g) => g.tags).map((t) => ({ slug: t.slug, displayName: t.displayName }))}
               />
             )}
+
+            <BookingBar provider={place.bookingProvider} url={place.bookingUrl} />
 
             {friendsWhoSaved.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">

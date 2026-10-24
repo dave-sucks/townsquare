@@ -5,6 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { editPlaceSummary, ensurePlace, mergePlace, updatePlaceFields } from "@/lib/engine/write/places";
 import { setPlaceTagOverride } from "@/lib/engine/write/tags";
 import { refreshPlaces } from "@/lib/engine/events";
+import { writeAudit } from "@/lib/engine/write/audit";
+import { runBooking } from "@/lib/engine/stages/booking";
+import { parseBookingUrl } from "@/lib/places/booking";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -21,7 +24,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const [row, runs, suppressed] = await Promise.all([
     prisma.place.findUnique({
       where: { id: place.id },
-      select: { id: true, googlePlaceId: true, name: true, lat: true, lng: true, neighborhood: true, locality: true, priceLevel: true, primaryType: true, types: true, isHidden: true, mergedIntoId: true, aiSummaryUpdatedAt: true },
+      select: { id: true, googlePlaceId: true, name: true, lat: true, lng: true, neighborhood: true, locality: true, priceLevel: true, primaryType: true, types: true, isHidden: true, mergedIntoId: true, aiSummaryUpdatedAt: true, bookingProvider: true, bookingUrl: true, bookingManual: true },
     }),
     prisma.engineRun.findMany({ where: { placeId: place.id }, orderBy: { startedAt: "desc" }, take: 5, select: { id: true, status: true, startedAt: true, costUsd: true } }),
     prisma.placeTagAggregate.findMany({ where: { placeId: place.id, isSuppressed: true }, select: { tag: { select: { slug: true, displayName: true } } } }),
@@ -57,6 +60,10 @@ const actionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("refresh") }),
   z.object({ action: z.literal("summary"), summary: z.string().trim().min(1), note: z.string().nullable().optional() }),
   z.object({ action: z.literal("tag"), slug: z.string(), show: z.boolean(), note: z.string().nullable().optional() }),
+  // Set (or, with null, clear) the booking page by hand; the monthly check then leaves it alone.
+  z.object({ action: z.literal("booking"), url: z.string().trim().nullable() }),
+  // Look for it again on the place's website, undoing a hand-set link.
+  z.object({ action: z.literal("find_booking") }),
 ]);
 
 export async function POST(req: NextRequest, { params }: Params) {
@@ -77,6 +84,22 @@ export async function POST(req: NextRequest, { params }: Params) {
     if (body.action === "refresh") {
       const queued = await refreshPlaces([place.id], { force: true });
       return NextResponse.json({ ok: queued, queued }, { status: queued ? 200 : 503 });
+    }
+    if (body.action === "booking") {
+      const booking = body.url ? parseBookingUrl(body.url) : null;
+      if (body.url && !booking) return NextResponse.json({ error: "That isn't a Resy, OpenTable, Tock or SevenRooms page" }, { status: 400 });
+      const before = await prisma.place.findUnique({ where: { id: place.id }, select: { bookingUrl: true } });
+      await prisma.place.update({
+        where: { id: place.id },
+        data: { bookingProvider: booking?.provider ?? null, bookingUrl: booking?.url ?? null, bookingManual: true, bookingCheckedAt: new Date() },
+      });
+      await writeAudit({ entity: "place", entityId: place.id, action: "booking", actor: user.id, fieldChanges: { bookingUrl: { from: before?.bookingUrl ?? null, to: booking?.url ?? null } } });
+      return NextResponse.json({ ok: true, booking });
+    }
+    if (body.action === "find_booking") {
+      await prisma.place.update({ where: { id: place.id }, data: { bookingManual: false } });
+      const { output } = await runBooking(place.id, { force: true });
+      return NextResponse.json({ ok: true, provider: output.provider ?? null, url: output.url ?? null, reservable: output.reservable ?? null });
     }
     if (body.action === "summary") {
       await editPlaceSummary(place.id, body.summary, { actor: user.id, note: body.note });

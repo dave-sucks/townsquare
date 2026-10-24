@@ -38,6 +38,7 @@ export const STAGE_LABEL: Record<string, string> = {
   tag: "Tag the place",
   aggregate: "Recount tags",
   summarize: "Write the summary",
+  booking: "Find the booking link",
 };
 
 /** Why a run happened. */

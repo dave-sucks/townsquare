@@ -29,6 +29,7 @@ import { EmojiPickerPopover } from "./shared/emoji-picker-popover";
 import { ListChip } from "./shared/list-chip";
 import { GroupedTags, InlineTags, TagCategoryGroup, TagInfo, TagsWithPopover } from "./shared/place-tags";
 import { placeCategory } from "@/lib/places/category";
+import { BookingBar } from "./shared/booking-bar";
 import { SiGooglemaps } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/query-client";
 import { useMutation } from "@tanstack/react-query";
@@ -47,6 +48,9 @@ interface Place {
   priceLevel: string | null;
   photoRefs: string[] | null;
   aiSummary?: string | null;
+  /** Its page on Resy, OpenTable, Tock or SevenRooms (from the place's details). */
+  bookingProvider?: string | null;
+  bookingUrl?: string | null;
 }
 
 interface SavedPlace {
@@ -311,6 +315,8 @@ export function PlaceDetailPanel({
               tagGroups={fetchedTags}
               maxInlineTags={2}
             />
+
+            <BookingBar provider={placeDetails?.place?.bookingProvider} url={placeDetails?.place?.bookingUrl} />
 
             {fetchedFriends.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
