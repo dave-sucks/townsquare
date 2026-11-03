@@ -100,6 +100,8 @@ function stepSummary(step: Step): string | null {
       return "Recounted the place's tags and dishes from every post.";
     case "summarize":
       return out.summary ? `“${String(out.summary)}”` : null;
+    case "booking":
+      return out.url ? `Books on ${String(out.provider)}: ${String(out.url)}` : out.reservable ? "Takes reservations, but its website doesn't link a booking page." : "Doesn't take reservations online.";
     default:
       return null;
   }

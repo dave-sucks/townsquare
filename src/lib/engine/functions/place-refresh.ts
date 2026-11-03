@@ -1,12 +1,14 @@
 /**
- * engine/place.refresh: Aggregate then Summarize for one place, debounced
- * so a burst of changes (a roundup, a backfill) refreshes the place once.
+ * engine/place.refresh: Aggregate, Summarize, then Booking (monthly) for one
+ * place, debounced so a burst of changes (a roundup, a backfill) refreshes
+ * the place once.
  */
 
 import { prisma } from "@/lib/prisma";
 import { ENGINE } from "../config";
 import { inngest, placeChanged } from "../inngest";
 import { runAggregate } from "../stages/aggregate";
+import { runBooking } from "../stages/booking";
 import { runSummarize } from "../stages/summarize";
 import { finishRun, recordStep, startRun } from "../write/runs";
 
@@ -29,6 +31,7 @@ export const placeRefresh = inngest.createFunction(
     const runId = await step.run("start", () => startRun({ kind: "place", placeId, trigger: "place_changed" }));
     await step.run("aggregate", () => recordStep(runId, "aggregate", "", { placeId }, () => runAggregate(placeId)));
     await step.run("summarize", () => recordStep(runId, "summarize", "", { placeId }, () => runSummarize(runId, placeId, { force })));
+    await step.run("booking", () => recordStep(runId, "booking", "", { placeId }, () => runBooking(placeId)));
     return step.run("finish", () => finishRun(runId));
   },
 );

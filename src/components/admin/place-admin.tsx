@@ -18,6 +18,7 @@ import {
   Activity01Icon,
   ArrowReloadHorizontalIcon,
   Building03Icon,
+  Calendar03Icon,
   DollarCircleIcon,
   GitMergeIcon,
   Location01Icon,
@@ -47,6 +48,7 @@ import { PlaceSearch, type PickedPlace } from "@/components/admin/place-search";
 import { EditableTagChips, type ChipTag } from "@/components/admin/tag-picker";
 import { adminPlaceKey, usePlaceWrite } from "@/components/admin/place-write";
 import { placeCategory } from "@/lib/places/category";
+import { BOOKING_PROVIDERS, PROVIDER_LABEL, type BookingProvider } from "@/lib/places/booking-link";
 
 type AdminPlace = {
   id: string;
@@ -57,6 +59,9 @@ type AdminPlace = {
   primaryType: string | null;
   types: string[] | null;
   isHidden: boolean;
+  bookingProvider: string | null;
+  bookingUrl: string | null;
+  bookingManual: boolean;
 };
 
 type AdminPlaceData = {
@@ -64,7 +69,7 @@ type AdminPlaceData = {
   runs: { id: string; status: string; startedAt: string; costUsd: number | null }[];
 };
 
-type Editing = null | "name" | "neighborhood" | "type" | "merge";
+type Editing = null | "name" | "neighborhood" | "type" | "booking" | "merge";
 
 const PRICES = [
   { value: "none", label: "Not set" },
@@ -106,6 +111,23 @@ export function PlaceAdminMenu({ googlePlaceId }: { googlePlaceId: string }) {
     write.mutate(
       { method: "POST", body: { action: "refresh" } },
       { onSuccess: () => toast.success("Re-running Aggregate and Summarize. The summary updates in a minute or so.") },
+    );
+
+  const findBooking = () =>
+    write.mutate(
+      { method: "POST", body: { action: "find_booking" } },
+      {
+        onSuccess: (r) => {
+          const found = r as { provider?: string | null; reservable?: boolean | null };
+          toast.success(
+            found.provider
+              ? `Found it on ${PROVIDER_LABEL[found.provider as BookingProvider] ?? found.provider}`
+              : found.reservable
+                ? "It takes reservations, but its website doesn't link a booking page"
+                : "Google says it doesn't take reservations",
+          );
+        },
+      },
     );
 
   const setHidden = (isHidden: boolean) =>
@@ -169,11 +191,20 @@ export function PlaceAdminMenu({ googlePlaceId }: { googlePlaceId: string }) {
             disabled={!place}
             testId="button-place-admin-type"
           />
+          <AdminMenuItem
+            icon={Calendar03Icon}
+            label="Booking"
+            value={place?.bookingProvider && BOOKING_PROVIDERS.includes(place.bookingProvider as BookingProvider) ? PROVIDER_LABEL[place.bookingProvider as BookingProvider] : "None"}
+            onClick={() => openEditor("booking")}
+            disabled={!place}
+            testId="button-place-admin-booking"
+          />
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuLabel>Engine</DropdownMenuLabel>
           <AdminMenuItem icon={ArrowReloadHorizontalIcon} label="Re-run summary" onClick={refresh} testId="button-place-admin-refresh" />
+          <AdminMenuItem icon={Calendar03Icon} label="Find booking link" onClick={findBooking} testId="button-place-admin-find-booking" />
           <AdminMenuItem
             icon={Activity01Icon}
             label="History"
@@ -231,6 +262,26 @@ export function PlaceAdminMenu({ googlePlaceId }: { googlePlaceId: string }) {
             saving={write.isPending}
             onSave={(v) => patch({ primaryType: v.trim().toLowerCase().replace(/\s+/g, "_") || null })}
             testId="place-type"
+          />
+          <EditFieldDialog
+            open={editing === "booking"}
+            onOpenChange={(o) => !o && setEditing(null)}
+            title="Booking link"
+            initialValue={place.bookingUrl ?? ""}
+            placeholder="Its page on Resy, OpenTable, Tock or SevenRooms"
+            saving={write.isPending}
+            onSave={(v) =>
+              write.mutate(
+                { method: "POST", body: { action: "booking", url: v.trim() || null } },
+                {
+                  onSuccess: () => {
+                    setEditing(null);
+                    toast.success(v.trim() ? "Booking link saved" : "Booking link removed");
+                  },
+                },
+              )
+            }
+            testId="place-booking"
           />
           <MergeDialog
             open={editing === "merge"}

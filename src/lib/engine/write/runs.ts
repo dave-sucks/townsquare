@@ -8,7 +8,7 @@ import type { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { LlmOutputError, type LlmUsage } from "../llm";
 
-export type Stage = "sync" | "media" | "read" | "resolve" | "mentions" | "tag" | "aggregate" | "summarize";
+export type Stage = "sync" | "media" | "read" | "resolve" | "mentions" | "tag" | "aggregate" | "summarize" | "booking";
 
 export async function startRun(opts: {
   kind: "post" | "place";
